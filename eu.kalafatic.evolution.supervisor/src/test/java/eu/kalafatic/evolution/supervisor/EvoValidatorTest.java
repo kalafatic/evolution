@@ -39,6 +39,9 @@ public class EvoValidatorTest {
         File viewBundle = new File(pluginsDir, "eu.kalafatic.evolution.view_2.6.5.20260906.jar");
         viewBundle.createNewFile();
 
+        File controllerBundle = new File(pluginsDir, "eu.kalafatic.evolution.controller_2.6.5.20260906.jar");
+        controllerBundle.createNewFile();
+
         File configIni = new File(configDir, "config.ini");
         Files.writeString(configIni.toPath(), "eclipse.application=eu.kalafatic.evolution.view.application.Application\neclipse.product=eu.kalafatic.evolution.view.product\n");
 

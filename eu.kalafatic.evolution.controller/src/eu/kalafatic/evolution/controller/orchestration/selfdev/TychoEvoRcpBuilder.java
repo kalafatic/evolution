@@ -572,15 +572,22 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             if (pluginJars == null || pluginJars.length == 0) {
                 missingItems.add("plugins/ directory contains no bundle JARs");
             } else {
-                boolean hasEvoBundle = false;
+                boolean hasViewBundle = false;
+                boolean hasControllerBundle = false;
                 for (File jar : pluginJars) {
-                    if (jar.getName().startsWith("eu.kalafatic.evolution.") || jar.getName().startsWith("org.eclipse.")) {
-                        hasEvoBundle = true;
-                        break;
+                    String name = jar.getName();
+                    if (name.startsWith("eu.kalafatic.evolution.view_")) {
+                        hasViewBundle = true;
+                    }
+                    if (name.startsWith("eu.kalafatic.evolution.controller_")) {
+                        hasControllerBundle = true;
                     }
                 }
-                if (!hasEvoBundle) {
-                    missingItems.add("plugins/ missing required EVO application bundle (eu.kalafatic.evolution.*.jar)");
+                if (!hasViewBundle) {
+                    missingItems.add("plugins/ missing required EVO view bundle (eu.kalafatic.evolution.view_*.jar)");
+                }
+                if (!hasControllerBundle) {
+                    missingItems.add("plugins/ missing required EVO controller bundle (eu.kalafatic.evolution.controller_*.jar)");
                 }
             }
         }

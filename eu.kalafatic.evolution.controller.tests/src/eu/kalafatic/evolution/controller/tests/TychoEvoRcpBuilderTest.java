@@ -235,6 +235,7 @@ public class TychoEvoRcpBuilderTest {
         File plugins = new File(dir, "plugins");
         plugins.mkdirs();
         new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -260,6 +261,7 @@ public class TychoEvoRcpBuilderTest {
         File plugins = new File(dir, "plugins");
         plugins.mkdirs();
         new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -274,6 +276,32 @@ public class TychoEvoRcpBuilderTest {
         TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
         assertNotNull(res);
         assertTrue(res.isSuccess());
+    }
+
+    @Test
+    public void testMissingControllerBundleRejection() throws Exception {
+        File dir = tempFolder.newFolder("missingControllerDir");
+        new File(dir, "evo").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
+
+        File plugins = new File(dir, "plugins");
+        plugins.mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+
+        File config = new File(dir, "configuration");
+        config.mkdirs();
+        File configIni = new File(config, "config.ini");
+        try (FileWriter fw = new FileWriter(configIni)) {
+            fw.write("eclipse.product=eu.kalafatic.evolution.view.product\n");
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("eu.kalafatic.evolution.controller_*.jar"));
     }
 
     @Test

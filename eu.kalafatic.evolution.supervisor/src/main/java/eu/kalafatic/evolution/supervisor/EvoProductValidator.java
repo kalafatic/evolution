@@ -120,7 +120,7 @@ public class EvoProductValidator {
             missingItems.add("evo.ini");
         }
 
-        // plugins/ directory & EVO view bundle check
+        // plugins/ directory & EVO view and controller bundles check
         File pluginsDir = new File(rootDir, "plugins");
         if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
             missingItems.add("plugins/ directory");
@@ -130,6 +130,12 @@ public class EvoProductValidator {
             );
             if (viewBundle == null || viewBundle.length == 0) {
                 missingItems.add("EVO application bundle (eu.kalafatic.evolution.view_*.jar)");
+            }
+            File[] controllerBundle = pluginsDir.listFiles((dir, name) ->
+                name.startsWith("eu.kalafatic.evolution.controller_") && name.endsWith(".jar")
+            );
+            if (controllerBundle == null || controllerBundle.length == 0) {
+                missingItems.add("EVO controller bundle (eu.kalafatic.evolution.controller_*.jar)");
             }
         }
 
