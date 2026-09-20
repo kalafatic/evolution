@@ -50,6 +50,11 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private final List<String> pendingParquetUrls = new ArrayList<>();
     private int currentParquetUrlIndex = 0;
 
+    // Hub Repository Tree API Fallback Recovery
+    private boolean triedHubRepositoryFallback = false;
+    private final List<String> pendingHubFileUrls = new ArrayList<>();
+    private int currentHubFileIndex = 0;
+
     // Stream & Chunk Level Accounting
     private long totalRowsFetched = 0;
     private long totalSamplesExtracted = 0;
@@ -213,6 +218,23 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         return lastError;
     }
 
+    public static String classifyError(int statusCode, String errorText) {
+        if (statusCode == 401 || statusCode == 403) return "AUTHENTICATION_FAILED";
+        if (statusCode == 404) return "NOT_FOUND";
+        if (statusCode == 429) return "RATE_LIMITED";
+        if (statusCode >= 500 && statusCode <= 504) return "SERVER_ERROR";
+        if (errorText != null) {
+            String lower = errorText.toLowerCase();
+            if (lower.contains("401") || lower.contains("403") || lower.contains("unauthorized") || lower.contains("forbidden")) return "AUTHENTICATION_FAILED";
+            if (lower.contains("404") || lower.contains("not found")) return "NOT_FOUND";
+            if (lower.contains("429") || lower.contains("rate limit")) return "RATE_LIMITED";
+            if (lower.contains("500") || lower.contains("502") || lower.contains("503") || lower.contains("server error")) return "SERVER_ERROR";
+            if (lower.contains("parse") || lower.contains("json") || lower.contains("malformed")) return "PARSE_ERROR";
+            if (lower.contains("connect") || lower.contains("timeout") || lower.contains("network")) return "NETWORK_ERROR";
+        }
+        return statusCode >= 400 ? "UNSUPPORTED" : "UNKNOWN";
+    }
+
     public long getTotalRowsFetched() { return totalRowsFetched; }
     public long getTotalSamplesExtracted() { return totalSamplesExtracted; }
     public long getTotalExtractionRejections() { return totalExtractionRejections; }
@@ -287,8 +309,15 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String runId = config != null ? config.getRunId() : null;
         String runTag = runId != null && !runId.trim().isEmpty() ? runId : "UNKNOWN";
 
-        if (triedParquetFallback) {
+        if (triedParquetFallback && !triedHubRepositoryFallback) {
             if (fetchNextParquetFileChunk(runTag)) {
+                endOfStream = false;
+                return;
+            }
+        }
+
+        if (triedHubRepositoryFallback) {
+            if (fetchNextHubFileChunk(runTag)) {
                 endOfStream = false;
             } else {
                 endOfStream = true;
@@ -306,7 +335,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String rev = config != null && config.getRevision() != null ? config.getRevision() : "main";
 
         int requestedLength = 100;
-        System.out.printf("[HF-ACQ][run=%s][HTTP]\nrepository=%s\nconfig=%s\nsplit=%s\nrevision=%s\noffset=%d\nlimit=%d\n",
+        System.out.printf("[HF][ACQUISITION][run=%s] Attempting dataset acquisition dataset=%s config=%s split=%s revision=%s strategy=ROWS_API offset=%d limit=%d\n",
                 runTag, repo, cfg, split, rev, currentOffset, requestedLength);
 
         long httpStartMs = System.currentTimeMillis();
@@ -333,9 +362,14 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     }
                 } else {
                     long httpDurationMs = System.currentTimeMillis() - httpStartMs;
-                    System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
-                            runTag, currentOffset, requestedLength, 0, 500, 0, httpDurationMs);
+                    String classification = classifyError(500, lastError);
+                    System.out.printf("[HF][ACQUISITION][run=%s] Strategy=ROWS_API status=500 records=0 bytes=0 durationMs=%d failureReason=%s classification=%s\n",
+                            runTag, httpDurationMs, lastError, classification);
                     if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                        endOfStream = false;
+                        return;
+                    }
+                    if (!triedHubRepositoryFallback && tryFetchFromHubRepositoryApi(repo, cfg, split, runTag)) {
                         endOfStream = false;
                         return;
                     }
@@ -418,6 +452,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                         endOfStream = false;
                         return;
                     }
+                    if (!triedHubRepositoryFallback && tryFetchFromHubRepositoryApi(repo, cfg, split, runTag)) {
+                        endOfStream = false;
+                        return;
+                    }
                     endOfStream = true;
                     return;
                 }
@@ -477,6 +515,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                             endOfStream = false;
                             return;
                         }
+                        if (!triedHubRepositoryFallback && tryFetchFromHubRepositoryApi(repo, cfg, split, runTag)) {
+                            endOfStream = false;
+                            return;
+                        }
                         endOfStream = true;
                     }
 
@@ -504,6 +546,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                         endOfStream = false;
                         return;
                     }
+                    if (!triedHubRepositoryFallback && tryFetchFromHubRepositoryApi(repo, cfg, split, runTag)) {
+                        endOfStream = false;
+                        return;
+                    }
                     endOfStream = true;
                 }
             } catch (Exception e) {
@@ -511,6 +557,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
                         runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
                 if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                    endOfStream = false;
+                    return;
+                }
+                if (!triedHubRepositoryFallback && tryFetchFromHubRepositoryApi(repo, cfg, split, runTag)) {
                     endOfStream = false;
                     return;
                 }
@@ -749,6 +799,167 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String customDir = config != null ? config.getOutputDir() : null;
         String repo = config != null ? config.getRepository() : "wikitext";
         return DatasetSourceConfig.resolveDatasetOutputDir(customDir, repo);
+    }
+
+    private boolean tryFetchFromHubRepositoryApi(String repo, String cfg, String split, String runTag) {
+        triedHubRepositoryFallback = true;
+        pendingHubFileUrls.clear();
+        currentHubFileIndex = 0;
+
+        String treeApiUrl = "https://huggingface.co/api/datasets/" + repo + "/tree/main";
+        System.out.printf("[HF-HUB-FALLBACK][run=%s] Querying Hub repository tree API fallback for %s (cfg=%s, split=%s) at %s\n",
+                runTag, repo, cfg, split, treeApiUrl);
+
+        try {
+            DownloadRequest req = new DownloadRequest(treeApiUrl).setReadTimeoutMs(15000);
+            DownloadResult res = downloader.download(req);
+            if (res != null && res.isSuccess() && res.getContentText() != null) {
+                JSONArray tree = new JSONArray(res.getContentText());
+                for (int i = 0; i < tree.length(); i++) {
+                    JSONObject item = tree.getJSONObject(i);
+                    String path = item.optString("path", "");
+                    String type = item.optString("type", "file");
+
+                    if ("file".equalsIgnoreCase(type) && path != null) {
+                        String lowerPath = path.toLowerCase();
+                        if (lowerPath.endsWith(".parquet") || lowerPath.endsWith(".jsonl") || lowerPath.endsWith(".json")
+                                || lowerPath.endsWith(".csv") || lowerPath.endsWith(".txt")) {
+
+                            boolean splitMatch = split == null || split.isEmpty() || lowerPath.contains(split.toLowerCase());
+                            boolean cfgMatch = cfg == null || cfg.isEmpty() || "default".equalsIgnoreCase(cfg) || lowerPath.contains(cfg.toLowerCase());
+
+                            if (splitMatch || cfgMatch) {
+                                String resolveUrl = "https://huggingface.co/datasets/" + repo + "/resolve/main/" + path;
+                                pendingHubFileUrls.add(resolveUrl);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            System.err.printf("[HF-HUB-FALLBACK][run=%s] Failed to query Hub repository tree API for %s: %s\n",
+                    runTag, repo, ex.getMessage());
+        }
+
+        if (!pendingHubFileUrls.isEmpty()) {
+            System.out.printf("[HF-HUB-FALLBACK][run=%s] Discovered %d matching repository files for %s (%s/%s)\n",
+                    runTag, pendingHubFileUrls.size(), repo, cfg, split);
+            return fetchNextHubFileChunk(runTag);
+        } else {
+            System.err.printf("[HF-HUB-FALLBACK][run=%s] No matching repository files found for %s (%s/%s)\n",
+                    runTag, repo, cfg, split);
+            return false;
+        }
+    }
+
+    private String extractHubFileName(String url, int index) {
+        if (url != null && url.contains("/")) {
+            String name = url.substring(url.lastIndexOf('/') + 1);
+            if (name.contains("?")) {
+                name = name.substring(0, name.indexOf('?'));
+            }
+            if (!name.isEmpty()) {
+                return name;
+            }
+        }
+        return String.format("%04d_hub_file", index);
+    }
+
+    private boolean fetchNextHubFileChunk(String runTag) {
+        while (currentHubFileIndex < pendingHubFileUrls.size()) {
+            if (isBoundsExceeded()) {
+                endOfStream = true;
+                return false;
+            }
+            String fileUrl = pendingHubFileUrls.get(currentHubFileIndex++);
+            System.out.printf("[HF-HUB-STREAM][run=%s] Downloading hub file %d/%d: %s\n",
+                    runTag, currentHubFileIndex, pendingHubFileUrls.size(), fileUrl);
+
+            try {
+                DownloadRequest req = new DownloadRequest(fileUrl).setReadTimeoutMs(60000);
+                DownloadResult res = downloader.download(req);
+                if (res != null && res.isSuccess()) {
+                    byte[] rawBytes = res.getRawBytes();
+                    long dlBytes = res.getDownloadedBytes() > 0 ? res.getDownloadedBytes() : (rawBytes != null ? rawBytes.length : 0);
+                    totalRawBytesDownloaded += dlBytes;
+                    stats.addDownloadedBytes(dlBytes);
+
+                    if (rawBytes != null && rawBytes.length > 0) {
+                        File targetDir = getResolvedOutputDir();
+                        if (!targetDir.exists()) {
+                            targetDir.mkdirs();
+                        }
+                        String fileName = extractHubFileName(fileUrl, currentHubFileIndex - 1);
+                        File persistedFile = new File(targetDir, fileName);
+
+                        Files.write(persistedFile.toPath(), rawBytes);
+
+                        String lowerName = fileName.toLowerCase();
+                        if (lowerName.endsWith(".parquet")) {
+                            DatasetItem localItem = new DatasetItem(true, persistedFile.getAbsolutePath(), "PARQUET");
+                            DatasetPreparationContext prepCtx = new DatasetPreparationContext();
+                            ParquetAdapter adapter = new ParquetAdapter();
+                            List<NormalizedSample> extracted = adapter.convert(localItem, prepCtx);
+                            if (extracted != null && !extracted.isEmpty()) {
+                                long chunkExtractedBytes = 0;
+                                for (NormalizedSample s : extracted) {
+                                    currentChunk.add(s);
+                                    totalSamplesExtracted++;
+                                    byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                                    chunkExtractedBytes += b.length;
+                                }
+                                stats.addExtractedBytes(chunkExtractedBytes);
+                                System.out.printf("[HF-HUB-STREAM][run=%s] Successfully extracted %d parquet samples (%d bytes) from hub file %s\n",
+                                        runTag, extracted.size(), chunkExtractedBytes, persistedFile.getAbsolutePath());
+                                return true;
+                            }
+                        } else {
+                            String content = new String(rawBytes, StandardCharsets.UTF_8);
+                            rawBytes = null;
+                            try (BufferedReader reader = new BufferedReader(new StringReader(content))) {
+                                String line;
+                                long chunkExtractedBytes = 0;
+                                int extractedCount = 0;
+                                while ((line = reader.readLine()) != null) {
+                                    String trimmed = line.trim();
+                                    if (trimmed.isEmpty()) continue;
+                                    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+                                        try {
+                                            JSONObject json = new JSONObject(trimmed);
+                                            NormalizedSample s = extractSampleFromRow(json);
+                                            if (s != null) {
+                                                currentChunk.add(s);
+                                                extractedCount++;
+                                                totalSamplesExtracted++;
+                                                byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                                                chunkExtractedBytes += b.length;
+                                            }
+                                        } catch (Exception ignored) {}
+                                    } else if (trimmed.length() > 5) {
+                                        NormalizedSample s = NormalizedSample.createTextSample(trimmed, getSourceName());
+                                        currentChunk.add(s);
+                                        extractedCount++;
+                                        totalSamplesExtracted++;
+                                        byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                                        chunkExtractedBytes += b.length;
+                                    }
+                                }
+                                if (extractedCount > 0) {
+                                    stats.addExtractedBytes(chunkExtractedBytes);
+                                    System.out.printf("[HF-HUB-STREAM][run=%s] Successfully extracted %d text/jsonl samples (%d bytes) from hub file %s\n",
+                                            runTag, extractedCount, chunkExtractedBytes, persistedFile.getAbsolutePath());
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                System.err.printf("[HF-HUB-STREAM][run=%s] Error fetching/parsing hub file %s: %s\n",
+                        runTag, fileUrl, ex.getMessage());
+            }
+        }
+        return false;
     }
 
     private String extractParquetFileName(String url, int index) {

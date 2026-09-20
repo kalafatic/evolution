@@ -105,7 +105,9 @@ public class HuggingFaceDownloader implements DataDownloader {
                 }
 
                 if (status < 200 || status >= 300) {
-                    throw new IOException("Hugging Face HTTP Error (" + status + "): " + body.trim());
+                    System.err.printf("[HF][DOWNLOAD] dataset_http_error status=%d message=%s bytes=%d url=%s\n",
+                            status, message, totalBytes, request.getUrl());
+                    return new DownloadResult(status, message, body, rawBytes, null, totalBytes, contentType);
                 }
 
                 return new DownloadResult(status, message, body, rawBytes, null, totalBytes, contentType);
