@@ -422,7 +422,7 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void createSelfDevColumns() {
-		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Command", "Path", "URL", "Status" };
+		String[] titles = { "#", "Action", "Edit", "Name", "Executed From", "Command", "Path", "URL", "Status" };
 		int[] bounds = { 40, 80, 40, 110, 140, 240, 150, 180, 120 };
 		for (int i = 0; i < titles.length; i++) {
 			TableViewerColumn col = new TableViewerColumn(selfDevTable, SWT.NONE);
@@ -447,8 +447,8 @@ public class DevelopmentPage extends AEvoPage {
 			case 0 -> String.valueOf(row.order);
 			case 1 -> ("running".equals(row.status)) ? "\u23F8 \u23F9" : "\u25B6";
 			case 2 -> "\u270E";
-			case 3 -> row.executor != null ? row.executor : "NA";
-			case 4 -> row.name;
+			case 3 -> row.name;
+			case 4 -> row.executor != null ? row.executor : "NA";			
 			case 5 -> row.command != null ? row.command : "";
 			case 6 -> row.path != null ? row.path : "";
 			case 7 -> row.url != null ? row.url : "";

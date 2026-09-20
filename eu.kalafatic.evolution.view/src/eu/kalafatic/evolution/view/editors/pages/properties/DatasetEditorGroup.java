@@ -240,9 +240,9 @@ public class DatasetEditorGroup extends AEvoGroup {
         });
 
         // SECTION: Discovered Remote Dataset Candidates SWT Table
-        Composite candGroup = GUIFactory.INSTANCE.createExpandableGroup(toolkit, group, "Discovered Remote Dataset Candidates (EMF Persisted)", 2, true, true);
+        Composite candGroup = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Discovered Remote Dataset Candidates (EMF Persisted)", 2, true, true);
         GridData gdCandGroup = new GridData(GridData.FILL_HORIZONTAL);
-        gdCandGroup.horizontalSpan = 2;
+        //gdCandGroup.horizontalSpan = 2;
         candGroup.setLayoutData(gdCandGroup);
 
         candidatesTable = new Table(candGroup, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
