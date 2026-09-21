@@ -29,12 +29,6 @@ public class EvoRcpRuntime implements ProcessLifecycle {
 
         if (executable == null) {
             BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
-            if (artifact == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-                File[] zips = context.getExportDirectory().listFiles((dir, name) -> name.endsWith(".zip") || name.startsWith("evolution"));
-                if (zips != null && zips.length > 0) {
-                    artifact = new BuildArtifact(ArtifactType.EVO_RCP, zips[0], context.getSourceRevision(), null, null);
-                }
-            }
             if (artifact != null) {
                 EvoRcpDeployer deployer = new EvoRcpDeployer();
                 TaskResult deployResult = deployer.deploy(context, artifact);
@@ -42,10 +36,6 @@ public class EvoRcpRuntime implements ProcessLifecycle {
                     executable = findExecutable(evoRuntimeDir);
                 }
             }
-        }
-
-        if (executable == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-            executable = findExecutable(context.getExportDirectory());
         }
 
         if (executable == null) {
@@ -116,7 +106,8 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         }
         File evoRuntimeDir = new File(context.getRuntimeDirectory(), "evo");
         File logDir = context != null ? context.getLogDirectory() : null;
-        return verifier.verifyReady(evoProcess, evoRuntimeDir, logDir, timeoutSeconds);
+        int port = context != null ? context.getEffectiveServerPort() : 48081;
+        return verifier.verifyReady(evoProcess, evoRuntimeDir, logDir, port, timeoutSeconds);
     }
 
     @Override

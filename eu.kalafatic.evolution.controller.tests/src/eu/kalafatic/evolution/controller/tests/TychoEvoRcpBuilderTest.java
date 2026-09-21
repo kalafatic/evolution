@@ -234,8 +234,7 @@ public class TychoEvoRcpBuilderTest {
 
         File plugins = new File(dir, "plugins");
         plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
+        createMockPlugins(plugins);
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -249,7 +248,7 @@ public class TychoEvoRcpBuilderTest {
 
         TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
         assertNotNull(res);
-        assertTrue(res.isSuccess());
+        assertTrue(res.getMessage(), res.isSuccess());
     }
 
     @Test
@@ -260,8 +259,7 @@ public class TychoEvoRcpBuilderTest {
 
         File plugins = new File(dir, "plugins");
         plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
+        createMockPlugins(plugins);
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -275,7 +273,35 @@ public class TychoEvoRcpBuilderTest {
 
         TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
         assertNotNull(res);
-        assertTrue(res.isSuccess());
+        assertTrue(res.getMessage(), res.isSuccess());
+    }
+
+    private void createMockPlugins(File pluginsDir) throws IOException {
+        String[] requiredCoreBundles = {
+            "eu.kalafatic.evolution.view_2.6.5.jar",
+            "eu.kalafatic.evolution.controller_2.6.5.jar",
+            "eu.kalafatic.evolution.model_2.6.5.jar",
+            "eu.kalafatic.evolution.model.edit_2.6.5.jar",
+            "eu.kalafatic.evolution.model.editor_2.6.5.jar",
+            "eu.kalafatic.utils_2.6.5.jar",
+            "eu.kalafatic.evolution.servers_2.6.5.jar",
+            "eu.kalafatic.evolution.media_2.6.5.jar",
+            "eu.kalafatic.evolution.creatic_2.6.5.jar",
+            "eu.kalafatic.evolution.selfdev.genome_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.math_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.model_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.tokenizer_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.data_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.runtime_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.trainer_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.agent.api_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.observability_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.controller_2.6.5.jar",
+            "eu.kalafatic.evolution.forge.agent_2.6.5.jar"
+        };
+        for (String b : requiredCoreBundles) {
+            new File(pluginsDir, b).createNewFile();
+        }
     }
 
     @Test
