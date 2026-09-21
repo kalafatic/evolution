@@ -301,13 +301,19 @@ public class McpSettingsPage extends AEvoPage {
 
 	private void loadMockData() {
 		resourcesGroup.clear();
-		resourcesGroup.addItem("Mock Resource", "mock://test", "text/plain", "Test resource for UI validation");
+		resourcesGroup.addItem("Server Info", "server://info", "text/plain", "Information about the MCP server");
+		resourcesGroup.addItem("Server Configuration", "server://config", "application/json", "Current server settings");
+		resourcesGroup.addItem("Available Connectors", "connectors://list", "application/json", "List of integrated enterprise connectors");
+		resourcesGroup.addItem("Documentation README", "docs://README.md", "text/markdown", "Local MCP Demo README Documentation");
 
 		toolsGroup.clear();
-		toolsGroup.addItem("mockTool", "A tool that does nothing", "{\"type\":\"object\"}");
+		toolsGroup.addItem("ping", "Ping the server to check availability", "{}");
+		toolsGroup.addItem("echo", "Echo back the provided message", "{\"type\":\"object\",\"properties\":{\"message\":{\"type\":\"string\"}}}");
+		toolsGroup.addItem("systemInfo", "Get host system information and metrics", "{}");
+		toolsGroup.addItem("dummyAction", "Execute dummy action on enterprise connector", "{\"type\":\"object\",\"properties\":{\"action\":{\"type\":\"string\"}}}");
 
 		promptsGroup.clear();
-		promptsGroup.addItem("mockPrompt", "A prompt for testing", "[]");
+		promptsGroup.addItem("codeReview", "Generate a code review template", "[]");
 	}
 
 	public void updateMcpInfo() {
