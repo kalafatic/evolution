@@ -370,7 +370,14 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
+		updateRowOrders(sdData);
 		selfDevTable.setInput(sdData);
+	}
+
+	private void updateRowOrders(List<SelfDevRow> rows) {
+		for (int i = 0; i < rows.size(); i++) {
+			rows.get(i).order = i + 1;
+		}
 	}
 
 	private String getTargetPath() {
@@ -419,6 +426,56 @@ public class DevelopmentPage extends AEvoPage {
 				}
 			}
 		});
+		org.eclipse.swt.widgets.MenuItem moveUpItem = new org.eclipse.swt.widgets.MenuItem(menu, SWT.PUSH);
+		moveUpItem.setText("\u25B2 Move Up");
+		moveUpItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				org.eclipse.jface.viewers.IStructuredSelection sel = selfDevTable.getStructuredSelection();
+				if (!sel.isEmpty())
+					moveRowUp((SelfDevRow) sel.getFirstElement());
+			}
+		});
+		org.eclipse.swt.widgets.MenuItem moveDownItem = new org.eclipse.swt.widgets.MenuItem(menu, SWT.PUSH);
+		moveDownItem.setText("\u25BC Move Down");
+		moveDownItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				org.eclipse.jface.viewers.IStructuredSelection sel = selfDevTable.getStructuredSelection();
+				if (!sel.isEmpty())
+					moveRowDown((SelfDevRow) sel.getFirstElement());
+			}
+		});
+	}
+
+	private void moveRowUp(SelfDevRow row) {
+		if (row == null || !(selfDevTable.getInput() instanceof List<?> inputList)) return;
+		@SuppressWarnings("unchecked")
+		List<SelfDevRow> rows = (List<SelfDevRow>) inputList;
+		int idx = rows.indexOf(row);
+		if (idx > 0) {
+			SelfDevRow temp = rows.get(idx);
+			rows.set(idx, rows.get(idx - 1));
+			rows.set(idx - 1, temp);
+			updateRowOrders(rows);
+			selfDevTable.refresh();
+			selfDevTable.setSelection(new org.eclipse.jface.viewers.StructuredSelection(row));
+		}
+	}
+
+	private void moveRowDown(SelfDevRow row) {
+		if (row == null || !(selfDevTable.getInput() instanceof List<?> inputList)) return;
+		@SuppressWarnings("unchecked")
+		List<SelfDevRow> rows = (List<SelfDevRow>) inputList;
+		int idx = rows.indexOf(row);
+		if (idx >= 0 && idx < rows.size() - 1) {
+			SelfDevRow temp = rows.get(idx);
+			rows.set(idx, rows.get(idx + 1));
+			rows.set(idx + 1, temp);
+			updateRowOrders(rows);
+			selfDevTable.refresh();
+			selfDevTable.setSelection(new org.eclipse.jface.viewers.StructuredSelection(row));
+		}
 	}
 
 	private void createSelfDevColumns() {
@@ -854,12 +911,33 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void runSelected() {
-		if (selfDevTable.getInput() instanceof List<?> rows) {
-			for (Object obj : rows) {
-				if (obj instanceof SelfDevRow row && row.selected)
-					handleActionInternal(row);
+		if (!(selfDevTable.getInput() instanceof List<?> rows)) return;
+		List<SelfDevRow> selectedRows = new ArrayList<>();
+		for (Object obj : rows) {
+			if (obj instanceof SelfDevRow row && row.selected) {
+				selectedRows.add(row);
 			}
 		}
+		selectedRows.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
+		if (selectedRows.isEmpty()) return;
+
+		new Thread(() -> {
+			for (SelfDevRow row : selectedRows) {
+				if (row.taskId == null) continue;
+				Display.getDefault().syncExec(() -> {
+					row.status = "running";
+					selfDevTable.refresh(row);
+				});
+				eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
+				String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
+				Display.getDefault().syncExec(() -> {
+					if (!selfDevTable.getTable().isDisposed()) {
+						row.status = statusStr;
+						selfDevTable.refresh(row);
+					}
+				});
+			}
+		}).start();
 	}
 
 	private void stopSelected() {
