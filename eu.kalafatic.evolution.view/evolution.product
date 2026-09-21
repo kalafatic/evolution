@@ -7,6 +7,10 @@
    </configIni>
 
    <launcherArgs>
+      <programArgs>-nosplash
+      </programArgs>
+      <vmArgs>-Xms512m -Xmx4g -Dfile.encoding=UTF-8
+      </vmArgs>
       <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts
       </vmArgsMac>
    </launcherArgs>
@@ -17,7 +21,7 @@
       startupProgressRect="212,348,350,2"
       startupMessageRect="212,335,350,5"
       startupForegroundColor="FF0000" />
-   <launcher>
+   <launcher name="evo">
       <win useIco="false">
          <bmp/>
       </win>

@@ -572,22 +572,25 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             if (pluginJars == null || pluginJars.length == 0) {
                 missingItems.add("plugins/ directory contains no bundle JARs");
             } else {
-                boolean hasViewBundle = false;
-                boolean hasControllerBundle = false;
-                for (File jar : pluginJars) {
-                    String name = jar.getName();
-                    if (name.startsWith("eu.kalafatic.evolution.view_")) {
-                        hasViewBundle = true;
+                String[] requiredCoreBundles = {
+                    "eu.kalafatic.evolution.view_",
+                    "eu.kalafatic.evolution.controller_",
+                    "eu.kalafatic.evolution.model_",
+                    "eu.kalafatic.evolution.servers_",
+                    "eu.kalafatic.evolution.forge.controller_",
+                    "eu.kalafatic.utils_"
+                };
+                for (String req : requiredCoreBundles) {
+                    boolean found = false;
+                    for (File jar : pluginJars) {
+                        if (jar.getName().startsWith(req)) {
+                            found = true;
+                            break;
+                        }
                     }
-                    if (name.startsWith("eu.kalafatic.evolution.controller_")) {
-                        hasControllerBundle = true;
+                    if (!found) {
+                        missingItems.add("plugins/ missing required EVO bundle (" + req + "*.jar)");
                     }
-                }
-                if (!hasViewBundle) {
-                    missingItems.add("plugins/ missing required EVO view bundle (eu.kalafatic.evolution.view_*.jar)");
-                }
-                if (!hasControllerBundle) {
-                    missingItems.add("plugins/ missing required EVO controller bundle (eu.kalafatic.evolution.controller_*.jar)");
                 }
             }
         }
