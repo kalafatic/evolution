@@ -195,8 +195,97 @@
         .viz-panel-header { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 0.8em; font-weight: bold; color: var(--text-dim); text-transform: uppercase; background: var(--bg-secondary); }
 
         #system-tree { padding: 15px; font-size: 12px; color: #333333; border-bottom: 1px solid var(--border); }
-        #graph-container { height: 220px; padding: 10px; position: relative; }
-        #visual-svg { width: 100%; height: 100%; }
+        #graph-container {
+            height: 240px;
+            position: relative;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+            user-select: none;
+        }
+        #visual-svg { width: 100%; height: 100%; display: block; }
+
+        /* Runtime Graph CSS Styling */
+        .graph-node {
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        .graph-node:hover {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+        }
+        .graph-node rect.node-bg {
+            fill: var(--evo-surface);
+            stroke: var(--evo-border);
+            stroke-width: 1.5px;
+            rx: 5px;
+            ry: 5px;
+        }
+        .graph-node.agent rect.node-bg {
+            stroke: var(--evo-primary);
+            fill: #f4f8fc;
+        }
+        .graph-node.task rect.node-bg {
+            stroke: var(--evo-border-dark);
+        }
+        .graph-node.status-running rect.node-bg {
+            stroke: var(--evo-primary);
+            fill: #edf5ff;
+        }
+        .graph-node.status-success rect.node-bg {
+            stroke: var(--evo-success);
+            fill: var(--evo-success-light);
+        }
+        .graph-node.status-failed rect.node-bg {
+            stroke: var(--evo-danger);
+            fill: var(--evo-danger-light);
+        }
+        .graph-node.status-blocked rect.node-bg {
+            stroke: var(--evo-warning);
+            fill: var(--evo-warning-light);
+        }
+
+        .graph-node text.node-icon {
+            font-size: 11px;
+            dominant-baseline: central;
+        }
+        .graph-node text.node-title {
+            font-size: 10px;
+            font-weight: 700;
+            fill: var(--evo-text);
+            dominant-baseline: central;
+        }
+        .graph-node text.node-type {
+            font-size: 8px;
+            fill: var(--evo-text-secondary);
+            dominant-baseline: central;
+        }
+
+        /* Badges */
+        .graph-node rect.badge-bg {
+            rx: 3px; ry: 3px;
+        }
+        .graph-node text.badge-text {
+            font-size: 7px;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        .graph-link {
+            fill: none;
+            stroke: var(--evo-border-dark);
+            stroke-width: 1.5px;
+            transition: stroke 0.2s, stroke-width 0.2s;
+        }
+        .graph-link.active {
+            stroke: var(--evo-primary);
+            stroke-width: 2px;
+            stroke-dasharray: 4 2;
+            animation: dash 1s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -12; }
+        }
 
         /* Evolution Tree Styles */
         #tree-container {
@@ -409,9 +498,22 @@
             <div id="system-tree">
                 <!-- Dynamic Tree Content -->
             </div>
-            <div class="viz-panel-header">Runtime Graph</div>
+            <div class="viz-panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px;">
+                <span>Runtime Graph</span>
+                <div class="graph-controls" style="display: flex; gap: 3px;">
+                    <button class="btn btn-sm" onclick="applyZoom(1.2)" title="Zoom In">+</button>
+                    <button class="btn btn-sm" onclick="applyZoom(0.8)" title="Zoom Out">-</button>
+                    <button class="btn btn-sm" onclick="resetZoom()" title="Reset Zoom">R</button>
+                    <button class="btn btn-sm" onclick="fitToScreen()" title="Fit to Panel">Fit</button>
+                </div>
+            </div>
             <div id="graph-container">
-                 <svg id="visual-svg" width="100%" height="100%" viewBox="0 0 400 220"></svg>
+                <svg id="visual-svg" width="100%" height="100%" style="display: block; width: 100%; height: 100%; cursor: grab;">
+                    <g id="graph-main-group">
+                        <g id="graph-links-group"></g>
+                        <g id="graph-nodes-group"></g>
+                    </g>
+                </svg>
             </div>
             <div class="viz-panel-header">
                 Evolution Lineage
@@ -424,6 +526,8 @@
     </div>
 
     <div id="context-menu"></div>
+
+    <div id="tooltip" class="flow-tooltip" style="opacity: 0; position: absolute; pointer-events: none; z-index: 1000; background: rgba(15, 23, 42, 0.95); color: white; padding: 8px 12px; border-radius: 6px; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #334155; max-width: 250px; transition: opacity 0.15s ease;"></div>
 
     <div id="popup-panel" style="display: none;">
         <div id="popup-header">
@@ -959,57 +1063,355 @@
             updateVisualGraph(state);
         }
 
-        function updateVisualGraph(state) {
-            const svg = document.getElementById('visual-svg');
-            svg.innerHTML = '';
-            const nodes = [];
-            const links = [];
+        // Pan & Zoom Engine State for Runtime Graph
+        let graphTransform = { x: 0, y: 0, k: 1 };
+        let isGraphPanning = false;
+        let graphStartPos = { x: 0, y: 0 };
+        let isGraphAutoFitted = false;
+        let lastGraphNodeCount = 0;
 
-            if (state.agents) {
-                state.agents.forEach((a, i) => {
-                    nodes.push({ id: a.id, label: a.type, x: 50, y: 50 + i * 60, color: 'rgba(0, 122, 204, 0.1)', stroke: '#007acc' });
-                });
+        function updateGraphTransform() {
+            const gMain = document.getElementById('graph-main-group');
+            if (gMain) {
+                gMain.setAttribute('transform', `translate(${graphTransform.x}, ${graphTransform.y}) scale(${graphTransform.k})`);
             }
+        }
 
-            if (state.tasks) {
-                state.tasks.forEach((t, i) => {
-                    nodes.push({ id: t.id, label: t.name, x: 200, y: 50 + i * 70, color: 'rgba(137, 209, 133, 0.1)', stroke: '#89d185' });
-                    if (t.next) {
-                        t.next.forEach(nid => links.push({ source: t.id, target: nid }));
-                    }
-                });
-            }
+        window.resetZoom = function() {
+            graphTransform = { x: 0, y: 0, k: 1 };
+            updateGraphTransform();
+        };
 
-            const nodeMap = {};
-            nodes.forEach(n => {
-                nodeMap[n.id] = n;
-                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', 25);
-                circle.setAttribute('fill', n.color); circle.setAttribute('stroke', n.stroke);
-                circle.setAttribute('stroke-width', '1.5');
-                g.appendChild(circle);
+        window.applyZoom = function(factor) {
+            const container = document.getElementById('graph-container');
+            const w = container ? container.clientWidth : 300;
+            const h = container ? container.clientHeight : 240;
+            const center = { x: w / 2, y: h / 2 };
 
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', n.x); text.setAttribute('y', n.y + 5);
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('font-size', '8');
-                text.setAttribute('fill', 'var(--text)');
-                text.textContent = n.label.substring(0, 10);
-                g.appendChild(text);
-                svg.appendChild(g);
+            const newK = Math.min(Math.max(graphTransform.k * factor, 0.2), 3.5);
+            graphTransform.x = center.x - (center.x - graphTransform.x) * (newK / graphTransform.k);
+            graphTransform.y = center.y - (center.y - graphTransform.y) * (newK / graphTransform.k);
+            graphTransform.k = newK;
+            updateGraphTransform();
+        };
+
+        window.fitToScreen = window.fitToPanel = function() {
+            const container = document.getElementById('graph-container');
+            const nodesGroup = document.getElementById('graph-nodes-group');
+            if (!container || !nodesGroup) return;
+
+            const nodes = nodesGroup.querySelectorAll('.graph-node');
+            if (nodes.length === 0) return;
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            nodes.forEach(nodeEl => {
+                const tx = parseFloat(nodeEl.getAttribute('data-x') || '0');
+                const ty = parseFloat(nodeEl.getAttribute('data-y') || '0');
+                const nw = parseFloat(nodeEl.getAttribute('data-w') || '120');
+                const nh = parseFloat(nodeEl.getAttribute('data-h') || '38');
+
+                if (tx < minX) minX = tx;
+                if (ty < minY) minY = ty;
+                if (tx + nw > maxX) maxX = tx + nw;
+                if (ty + nh > maxY) maxY = ty + nh;
             });
 
-            links.forEach(l => {
-                const s = nodeMap[l.source], t = nodeMap[l.target];
-                if (s && t) {
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', s.x + 25); line.setAttribute('y1', s.y);
-                    line.setAttribute('x2', t.x - 25); line.setAttribute('y2', t.y);
-                    line.setAttribute('stroke', 'var(--border)');
-                    svg.appendChild(line);
+            if (minX === Infinity) return;
+
+            const pad = 20;
+            const w = container.clientWidth || 300;
+            const h = container.clientHeight || 240;
+            const graphW = Math.max(maxX - minX, 10);
+            const graphH = Math.max(maxY - minY, 10);
+
+            const scale = Math.min(
+                (w - pad * 2) / graphW,
+                (h - pad * 2) / graphH,
+                1.3
+            );
+
+            graphTransform.k = Math.max(scale, 0.3);
+            graphTransform.x = (w - graphW * graphTransform.k) / 2 - minX * graphTransform.k;
+            graphTransform.y = (h - graphH * graphTransform.k) / 2 - minY * graphTransform.k;
+            updateGraphTransform();
+            isGraphAutoFitted = true;
+        };
+
+        // Initialize Mouse Drag & Wheel Panning on graph container
+        (function initGraphPanZoom() {
+            const container = document.getElementById('graph-container');
+            const svg = document.getElementById('visual-svg');
+            if (!container || !svg) return;
+
+            svg.addEventListener('mousedown', (e) => {
+                isGraphPanning = true;
+                graphStartPos = { x: e.clientX - graphTransform.x, y: e.clientY - graphTransform.y };
+                svg.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isGraphPanning) {
+                    graphTransform.x = e.clientX - graphStartPos.x;
+                    graphTransform.y = e.clientY - graphStartPos.y;
+                    updateGraphTransform();
                 }
             });
+
+            window.addEventListener('mouseup', () => {
+                if (isGraphPanning) {
+                    isGraphPanning = false;
+                    svg.style.cursor = 'grab';
+                }
+            });
+
+            svg.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.15 : 0.85;
+                const newK = Math.min(Math.max(graphTransform.k * factor, 0.2), 3.5);
+
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                graphTransform.x = mouseX - (mouseX - graphTransform.x) * (newK / graphTransform.k);
+                graphTransform.y = mouseY - (mouseY - graphTransform.y) * (newK / graphTransform.k);
+                graphTransform.k = newK;
+
+                updateGraphTransform();
+            }, { passive: false });
+        })();
+
+        function updateVisualGraph(state) {
+            const gLinks = document.getElementById('graph-links-group');
+            const gNodes = document.getElementById('graph-nodes-group');
+            const tooltip = document.getElementById('tooltip');
+            if (!gLinks || !gNodes) return;
+
+            gLinks.innerHTML = '';
+            gNodes.innerHTML = '';
+
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            const nodeWidth = 120;
+            const nodeHeight = 38;
+            const nodeMap = new Map();
+            const graphNodes = [];
+            const graphLinks = [];
+
+            // Add Orchestrator / Agents
+            if (state.agents && state.agents.length > 0) {
+                state.agents.forEach((a, i) => {
+                    const id = a.id || ('agent-' + i);
+                    const node = {
+                        id: id,
+                        name: id.length > 14 ? id.substring(0, 12) + '..' : id,
+                        type: 'AGENT',
+                        agentType: a.type || 'Agent',
+                        status: 'ACTIVE',
+                        icon: getIconForAgentType((a.type || '').toLowerCase())
+                    };
+                    graphNodes.push(node);
+                    nodeMap.set(id, node);
+                });
+            } else {
+                // Fallback default orchestrator node
+                const rootNode = {
+                    id: 'orchestrator',
+                    name: state.name || 'Orchestrator',
+                    type: 'SUPERVISOR',
+                    agentType: 'Supervisor',
+                    status: 'RUNNING',
+                    icon: '🎼'
+                };
+                graphNodes.push(rootNode);
+                nodeMap.set('orchestrator', rootNode);
+            }
+
+            // Add Tasks
+            const tasks = state.tasks || [];
+            tasks.forEach(t => {
+                const node = {
+                    id: t.id,
+                    name: (t.name || t.id).length > 14 ? (t.name || t.id).substring(0, 12) + '..' : (t.name || t.id),
+                    type: 'TASK',
+                    agentType: t.status || 'TASK',
+                    status: t.status || 'READY',
+                    icon: t.status === 'RUNNING' ? '🔄' : (t.status === 'SUCCESS' ? '✅' : (t.status === 'FAILED' ? '❌' : '📄')),
+                    rawTask: t
+                };
+                graphNodes.push(node);
+                nodeMap.set(t.id, node);
+
+                if (t.next && Array.isArray(t.next)) {
+                    t.next.forEach(targetId => {
+                        graphLinks.push({ from: t.id, to: targetId, active: t.status === 'RUNNING' });
+                    });
+                }
+            });
+
+            // Calculate Hierarchical Level Assignment
+            const levels = new Map();
+            function assignLevel(nodeId, level) {
+                if (levels.has(nodeId) && levels.get(nodeId) >= level) return;
+                levels.set(nodeId, level);
+                graphLinks.filter(l => l.from === nodeId).forEach(l => assignLevel(l.to, level + 1));
+            }
+
+            // Assign root levels
+            const targetIds = new Set(graphLinks.map(l => l.to));
+            graphNodes.forEach(n => {
+                if (n.type === 'AGENT' || n.type === 'SUPERVISOR') {
+                    assignLevel(n.id, 0);
+                } else if (!targetIds.has(n.id)) {
+                    assignLevel(n.id, 1);
+                }
+            });
+            graphNodes.forEach(n => {
+                if (!levels.has(n.id)) assignLevel(n.id, 1);
+            });
+
+            // Group by level
+            const levelGroups = new Map();
+            graphNodes.forEach(node => {
+                const lvl = levels.get(node.id) || 0;
+                if (!levelGroups.has(lvl)) levelGroups.set(lvl, []);
+                levelGroups.get(lvl).push(node);
+            });
+
+            const levelSpacing = 160;
+            const siblingSpacing = 52;
+            const startX = 20;
+
+            levelGroups.forEach((group, level) => {
+                group.forEach((node, i) => {
+                    node.x = startX + level * levelSpacing;
+                    node.y = 20 + i * siblingSpacing;
+                });
+            });
+
+            // Render Links
+            graphLinks.forEach(l => {
+                const s = nodeMap.get(l.from);
+                const t = nodeMap.get(l.to);
+                if (!s || !t) return;
+
+                const x0 = s.x + nodeWidth;
+                const y0 = s.y + nodeHeight / 2;
+                const x1 = t.x;
+                const y1 = t.y + nodeHeight / 2;
+                const mx = (x0 + x1) / 2;
+
+                const path = document.createElementNS(SVG_NS, 'path');
+                path.setAttribute('class', 'graph-link' + (l.active ? ' active' : ''));
+                path.setAttribute('d', `M ${x0},${y0} C ${mx},${y0} ${mx},${y1} ${x1},${y1}`);
+                gLinks.appendChild(path);
+            });
+
+            // Render Nodes
+            graphNodes.forEach(d => {
+                const g = document.createElementNS(SVG_NS, 'g');
+                const statusCls = (d.status || '').toLowerCase();
+                const typeCls = (d.type || '').toLowerCase();
+                g.setAttribute('class', `graph-node ${typeCls} status-${statusCls}`);
+                g.setAttribute('transform', `translate(${d.x}, ${d.y})`);
+                g.setAttribute('data-x', d.x);
+                g.setAttribute('data-y', d.y);
+                g.setAttribute('data-w', nodeWidth);
+                g.setAttribute('data-h', nodeHeight);
+
+                // Background Card Rect
+                const rect = document.createElementNS(SVG_NS, 'rect');
+                rect.setAttribute('class', 'node-bg');
+                rect.setAttribute('width', nodeWidth);
+                rect.setAttribute('height', nodeHeight);
+                g.appendChild(rect);
+
+                // Icon
+                const iconText = document.createElementNS(SVG_NS, 'text');
+                iconText.setAttribute('class', 'node-icon');
+                iconText.setAttribute('x', '10');
+                iconText.setAttribute('y', '19');
+                iconText.textContent = d.icon;
+                g.appendChild(iconText);
+
+                // Title Label
+                const labelText = document.createElementNS(SVG_NS, 'text');
+                labelText.setAttribute('class', 'node-title');
+                labelText.setAttribute('x', '28');
+                labelText.setAttribute('y', '14');
+                labelText.textContent = d.name;
+                g.appendChild(labelText);
+
+                // Type / Subtitle Label
+                const subText = document.createElementNS(SVG_NS, 'text');
+                subText.setAttribute('class', 'node-type');
+                subText.setAttribute('x', '28');
+                subText.setAttribute('y', '26');
+                subText.textContent = d.agentType;
+                g.appendChild(subText);
+
+                // Status Badge
+                const badgeWidth = 36;
+                const badgeHeight = 12;
+                const badgeX = nodeWidth - badgeWidth - 6;
+                const badgeY = (nodeHeight - badgeHeight) / 2;
+
+                const badgeBg = document.createElementNS(SVG_NS, 'rect');
+                badgeBg.setAttribute('class', 'badge-bg');
+                badgeBg.setAttribute('x', badgeX);
+                badgeBg.setAttribute('y', badgeY);
+                badgeBg.setAttribute('width', badgeWidth);
+                badgeBg.setAttribute('height', badgeHeight);
+
+                let badgeFill = '#e2e8f0';
+                let badgeTextColor = '#475569';
+                if (d.status === 'RUNNING' || d.status === 'ACTIVE') { badgeFill = '#2563eb'; badgeTextColor = '#ffffff'; }
+                else if (d.status === 'SUCCESS') { badgeFill = '#16a34a'; badgeTextColor = '#ffffff'; }
+                else if (d.status === 'FAILED') { badgeFill = '#dc2626'; badgeTextColor = '#ffffff'; }
+                else if (d.status === 'BLOCKED') { badgeFill = '#d97706'; badgeTextColor = '#ffffff'; }
+
+                badgeBg.setAttribute('fill', badgeFill);
+                g.appendChild(badgeBg);
+
+                const badgeText = document.createElementNS(SVG_NS, 'text');
+                badgeText.setAttribute('class', 'badge-text');
+                badgeText.setAttribute('x', badgeX + badgeWidth / 2);
+                badgeText.setAttribute('y', badgeY + badgeHeight / 2 + 1);
+                badgeText.setAttribute('fill', badgeTextColor);
+                badgeText.textContent = (d.status || 'READY').substring(0, 6);
+                g.appendChild(badgeText);
+
+                // Tooltip & Interaction
+                g.addEventListener('mouseover', (e) => {
+                    if (!tooltip) return;
+                    tooltip.style.opacity = '0.95';
+                    tooltip.innerHTML = `
+                        <div style="font-weight:700; color:var(--accent); margin-bottom:2px;">${d.id.toUpperCase()}</div>
+                        <div><strong>Type:</strong> ${d.type}</div>
+                        <div><strong>Status:</strong> ${d.status}</div>
+                        ${d.rawTask ? `<div><strong>Name:</strong> ${d.rawTask.name || d.id}</div>` : ''}
+                    `;
+                    tooltip.style.left = (e.pageX + 12) + 'px';
+                    tooltip.style.top = (e.pageY - 12) + 'px';
+                });
+
+                g.addEventListener('mousemove', (e) => {
+                    if (!tooltip) return;
+                    tooltip.style.left = (e.pageX + 12) + 'px';
+                    tooltip.style.top = (e.pageY - 12) + 'px';
+                });
+
+                g.addEventListener('mouseout', () => {
+                    if (tooltip) tooltip.style.opacity = '0';
+                });
+
+                gNodes.appendChild(g);
+            });
+
+            // Auto-fit panel on first render or when node count changes
+            if (!isGraphAutoFitted || lastGraphNodeCount !== graphNodes.length) {
+                lastGraphNodeCount = graphNodes.length;
+                setTimeout(() => { window.fitToScreen(); }, 50);
+            }
         }
 
         function showBranchDetails(branchId) {
