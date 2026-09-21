@@ -1,16 +1,42 @@
 /* Evolution Server Dashboard - Professional Workstation Theme */
 :root {
-    --evo-bg: #f2f3f5;
+    --evo-bg: #e8ecef;
     --evo-surface: #ffffff;
-    --evo-surface-alt: #f8f9fa;
-    --evo-border: #c8ccd1;
-    --evo-border-dark: #aeb4bb;
-    --evo-text: #202428;
-    --evo-text-secondary: #555b62;
-    --evo-primary: #2864a5;
-    --evo-primary-hover: #1f5289;
-    --evo-radius: 3px;
-    --evo-shadow-md: 0 2px 6px rgba(0,0,0,0.12);
+    --evo-surface-alt: #f1f3f6;
+    --evo-surface-hover: #e2e7ec;
+    --evo-surface-selected: #dbe4f0;
+
+    --evo-border: #b8c0c8;
+    --evo-border-dark: #98a2ac;
+    --evo-border-focus: #1d5296;
+
+    --evo-text: #1a202c;
+    --evo-text-secondary: #4a5568;
+    --evo-text-muted: #718096;
+    --evo-text-inverse: #ffffff;
+    --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+
+    --evo-primary: #1d5296;
+    --evo-primary-hover: #153e70;
+    --evo-primary-light: #e8f0fe;
+    --evo-primary-border: #153e70;
+
+    --evo-success: #1e7e34;
+    --evo-success-hover: #145827;
+    --evo-success-light: #e6f4ea;
+    --evo-warning: #b45309;
+    --evo-warning-hover: #853704;
+    --evo-warning-light: #fef3c7;
+    --evo-danger: #b91c1c;
+    --evo-danger-hover: #881313;
+    --evo-danger-light: #fee2e2;
+    --evo-info: #0284c7;
+    --evo-info-light: #e0f2fe;
+
+    --evo-radius: 4px;
+    --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+    --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 body {
@@ -99,23 +125,80 @@ input[type="text"], input[type="password"], select, textarea {
 }
 
 .portal-container {
-    display: grid;
-    grid-template-columns: 200px 1fr 250px;
+    display: flex;
+    flex-direction: row;
     height: calc(100vh - 28px);
     background: var(--evo-surface);
+    overflow: hidden;
 }
 
 .sidebar-left {
+    width: 220px;
+    min-width: 140px;
+    max-width: 500px;
     background: var(--evo-surface-alt);
     color: var(--evo-text);
     padding: 10px;
-    border-right: 1px solid var(--evo-border);
+    overflow-y: auto;
 }
 
 .sidebar-right {
+    width: 250px;
+    min-width: 150px;
+    max-width: 600px;
     background: var(--evo-surface-alt);
-    border-left: 1px solid var(--evo-border);
     padding: 15px;
+    overflow-y: auto;
+}
+
+/* Workstation Draggable Sashes / Splitters */
+.evo-sash {
+    background-color: var(--evo-border);
+    position: relative;
+    z-index: 10;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.15s ease;
+    flex-shrink: 0;
+}
+.evo-sash:hover, .evo-sash.active {
+    background-color: var(--evo-primary);
+}
+.evo-sash-v {
+    width: 6px;
+    cursor: col-resize;
+}
+.evo-sash-v::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 16px;
+    border-left: 1px solid var(--evo-border-dark);
+    border-right: 1px solid var(--evo-border-dark);
+}
+.evo-sash-v:hover::after, .evo-sash-v.active::after {
+    border-color: var(--evo-text-inverse);
+}
+.evo-sash-h {
+    height: 6px;
+    cursor: row-resize;
+}
+.evo-sash-h::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 2px;
+    transform: translateX(-50%);
+    height: 2px;
+    width: 16px;
+    border-top: 1px solid var(--evo-border-dark);
+    border-bottom: 1px solid var(--evo-border-dark);
+}
+.evo-sash-h:hover::after, .evo-sash-h.active::after {
+    border-color: var(--evo-text-inverse);
 }
 
 .portal-main {

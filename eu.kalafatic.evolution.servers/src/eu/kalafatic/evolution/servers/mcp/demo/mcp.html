@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCP Demo Server</title>
+    <base href="/">
+    <link rel="stylesheet" href="/evo-style.css">
     <style>
         :root {
             --bg-color: #f4f4f9;
@@ -54,9 +56,23 @@
         h1 { margin: 0; }
 
         .grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        aside {
+            width: 320px;
+            min-width: 200px;
+            max-width: 600px;
+            overflow-y: auto;
+        }
+
+        main {
+            flex: 1;
+            min-width: 300px;
+            overflow-y: auto;
         }
 
         @media (max-width: 768px) {
@@ -191,8 +207,8 @@
         <h1>MCP Demo Server Interface</h1>
     </header>
 
-    <div class="grid">
-        <aside>
+    <div class="grid" id="mcp-grid">
+        <aside id="mcp-aside">
             <div class="card">
                 <div class="card-title">Connection Info</div>
                 <div class="info-item">
@@ -228,6 +244,8 @@
                 </div>
             </div>
         </aside>
+
+        <div class="evo-sash evo-sash-v" id="mcp-sash" style="margin: 0 8px;"></div>
 
         <main>
             <div class="card">
@@ -433,6 +451,40 @@
     setInterval(updateTime, 1000);
     loadInfo();
     loadTools();
+
+    // Draggable Sash Implementation
+    (function() {
+        const sash = document.getElementById('mcp-sash');
+        const aside = document.getElementById('mcp-aside');
+        const container = document.getElementById('mcp-grid');
+        if (!sash || !aside || !container) return;
+
+        let isDragging = false;
+
+        sash.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            sash.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            const rect = container.getBoundingClientRect();
+            let newWidth = e.clientX - rect.left;
+            if (newWidth < 180) newWidth = 180;
+            if (newWidth > rect.width - 250) newWidth = rect.width - 250;
+            aside.style.width = newWidth + 'px';
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                sash.classList.remove('active');
+                document.body.style.cursor = '';
+            }
+        });
+    })();
 </script>
 
 </body>

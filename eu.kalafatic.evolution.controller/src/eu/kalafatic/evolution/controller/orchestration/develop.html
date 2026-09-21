@@ -125,8 +125,8 @@
 
         /* LEFT PANEL - AGENT & TASK */
         #agent-panel {
-            flex: 1; display: flex; flex-direction: column;
-            border-right: 1px solid var(--border); background: var(--bg-primary);
+            width: 50%; min-width: 250px; display: flex; flex-direction: column;
+            border-right: none; background: var(--bg-primary);
         }
 
         .panel-header {
@@ -158,7 +158,7 @@
 
         /* RIGHT PANEL - DIFF & OUTPUT */
         #output-panel {
-            width: 50%; display: flex; flex-direction: column; background: var(--bg-secondary);
+            flex: 1; min-width: 250px; display: flex; flex-direction: column; background: var(--bg-secondary);
         }
 
         #changed-files-bar {
@@ -232,6 +232,8 @@
                     <div class="log-entry">Waiting for autonomous task initiation...</div>
                 </div>
             </div>
+
+            <div class="evo-sash evo-sash-v" id="develop-sash"></div>
 
             <!-- DIFF & OUTPUT PANEL -->
             <div id="output-panel">
@@ -461,6 +463,40 @@
         fetchModels();
         refreshTaskList();
         setInterval(pollTaskStatus, 2000);
+
+        // Draggable Sash Implementation
+        (function() {
+            const sash = document.getElementById('develop-sash');
+            const leftPanel = document.getElementById('agent-panel');
+            const container = document.getElementById('main-split');
+            if (!sash || !leftPanel || !container) return;
+
+            let isDragging = false;
+
+            sash.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                sash.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                const rect = container.getBoundingClientRect();
+                let newWidth = e.clientX - rect.left;
+                if (newWidth < 200) newWidth = 200;
+                if (newWidth > rect.width - 200) newWidth = rect.width - 200;
+                leftPanel.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    sash.classList.remove('active');
+                    document.body.style.cursor = '';
+                }
+            });
+        })();
     </script>
 </body>
 </html>

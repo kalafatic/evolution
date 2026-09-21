@@ -66,8 +66,10 @@
         /* Session Bar */
         #sidebar {
             width: 260px;
+            min-width: 160px;
+            max-width: 500px;
             background-color: var(--bg-secondary);
-            border-right: 1px solid var(--border);
+            border-right: none;
             display: flex;
             flex-direction: column;
         }
@@ -717,6 +719,8 @@
             </div>
         </div>
 
+        <div class="evo-sash evo-sash-v" id="sidebar-sash"></div>
+
         <!-- MAIN CANVAS -->
         <div id="main-content">
             <div id="top-toolbar">
@@ -800,7 +804,7 @@
             </div>
         </div>
 
-        <div id="panel-resizer"></div>
+        <div class="evo-sash evo-sash-v" id="panel-resizer"></div>
 
         <!-- RIGHT PANELS -->
         <div id="panels-container">
@@ -1145,28 +1149,61 @@
             const resizer = document.getElementById('panel-resizer');
             const container = document.getElementById('panels-container');
 
-            resizer.onmousedown = (e) => {
-                isResizing = true;
-                resizer.classList.add('resizing');
-                document.body.style.cursor = 'col-resize';
-                e.preventDefault();
-            };
+            if (resizer && container) {
+                resizer.onmousedown = (e) => {
+                    isResizing = true;
+                    resizer.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                };
 
-            window.addEventListener('mousemove', (e) => {
-                if (!isResizing) return;
-                const width = window.innerWidth - e.clientX;
-                if (width >= 200 && width <= 600) {
-                    container.style.width = width + 'px';
-                }
-            });
+                window.addEventListener('mousemove', (e) => {
+                    if (!isResizing) return;
+                    const width = window.innerWidth - e.clientX;
+                    if (width >= 180 && width <= 600) {
+                        container.style.width = width + 'px';
+                    }
+                });
 
-            window.addEventListener('mouseup', () => {
-                if (isResizing) {
-                    isResizing = false;
-                    resizer.classList.remove('resizing');
-                    document.body.style.cursor = 'default';
-                }
-            });
+                window.addEventListener('mouseup', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        resizer.classList.remove('active');
+                        document.body.style.cursor = 'default';
+                    }
+                });
+            }
+
+            // Left Sidebar Resizer
+            const sidebarSash = document.getElementById('sidebar-sash');
+            const sidebar = document.getElementById('sidebar');
+            const layout = document.getElementById('layout');
+            if (sidebarSash && sidebar && layout) {
+                let isDraggingSidebar = false;
+                sidebarSash.onmousedown = (e) => {
+                    isDraggingSidebar = true;
+                    sidebarSash.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                };
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!isDraggingSidebar) return;
+                    const rect = layout.getBoundingClientRect();
+                    let newWidth = e.clientX - rect.left;
+                    if (newWidth < 150) newWidth = 150;
+                    if (newWidth > 500) newWidth = 500;
+                    sidebar.style.width = newWidth + 'px';
+                });
+
+                window.addEventListener('mouseup', () => {
+                    if (isDraggingSidebar) {
+                        isDraggingSidebar = false;
+                        sidebarSash.classList.remove('active');
+                        document.body.style.cursor = 'default';
+                    }
+                });
+            }
         }
 
         function getBaseUrl() {

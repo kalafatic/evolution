@@ -341,6 +341,56 @@ public class EvoStyleManager implements IEvoStyleManager {
                 padding: 15px;
                 color: var(--evo-text-secondary);
             }
+
+            /* Workstation Draggable Sashes / Splitters */
+            .evo-sash {
+                background-color: var(--evo-border);
+                position: relative;
+                z-index: 10;
+                user-select: none;
+                -webkit-user-select: none;
+                transition: background-color 0.15s ease;
+                flex-shrink: 0;
+            }
+            .evo-sash:hover, .evo-sash.active {
+                background-color: var(--evo-primary);
+            }
+            .evo-sash-v {
+                width: 6px;
+                cursor: col-resize;
+            }
+            .evo-sash-v::after {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 2px;
+                transform: translateY(-50%);
+                width: 2px;
+                height: 16px;
+                border-left: 1px solid var(--evo-border-dark);
+                border-right: 1px solid var(--evo-border-dark);
+            }
+            .evo-sash-v:hover::after, .evo-sash-v.active::after {
+                border-color: var(--evo-text-inverse);
+            }
+            .evo-sash-h {
+                height: 6px;
+                cursor: row-resize;
+            }
+            .evo-sash-h::after {
+                content: "";
+                position: absolute;
+                left: 50%;
+                top: 2px;
+                transform: translateX(-50%);
+                height: 2px;
+                width: 16px;
+                border-top: 1px solid var(--evo-border-dark);
+                border-bottom: 1px solid var(--evo-border-dark);
+            }
+            .evo-sash-h:hover::after, .evo-sash-h.active::after {
+                border-color: var(--evo-text-inverse);
+            }
             """;
     }
 
