@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.dialogs.ProgressIndicator;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
@@ -27,8 +28,6 @@ import eu.kalafatic.utils.ui.ImageUtils;
  * @version 3.0.0
  */
 public class EvolutionSplashHandler extends EclipseSplashHandler {
-	
-	public static final Image SPLASH_IMG = Activator.getImageDescriptor("splash.bmp").createImage();
 
 	/**
 	 * The Class class GSHf.
@@ -145,14 +144,26 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	 */
 	public Shell createUI(Display display) {
 		splash = new Shell(this.display = display, SWT.ON_TOP | SWT.APPLICATION_MODAL | SWT.INHERIT_DEFAULT);
-		splash.setBackgroundImage(SPLASH_IMG);
-		 splash.setBounds(getBounds());
-		 splash.setLocation(getLocation());
+		try {
+			ImageDescriptor desc = Activator.getImageDescriptor("splash.bmp");
+			if (desc != null) {
+				Image splashImg = desc.createImage();
+				if (splashImg != null) {
+					splash.setBackgroundImage(splashImg);
+				}
+			}
+		} catch (Exception e) {
+			Log.log(ECorePreferences.MODULE, e);
+		}
+		splash.setBounds(getBounds());
+		splash.setLocation(getLocation());
 
 		String splashLoc = System.getProperty("org.eclipse.equinox.launcher.splash.location");
 		final Image background = ImageUtils.loadImage(splashLoc);
 
-		splash.setBackgroundImage(background);
+		if (background != null) {
+			splash.setBackgroundImage(background);
+		}
 
 		Rectangle rect = new Rectangle(0,0,100,10); // getProgressRect();
 		createPending(new Rectangle(rect.x, rect.y - 5, rect.width, 3));
@@ -239,31 +250,6 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	@Override
 	public void init(Shell splash) {
 		super.init(splash);
-		
-		// Optional: still use built-in positions if you want, or fully custom
-        // setProgressRect(new Rectangle(10, 280, 400, 20));
-        // setMessageRect(new Rectangle(10, 250, 400, 20));
-
-        // But for color change → create your own ProgressBar
-//        Composite content = getContent();  // the composite covering the splash image
-
-//        customBar = new ProgressBar(content, SWT.HORIZONTAL | SWT.SMOOTH);
-//        customBar.setBounds(10, 280, 400, 20);  // position as needed
-
-        // Key: set the foreground color (fill color of the bar)
-//        Color barColor = new Color(Display.getCurrent(), 255, 0, 0);  // red; use any RGB
-//        customBar.setForeground(barColor);
-
-        // Optional: background color (area not filled yet)
-//        customBar.setBackground(new Color(Display.getCurrent(), 50, 50, 50));  // dark gray
-
-        // Hook progress updates to your custom bar instead of built-in
-        // (you may need to override getBundleProgressMonitor() or listen to events)
-    
-
-    // Important: if you want automatic bundle-loading progress
-    // override getBundleProgressMonitor() and update customBar.setSelection(percent)
-
 	}
 
 	// ---------------------------------------------------------------
@@ -367,11 +353,6 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	 */
 	public void update() {
 		try {
-			// System.out.println("------\n"
-			// + Integer.toString(GSHf.FLAG & 0xff, 2) + " " + GSHf.FLAG);
-			// System.out.println((GSHf.FLAG & GSHf.VISIBLE) != 0);
-			// System.err.println("progress-" + progress);
-
 			if ((GSHf.FLAG & GSHf.DONE) != 0) {
 				textLabel.setText("Done");
 				textLabel.update();
