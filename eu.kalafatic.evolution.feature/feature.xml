@@ -52,4 +52,56 @@
          id="eu.kalafatic.evolution.selfdev.genome.tests"
          version="0.0.0"/>
 
+   <plugin
+         id="eu.kalafatic.evolution.media"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.creatic"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.servers"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.math"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.model"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.tokenizer"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.data"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.runtime"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.trainer"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.agent.api"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.observability"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.controller"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.forge.agent"
+         version="0.0.0"/>
+
 </feature>
