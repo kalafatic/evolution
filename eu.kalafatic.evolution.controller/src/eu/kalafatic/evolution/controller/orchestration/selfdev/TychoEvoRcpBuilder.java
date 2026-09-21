@@ -128,8 +128,23 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         if (!targetDir.exists()) {
             targetDir = new File(reactorRoot, "target");
         }
-        if (!targetDir.exists()) {
-            targetDir = reactorRoot;
+
+        File targetProductsDir = new File(reactorRoot, prodDef.getRepositoryModule() + "/target/products");
+        if (!targetProductsDir.exists() || !targetProductsDir.isDirectory()) {
+            targetProductsDir = new File(reactorRoot, "target/products");
+        }
+
+        if (!targetProductsDir.exists() || !targetProductsDir.isDirectory() || targetProductsDir.listFiles() == null || targetProductsDir.listFiles().length == 0) {
+            String err = "[TychoEvoRcpBuilder] BUILD PRODUCT VERIFICATION FAILED: products directory (" + targetProductsDir.getAbsolutePath() + ") is missing or empty. The Tycho build did not assemble the required EVO product (" + prodDef.getProductId() + ").";
+            log("[MAVEN][FATAL] " + err);
+            return new TaskResult.Builder("build_evo_rcp")
+                    .status(TaskStatus.FAILED)
+                    .message(err)
+                    .logFile(logFile)
+                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
+                    .diagnostic("productDefinition", prodDef.toString())
+                    .diagnostic("targetPlatform", platform.toString())
+                    .build();
         }
 
         Map<String, String> metadata = new HashMap<>();
@@ -576,9 +591,23 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     "eu.kalafatic.evolution.view_",
                     "eu.kalafatic.evolution.controller_",
                     "eu.kalafatic.evolution.model_",
+                    "eu.kalafatic.evolution.model.edit_",
+                    "eu.kalafatic.evolution.model.editor_",
+                    "eu.kalafatic.utils_",
                     "eu.kalafatic.evolution.servers_",
+                    "eu.kalafatic.evolution.media_",
+                    "eu.kalafatic.evolution.creatic_",
+                    "eu.kalafatic.evolution.selfdev.genome_",
+                    "eu.kalafatic.evolution.forge.math_",
+                    "eu.kalafatic.evolution.forge.model_",
+                    "eu.kalafatic.evolution.forge.tokenizer_",
+                    "eu.kalafatic.evolution.forge.data_",
+                    "eu.kalafatic.evolution.forge.runtime_",
+                    "eu.kalafatic.evolution.forge.trainer_",
+                    "eu.kalafatic.evolution.forge.agent.api_",
+                    "eu.kalafatic.evolution.forge.observability_",
                     "eu.kalafatic.evolution.forge.controller_",
-                    "eu.kalafatic.utils_"
+                    "eu.kalafatic.evolution.forge.agent_"
                 };
                 for (String req : requiredCoreBundles) {
                     boolean found = false;
@@ -595,6 +624,14 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             }
         }
 
+        File featuresDir = new File(rootDir, "features");
+        if (featuresDir.exists() && featuresDir.isDirectory()) {
+            File[] featureItems = featuresDir.listFiles((dir, name) -> name.startsWith("eu.kalafatic.evolution.feature"));
+            if (featureItems == null || featureItems.length == 0) {
+                missingItems.add("features/ missing required EVO feature (eu.kalafatic.evolution.feature)");
+            }
+        }
+
         File configDir = new File(rootDir, "configuration");
         if (!configDir.exists() || !configDir.isDirectory()) {
             missingItems.add("configuration/ directory");
@@ -605,11 +642,26 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             } else {
                 try {
                     String content = Files.readString(configIni.toPath());
-                    if (!content.contains("eclipse.application") && !content.contains("eclipse.product")) {
-                        missingItems.add("eclipse.application or eclipse.product entry in configuration/config.ini");
+                    boolean hasAppOrProd = content.contains("eu.kalafatic.evolution.view.product") ||
+                                           content.contains("eu.kalafatic.evolution.view.application.Application") ||
+                                           (content.contains("eclipse.application") && content.contains("eclipse.product"));
+                    if (!hasAppOrProd) {
+                        missingItems.add("configuration/config.ini missing eclipse.product=eu.kalafatic.evolution.view.product or eclipse.application=eu.kalafatic.evolution.view.application.Application");
                     }
                 } catch (IOException e) {
                     missingItems.add("Readable configuration/config.ini (" + e.getMessage() + ")");
+                }
+            }
+
+            File bundlesInfo = new File(configDir, "org.eclipse.equinox.simpleconfigurator/bundles.info");
+            if (bundlesInfo.exists() && bundlesInfo.isFile()) {
+                try {
+                    String info = Files.readString(bundlesInfo.toPath());
+                    if (!info.contains("eu.kalafatic.evolution.view,") || !info.contains("eu.kalafatic.evolution.controller,")) {
+                        missingItems.add("org.eclipse.equinox.simpleconfigurator/bundles.info missing core EVO bundles (eu.kalafatic.evolution.view, eu.kalafatic.evolution.controller)");
+                    }
+                } catch (IOException e) {
+                    missingItems.add("Readable bundles.info (" + e.getMessage() + ")");
                 }
             }
         }

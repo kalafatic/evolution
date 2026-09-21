@@ -73,11 +73,14 @@ public class SelfDevStandalonePipelineTest {
 
     @Test
     public void testBuildEvoPrevalidationSuccess() throws Exception {
+        File preparedTarget = new File(context.getPreparedReactorDirectory(), "target");
+        new File(preparedTarget, "products").mkdirs();
+
         BuildEvoTask task = new BuildEvoTask("BUILD_EVO") {
             @Override
             protected TaskResult run(SelfDevContext ctx) throws Exception {
                 // Return success for standalone task testing
-                BuildArtifact artifact = new BuildArtifact(ArtifactType.EVO_RCP, new File(ctx.getPreparedReactorDirectory(), "target"), "HEAD", "linux", null);
+                BuildArtifact artifact = new BuildArtifact(ArtifactType.EVO_RCP, preparedTarget, "HEAD", "linux", null);
                 ctx.recordArtifact(artifact);
                 return TaskResult.success(id, "Build successful");
             }
@@ -182,6 +185,25 @@ public class SelfDevStandalonePipelineTest {
             EvoRcpVerifier verifier = new EvoRcpVerifier();
             TaskResult res = verifier.verifyReady(dummyProc, context.getRuntimeDirectory(), logDir, 5);
             assertTrue("Verifier should detect ready marker in runtime log", res.isSuccess());
+        } finally {
+            dummyProc.destroyForcibly();
+        }
+    }
+
+    @Test
+    public void testEvoVerifierFailsOnTimeoutWithoutReadyMarker() throws Exception {
+        File logDir = context.getLogDirectory();
+        File runtimeLog = new File(logDir, "evo_runtime.log");
+        try (FileWriter fw = new FileWriter(runtimeLog)) {
+            fw.write("Generic OSGi message without ready marker\n");
+        }
+
+        Process dummyProc = new ProcessBuilder("sleep", "10").start();
+        try {
+            EvoRcpVerifier verifier = new EvoRcpVerifier();
+            TaskResult res = verifier.verifyReady(dummyProc, context.getRuntimeDirectory(), logDir, 2);
+            assertFalse("Verifier must fail when timeout expires without ready marker or HTTP response", res.isSuccess());
+            assertTrue(res.getMessage().contains("Timed out waiting for EVO RCP process startup"));
         } finally {
             dummyProc.destroyForcibly();
         }

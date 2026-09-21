@@ -73,6 +73,14 @@ public class BuildEvoTask extends AbstractSelfDevTask {
             log("[MAVEN] ========================================");
             return TaskResult.failure(id, "EVO RCP build post-validation failed: expected artifact missing or empty.", null);
         }
+
+        java.io.File targetProducts = new java.io.File(artifact.getPath(), "products");
+        if (!targetProducts.exists()) {
+            targetProducts = new java.io.File(artifact.getPath().getParentFile(), "products");
+        }
+        if (!targetProducts.exists() && !artifact.getPath().getName().equals("products")) {
+            return TaskResult.failure(id, "EVO RCP build post-validation failed: target products directory missing under " + artifact.getPath().getAbsolutePath(), null);
+        }
         return runResult;
     }
 
