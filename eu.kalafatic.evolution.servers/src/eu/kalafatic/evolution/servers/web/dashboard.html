@@ -32,8 +32,8 @@
             </div>
         </header>
 
-        <div class="portal-container">
-            <aside class="sidebar-left">
+        <div class="portal-container" id="portal-container">
+            <aside class="sidebar-left" id="sidebar-left">
                 <nav class="nav-menu">
                     <div class="nav-section-title">Workflow Tools</div>
                     <ul>
@@ -41,6 +41,7 @@
                         <li><a href="/experimental/architecture" class="nav-link">📐 Architecture</a></li>
                         <li><a href="/experimental/forge" class="nav-link">🛠️ Forge Lab</a></li>
                         <li><a href="/experimental/evolution/tree" class="nav-link">🌳 Evolution Tree</a></li>
+                        <li><a href="/develop" class="nav-link">🤖 Develop Agent</a></li>
                     </ul>
                     <div class="nav-section-title">Platform</div>
                     <ul>
@@ -48,6 +49,8 @@
                     </ul>
                 </nav>
             </aside>
+
+            <div class="evo-sash evo-sash-v" id="sash-left"></div>
 
             <main class="portal-main">
                 <section class="welcome-section">
@@ -78,7 +81,9 @@
                 </section>
             </main>
 
-            <aside class="sidebar-right">
+            <div class="evo-sash evo-sash-v" id="sash-right"></div>
+
+            <aside class="sidebar-right" id="sidebar-right">
                 <div class="session-panel">
                     <h3>Session Context</h3>
                     <div id="userInfo">
@@ -110,5 +115,44 @@
         </div>
     </div>
     <script src="/js/auth.js"></script>
+    <script>
+        (function() {
+            function setupSash(sashId, targetEl, isLeft, containerId) {
+                const sash = document.getElementById(sashId);
+                const target = document.getElementById(targetEl);
+                const container = document.getElementById(containerId);
+                if (!sash || !target || !container) return;
+
+                let isDragging = false;
+
+                sash.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    sash.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    const rect = container.getBoundingClientRect();
+                    let newWidth = isLeft ? (e.clientX - rect.left) : (rect.right - e.clientX);
+                    if (newWidth < 120) newWidth = 120;
+                    if (newWidth > 500) newWidth = 500;
+                    target.style.width = newWidth + 'px';
+                });
+
+                document.addEventListener('mouseup', function() {
+                    if (isDragging) {
+                        isDragging = false;
+                        sash.classList.remove('active');
+                        document.body.style.cursor = '';
+                    }
+                });
+            }
+
+            setupSash('sash-left', 'sidebar-left', true, 'portal-container');
+            setupSash('sash-right', 'sidebar-right', false, 'portal-container');
+        })();
+    </script>
 </body>
 </html>

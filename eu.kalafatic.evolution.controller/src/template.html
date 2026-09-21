@@ -33,7 +33,7 @@
 </head>
 <body>
     <div id="layout">
-        <div id="sidebar">
+        <div id="sidebar" style="min-width: 160px; max-width: 500px;">
             <h1>🧬 Architecture</h1>
 
             <div class="sidebar-section">
@@ -101,6 +101,8 @@
                 <span>Evolution Architecture Engine v2.7.0</span>
             </div>
         </div>
+
+        <div class="evo-sash evo-sash-v" id="arch-sash"></div>
 
         <div id="main-container">
             <div id="header">
@@ -243,6 +245,38 @@
 {{NAVIGATOR_JS}}
     </script>
     <script>
+        // Draggable Sash Implementation
+        (function() {
+            const sash = document.getElementById('arch-sash');
+            const sidebar = document.getElementById('sidebar');
+            if (!sash || !sidebar) return;
+
+            let isDragging = false;
+
+            sash.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                sash.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                let newWidth = e.clientX;
+                if (newWidth < 150) newWidth = 150;
+                if (newWidth > 500) newWidth = 500;
+                sidebar.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    sash.classList.remove('active');
+                    document.body.style.cursor = '';
+                }
+            });
+        })();
+
         window.onload = function(event) {
             log('ready');
             initUI();

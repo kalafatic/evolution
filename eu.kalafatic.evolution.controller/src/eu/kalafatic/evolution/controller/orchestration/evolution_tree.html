@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Darwin Evolution Tree</title>
+    <base href="/">
+    <link rel="stylesheet" href="/evo-style.css">
     <style>
         :root {
             --bg: #f8fafc;
@@ -36,8 +38,10 @@
 
         #sidebar {
             width: 400px;
+            min-width: 200px;
+            max-width: 700px;
             background: var(--node-bg);
-            border-left: 1px solid var(--node-border);
+            border-left: none;
             padding: 20px;
             overflow-y: auto;
             display: none;
@@ -84,6 +88,7 @@
     <div id="tree-container">
         <svg id="canvas" width="100%" height="100%"></svg>
     </div>
+    <div class="evo-sash evo-sash-v" id="tree-sash" style="display: none;"></div>
     <div id="sidebar">
         <h2 id="side-title">Node Details</h2>
         <div class="detail-item">
@@ -202,6 +207,7 @@
 
         function showDetails(node) {
             sidebar.style.display = 'block';
+            document.getElementById('tree-sash').style.display = 'block';
             document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
             event.target.classList.add('selected');
 
@@ -247,6 +253,39 @@
         }
 
         loadTree();
+
+        // Draggable Sash Implementation
+        (function() {
+            const sash = document.getElementById('tree-sash');
+            const sidebar = document.getElementById('sidebar');
+            if (!sash || !sidebar) return;
+
+            let isSashDragging = false;
+
+            sash.addEventListener('mousedown', function(e) {
+                isSashDragging = true;
+                sash.classList.add('active');
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isSashDragging) return;
+                let newWidth = window.innerWidth - e.clientX;
+                if (newWidth < 180) newWidth = 180;
+                if (newWidth > 700) newWidth = 700;
+                sidebar.style.width = newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isSashDragging) {
+                    isSashDragging = false;
+                    sash.classList.remove('active');
+                    document.body.style.cursor = '';
+                }
+            });
+        })();
     </script>
 </body>
 </html>

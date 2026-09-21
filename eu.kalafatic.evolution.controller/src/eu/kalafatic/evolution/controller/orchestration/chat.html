@@ -33,9 +33,9 @@
 
         /* Sidebar */
         #sidebar {
-            width: 280px; min-width: 280px;
+            width: 280px; min-width: 180px; max-width: 500px;
             background-color: var(--bg-secondary);
-            border-right: 1px solid var(--border);
+            border-right: none;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
@@ -189,7 +189,7 @@
 
         /* Visualization Area */
         #visual-area {
-            width: 320px; background: var(--bg-secondary); border-left: 1px solid var(--border);
+            width: 320px; min-width: 180px; max-width: 600px; background: var(--bg-secondary); border-left: none;
             display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
         }
         .viz-panel-header { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 0.8em; font-weight: bold; color: var(--text-dim); text-transform: uppercase; background: var(--bg-secondary); }
@@ -374,6 +374,8 @@
             </div>
         </div>
 
+        <div class="evo-sash evo-sash-v" id="sidebar-sash"></div>
+
         <!-- MAIN CHAT -->
         <div id="main-content">
             <div id="header">
@@ -398,6 +400,8 @@
                     <button onclick="sendMessage()" data-guidance="Send your command to the Evolution Orchestrator.">Send</button>
             </div>
         </div>
+
+        <div class="evo-sash evo-sash-v" id="visual-sash"></div>
 
         <!-- VISUALIZATION -->
         <div id="visual-area">
@@ -1047,6 +1051,45 @@
         setInterval(pollSystemState, 2000);
         setInterval(pollStatus, 10000);
         setInterval(fetchSettings, 30000);
+
+        // Draggable Sashes Implementation
+        (function() {
+            function setupSash(sashId, targetEl, isLeft, containerId) {
+                const sash = document.getElementById(sashId);
+                const target = document.getElementById(targetEl);
+                const container = document.getElementById(containerId);
+                if (!sash || !target || !container) return;
+
+                let isDragging = false;
+
+                sash.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    sash.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    const rect = container.getBoundingClientRect();
+                    let newWidth = isLeft ? (e.clientX - rect.left) : (rect.right - e.clientX);
+                    if (newWidth < 150) newWidth = 150;
+                    if (newWidth > 550) newWidth = 550;
+                    target.style.width = newWidth + 'px';
+                });
+
+                document.addEventListener('mouseup', function() {
+                    if (isDragging) {
+                        isDragging = false;
+                        sash.classList.remove('active');
+                        document.body.style.cursor = '';
+                    }
+                });
+            }
+
+            setupSash('sidebar-sash', 'sidebar', true, 'layout');
+            setupSash('visual-sash', 'visual-area', false, 'layout');
+        })();
     </script>
 </body>
 </html>
