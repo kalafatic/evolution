@@ -157,6 +157,20 @@ public class McpServersGroup extends AEvoGroup {
                 .filter(e -> "MCP".equals(e.getType()))
                 .collect(Collectors.toList());
 
+        boolean hasLocalhost = mcpServers.stream()
+                .anyMatch(e -> ("localhost".equalsIgnoreCase(e.getAddress()) || "127.0.0.1".equals(e.getAddress())) && e.getPort() == 38080);
+        if (!hasLocalhost) {
+            NetworkEntry localEntry = OrchestrationFactory.eINSTANCE.createNetworkEntry();
+            localEntry.setHost("Localhost Demo MCP");
+            localEntry.setAddress("localhost");
+            localEntry.setPort(38080);
+            localEntry.setPath("/mcp");
+            localEntry.setType("MCP");
+            localEntry.setNote("Localhost MCP Server");
+            orchestrator.getNetworkEntries().add(localEntry);
+            mcpServers.add(localEntry);
+        }
+
         for (NetworkEntry entry : mcpServers) {
             TableItem item = new TableItem(serversTable, SWT.NONE);
             item.setText(0, entry.getHost() != null ? entry.getHost() : "");
