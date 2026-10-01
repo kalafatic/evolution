@@ -132,6 +132,21 @@ public class DatasetCandidate {
     public String getStatus() { return status != null ? status : "READY"; }
     public void setStatus(String status) { this.status = status; }
 
+    public static String formatCandidateSize(long sizeBytes) {
+        if (sizeBytes <= 0) {
+            return "Stream";
+        } else if (sizeBytes < 1024 * 1024L) {
+            double kb = sizeBytes / 1024.0;
+            return String.format(java.util.Locale.US, "%.1f KB", kb);
+        } else if (sizeBytes < 1024 * 1024 * 1024L) {
+            double mb = sizeBytes / (1024.0 * 1024.0);
+            return String.format(java.util.Locale.US, "%.1f MB", mb);
+        } else {
+            double gb = sizeBytes / (1024.0 * 1024.0 * 1024.0);
+            return String.format(java.util.Locale.US, "%.2f GB", gb);
+        }
+    }
+
     public JSONObject toJsonObject() {
         JSONObject obj = new JSONObject();
         obj.put("id", getId());
