@@ -63,7 +63,7 @@ public class GlobalActionsGroup extends AEvoGroup {
         });
 
         Composite compositeRemote = new Composite(parent, SWT.BORDER);
-        compositeRemote.setLayout(new GridLayout(6, false));
+        compositeRemote.setLayout(new GridLayout(7, false));
         compositeRemote.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button executeBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Execute Selected", SWT.PUSH, 2 * GUIFactory.BUTTON_WIDTH);
@@ -98,7 +98,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button addForgeTaskBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Add Forge Task");
+        Button addForgeTaskBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Add Forge Task", SWT.PUSH, 2 * GUIFactory.BUTTON_WIDTH);
         addForgeTaskBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
