@@ -65,10 +65,37 @@ public class MavenBuildExecutor {
         String javaHome = System.getProperty("java.home");
         String startDateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(startTime));
 
+        File logDir = logFile != null ? logFile.getParentFile() : new File(workingDir, "logs");
+        if (!logDir.exists()) logDir.mkdirs();
+
+        File cmdFile = new File(logDir, "maven-command.txt");
+        try (PrintWriter pw = new PrintWriter(new FileWriter(cmdFile, false))) {
+            pw.println("executable=" + mavenExec);
+            pw.println("workingDirectory=" + workingDir.getAbsolutePath());
+            pw.println("arguments=" + command);
+            pw.println("timeout=" + timeoutMinutes);
+        } catch (Exception ignored) {}
+
+        File envFile = new File(logDir, "maven-environment.txt");
+        try (PrintWriter pw = new PrintWriter(new FileWriter(envFile, false))) {
+            pw.println("JAVA_HOME=" + (javaHome != null ? javaHome : ""));
+            pw.println("Java Version=" + System.getProperty("java.version"));
+            pw.println("Maven Executable=" + mavenExec);
+            pw.println("System Environment:");
+            for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
+                pw.println(entry.getKey() + "=" + entry.getValue());
+            }
+        } catch (Exception ignored) {}
+
+        File pomFile = new File(workingDir, "pom.xml");
+        String pomCanon = "";
+        try { pomCanon = pomFile.getCanonicalPath(); } catch (Exception ignored) {}
+
         log("[MAVEN] ========================================");
         log("[MAVEN] PROJECT       = " + taskId);
         log("[MAVEN] REPOSITORY    = " + workingDir.getAbsolutePath());
         log("[MAVEN] WORKDIR       = " + workingDir.getAbsolutePath());
+        log("[MAVEN] POM           = " + pomFile.getAbsolutePath() + " (canonical: " + pomCanon + ", exists: " + pomFile.exists() + ", size: " + pomFile.length() + ")");
         log("[MAVEN] JAVA          = " + (javaHome != null ? javaHome : "System default"));
         log("[MAVEN] MAVEN         = " + mavenExec);
         log("[MAVEN] COMMAND       = " + fullCommandStr);

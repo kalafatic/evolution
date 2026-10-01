@@ -30,54 +30,155 @@ import eu.kalafatic.utils.Activator;
  */
 public final class FUIConstants {
 
+	static {
+		try {
+			java.security.ProtectionDomain pd = FUIConstants.class.getProtectionDomain();
+			java.net.URL loc = (pd != null && pd.getCodeSource() != null) ? pd.getCodeSource().getLocation() : null;
+			System.out.println("[DIAGNOSTIC][FUIConstants] Class loaded from location: " + loc);
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Failed resolving code source: " + t);
+		}
+	}
+
+	private static ISharedImages safeGetSharedImages() {
+		try {
+			if (PlatformUI.isWorkbenchRunning()) {
+				return PlatformUI.getWorkbench().getSharedImages();
+			} else {
+				System.err.println("[DIAGNOSTIC][FUIConstants] PlatformUI workbench is not running during class load.");
+			}
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Workbench shared images exception: " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
+	private static Image safeCreateImage(ISharedImages shared, String imageId) {
+		try {
+			if (shared != null && shared.getImageDescriptor(imageId) != null) {
+				return shared.getImageDescriptor(imageId).createImage();
+			}
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Exception creating shared image " + imageId + ": " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
+	private static Image safeCreateActivatorImage(String path) {
+		try {
+			ImageDescriptor desc = Activator.getImageDescriptor(path);
+			if (desc != null) {
+				return desc.createImage();
+			}
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Exception creating Activator image " + path + ": " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
+	private static ImageDescriptor safeCreateActivatorImageDesc(String path) {
+		try {
+			return Activator.getImageDescriptor(path);
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Exception creating Activator image desc " + path + ": " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
+	private static Color safeGetSystemColor(int colorId) {
+		try {
+			Display display = Display.getCurrent();
+			if (display == null) display = Display.getDefault();
+			if (display != null && !display.isDisposed()) {
+				return display.getSystemColor(colorId);
+			}
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Exception getting system color " + colorId + ": " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
+	private static Color safeCreateColor(int r, int g, int b) {
+		try {
+			Display display = Display.getCurrent();
+			if (display == null) display = Display.getDefault();
+			if (display != null && !display.isDisposed()) {
+				return new Color(display, r, g, b);
+			}
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Exception creating Color(" + r + "," + g + "," + b + "): " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
+	private static Font safeCreateFont(String name, int height, int style) {
+		try {
+			Display display = Display.getCurrent();
+			if (display == null) display = Display.getDefault();
+			if (display != null && !display.isDisposed()) {
+				return new Font(display, name, height, style);
+			}
+		} catch (Throwable t) {
+			System.err.println("[DIAGNOSTIC][FUIConstants] Exception creating Font(" + name + "): " + t);
+			t.printStackTrace();
+		}
+		return null;
+	}
+
 	/** The shared images. */
-	private static ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
+	private static ISharedImages sharedImages = safeGetSharedImages();
 
 	// ---------------------------------------------------------------
 	// ---------------------------------------------------------------
 
 	// FILE STRUCTURE
 	/** The Constant FOLDER_IMG. */
-	public static final Image FOLDER_IMG = sharedImages.getImageDescriptor(ISharedImages.IMG_OBJ_FOLDER).createImage();
+	public static final Image FOLDER_IMG = safeCreateImage(sharedImages, ISharedImages.IMG_OBJ_FOLDER);
 
 	/** The Constant FILE_IMG. */
-	public static final Image FILE_IMG = sharedImages.getImageDescriptor(ISharedImages.IMG_OBJ_FILE).createImage();
+	public static final Image FILE_IMG = safeCreateImage(sharedImages, ISharedImages.IMG_OBJ_FILE);
 
 	/** The Constant DRIVE_IMG_1. */
-	public static final Image DRIVE_IMG_1 = Activator.getImageDescriptor("icons/drive1.png").createImage();
+	public static final Image DRIVE_IMG_1 = safeCreateActivatorImage("icons/drive1.png");
 
 	/** The Constant DRIVE_IMG_2. */
-	public static final Image DRIVE_IMG_2 = Activator.getImageDescriptor("icons/drive2.png").createImage();
+	public static final Image DRIVE_IMG_2 = safeCreateActivatorImage("icons/drive2.png");
 
 	/** The Constant MAINTAIN_IMG. */
-	public static final Image MAINTAIN_IMG = Activator.getImageDescriptor("icons/maintain.png").createImage();
+	public static final Image MAINTAIN_IMG = safeCreateActivatorImage("icons/maintain.png");
 
 	/** The Constant PROJECT_IMG. */
-	public static final Image PROJECT_IMG = Activator.getImageDescriptor("icons/project/project.gif").createImage();
+	public static final Image PROJECT_IMG = safeCreateActivatorImage("icons/project/project.gif");
 
 	/** The Constant SETTINGS_IMG. */
-	public static final Image SETTINGS_IMG = Activator.getImageDescriptor("icons/settings.png").createImage();
+	public static final Image SETTINGS_IMG = safeCreateActivatorImage("icons/settings.png");
 
 	/** The Constant TREE_IMG. */
-	public static final Image TREE_IMG = Activator.getImageDescriptor("icons/tree/tree.png").createImage();
+	public static final Image TREE_IMG = safeCreateActivatorImage("icons/tree/tree.png");
 
 	/** The Constant LIST_IMG. */
-	public static final Image LIST_IMG = Activator.getImageDescriptor("icons/tree/list.gif").createImage();
+	public static final Image LIST_IMG = safeCreateActivatorImage("icons/tree/list.gif");
 
 	/** The Constant ELEMENTS_IMG. */
-	public static final Image ELEMENTS_IMG = Activator.getImageDescriptor("icons/tree/elements.gif").createImage();
+	public static final Image ELEMENTS_IMG = safeCreateActivatorImage("icons/tree/elements.gif");
 
 	/** The Constant FRAME_IMG. */
-	public static final Image FRAME_IMG = Activator.getImageDescriptor("icons/tree/frame.png").createImage();
+	public static final Image FRAME_IMG = safeCreateActivatorImage("icons/tree/frame.png");
 
 	// public static final Image SERVER_IMG = Activator.getImageDescriptor(
 	// "icons/server.png").createImage();
 
 	/** The Constant COLLAPSE_ALL_DESC. */
-	public static final ImageDescriptor COLLAPSE_ALL_DESC = Activator.getImageDescriptor("icons/tree/collapse_all.gif");
+	public static final ImageDescriptor COLLAPSE_ALL_DESC = safeCreateActivatorImageDesc("icons/tree/collapse_all.gif");
 
 	/** The Constant EXPAND_ALL_DESC. */
-	public static final ImageDescriptor EXPAND_ALL_DESC = Activator.getImageDescriptor("icons/tree/expand_all.gif");
+	public static final ImageDescriptor EXPAND_ALL_DESC = safeCreateActivatorImageDesc("icons/tree/expand_all.gif");
 
 	/** The Constant APP_SIZE. */
 	public final static Point APP_SIZE = new Point(800, 600);
@@ -174,89 +275,85 @@ public final class FUIConstants {
 	// ---------------------------------------------------------------
 
 	/** The Constant RED. */
-	public final static Color RED = Display.getDefault().getSystemColor(SWT.COLOR_RED);
+	public final static Color RED = safeGetSystemColor(SWT.COLOR_RED);
 
 	/** The Constant LIGHT_RED. */
-	public final static Color LIGHT_RED = new Color(Display.getDefault(), 255, 240, 240);
+	public final static Color LIGHT_RED = safeCreateColor(255, 240, 240);
 
 	/** The Constant WHITE. */
-	public final static Color WHITE = Display.getDefault().getSystemColor(SWT.COLOR_WHITE);
+	public final static Color WHITE = safeGetSystemColor(SWT.COLOR_WHITE);
 
 	/** The Constant SILVER. */
-	public final static Color SILVER = Display.getDefault().getSystemColor(SWT.COLOR_GRAY);
+	public final static Color SILVER = safeGetSystemColor(SWT.COLOR_GRAY);
 
 	/** The Constant BLUE. */
-	public final static Color BLUE = Display.getDefault().getSystemColor(SWT.COLOR_BLUE);
+	public final static Color BLUE = safeGetSystemColor(SWT.COLOR_BLUE);
 
 	/** The Constant DARK_BLUE. */
-	public final static Color DARK_BLUE = Display.getDefault().getSystemColor(SWT.COLOR_DARK_BLUE);
+	public final static Color DARK_BLUE = safeGetSystemColor(SWT.COLOR_DARK_BLUE);
 
 	/** The Constant LIGHT_BLUE. */
-	public final static Color LIGHT_BLUE = new Color(Display.getDefault(), 240, 240, 255);
+	public final static Color LIGHT_BLUE = safeCreateColor(240, 240, 255);
 
 	/** The Constant GREEN. */
-	public final static Color GREEN = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
+	public final static Color GREEN = safeGetSystemColor(SWT.COLOR_GREEN);
 
 	/** The Constant LIGHT_GREEN. */
-	public final static Color LIGHT_GREEN = new Color(Display.getDefault(), 240, 255, 240);
+	public final static Color LIGHT_GREEN = safeCreateColor(240, 255, 240);
 
 	/** The Constant DARK_GREEN. */
-	public final static Color DARK_GREEN = Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN);
-
-	// public final static Color DARK_GREEN =
-	// Display.getDefault().getSystemColor(
-	// SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
+	public final static Color DARK_GREEN = safeGetSystemColor(SWT.COLOR_DARK_GREEN);
 
 	/** The Constant YELLOW. */
-	public final static Color YELLOW = Display.getDefault().getSystemColor(SWT.COLOR_YELLOW);
+	public final static Color YELLOW = safeGetSystemColor(SWT.COLOR_YELLOW);
 
 	/** The Constant GRADIENT. */
-	public final static Color GRADIENT = Display.getDefault().getSystemColor(SWT.COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT);
+	public final static Color GRADIENT = safeGetSystemColor(SWT.COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT);
 
 	/** The Constant CYAN. */
-	public final static Color CYAN = Display.getDefault().getSystemColor(SWT.COLOR_CYAN);
+	public final static Color CYAN = safeGetSystemColor(SWT.COLOR_CYAN);
 
 	/** The Constant GRAY. */
-	public final static Color GRAY = Display.getDefault().getSystemColor(SWT.COLOR_GRAY);
+	public final static Color GRAY = safeGetSystemColor(SWT.COLOR_GRAY);
 
 	/** The Constant DARK_GRAY. */
-	public final static Color DARK_GRAY = Display.getDefault().getSystemColor(SWT.COLOR_DARK_GRAY);
+	public final static Color DARK_GRAY = safeGetSystemColor(SWT.COLOR_DARK_GRAY);
 
 	/** The Constant BLACK. */
-	public final static Color BLACK = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
+	public final static Color BLACK = safeGetSystemColor(SWT.COLOR_BLACK);
 
 	/** The Constant SAND_COLOR. */
-	public final static Color SAND_COLOR = new Color(Display.getDefault(), 255, 200, 50);
+	public final static Color SAND_COLOR = safeCreateColor(255, 200, 50);
 
 	/** The Constant GRASS_COLOR. */
-	public final static Color GRASS_COLOR = new Color(Display.getDefault(), 230, 255, 220);
+	public final static Color GRASS_COLOR = safeCreateColor(230, 255, 220);
 
 	/** The Constant ORANGE_COLOR. */
-	public final static Color ORANGE_COLOR = new Color(Display.getDefault(), 255, 100, 50);
+	public final static Color ORANGE_COLOR = safeCreateColor(255, 100, 50);
 
 	/** The Constant NORMAL_FONT. */
-	public final static Font NORMAL_FONT = new Font(Display.getDefault(), "Normal", 8, SWT.NORMAL);
+	public final static Font NORMAL_FONT = safeCreateFont("Normal", 8, SWT.NORMAL);
 
 	/** The Constant BOLD_FONT. */
-	public final static Font BOLD_FONT = new Font(Display.getDefault(), "Arial", 8, SWT.BOLD);
+	public final static Font BOLD_FONT = safeCreateFont("Arial", 8, SWT.BOLD);
 
 	/** The Constant BOLD_6_FONT. */
-	public final static Font BOLD_6_FONT = new Font(Display.getDefault(), "Courier", 10, SWT.NORMAL);
+	public final static Font BOLD_6_FONT = safeCreateFont("Courier", 10, SWT.NORMAL);
 
 	/** The Constant PROGRESS_FONT. */
-	public final static Font PROGRESS_FONT = new Font(Display.getDefault(), "Arial", 8, SWT.BOLD);
+	public final static Font PROGRESS_FONT = safeCreateFont("Arial", 8, SWT.BOLD);
 
 	/** The Constant ARIAL_8_FONT. */
-	public final static Font ARIAL_8_FONT = new Font(Display.getDefault(), "Arial", 8, SWT.NORMAL);
+	public final static Font ARIAL_8_FONT = safeCreateFont("Arial", 8, SWT.NORMAL);
 
 	/** The Constant INDEXES_FONT. */
-	public final static Font INDEXES_FONT = new Font(Display.getDefault(), "Normal", 6, SWT.ITALIC);
+	public final static Font INDEXES_FONT = safeCreateFont("Normal", 6, SWT.ITALIC);
 
 	/** The Constant PERCENT_FONT. */
-	public final static Font PERCENT_FONT = new Font(Display.getDefault(), "Normal", 7, SWT.ITALIC);
+	public final static Font PERCENT_FONT = safeCreateFont("Normal", 7, SWT.ITALIC);
 
 	/** The Constant COURIER_FONT. */
-	public final static Font COURIER_FONT = new Font(Display.getDefault(), "Courier New", 10, SWT.NORMAL);
+	public final static Font COURIER_FONT = safeCreateFont("Courier New", 10, SWT.NORMAL);
 
 	/** The Constant KB. */
 	public final static long KB = 1024;

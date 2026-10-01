@@ -246,7 +246,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             }
         }
 
-        TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, platform);
+        TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, platform, context);
         if (!valRes.isSuccess()) {
             return TaskResult.failure("export_evo_rcp", "Exported EVO RCP product validation failed for " + exportedLocation.getAbsolutePath() + ": " + valRes.getMessage(), null);
         }
@@ -330,54 +330,75 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         String reqFormat = platform.getPackaging() != null ? platform.getPackaging().trim().toLowerCase() : "zip";
         String reqTarget = platform.getOs() + "." + platform.getWs() + "." + platform.getArch();
 
-        log("[PRODUCT_DISCOVERY] productsRoot=" + targetProductsDir.getAbsolutePath());
-        log("[PRODUCT_DISCOVERY] requestedProduct=" + prodDef.getProductId());
-        log("[PRODUCT_DISCOVERY] requestedTarget=" + reqTarget);
-        log("[PRODUCT_DISCOVERY] requestedFormat=" + reqFormat);
+        File logDir = context != null ? context.getLogDirectory() : new File(reactorRoot, "logs");
+        if (!logDir.exists()) logDir.mkdirs();
+        File selectionLogFile = new File(logDir, "product-selection.log");
 
-        List<File> candidates = new ArrayList<>();
-        File[] files = targetProductsDir.listFiles();
-        if (files != null) {
-            for (File f : files) {
-                log("[PRODUCT_DISCOVERY] Inspecting:\n" + f.getAbsolutePath());
-                if (f.isDirectory()) {
-                    log("[PRODUCT_DISCOVERY] type=DIRECTORY");
-                } else if (f.isFile()) {
-                    log("[PRODUCT_DISCOVERY] type=FILE");
-                } else {
-                    log("[PRODUCT_DISCOVERY] type=OTHER");
-                }
+        try (java.io.PrintWriter selectionWriter = new java.io.PrintWriter(new java.io.FileWriter(selectionLogFile, true))) {
+            selectionWriter.println("[PRODUCT_DISCOVERY] productsRoot=" + targetProductsDir.getAbsolutePath());
+            selectionWriter.println("[PRODUCT_DISCOVERY] requestedProduct=" + prodDef.getProductId());
+            selectionWriter.println("[PRODUCT_DISCOVERY] requestedTarget=" + reqTarget);
+            selectionWriter.println("[PRODUCT_DISCOVERY] requestedFormat=" + reqFormat);
 
-                String reason = getExclusionReason(f, prodDef, platform);
-                if (reason == null) {
-                    log("[PRODUCT_DISCOVERY] format=" + reqFormat.toUpperCase());
-                    log("[PRODUCT_DISCOVERY] product=" + prodDef.getProductId());
-                    log("[PRODUCT_DISCOVERY] target=" + reqTarget);
-                    log("[PRODUCT_DISCOVERY] candidate=true");
-                    candidates.add(f);
-                } else {
-                    log("[PRODUCT_DISCOVERY] excluded reason=" + reason);
+            log("[PRODUCT_DISCOVERY] productsRoot=" + targetProductsDir.getAbsolutePath());
+            log("[PRODUCT_DISCOVERY] requestedProduct=" + prodDef.getProductId());
+            log("[PRODUCT_DISCOVERY] requestedTarget=" + reqTarget);
+            log("[PRODUCT_DISCOVERY] requestedFormat=" + reqFormat);
+
+            List<File> candidates = new ArrayList<>();
+            File[] files = targetProductsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    selectionWriter.println("[PRODUCT_DISCOVERY] Inspecting: " + f.getAbsolutePath());
+                    log("[PRODUCT_DISCOVERY] Inspecting:\n" + f.getAbsolutePath());
+                    if (f.isDirectory()) {
+                        log("[PRODUCT_DISCOVERY] type=DIRECTORY");
+                    } else if (f.isFile()) {
+                        log("[PRODUCT_DISCOVERY] type=FILE");
+                    } else {
+                        log("[PRODUCT_DISCOVERY] type=OTHER");
+                    }
+
+                    String reason = getExclusionReason(f, prodDef, platform);
+                    if (reason == null) {
+                        selectionWriter.println("  -> CANDIDATE MATCH");
+                        log("[PRODUCT_DISCOVERY] format=" + reqFormat.toUpperCase());
+                        log("[PRODUCT_DISCOVERY] product=" + prodDef.getProductId());
+                        log("[PRODUCT_DISCOVERY] target=" + reqTarget);
+                        log("[PRODUCT_DISCOVERY] candidate=true");
+                        candidates.add(f);
+                    } else {
+                        selectionWriter.println("  -> EXCLUDED: " + reason);
+                        log("[PRODUCT_DISCOVERY] excluded reason=" + reason);
+                    }
                 }
             }
-        }
 
-        boolean isArchiveRequested = reqFormat.contains("zip") || reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz");
-        if (candidates.isEmpty() && !isArchiveRequested) {
-            File nestedDir = platform.isWindows() ?
-                    new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
-                    new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
-            if (nestedDir.exists()) {
-                candidates.add(nestedDir);
+            boolean isArchiveRequested = reqFormat.contains("zip") || reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz");
+            if (candidates.isEmpty() && !isArchiveRequested) {
+                File nestedDir = platform.isWindows() ?
+                        new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
+                        new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
+                if (nestedDir.exists()) {
+                    candidates.add(nestedDir);
+                }
             }
-        }
 
-        log("[PRODUCT_DISCOVERY] candidateCount=" + candidates.size());
+            log("[PRODUCT_DISCOVERY] candidateCount=" + candidates.size());
 
-        if (candidates.size() == 1) {
-            log("[PRODUCT_DISCOVERY] selected=" + candidates.get(0).getAbsolutePath());
-            return candidates.get(0);
-        } else if (candidates.size() > 1) {
-            throw new IOException("Multiple candidate exported products found under " + targetProductsDir.getAbsolutePath() + " matching " + prodDef.getProductId() + " (" + platform + "): " + candidates + ". Rejecting ambiguous selection.");
+            if (candidates.size() == 1) {
+                File selected = candidates.get(0);
+                selectionWriter.println("SELECTED PRODUCT: " + selected.getAbsolutePath());
+                log("[PRODUCT_DISCOVERY] selected=" + selected.getAbsolutePath());
+                return selected;
+            } else if (candidates.size() > 1) {
+                selectionWriter.println("PRODUCT SELECTION FAILED: Ambiguous candidates: " + candidates);
+                throw new IOException("Multiple candidate exported products found under " + targetProductsDir.getAbsolutePath() + " matching " + prodDef.getProductId() + " (" + platform + "): " + candidates + ". Rejecting ambiguous selection.");
+            } else {
+                selectionWriter.println("PRODUCT SELECTION FAILED: Zero candidates found");
+            }
+        } catch (Exception e) {
+            if (e instanceof IOException) throw (IOException) e;
         }
 
         return null;
@@ -459,6 +480,10 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     }
 
     public TaskResult validateProductDeployment(File location, ProductDefinition prodDef, TargetPlatform platform) {
+        return validateProductDeployment(location, prodDef, platform, null);
+    }
+
+    public TaskResult validateProductDeployment(File location, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) {
         if (location == null || !location.exists()) {
             return TaskResult.failure("validate_product", "Product location is null or non-existent.", null);
         }
@@ -484,7 +509,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 }
             }
 
-            return validateDirectoryLayout(rootDir, prodDef, platform);
+            return validateDirectoryLayout(rootDir, prodDef, platform, context);
 
         } catch (Exception e) {
             return TaskResult.failure("validate_product", "Product deployment validation exception: " + e.getMessage(), e);
@@ -531,7 +556,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         return hasLauncher && (hasPlugins || hasConfig);
     }
 
-    private TaskResult validateDirectoryLayout(File rootDir, ProductDefinition prodDef, TargetPlatform platform) {
+    private TaskResult validateDirectoryLayout(File rootDir, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) {
         if (rootDir == null || !rootDir.exists() || !rootDir.isDirectory()) {
             return TaskResult.failure("validate_product", "Product root directory does not exist or is not a directory: " + (rootDir != null ? rootDir.getAbsolutePath() : "null"), null);
         }
@@ -618,11 +643,94 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("validate_product", "Product deployment validation failed due to missing items: " + String.join(", ", missingItems), null);
         }
 
+        if (context != null) {
+            writeProductInventoryFiles(rootDir, context.getLogDirectory(), prodDef);
+        }
+
         return new TaskResult.Builder("validate_product")
                 .status(TaskStatus.SUCCESS)
                 .message("EVO RCP product deployment validation passed successfully at " + rootDir.getAbsolutePath())
                 .workingDirectory(rootDir)
                 .build();
+    }
+
+    private void writeProductInventoryFiles(File rootDir, File logDir, ProductDefinition prodDef) {
+        if (rootDir == null || !rootDir.exists() || logDir == null) return;
+        if (!logDir.exists()) logDir.mkdirs();
+
+        File inventoryFile = new File(logDir, "product-inventory.txt");
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(inventoryFile, false))) {
+            pw.println("PRODUCT INVENTORY FOR: " + rootDir.getAbsolutePath());
+            pw.println("==================================================");
+            writeInventoryRecursive(rootDir, "", pw);
+        } catch (Exception e) {
+            log("[TychoEvoRcpBuilder] Error writing product-inventory.txt: " + e.getMessage());
+        }
+
+        File pluginsDir = new File(rootDir, "plugins");
+        File pluginsFile = new File(logDir, "plugins.txt");
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(pluginsFile, false))) {
+            pw.println("PLUGINS INVENTORY (" + pluginsDir.getAbsolutePath() + "):");
+            if (pluginsDir.exists() && pluginsDir.isDirectory()) {
+                File[] pluginFiles = pluginsDir.listFiles();
+                if (pluginFiles != null) {
+                    Arrays.sort(pluginFiles, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+                    for (File pf : pluginFiles) {
+                        pw.println(pf.getName() + " (" + pf.length() + " bytes)");
+                    }
+                }
+            } else {
+                pw.println("plugins directory missing");
+            }
+        } catch (Exception e) {
+            log("[TychoEvoRcpBuilder] Error writing plugins.txt: " + e.getMessage());
+        }
+
+        File featuresDir = new File(rootDir, "features");
+        File featuresFile = new File(logDir, "features.txt");
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(featuresFile, false))) {
+            pw.println("FEATURES INVENTORY (" + featuresDir.getAbsolutePath() + "):");
+            if (featuresDir.exists() && featuresDir.isDirectory()) {
+                File[] featureFiles = featuresDir.listFiles();
+                if (featureFiles != null) {
+                    Arrays.sort(featureFiles, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+                    for (File ff : featureFiles) {
+                        pw.println(ff.getName());
+                    }
+                }
+            } else {
+                pw.println("features directory missing or empty");
+            }
+        } catch (Exception e) {
+            log("[TychoEvoRcpBuilder] Error writing features.txt: " + e.getMessage());
+        }
+
+        File configIni = new File(rootDir, "configuration/config.ini");
+        if (configIni.exists()) {
+            try {
+                Files.copy(configIni.toPath(), new File(logDir, "config.ini").toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception ignored) {}
+        }
+        String launcherName = prodDef != null ? prodDef.getLauncherName() : "evo";
+        File iniFile = new File(rootDir, launcherName + ".ini");
+        if (!iniFile.exists()) iniFile = new File(rootDir, "eclipse.ini");
+        if (iniFile.exists()) {
+            try {
+                Files.copy(iniFile.toPath(), new File(logDir, "eclipse.ini").toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void writeInventoryRecursive(File dir, String prefix, java.io.PrintWriter pw) {
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+        for (File f : files) {
+            pw.println(prefix + (f.isDirectory() ? "[DIR] " : "[FILE] ") + f.getName() + (f.isFile() ? " (" + f.length() + " bytes)" : ""));
+            if (f.isDirectory() && !f.getName().equals("plugins")) {
+                writeInventoryRecursive(f, prefix + "  ", pw);
+            }
+        }
     }
 
     private void unzipSafely(File zipFile, File destDir) throws IOException {

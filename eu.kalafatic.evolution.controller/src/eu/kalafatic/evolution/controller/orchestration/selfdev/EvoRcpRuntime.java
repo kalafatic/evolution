@@ -72,15 +72,72 @@ public class EvoRcpRuntime implements ProcessLifecycle {
             command.add("-consoleLog");
         }
 
+        File logDir = context.getLogDirectory();
+        if (!logDir.exists()) logDir.mkdirs();
+
+        File startCmdFile = new File(logDir, "start-command.txt");
+        try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(startCmdFile, false))) {
+            pw.println("executable=" + executable.getAbsolutePath());
+            pw.println("arguments=" + command);
+            pw.println("workingDirectory=" + executable.getParentFile().getAbsolutePath());
+            pw.println("javaHome=" + System.getProperty("java.home"));
+        } catch (Exception ignored) {}
+
+        String cmdStr = String.join(" ", command);
+        System.out.println("[RCP][START][COMMAND]\nexecutable=" + executable.getAbsolutePath() +
+                "\narguments=" + command +
+                "\nworkingDirectory=" + executable.getParentFile().getAbsolutePath() +
+                "\njavaHome=" + System.getProperty("java.home"));
+
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(executable.getParentFile());
 
-            File logFile = new File(context.getLogDirectory(), "evo_runtime.log");
-            pb.redirectErrorStream(true);
-            pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
+            File logFile = new File(logDir, "evo_runtime.log");
+            File stdoutFile = new File(logDir, "start.stdout.log");
+            File stderrFile = new File(logDir, "start.stderr.log");
 
             evoProcess = pb.start();
+            long pid = getPid();
+
+            try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(startCmdFile, true))) {
+                pw.println("processId=" + pid);
+            } catch (Exception ignored) {}
+
+            Thread stdoutThread = new Thread(() -> {
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(evoProcess.getInputStream()));
+                     java.io.PrintWriter stdoutWriter = new java.io.PrintWriter(new java.io.FileWriter(stdoutFile, true));
+                     java.io.PrintWriter runtimeWriter = new java.io.PrintWriter(new java.io.FileWriter(logFile, true))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        stdoutWriter.println(line);
+                        stdoutWriter.flush();
+                        runtimeWriter.println("[STDOUT] " + line);
+                        runtimeWriter.flush();
+                        System.out.println("[RCP][STDOUT] " + line);
+                    }
+                } catch (Exception ignored) {}
+            }, "RCP-Stdout-Reader");
+
+            Thread stderrThread = new Thread(() -> {
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(evoProcess.getErrorStream()));
+                     java.io.PrintWriter stderrWriter = new java.io.PrintWriter(new java.io.FileWriter(stderrFile, true));
+                     java.io.PrintWriter runtimeWriter = new java.io.PrintWriter(new java.io.FileWriter(logFile, true))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        stderrWriter.println(line);
+                        stderrWriter.flush();
+                        runtimeWriter.println("[STDERR] " + line);
+                        runtimeWriter.flush();
+                        System.err.println("[RCP][STDERR] " + line);
+                    }
+                } catch (Exception ignored) {}
+            }, "RCP-Stderr-Reader");
+
+            stdoutThread.setDaemon(true);
+            stderrThread.setDaemon(true);
+            stdoutThread.start();
+            stderrThread.start();
 
             Thread.sleep(1500);
             if (!evoProcess.isAlive()) {
@@ -91,9 +148,9 @@ public class EvoRcpRuntime implements ProcessLifecycle {
             long duration = System.currentTimeMillis() - startTime;
             return new TaskResult.Builder("start_evo_rcp")
                     .status(TaskStatus.SUCCESS)
-                    .message("EVO RCP process launched (PID: " + getPid() + ")")
+                    .message("EVO RCP process launched (PID: " + pid + ")")
                     .duration(duration)
-                    .command(String.join(" ", command))
+                    .command(cmdStr)
                     .workingDirectory(executable.getParentFile())
                     .logFile(logFile)
                     .build();

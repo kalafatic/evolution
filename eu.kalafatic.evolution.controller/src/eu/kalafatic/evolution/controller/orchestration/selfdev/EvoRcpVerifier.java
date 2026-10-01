@@ -24,6 +24,11 @@ public class EvoRcpVerifier {
 
             File logFile = findLatestLogFile(runtimeDir, logDir);
             if (logFile != null && logFile.exists()) {
+                String fatalErr = checkFatalExceptions(logFile, logDir);
+                if (fatalErr != null) {
+                    return TaskResult.failure("evo_verifier", "EVO RCP process startup failed with fatal exception:\n" + fatalErr, null);
+                }
+
                 if (containsReadyMarker(logFile)) {
                     long duration = System.currentTimeMillis() - startTime;
                     return new TaskResult.Builder("evo_verifier")
@@ -44,6 +49,12 @@ public class EvoRcpVerifier {
         }
 
         if (process.isAlive()) {
+            File logFile = findLatestLogFile(runtimeDir, logDir);
+            String fatalErr = checkFatalExceptions(logFile, logDir);
+            if (fatalErr != null) {
+                return TaskResult.failure("evo_verifier", "EVO RCP process startup failed with fatal exception:\n" + fatalErr, null);
+            }
+
             long duration = System.currentTimeMillis() - startTime;
             return new TaskResult.Builder("evo_verifier")
                     .status(TaskStatus.SUCCESS)
@@ -68,6 +79,57 @@ public class EvoRcpVerifier {
         }
         File runtimeLog = new File(runtimeDir, "evo_runtime.log");
         if (runtimeLog.exists() && runtimeLog.length() > 0) return runtimeLog;
+        return null;
+    }
+
+    private String checkFatalExceptions(File logFile, File logDir) {
+        String err = checkFileForFatalException(logFile);
+        if (err != null) return err;
+
+        if (logDir != null && logDir.exists()) {
+            File stderrLog = new File(logDir, "start.stderr.log");
+            err = checkFileForFatalException(stderrLog);
+            if (err != null) return err;
+
+            File runtimeLog = new File(logDir, "evo_runtime.log");
+            err = checkFileForFatalException(runtimeLog);
+            if (err != null) return err;
+        }
+
+        return null;
+    }
+
+    private String checkFileForFatalException(File file) {
+        if (file == null || !file.exists()) return null;
+        try {
+            String content = java.nio.file.Files.readString(file.toPath());
+            if (content.contains("Could not initialize class") ||
+                content.contains("ExceptionInInitializerError") ||
+                content.contains("NoClassDefFoundError") ||
+                content.contains("ClassNotFoundException") ||
+                content.contains("LinkageError") ||
+                content.contains("BundleException")) {
+
+                String[] lines = content.split("\n");
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < lines.length; i++) {
+                    if (lines[i].contains("Could not initialize class") ||
+                        lines[i].contains("ExceptionInInitializerError") ||
+                        lines[i].contains("NoClassDefFoundError") ||
+                        lines[i].contains("ClassNotFoundException") ||
+                        lines[i].contains("LinkageError") ||
+                        lines[i].contains("BundleException")) {
+                        int start = Math.max(0, i - 2);
+                        int end = Math.min(lines.length, i + 10);
+                        for (int j = start; j < end; j++) {
+                            sb.append(lines[j]).append("\n");
+                        }
+                        break;
+                    }
+                }
+                return sb.toString().trim();
+            }
+        } catch (Exception ignored) {}
         return null;
     }
 
