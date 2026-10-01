@@ -54,23 +54,40 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
         System.out.println("[" + id + "] " + stepName + (details != null && !details.isEmpty() ? ": " + details : ""));
     }
 
+    protected void logPathDetails(String label, java.io.File file) {
+        if (file == null) {
+            logTaskStep("  " + label, "null");
+            return;
+        }
+        String canonical;
+        try {
+            canonical = file.getCanonicalPath();
+        } catch (Exception e) {
+            canonical = "ERROR:" + e.getMessage();
+        }
+        logTaskStep("  " + label, "abs=" + file.getAbsolutePath() + " canonical=" + canonical +
+                " exists=" + file.exists() + " isDir=" + file.isDirectory() + " isFile=" + file.isFile());
+    }
+
     @Override
     public TaskResult execute(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
         ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
 
-        System.out.println("[SELF-DEV][TASK]\nid=" + id + "\nname=" + name + "\nphase=START");
+        String runId = context != null ? context.getRunId() : "N/A";
+        System.out.println("[SELFDEV_RUN_ID=" + runId + "][SELF-DEV][TASK]\nid=" + id + "\nname=" + name + "\nphase=START");
         logTaskStep("==================================================", null);
-        logTaskStep("START", "Task [" + id + ": " + name + "]");
+        logTaskStep("START", "Task [" + id + ": " + name + "] [SELFDEV_RUN_ID=" + runId + "]");
         if (context != null) {
             logTaskStep("SELF-DEV PATHS", null);
-            logTaskStep("  repository", String.valueOf(context.getRepositoryRoot()));
-            logTaskStep("  preparedSource", String.valueOf(context.getPreparedReactorDirectory()));
-            logTaskStep("  build", String.valueOf(context.getBuildDirectory()));
-            logTaskStep("  export", String.valueOf(context.getExportDirectory()));
+            logPathDetails("repository", context.getRepositoryRoot());
+            logPathDetails("preparedSource", context.getPreparedReactorDirectory());
+            logPathDetails("build", context.getBuildDirectory());
+            logPathDetails("export", context.getExportDirectory());
+            logPathDetails("runtime", context.getRuntimeDirectory());
             logTaskStep("  targetOS", context.getOs() + "." + context.getWs() + "." + context.getArch());
         } else {
-            logTaskStep("ResourceManager repository", String.valueOf(rm.getEvoGitRepository()));
+            logPathDetails("ResourceManager repository", rm.getEvoGitRepository().toFile());
         }
         logTaskStep("--------------------------------------------------", null);
 
@@ -169,6 +186,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
             if (context != null) {
                 context.recordTaskResult(recordedResult);
+                DiagnosticsSummaryWriter.writeSummary(context);
             }
             return recordedResult;
 
@@ -189,6 +207,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
             if (context != null) {
                 context.recordTaskResult(errResult);
+                DiagnosticsSummaryWriter.writeSummary(context);
             }
             return errResult;
         }

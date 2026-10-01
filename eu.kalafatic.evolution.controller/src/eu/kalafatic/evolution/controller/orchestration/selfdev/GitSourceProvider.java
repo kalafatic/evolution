@@ -147,6 +147,19 @@ public class GitSourceProvider implements SourceProvider {
             }
         } else {
             java.nio.file.Files.copy(sourceLocation.toPath(), targetLocation.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            long size = targetLocation.length();
+            long lastMod = targetLocation.lastModified();
+            String canonSrc = "";
+            String canonDst = "";
+            try { canonSrc = sourceLocation.getCanonicalPath(); } catch (Exception ignored) {}
+            try { canonDst = targetLocation.getCanonicalPath(); } catch (Exception ignored) {}
+            System.out.println("COPY source=" + sourceLocation.getAbsolutePath() +
+                    " destination=" + targetLocation.getAbsolutePath() +
+                    " size=" + size +
+                    " lastModified=" + lastMod +
+                    " existsAfterCopy=" + targetLocation.exists() +
+                    " canonicalSource=" + canonSrc +
+                    " canonicalDestination=" + canonDst);
         }
     }
 
