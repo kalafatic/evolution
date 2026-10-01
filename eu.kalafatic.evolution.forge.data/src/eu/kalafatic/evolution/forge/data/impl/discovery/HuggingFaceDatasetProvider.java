@@ -171,16 +171,30 @@ public class HuggingFaceDatasetProvider implements RemoteDatasetProvider {
 
     private long extractRealMetadataBytes(JSONObject repoObj) {
         if (repoObj == null) return 0L;
+
+        // Check direct top-level metadata fields
+        long directSize = repoObj.optLong("size_in_bytes", repoObj.optLong("download_size", repoObj.optLong("size", 0L)));
+        if (directSize > 0) return directSize;
+
         if (repoObj.has("cardData")) {
             JSONObject cardData = repoObj.optJSONObject("cardData");
-            if (cardData != null && cardData.has("dataset_info")) {
-                Object info = cardData.get("dataset_info");
-                if (info instanceof JSONObject infoObj && infoObj.has("dataset_size")) {
-                    return infoObj.optLong("dataset_size", 0L);
-                } else if (info instanceof JSONArray arr && arr.length() > 0) {
-                    JSONObject first = arr.optJSONObject(0);
-                    if (first != null && first.has("dataset_size")) {
-                        return first.optLong("dataset_size", 0L);
+            if (cardData != null) {
+                long cardSize = cardData.optLong("dataset_size", cardData.optLong("download_size", cardData.optLong("size_in_bytes", 0L)));
+                if (cardSize > 0) return cardSize;
+
+                if (cardData.has("dataset_info")) {
+                    Object info = cardData.get("dataset_info");
+                    if (info instanceof JSONObject infoObj) {
+                        long size = infoObj.optLong("dataset_size", infoObj.optLong("download_size", 0L));
+                        if (size > 0) return size;
+                    } else if (info instanceof JSONArray arr) {
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject item = arr.optJSONObject(i);
+                            if (item != null) {
+                                long size = item.optLong("dataset_size", item.optLong("download_size", 0L));
+                                if (size > 0) return size;
+                            }
+                        }
                     }
                 }
             }

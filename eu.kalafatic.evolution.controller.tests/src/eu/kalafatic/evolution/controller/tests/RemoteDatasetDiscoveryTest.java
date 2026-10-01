@@ -193,4 +193,13 @@ public class RemoteDatasetDiscoveryTest {
         manager.clearCandidates(session);
         assertTrue(manager.getCandidates(session).isEmpty());
     }
+
+    @Test
+    public void testFormatCandidateSize() {
+        assertEquals("Stream", DatasetCandidate.formatCandidateSize(0L));
+        assertEquals("Stream", DatasetCandidate.formatCandidateSize(-100L));
+        assertEquals("500.0 KB", DatasetCandidate.formatCandidateSize(500 * 1024L));
+        assertEquals("2.5 MB", DatasetCandidate.formatCandidateSize((long) (2.5 * 1024 * 1024)));
+        assertEquals("2.32 GB", DatasetCandidate.formatCandidateSize((long) (2.32 * 1024 * 1024 * 1024)));
+    }
 }

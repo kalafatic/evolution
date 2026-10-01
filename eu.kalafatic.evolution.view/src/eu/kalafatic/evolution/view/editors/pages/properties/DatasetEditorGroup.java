@@ -288,6 +288,23 @@ public class DatasetEditorGroup extends AEvoGroup {
         colStatus.setText("Status");
         colStatus.setWidth(80);
 
+        candidatesTable.addMouseListener(new org.eclipse.swt.events.MouseAdapter() {
+            @Override
+            public void mouseDoubleClick(org.eclipse.swt.events.MouseEvent e) {
+                handleUseCandidateAsSource();
+            }
+        });
+
+        candidatesTable.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = candidatesTable.getSelectionIndex();
+                if (idx >= 0 && idx < candidateList.size()) {
+                    displayCandidateDetails(candidateList.get(idx));
+                }
+            }
+        });
+
         Composite candBtnComp = toolkit.createComposite(candGroup);
         candBtnComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
         candBtnComp.setLayout(new GridLayout(1, true));
@@ -412,16 +429,36 @@ public class DatasetEditorGroup extends AEvoGroup {
                     if (!reportArea.isDisposed()) {
                         refreshCandidatesTableFromEmf();
 
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("REMOTE DATASET DISCOVERY COMPLETED:\n");
-                        sb.append("- Discovered & Evaluated Candidates: ").append(discovered.size()).append("\n");
-                        sb.append("- Saved to EMF Persistence Session: ").append(activeSession != null ? activeSession.getSessionId() : "Active").append("\n\n");
-                        for (int i = 0; i < Math.min(10, discovered.size()); i++) {
-                            DatasetCandidate c = discovered.get(i);
-                            double mb = c.getSizeBytes() / (1024.0 * 1024.0);
-                            sb.append(String.format(Locale.US, "#%d %-25s | Compat: %3d%% | Size: %6.1f MB | Status: %s\n",
-                                    (i + 1), c.getRepository(), c.getCompatibilityScore(), mb, c.getStatus()));
+                        int maxRepoWidth = 28;
+                        for (DatasetCandidate c : discovered) {
+                            if (c.getRepository() != null) {
+                                maxRepoWidth = Math.max(maxRepoWidth, c.getRepository().length());
+                            }
                         }
+
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("========================================================================================================\n");
+                        sb.append("REMOTE DATASET DISCOVERY COMPLETED\n");
+                        sb.append("========================================================================================================\n");
+                        sb.append(String.format(Locale.US, "- Search Query: '%s' | Task: %s | Domain: %s\n", repo.isEmpty() ? domain : repo, task, domain));
+                        sb.append(String.format(Locale.US, "- Target Usable Size: %s MB | Preferred Split: %s\n", sizeMbStr, request.getPreferredSplit()));
+                        sb.append(String.format(Locale.US, "- Discovered Candidates: %d | Saved to EMF Session: %s\n\n",
+                                discovered.size(), activeSession != null ? activeSession.getSessionId() : "Active"));
+
+                        String formatHeader = String.format(Locale.US, "#%-2s | %-" + maxRepoWidth + "s | COMPAT | %-10s | %-11s | TASK / FORMAT\n",
+                                "", "DATASET REPOSITORY ID", "SIZE", "STATUS");
+                        sb.append(formatHeader);
+                        String divider = "-".repeat(Math.max(80, formatHeader.length() - 1)) + "\n";
+                        sb.append(divider);
+
+                        for (int i = 0; i < Math.min(15, discovered.size()); i++) {
+                            DatasetCandidate c = discovered.get(i);
+                            String sizeFormatted = DatasetCandidate.formatCandidateSize(c.getSizeBytes());
+                            sb.append(String.format(Locale.US, "#%-2d | %-" + maxRepoWidth + "s |   %3d%% | %-10s | %-11s | %s / %s\n",
+                                    (i + 1), c.getRepository(), c.getCompatibilityScore(), sizeFormatted, c.getStatus(), c.getTask(), c.getFormat()));
+                        }
+                        sb.append("========================================================================================================\n");
+                        sb.append("Tip: Double-click any table row below or click 'Use as Dataset Source' to set as active dataset.\n");
                         reportArea.setText(sb.toString());
 
                         MessageDialog.openInformation(group.getShell(), "Dataset Discovery Complete",
@@ -515,6 +552,54 @@ public class DatasetEditorGroup extends AEvoGroup {
         refreshCandidatesTableFromEmf();
     }
 
+    private void displayCandidateDetails(DatasetCandidate cand) {
+        if (cand == null || reportArea == null || reportArea.isDisposed()) return;
+        StringBuilder sb = new StringBuilder();
+        sb.append("========================================================================================================\n");
+        sb.append("SELECTED REMOTE DATASET CANDIDATE DETAILS\n");
+        sb.append("========================================================================================================\n");
+        sb.append("Repository ID:       ").append(cand.getRepository()).append("\n");
+        sb.append("Provider:            ").append(cand.getProvider()).append(" (Revision: ").append(cand.getRevision()).append(")\n");
+        sb.append("Technical Score:     ").append(cand.getCompatibilityScore()).append("% (Status: ").append(cand.getStatus()).append(")\n");
+        sb.append("Size:                ").append(DatasetCandidate.formatCandidateSize(cand.getSizeBytes())).append("\n");
+        sb.append("Task / Format:       ").append(cand.getTask()).append(" / ").append(cand.getFormat()).append("\n");
+        sb.append("Language / Domain:   ").append(cand.getLanguage()).append(" / ").append(cand.getDomain()).append("\n");
+        sb.append("License:             ").append(cand.getLicense()).append(" | Author: ").append(cand.getAuthor()).append("\n");
+        if (cand.getUrl() != null && !cand.getUrl().isEmpty()) {
+            sb.append("HF Web URL:          ").append(cand.getUrl()).append("\n");
+        }
+        if (cand.getDescription() != null && !cand.getDescription().isEmpty()) {
+            sb.append("Description:         ").append(cand.getDescription()).append("\n");
+        }
+        sb.append("Available Splits:    ").append(cand.getSplits().isEmpty() ? "train" : String.join(", ", cand.getSplits())).append("\n");
+        if (!cand.getSchema().isEmpty()) {
+            sb.append("Schema Fields:       ").append(String.join(", ", cand.getSchema())).append("\n");
+        }
+        if (!cand.getTags().isEmpty()) {
+            sb.append("Tags:                ").append(String.join(", ", cand.getTags())).append("\n");
+        }
+        sb.append("\nTECHNICAL COMPATIBILITY BREAKDOWN:\n");
+        sb.append("  Positive Match Reasons (+):\n");
+        if (cand.getCompatibilityReasons().isEmpty()) {
+            sb.append("    - (None listed)\n");
+        } else {
+            for (String r : cand.getCompatibilityReasons()) {
+                sb.append("    ").append(r).append("\n");
+            }
+        }
+        sb.append("  Warnings / Shortfalls (-):\n");
+        if (cand.getCompatibilityWarnings().isEmpty()) {
+            sb.append("    - (No warnings)\n");
+        } else {
+            for (String w : cand.getCompatibilityWarnings()) {
+                sb.append("    ").append(w).append("\n");
+            }
+        }
+        sb.append("========================================================================================================\n");
+        sb.append("Tip: Double-click table row or click 'Use as Dataset Source' to select this candidate for forging.\n");
+        reportArea.setText(sb.toString());
+    }
+
     private void refreshCandidatesTableFromEmf() {
         if (candidatesTable == null || candidatesTable.isDisposed()) return;
         candidatesTable.removeAll();
@@ -528,12 +613,18 @@ public class DatasetEditorGroup extends AEvoGroup {
             item.setText(2, cand.getTask());
             item.setText(3, cand.getLanguage());
             item.setText(4, cand.getFormat());
-            double mb = cand.getSizeBytes() / (1024.0 * 1024.0);
-            item.setText(5, cand.getSizeBytes() > 0 ? String.format(Locale.US, "%.1f MB", mb) : "Stream");
+            item.setText(5, DatasetCandidate.formatCandidateSize(cand.getSizeBytes()));
             item.setText(6, cand.getSplits().isEmpty() ? "train" : String.join(",", cand.getSplits()));
             item.setText(7, cand.getCompatibilityScore() + "%");
             item.setText(8, cand.getStatus());
             item.setData(cand);
+        }
+
+        for (TableColumn col : candidatesTable.getColumns()) {
+            col.pack();
+            if (col.getWidth() < 50) {
+                col.setWidth(60);
+            }
         }
     }
 
