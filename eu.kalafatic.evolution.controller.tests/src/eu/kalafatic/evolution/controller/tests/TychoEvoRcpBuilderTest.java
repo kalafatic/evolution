@@ -87,6 +87,31 @@ public class TychoEvoRcpBuilderTest {
     }
 
     @Test
+    public void testEvoVsEvolutionAmbiguityResolution() throws Exception {
+        File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+
+        // Launcher-prefixed archive (e.g. evo-*.zip)
+        File evoZip = new File(productsDir, "evo-win32.win32.x86_64.zip");
+        try (FileOutputStream fos = new FileOutputStream(evoZip)) {
+            fos.write("evo zip content".getBytes());
+        }
+
+        // Product-prefixed archive (e.g. evolution-*.zip)
+        File evolutionZip = new File(productsDir, "evolution-win32.win32.x86_64.zip");
+        try (FileOutputStream fos = new FileOutputStream(evolutionZip)) {
+            fos.write("evolution zip content".getBytes());
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        File found = builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+        assertNotNull("Should discover evolution-*.zip and exclude evo-*.zip without ambiguity error", found);
+        assertEquals(evolutionZip.getAbsoluteFile(), found.getAbsoluteFile());
+    }
+
+    @Test
     public void testExplodedDirectoryAndZipNoAmbiguity() throws Exception {
         File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
         productsDir.mkdirs();
@@ -343,7 +368,53 @@ public class TychoEvoRcpBuilderTest {
         TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
         assertNotNull(res);
         assertFalse(res.isSuccess());
-        assertTrue(res.getMessage().contains("eu.kalafatic.evolution.controller_*.jar"));
+        assertTrue(res.getMessage().contains("eu.kalafatic.evolution.controller"));
+    }
+
+    @Test
+    public void testManifestBundleSymbolicNameValidation() throws Exception {
+        File dir = tempFolder.newFolder("manifestValDir");
+        new File(dir, "evo").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
+
+        File plugins = new File(dir, "plugins");
+        plugins.mkdirs();
+
+        String[] bundles = {
+            "eu.kalafatic.evolution.view",
+            "eu.kalafatic.evolution.controller",
+            "eu.kalafatic.evolution.model",
+            "eu.kalafatic.evolution.servers",
+            "eu.kalafatic.evolution.forge.controller",
+            "eu.kalafatic.utils"
+        };
+
+        for (String b : bundles) {
+            File bundleDir = new File(plugins, b + "_2.6.5");
+            File metaInf = new File(bundleDir, "META-INF");
+            metaInf.mkdirs();
+            File mf = new File(metaInf, "MANIFEST.MF");
+            try (FileWriter fw = new FileWriter(mf)) {
+                fw.write("Manifest-Version: 1.0\n");
+                fw.write("Bundle-SymbolicName: " + b + ";singleton:=true\n");
+                fw.write("Bundle-Version: 2.6.5\n");
+            }
+        }
+
+        File config = new File(dir, "configuration");
+        config.mkdirs();
+        File configIni = new File(config, "config.ini");
+        try (FileWriter fw = new FileWriter(configIni)) {
+            fw.write("eclipse.product=eu.kalafatic.evolution.view.product\n");
+            fw.write("eclipse.application=eu.kalafatic.evolution.view.application.Application\n");
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertTrue(res.getMessage(), res.isSuccess());
     }
 
     @Test

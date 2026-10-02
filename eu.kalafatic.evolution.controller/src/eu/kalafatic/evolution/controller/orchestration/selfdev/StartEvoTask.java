@@ -58,9 +58,21 @@ public class StartEvoTask extends AbstractSelfDevTask {
             if (files != null && files.length > 0) return evoRuntimeDir;
         }
 
+        String productId = "evolution";
+        if (context.getResourceManager() != null && context.getResourceManager().getProductDefinition() != null) {
+            productId = context.getResourceManager().getProductDefinition().getProductId().toLowerCase();
+        }
+
+        final String reqProductId = productId;
+
         if (context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-            java.io.File[] zips = context.getExportDirectory().listFiles((dir, name) -> name.endsWith(".zip") || name.startsWith("evolution"));
-            if (zips != null && zips.length > 0) return zips[0];
+            java.io.File[] archives = context.getExportDirectory().listFiles((dir, name) -> {
+                String lname = name.toLowerCase();
+                boolean isArchive = lname.endsWith(".zip") || lname.endsWith(".tar.gz") || lname.endsWith(".tgz");
+                boolean matchesProduct = lname.startsWith(reqProductId + "-") || lname.startsWith(reqProductId + "_") || lname.equals(reqProductId + ".zip") || lname.equals(reqProductId + ".tar.gz");
+                return isArchive && matchesProduct;
+            });
+            if (archives != null && archives.length > 0) return archives[0];
         }
 
         java.io.File repoTarget = new java.io.File(context.getProjectRoot(), "eu.kalafatic.evolution.repository/target");

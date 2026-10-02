@@ -349,27 +349,23 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             File[] files = targetProductsDir.listFiles();
             if (files != null) {
                 for (File f : files) {
-                    selectionWriter.println("[PRODUCT_DISCOVERY] Inspecting: " + f.getAbsolutePath());
-                    log("[PRODUCT_DISCOVERY] Inspecting:\n" + f.getAbsolutePath());
-                    if (f.isDirectory()) {
-                        log("[PRODUCT_DISCOVERY] type=DIRECTORY");
-                    } else if (f.isFile()) {
-                        log("[PRODUCT_DISCOVERY] type=FILE");
-                    } else {
-                        log("[PRODUCT_DISCOVERY] type=OTHER");
-                    }
+                    CandidateEvaluation eval = evaluateCandidate(f, prodDef, platform);
 
-                    String reason = getExclusionReason(f, prodDef, platform);
-                    if (reason == null) {
-                        selectionWriter.println("  -> CANDIDATE MATCH");
-                        log("[PRODUCT_DISCOVERY] format=" + reqFormat.toUpperCase());
-                        log("[PRODUCT_DISCOVERY] product=" + prodDef.getProductId());
-                        log("[PRODUCT_DISCOVERY] target=" + reqTarget);
-                        log("[PRODUCT_DISCOVERY] candidate=true");
+                    String logEntry = "[PRODUCT_DISCOVERY]\n" +
+                            "  path=" + f.getAbsolutePath() + "\n" +
+                            "  filename=" + f.getName() + "\n" +
+                            "  productNameMatch=" + eval.productNameMatch + "\n" +
+                            "  launcherMatch=" + eval.launcherMatch + "\n" +
+                            "  targetMatch=" + eval.targetMatch + "\n" +
+                            "  formatMatch=" + eval.formatMatch + "\n" +
+                            "  candidate=" + eval.isCandidate +
+                            (!eval.isCandidate ? "\n  reason=" + eval.reason : "");
+
+                    selectionWriter.println(logEntry);
+                    log(logEntry);
+
+                    if (eval.isCandidate) {
                         candidates.add(f);
-                    } else {
-                        selectionWriter.println("  -> EXCLUDED: " + reason);
-                        log("[PRODUCT_DISCOVERY] excluded reason=" + reason);
                     }
                 }
             }
@@ -404,9 +400,27 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         return null;
     }
 
-    private String getExclusionReason(File file, ProductDefinition prodDef, TargetPlatform platform) {
+    private static class CandidateEvaluation {
+        final boolean formatMatch;
+        final boolean productNameMatch;
+        final boolean launcherMatch;
+        final boolean targetMatch;
+        final boolean isCandidate;
+        final String reason;
+
+        CandidateEvaluation(boolean formatMatch, boolean productNameMatch, boolean launcherMatch, boolean targetMatch, boolean isCandidate, String reason) {
+            this.formatMatch = formatMatch;
+            this.productNameMatch = productNameMatch;
+            this.launcherMatch = launcherMatch;
+            this.targetMatch = targetMatch;
+            this.isCandidate = isCandidate;
+            this.reason = reason;
+        }
+    }
+
+    private CandidateEvaluation evaluateCandidate(File file, ProductDefinition prodDef, TargetPlatform platform) {
         if (file == null || !file.exists()) {
-            return "FILE_NULL_OR_NON_EXISTENT";
+            return new CandidateEvaluation(false, false, false, false, false, "FILE_NULL_OR_NON_EXISTENT");
         }
 
         String reqFormat = platform.getPackaging() != null ? platform.getPackaging().trim().toLowerCase() : "zip";
@@ -414,69 +428,82 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         boolean isDirRequested = reqFormat.contains("dir") || reqFormat.contains("folder") || reqFormat.contains("exploded");
 
         String name = file.getName().toLowerCase();
+        String productId = prodDef.getProductId().toLowerCase();
+        String launcherName = prodDef.getLauncherName().toLowerCase();
 
+        boolean formatMatch;
         if (isArchiveRequested) {
             if (!file.isFile()) {
-                return "REQUESTED_FORMAT_" + (reqFormat.contains("zip") ? "ZIP" : reqFormat.toUpperCase()) + "_REQUIRES_REGULAR_FILE";
-            }
-
-            if (reqFormat.contains("zip") && !name.endsWith(".zip")) {
-                return "FORMAT_MISMATCH_EXPECTED_ZIP";
-            }
-            if ((reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz")) && !(name.endsWith(".tar.gz") || name.endsWith(".tgz"))) {
-                return "FORMAT_MISMATCH_EXPECTED_TAR_GZ";
-            }
-
-            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.contains("evo");
-            if (!nameMatchesProduct) {
-                return "UNMATCHED_PRODUCT_NAME";
-            }
-
-            if (platform.isWindows()) {
-                if (!(name.contains("win32") || name.contains("win"))) {
-                    return "UNMATCHED_TARGET_PLATFORM";
-                }
+                formatMatch = false;
+            } else if (reqFormat.contains("zip") && name.endsWith(".zip")) {
+                formatMatch = true;
+            } else if ((reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz")) && (name.endsWith(".tar.gz") || name.endsWith(".tgz"))) {
+                formatMatch = true;
             } else {
-                if (!(name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz"))) {
-                    return "UNMATCHED_TARGET_PLATFORM";
-                }
+                formatMatch = false;
             }
-
-            return null;
         } else if (isDirRequested) {
-            if (!file.isDirectory()) {
-                return "REQUESTED_FORMAT_DIRECTORY_REQUIRES_DIRECTORY";
-            }
-
-            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.equals(prodDef.getRootFolder().toLowerCase());
-            if (!nameMatchesProduct) {
-                return "UNMATCHED_PRODUCT_NAME";
-            }
-
-            return null;
+            formatMatch = file.isDirectory();
         } else {
-            if (file.isFile()) {
-                boolean isZipOrTar = name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".tgz");
-                if (!isZipOrTar) return "UNSUPPORTED_FILE_FORMAT";
-
-                boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.contains("evo");
-                if (!nameMatchesProduct) return "UNMATCHED_PRODUCT_NAME";
-
-                if (platform.isWindows()) {
-                    if (!(name.contains("win32") || name.contains("win"))) return "UNMATCHED_TARGET_PLATFORM";
-                } else {
-                    if (!(name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz"))) return "UNMATCHED_TARGET_PLATFORM";
-                }
-                return null;
-            } else if (file.isDirectory()) {
-                return "UNEXPECTED_DIRECTORY_FOR_DEFAULT_FORMAT";
-            }
-            return "UNKNOWN_ARTIFACT_TYPE";
+            formatMatch = file.isFile() && (name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".tgz"));
         }
+
+        boolean productNameMatch;
+        if (file.isDirectory()) {
+            productNameMatch = name.equals(productId) || name.startsWith(productId + "-") || name.startsWith(productId + "_") || name.equals(prodDef.getRootFolder().toLowerCase());
+        } else {
+            productNameMatch = name.equals(productId) || name.startsWith(productId + "-") || name.startsWith(productId + "_") || name.startsWith(productId + ".");
+        }
+
+        boolean launcherMatch;
+        if (file.isDirectory()) {
+            launcherMatch = name.equals(launcherName) || name.startsWith(launcherName + "-") || name.startsWith(launcherName + "_");
+        } else {
+            launcherMatch = name.equals(launcherName) || name.startsWith(launcherName + "-") || name.startsWith(launcherName + "_") || name.startsWith(launcherName + ".");
+        }
+
+        boolean targetMatch;
+        if (platform.isWindows()) {
+            targetMatch = name.contains("win32") || name.contains("win");
+        } else {
+            targetMatch = name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz") || name.endsWith(".tgz");
+        }
+
+        boolean isCandidate = formatMatch && productNameMatch && targetMatch;
+        String reason = null;
+
+        if (!isCandidate) {
+            if (!formatMatch) {
+                if (isArchiveRequested && !file.isFile()) {
+                    reason = "REQUESTED_FORMAT_" + (reqFormat.contains("zip") ? "ZIP" : reqFormat.toUpperCase()) + "_REQUIRES_REGULAR_FILE";
+                } else if (isDirRequested && !file.isDirectory()) {
+                    reason = "REQUESTED_FORMAT_DIRECTORY_REQUIRES_DIRECTORY";
+                } else {
+                    reason = "FORMAT_MISMATCH";
+                }
+            } else if (!productNameMatch) {
+                if (launcherMatch) {
+                    reason = "PRODUCT_NAME_MISMATCH";
+                } else {
+                    reason = "UNMATCHED_PRODUCT_NAME";
+                }
+            } else if (!targetMatch) {
+                reason = "UNMATCHED_TARGET_PLATFORM";
+            } else {
+                reason = "NOT_A_CANDIDATE";
+            }
+        }
+
+        return new CandidateEvaluation(formatMatch, productNameMatch, launcherMatch, targetMatch, isCandidate, reason);
+    }
+
+    private String getExclusionReason(File file, ProductDefinition prodDef, TargetPlatform platform) {
+        CandidateEvaluation eval = evaluateCandidate(file, prodDef, platform);
+        return eval.reason;
     }
 
     private boolean isExactMatchingArtifact(File file, ProductDefinition prodDef, TargetPlatform platform) {
-        return getExclusionReason(file, prodDef, platform) == null;
+        return evaluateCandidate(file, prodDef, platform).isCandidate;
     }
 
     public TaskResult validateProductDeployment(File location, ProductDefinition prodDef, TargetPlatform platform) {
@@ -556,6 +583,42 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         return hasLauncher && (hasPlugins || hasConfig);
     }
 
+    private String extractBundleSymbolicName(File entry) {
+        if (entry == null || !entry.exists()) return null;
+        try {
+            if (entry.isDirectory()) {
+                File manifestFile = new File(entry, "META-INF/MANIFEST.MF");
+                if (manifestFile.exists()) {
+                    try (java.io.InputStream is = new FileInputStream(manifestFile)) {
+                        java.util.jar.Manifest manifest = new java.util.jar.Manifest(is);
+                        String name = manifest.getMainAttributes().getValue("Bundle-SymbolicName");
+                        return cleanSymbolicName(name);
+                    }
+                }
+            } else if (entry.isFile() && entry.getName().endsWith(".jar")) {
+                try (java.util.jar.JarFile jarFile = new java.util.jar.JarFile(entry)) {
+                    java.util.jar.Manifest manifest = jarFile.getManifest();
+                    if (manifest != null) {
+                        String name = manifest.getMainAttributes().getValue("Bundle-SymbolicName");
+                        return cleanSymbolicName(name);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log("[PRODUCT_VALIDATION] Error reading manifest for " + entry.getName() + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+    private String cleanSymbolicName(String rawName) {
+        if (rawName == null) return null;
+        int semicolon = rawName.indexOf(';');
+        if (semicolon >= 0) {
+            rawName = rawName.substring(0, semicolon);
+        }
+        return rawName.trim();
+    }
+
     private TaskResult validateDirectoryLayout(File rootDir, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) {
         if (rootDir == null || !rootDir.exists() || !rootDir.isDirectory()) {
             String err = "Product root directory does not exist or is not a directory: " + (rootDir != null ? rootDir.getAbsolutePath() : "null");
@@ -611,32 +674,41 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 log("[PRODUCT_VALIDATION] [FAIL] plugins/ directory contains no bundle JARs or directories");
             } else {
                 log("[PRODUCT_VALIDATION] [PASS] plugins/ directory exists with " + pluginEntries.length + " bundle entries.");
-                String[] requiredCoreBundles = {
-                    "eu.kalafatic.evolution.view_",
-                    "eu.kalafatic.evolution.controller_",
-                    "eu.kalafatic.evolution.model_",
-                    "eu.kalafatic.evolution.servers_",
-                    "eu.kalafatic.evolution.forge.controller_",
-                    "eu.kalafatic.evolution.forge.model_",
-                    "eu.kalafatic.evolution.forge.data_",
-                    "eu.kalafatic.evolution.forge.agent_",
-                    "eu.kalafatic.utils_"
-                };
-                for (String req : requiredCoreBundles) {
-                    boolean found = false;
-                    String matchedName = null;
-                    for (File entry : pluginEntries) {
-                        if (entry.getName().startsWith(req)) {
-                            found = true;
-                            matchedName = entry.getName();
-                            break;
-                        }
+
+                java.util.Set<String> discoveredSymbolicNames = new java.util.HashSet<>();
+                for (File entry : pluginEntries) {
+                    String symName = extractBundleSymbolicName(entry);
+                    if (symName != null && !symName.isEmpty()) {
+                        discoveredSymbolicNames.add(symName);
                     }
-                    if (!found) {
-                        missingItems.add("plugins/ missing required EVO bundle (" + req + "*.jar or directory)");
-                        log("[PRODUCT_VALIDATION] [FAIL] Missing required EVO bundle: " + req + "*");
+                }
+
+                String[] requiredCoreBundles = {
+                    "eu.kalafatic.evolution.view",
+                    "eu.kalafatic.evolution.controller",
+                    "eu.kalafatic.evolution.model",
+                    "eu.kalafatic.evolution.servers",
+                    "eu.kalafatic.evolution.forge.controller",
+                    "eu.kalafatic.utils"
+                };
+
+                for (String req : requiredCoreBundles) {
+                    if (!discoveredSymbolicNames.contains(req)) {
+                        boolean foundByFilename = false;
+                        for (File entry : pluginEntries) {
+                            if (entry.getName().startsWith(req + "_") || entry.getName().startsWith(req + "-")) {
+                                foundByFilename = true;
+                                break;
+                            }
+                        }
+                        if (!foundByFilename) {
+                            missingItems.add("plugins/ missing required EVO bundle (" + req + ")");
+                            log("[PRODUCT_VALIDATION] [FAIL] Missing required EVO bundle by Bundle-SymbolicName: " + req);
+                        } else {
+                            log("[PRODUCT_VALIDATION] [PASS] Found required EVO bundle (filename match): " + req);
+                        }
                     } else {
-                        log("[PRODUCT_VALIDATION] [PASS] Found required EVO bundle: " + matchedName);
+                        log("[PRODUCT_VALIDATION] [PASS] Found required EVO bundle by Bundle-SymbolicName: " + req);
                     }
                 }
             }
