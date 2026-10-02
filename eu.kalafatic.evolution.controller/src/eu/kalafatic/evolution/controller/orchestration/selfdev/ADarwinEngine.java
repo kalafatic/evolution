@@ -3011,6 +3011,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		case SELF_DEV_MODE:
 			minBranchingLimit = 2;
 			break;
+		case INTENT_RECONSTRUCTION:
+			minBranchingLimit = 2;
+			break;
 		default:
 			minBranchingLimit = 2;
 		}
@@ -3034,6 +3037,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			branchingLimit = expansionValue <= 5 ? 3 : 4;
 			break;
 		case DARWIN_MODE:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+		case INTENT_RECONSTRUCTION:
 			branchingLimit = expansionValue <= 5 ? 3 : 4;
 			break;
 

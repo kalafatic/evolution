@@ -49,10 +49,16 @@ public class SchemaValidator {
 
             if (!type.isInstance(value)) {
                 // Special handling for numbers since optDouble/optInt might return different types
-                if (type == Double.class && (value instanceof Integer || value instanceof Long || value instanceof Double || value instanceof Float)) {
+                if ((type == Double.class || type == Number.class) && value instanceof Number) {
                     continue;
                 }
-                if (type == Integer.class && value instanceof Integer) {
+                if (type == Integer.class && value instanceof Number) {
+                    continue;
+                }
+                // Auto-normalize scalar number to JSONObject if JSONObject is expected (e.g. confidence: 0.95)
+                if (type == JSONObject.class && value instanceof Number) {
+                    JSONObject normalized = new JSONObject().put("overallConfidence", ((Number) value).doubleValue());
+                    json.put(field, normalized);
                     continue;
                 }
 
