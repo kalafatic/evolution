@@ -56,9 +56,26 @@ public class EvoRcpRuntime implements ProcessLifecycle {
             executable.setExecutable(true);
         }
 
+        int effectiveServerPort = context.getEffectiveServerPort();
+
+        // Prepare OS network / firewall access before process launch
+        eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessResult netResult =
+                eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessManager.getInstance()
+                        .prepareNetworkAccess(executable, effectiveServerPort, context);
+        if (!netResult.isSuccess()) {
+            if (netResult.isRequiresElevation()) {
+                return TaskResult.failure("start_evo_rcp",
+                        "EVO RCP network access preparation failed (requires administrator elevation to create firewall rule): " + netResult.getMessage(),
+                        netResult.getError());
+            } else {
+                return TaskResult.failure("start_evo_rcp",
+                        "EVO RCP network access preparation failed: " + netResult.getMessage(),
+                        netResult.getError());
+            }
+        }
+
         List<String> command = new ArrayList<>();
         command.add(executable.getAbsolutePath());
-        int effectiveServerPort = context.getEffectiveServerPort();
         command.add("--port=" + effectiveServerPort);
         command.add("--mode=SELF_DEV");
         File runtimeWs = new File(context.getRuntimeDirectory(), "workspace");
