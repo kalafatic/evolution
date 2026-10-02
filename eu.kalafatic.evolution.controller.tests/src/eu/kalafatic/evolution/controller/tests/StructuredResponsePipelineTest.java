@@ -79,4 +79,14 @@ public class StructuredResponsePipelineTest {
         assertNotNull(result);
         assertEquals("CLEAR", result.getString("state"));
     }
+
+    @Test
+    public void testScalarConfidenceAutoNormalization() {
+        String raw = "{\"state\": \"CLEAR\", \"confidence\": 0.95}";
+        JSONObject result = pipeline.process(raw, schema, context);
+        assertNotNull(result);
+        assertEquals("CLEAR", result.getString("state"));
+        assertTrue(result.get("confidence") instanceof JSONObject);
+        assertEquals(0.95, result.getJSONObject("confidence").getDouble("overallConfidence"), 0.001);
+    }
 }
