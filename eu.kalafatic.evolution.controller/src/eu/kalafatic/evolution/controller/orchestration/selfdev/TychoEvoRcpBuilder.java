@@ -558,9 +558,12 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
 
     private TaskResult validateDirectoryLayout(File rootDir, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) {
         if (rootDir == null || !rootDir.exists() || !rootDir.isDirectory()) {
-            return TaskResult.failure("validate_product", "Product root directory does not exist or is not a directory: " + (rootDir != null ? rootDir.getAbsolutePath() : "null"), null);
+            String err = "Product root directory does not exist or is not a directory: " + (rootDir != null ? rootDir.getAbsolutePath() : "null");
+            log("[PRODUCT_VALIDATION] [FAIL] " + err);
+            return TaskResult.failure("validate_product", err, null);
         }
 
+        log("[PRODUCT_VALIDATION] Starting layout validation for product at: " + rootDir.getAbsolutePath());
         List<String> missingItems = new ArrayList<>();
         boolean isWin = platform != null ? platform.isWindows() : System.getProperty("os.name").toLowerCase().contains("win");
         String launcherName = prodDef != null ? prodDef.getLauncherName() : "evo";
@@ -570,6 +573,9 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             File altExeFile = new File(rootDir, "eclipse.exe");
             if (!exeFile.exists() && !altExeFile.exists()) {
                 missingItems.add("Launcher executable (" + launcherName + ".exe or eclipse.exe)");
+                log("[PRODUCT_VALIDATION] [FAIL] Launcher executable missing (" + launcherName + ".exe or eclipse.exe)");
+            } else {
+                log("[PRODUCT_VALIDATION] [PASS] Launcher executable found: " + (exeFile.exists() ? exeFile.getName() : altExeFile.getName()));
             }
         } else {
             File nativeLauncher = new File(rootDir, launcherName);
@@ -577,9 +583,11 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             File altLauncher = new File(rootDir, "eclipse");
             if (!nativeLauncher.exists() && !shLauncher.exists() && !altLauncher.exists()) {
                 missingItems.add("Launcher executable (" + launcherName + " or " + launcherName + ".sh or eclipse)");
+                log("[PRODUCT_VALIDATION] [FAIL] Launcher executable missing (" + launcherName + " / " + launcherName + ".sh / eclipse)");
             } else {
                 if (nativeLauncher.exists()) nativeLauncher.setExecutable(true);
                 if (shLauncher.exists()) shLauncher.setExecutable(true);
+                log("[PRODUCT_VALIDATION] [PASS] Launcher executable found");
             }
         }
 
@@ -587,34 +595,48 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         File altIniFile = new File(rootDir, "eclipse.ini");
         if (!iniFile.exists() && !altIniFile.exists()) {
             missingItems.add("Launcher configuration (" + launcherName + ".ini or eclipse.ini)");
+            log("[PRODUCT_VALIDATION] [FAIL] Launcher configuration missing (" + launcherName + ".ini or eclipse.ini)");
+        } else {
+            log("[PRODUCT_VALIDATION] [PASS] Launcher configuration found: " + (iniFile.exists() ? iniFile.getName() : altIniFile.getName()));
         }
 
         File pluginsDir = new File(rootDir, "plugins");
         if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
             missingItems.add("plugins/ directory");
+            log("[PRODUCT_VALIDATION] [FAIL] plugins/ directory missing at " + rootDir.getAbsolutePath());
         } else {
-            File[] pluginJars = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar"));
-            if (pluginJars == null || pluginJars.length == 0) {
-                missingItems.add("plugins/ directory contains no bundle JARs");
+            File[] pluginEntries = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar") || new File(dir, name).isDirectory());
+            if (pluginEntries == null || pluginEntries.length == 0) {
+                missingItems.add("plugins/ directory contains no bundle JARs or directories");
+                log("[PRODUCT_VALIDATION] [FAIL] plugins/ directory contains no bundle JARs or directories");
             } else {
+                log("[PRODUCT_VALIDATION] [PASS] plugins/ directory exists with " + pluginEntries.length + " bundle entries.");
                 String[] requiredCoreBundles = {
                     "eu.kalafatic.evolution.view_",
                     "eu.kalafatic.evolution.controller_",
                     "eu.kalafatic.evolution.model_",
                     "eu.kalafatic.evolution.servers_",
                     "eu.kalafatic.evolution.forge.controller_",
+                    "eu.kalafatic.evolution.forge.model_",
+                    "eu.kalafatic.evolution.forge.data_",
+                    "eu.kalafatic.evolution.forge.agent_",
                     "eu.kalafatic.utils_"
                 };
                 for (String req : requiredCoreBundles) {
                     boolean found = false;
-                    for (File jar : pluginJars) {
-                        if (jar.getName().startsWith(req)) {
+                    String matchedName = null;
+                    for (File entry : pluginEntries) {
+                        if (entry.getName().startsWith(req)) {
                             found = true;
+                            matchedName = entry.getName();
                             break;
                         }
                     }
                     if (!found) {
-                        missingItems.add("plugins/ missing required EVO bundle (" + req + "*.jar)");
+                        missingItems.add("plugins/ missing required EVO bundle (" + req + "*.jar or directory)");
+                        log("[PRODUCT_VALIDATION] [FAIL] Missing required EVO bundle: " + req + "*");
+                    } else {
+                        log("[PRODUCT_VALIDATION] [PASS] Found required EVO bundle: " + matchedName);
                     }
                 }
             }
@@ -623,25 +645,34 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         File configDir = new File(rootDir, "configuration");
         if (!configDir.exists() || !configDir.isDirectory()) {
             missingItems.add("configuration/ directory");
+            log("[PRODUCT_VALIDATION] [FAIL] configuration/ directory missing");
         } else {
             File configIni = new File(configDir, "config.ini");
             if (!configIni.exists()) {
                 missingItems.add("configuration/config.ini");
+                log("[PRODUCT_VALIDATION] [FAIL] configuration/config.ini missing");
             } else {
                 try {
                     String content = Files.readString(configIni.toPath());
                     if (!content.contains("eclipse.application") && !content.contains("eclipse.product")) {
                         missingItems.add("eclipse.application or eclipse.product entry in configuration/config.ini");
+                        log("[PRODUCT_VALIDATION] [FAIL] config.ini missing eclipse.application or eclipse.product property");
+                    } else {
+                        log("[PRODUCT_VALIDATION] [PASS] configuration/config.ini validated");
                     }
                 } catch (IOException e) {
                     missingItems.add("Readable configuration/config.ini (" + e.getMessage() + ")");
+                    log("[PRODUCT_VALIDATION] [FAIL] Error reading config.ini: " + e.getMessage());
                 }
             }
         }
 
         if (!missingItems.isEmpty()) {
+            log("[PRODUCT_VALIDATION] [RESULT] FAILED due to " + missingItems.size() + " missing items: " + String.join(", ", missingItems));
             return TaskResult.failure("validate_product", "Product deployment validation failed due to missing items: " + String.join(", ", missingItems), null);
         }
+
+        log("[PRODUCT_VALIDATION] [RESULT] SUCCESS - Product directory layout verified at " + rootDir.getAbsolutePath());
 
         if (context != null) {
             writeProductInventoryFiles(rootDir, context.getLogDirectory(), prodDef);
@@ -675,12 +706,20 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 File[] pluginFiles = pluginsDir.listFiles();
                 if (pluginFiles != null) {
                     Arrays.sort(pluginFiles, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+                    int evoCount = 0;
+                    long totalBytes = 0;
                     for (File pf : pluginFiles) {
                         pw.println(pf.getName() + " (" + pf.length() + " bytes)");
+                        if (pf.getName().startsWith("eu.kalafatic.")) {
+                            evoCount++;
+                        }
+                        totalBytes += pf.length();
                     }
+                    log("[PRODUCT_INVENTORY] Plugins total count: " + pluginFiles.length + " (EVO bundles: " + evoCount + ", total size: " + (totalBytes / (1024 * 1024)) + " MB)");
                 }
             } else {
                 pw.println("plugins directory missing");
+                log("[PRODUCT_INVENTORY] WARNING: plugins directory missing");
             }
         } catch (Exception e) {
             log("[TychoEvoRcpBuilder] Error writing plugins.txt: " + e.getMessage());
