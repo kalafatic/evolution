@@ -51,12 +51,12 @@ public class EvoProductBuildService {
                 try {
                     Path productsDir = baseDir.toPath().resolve("eu.kalafatic.evolution.repository/target/products");
                     if (Files.exists(productsDir)) {
-                        // Prioritize evolution product archives (e.g., evolution-linux.gtk.x86_64.tar.gz or evolution-win32.win32.x86_64.zip)
+                        // Prioritize evolution / evo product archives (e.g., evolution-linux.gtk.x86_64.tar.gz or evo-win32.win32.x86_64.zip)
                         artifactPath = Files.walk(productsDir)
                             .filter(Files::isRegularFile)
                             .filter(p -> {
                                 String name = p.getFileName().toString().toLowerCase();
-                                return (name.endsWith(".zip") || name.endsWith(".tar.gz")) && name.contains("evolution");
+                                return (name.endsWith(".zip") || name.endsWith(".tar.gz")) && (name.contains("evolution") || name.contains("evo"));
                             })
                             .findFirst()
                             .orElse(null);

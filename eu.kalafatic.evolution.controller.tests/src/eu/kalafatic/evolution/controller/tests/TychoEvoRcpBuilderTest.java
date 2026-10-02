@@ -226,6 +226,19 @@ public class TychoEvoRcpBuilderTest {
         assertTrue(res.getMessage().contains("configuration/"));
     }
 
+    private void createDummyCoreBundles(File plugins) throws IOException {
+        plugins.mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.model_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.servers_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.agent_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.utils_2.6.5.jar").createNewFile();
+    }
+
     @Test
     public void testValidWindowsDeployment() throws Exception {
         File dir = tempFolder.newFolder("validWinDir");
@@ -233,9 +246,7 @@ public class TychoEvoRcpBuilderTest {
         new File(dir, "evo.ini").createNewFile();
 
         File plugins = new File(dir, "plugins");
-        plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
+        createDummyCoreBundles(plugins);
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -249,7 +260,7 @@ public class TychoEvoRcpBuilderTest {
 
         TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
         assertNotNull(res);
-        assertTrue(res.isSuccess());
+        assertTrue(res.getMessage(), res.isSuccess());
     }
 
     @Test
@@ -259,9 +270,7 @@ public class TychoEvoRcpBuilderTest {
         new File(dir, "evo.ini").createNewFile();
 
         File plugins = new File(dir, "plugins");
-        plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
+        createDummyCoreBundles(plugins);
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -275,7 +284,40 @@ public class TychoEvoRcpBuilderTest {
 
         TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
         assertNotNull(res);
-        assertTrue(res.isSuccess());
+        assertTrue(res.getMessage(), res.isSuccess());
+    }
+
+    @Test
+    public void testDirectoryPluginBundleSupported() throws Exception {
+        File dir = tempFolder.newFolder("validDirBundleDir");
+        new File(dir, "evo").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
+
+        File plugins = new File(dir, "plugins");
+        plugins.mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.model_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.servers_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.agent_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.utils_2.6.5").mkdirs();
+
+        File config = new File(dir, "configuration");
+        config.mkdirs();
+        File configIni = new File(config, "config.ini");
+        try (FileWriter fw = new FileWriter(configIni)) {
+            fw.write("eclipse.product=eu.kalafatic.evolution.view.product\n");
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertTrue(res.getMessage(), res.isSuccess());
     }
 
     @Test

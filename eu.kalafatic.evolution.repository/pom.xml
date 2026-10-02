@@ -54,6 +54,11 @@
 							<attachId>evolution</attachId>
 						</product>
 						<product>
+							<id>evo</id>
+							<rootFolder>evolution</rootFolder>
+							<attachId>evo</attachId>
+						</product>
+						<product>
 							<id>headless</id>
 							<rootFolder>headless</rootFolder>
 							<attachId>headless</attachId>

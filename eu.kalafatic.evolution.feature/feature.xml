@@ -45,6 +45,18 @@
          version="0.0.0"/>
 
    <plugin
+         id="eu.kalafatic.evolution.model.tests"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.controller.tests"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.quality.tests"
+         version="0.0.0"/>
+
+   <plugin
          id="eu.kalafatic.evolution.selfdev.genome"
          version="0.0.0"/>
 

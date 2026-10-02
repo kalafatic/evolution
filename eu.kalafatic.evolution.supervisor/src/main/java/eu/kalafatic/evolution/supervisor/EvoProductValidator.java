@@ -120,22 +120,31 @@ public class EvoProductValidator {
             missingItems.add("evo.ini");
         }
 
-        // plugins/ directory & EVO view and controller bundles check
+        // plugins/ directory & EVO bundles check
         File pluginsDir = new File(rootDir, "plugins");
         if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
             missingItems.add("plugins/ directory");
         } else {
-            File[] viewBundle = pluginsDir.listFiles((dir, name) ->
-                name.startsWith("eu.kalafatic.evolution.view_") && name.endsWith(".jar")
-            );
-            if (viewBundle == null || viewBundle.length == 0) {
-                missingItems.add("EVO application bundle (eu.kalafatic.evolution.view_*.jar)");
-            }
-            File[] controllerBundle = pluginsDir.listFiles((dir, name) ->
-                name.startsWith("eu.kalafatic.evolution.controller_") && name.endsWith(".jar")
-            );
-            if (controllerBundle == null || controllerBundle.length == 0) {
-                missingItems.add("EVO controller bundle (eu.kalafatic.evolution.controller_*.jar)");
+            File[] pluginEntries = pluginsDir.listFiles();
+            String[] requiredCoreBundles = {
+                "eu.kalafatic.evolution.view_",
+                "eu.kalafatic.evolution.controller_",
+                "eu.kalafatic.evolution.model_",
+                "eu.kalafatic.utils_"
+            };
+            for (String req : requiredCoreBundles) {
+                boolean found = false;
+                if (pluginEntries != null) {
+                    for (File entry : pluginEntries) {
+                        if (entry.getName().startsWith(req)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    missingItems.add("EVO bundle missing (" + req + "*.jar or directory)");
+                }
             }
         }
 
