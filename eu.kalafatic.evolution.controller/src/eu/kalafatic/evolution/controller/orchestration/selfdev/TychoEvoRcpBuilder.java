@@ -616,6 +616,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     "eu.kalafatic.evolution.controller_",
                     "eu.kalafatic.evolution.model_",
                     "eu.kalafatic.evolution.servers_",
+                    "eu.kalafatic.evolution.supervisor_",
                     "eu.kalafatic.evolution.forge.controller_",
                     "eu.kalafatic.evolution.forge.model_",
                     "eu.kalafatic.evolution.forge.data_",

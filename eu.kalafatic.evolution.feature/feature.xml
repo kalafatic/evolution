@@ -116,4 +116,12 @@
          id="eu.kalafatic.evolution.forge.agent"
          version="0.0.0"/>
 
+   <plugin
+         id="eu.kalafatic.evolution.supervisor"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.module"
+         version="0.0.0"/>
+
 </feature>

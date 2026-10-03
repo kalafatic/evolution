@@ -232,6 +232,7 @@ public class TychoEvoRcpBuilderTest {
         new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
         new File(plugins, "eu.kalafatic.evolution.model_2.6.5.jar").createNewFile();
         new File(plugins, "eu.kalafatic.evolution.servers_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.supervisor_2.6.5.jar").createNewFile();
         new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.5.jar").createNewFile();
         new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.5.jar").createNewFile();
         new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.5.jar").createNewFile();
@@ -299,6 +300,7 @@ public class TychoEvoRcpBuilderTest {
         new File(plugins, "eu.kalafatic.evolution.controller_2.6.5").mkdirs();
         new File(plugins, "eu.kalafatic.evolution.model_2.6.5").mkdirs();
         new File(plugins, "eu.kalafatic.evolution.servers_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.supervisor_2.6.5").mkdirs();
         new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.5").mkdirs();
         new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.5").mkdirs();
         new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.5").mkdirs();

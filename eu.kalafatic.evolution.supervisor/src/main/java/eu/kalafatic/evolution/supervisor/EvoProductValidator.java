@@ -130,6 +130,7 @@ public class EvoProductValidator {
                 "eu.kalafatic.evolution.view_",
                 "eu.kalafatic.evolution.controller_",
                 "eu.kalafatic.evolution.model_",
+                "eu.kalafatic.evolution.supervisor_",
                 "eu.kalafatic.utils_"
             };
             for (String req : requiredCoreBundles) {
