@@ -56,6 +56,7 @@ public class Application implements IApplication {
 				System.out.println("Starting Evolution background server on port " + finalPort + "...");
 				ServerManager.getInstance().start(finalPort);
 				System.out.println("Evolution background server started on port " + finalPort);
+				eu.kalafatic.evolution.controller.orchestration.EvolutionServer.logOsgiStatusDiagnostics();
 			} catch (Exception e) {
 				System.err.println("Failed to start background server on port " + finalPort + ": " + e.getMessage());
 				e.printStackTrace();

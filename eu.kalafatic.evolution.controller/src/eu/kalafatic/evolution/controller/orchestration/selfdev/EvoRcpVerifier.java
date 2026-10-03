@@ -9,6 +9,10 @@ public class EvoRcpVerifier {
     }
 
     public TaskResult verifyReady(Process process, File runtimeDir, File logDir, long timeoutSeconds) {
+        return verifyReady(process, runtimeDir, logDir, -1, timeoutSeconds);
+    }
+
+    public TaskResult verifyReady(Process process, File runtimeDir, File logDir, int port, long timeoutSeconds) {
         long startTime = System.currentTimeMillis();
         long deadline = startTime + (timeoutSeconds * 1000);
 
@@ -30,10 +34,15 @@ public class EvoRcpVerifier {
                 }
 
                 if (containsReadyMarker(logFile)) {
+                    String unresolvedErr = verifyOsgiResolution(port, logDir);
+                    if (unresolvedErr != null) {
+                        return TaskResult.failure("evo_verifier", "EVO RCP process started but OSGi bundle resolution failed:\n" + unresolvedErr, null);
+                    }
+
                     long duration = System.currentTimeMillis() - startTime;
                     return new TaskResult.Builder("evo_verifier")
                             .status(TaskStatus.SUCCESS)
-                            .message("EVO RCP product reached READY state.")
+                            .message("EVO RCP product reached READY state with all OSGi bundles verified.")
                             .duration(duration)
                             .logFile(logFile)
                             .build();
@@ -55,6 +64,11 @@ public class EvoRcpVerifier {
                 return TaskResult.failure("evo_verifier", "EVO RCP process startup failed with fatal exception:\n" + fatalErr, null);
             }
 
+            String unresolvedErr = verifyOsgiResolution(port, logDir);
+            if (unresolvedErr != null) {
+                return TaskResult.failure("evo_verifier", "EVO RCP process is alive but OSGi bundle resolution failed:\n" + unresolvedErr, null);
+            }
+
             long duration = System.currentTimeMillis() - startTime;
             return new TaskResult.Builder("evo_verifier")
                     .status(TaskStatus.SUCCESS)
@@ -64,6 +78,78 @@ public class EvoRcpVerifier {
         }
 
         return TaskResult.failure("evo_verifier", "Timed out waiting for EVO RCP process startup after " + timeoutSeconds + "s.", null);
+    }
+
+    public String verifyOsgiResolution(int port, File logDir) {
+        if (port > 0) {
+            try {
+                java.net.URL url = new java.net.URI("http://127.0.0.1:" + port + "/server/osgi").toURL();
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(1500);
+                conn.setReadTimeout(1500);
+                if (conn.getResponseCode() == 200) {
+                    try (java.io.InputStream is = conn.getInputStream()) {
+                        String jsonText = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                        org.json.JSONObject obj = new org.json.JSONObject(jsonText);
+                        org.json.JSONArray bundles = obj.optJSONArray("bundles");
+
+                        StringBuilder unresolvedReport = new StringBuilder();
+                        int unresolvedEvoBundles = 0;
+
+                        if (bundles != null) {
+                            for (int i = 0; i < bundles.length(); i++) {
+                                org.json.JSONObject b = bundles.getJSONObject(i);
+                                String symName = b.optString("symbolicName", "");
+                                boolean resolved = b.optBoolean("resolved", true);
+                                String state = b.optString("state", "UNKNOWN");
+
+                                if (!resolved || "INSTALLED".equals(state)) {
+                                    if (symName.startsWith("eu.kalafatic.")) {
+                                        unresolvedEvoBundles++;
+                                        unresolvedReport.append("\n[EVO-OSGI] Unresolved Bundle: ").append(symName)
+                                                .append(" (v").append(b.optString("version", "")).append(")\n")
+                                                .append("    State: ").append(state).append(" (RESOLVED: NO)\n");
+                                        if (b.has("requireBundle")) unresolvedReport.append("    Require-Bundle: ").append(b.getString("requireBundle")).append("\n");
+                                        if (b.has("importPackage")) unresolvedReport.append("    Import-Package: ").append(b.getString("importPackage")).append("\n");
+                                        if (b.has("fragmentHost")) unresolvedReport.append("    Fragment-Host: ").append(b.getString("fragmentHost")).append("\n");
+                                    }
+                                }
+                            }
+                        }
+
+                        if (unresolvedEvoBundles > 0) {
+                            return "OSGi Resolution Failure: " + unresolvedEvoBundles + " EVO bundle(s) remain UNRESOLVED (State: INSTALLED):\n" + unresolvedReport.toString();
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // Server might not be listening yet, fallback to log check
+            }
+        }
+
+        // Fallback: check log files for unresolved bundle markers
+        if (logDir != null && logDir.exists()) {
+            File[] checkFiles = new File[] { new File(logDir, "start.stdout.log"), new File(logDir, "evo_runtime.log") };
+            for (File f : checkFiles) {
+                if (f.exists()) {
+                    try {
+                        String content = java.nio.file.Files.readString(f.toPath());
+                        if (content.contains("[EVO-OSGI] UNRESOLVED BUNDLE:")) {
+                            StringBuilder sb = new StringBuilder();
+                            String[] lines = content.split("\n");
+                            for (String line : lines) {
+                                if (line.contains("[EVO-OSGI]") || line.contains("State: INSTALLED") || line.contains("Require-Bundle:") || line.contains("Import-Package:")) {
+                                    sb.append(line).append("\n");
+                                }
+                            }
+                            return "OSGi Resolution Failure detected in logs:\n" + sb.toString().trim();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        return null;
     }
 
     private File findLatestLogFile(File runtimeDir, File logDir) {

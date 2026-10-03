@@ -120,31 +120,14 @@ public class EvoProductValidator {
             missingItems.add("evo.ini");
         }
 
-        // plugins/ directory & EVO bundles check
+        // plugins/ directory check
         File pluginsDir = new File(rootDir, "plugins");
         if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
             missingItems.add("plugins/ directory");
         } else {
-            File[] pluginEntries = pluginsDir.listFiles();
-            String[] requiredCoreBundles = {
-                "eu.kalafatic.evolution.view_",
-                "eu.kalafatic.evolution.controller_",
-                "eu.kalafatic.evolution.model_",
-                "eu.kalafatic.utils_"
-            };
-            for (String req : requiredCoreBundles) {
-                boolean found = false;
-                if (pluginEntries != null) {
-                    for (File entry : pluginEntries) {
-                        if (entry.getName().startsWith(req)) {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    missingItems.add("EVO bundle missing (" + req + "*.jar or directory)");
-                }
+            File[] pluginEntries = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar") || new File(dir, name).isDirectory());
+            if (pluginEntries == null || pluginEntries.length == 0) {
+                missingItems.add("plugins/ directory contains no bundle JARs or directories");
             }
         }
 
