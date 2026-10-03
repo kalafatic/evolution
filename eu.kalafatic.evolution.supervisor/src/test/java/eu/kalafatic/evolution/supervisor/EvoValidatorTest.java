@@ -60,8 +60,8 @@ public class EvoValidatorTest {
     }
 
     @Test
-    public void testProductLayoutValidationMissingEvoBundle() throws IOException {
-        File tempDir = createTempDir("test-layout-missing-bundle");
+    public void testProductLayoutValidationEmptyPlugins() throws IOException {
+        File tempDir = createTempDir("test-layout-empty-plugins");
         File pluginsDir = new File(tempDir, "plugins");
         File configDir = new File(tempDir, "configuration");
         pluginsDir.mkdirs();

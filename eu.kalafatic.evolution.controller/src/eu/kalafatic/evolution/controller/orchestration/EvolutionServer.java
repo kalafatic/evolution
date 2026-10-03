@@ -23,6 +23,8 @@ import org.eclipse.core.runtime.Platform;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
@@ -249,6 +251,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetEvolutionTreeJson(session);
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
+            } else if (Method.GET.equals(method) && "/server/osgi".equals(uri)) {
+                return handleGetOsgiStatus();
             } else if (Method.GET.equals(method) && "/server/system/state".equals(uri)) {
                 return handleGetSystemState();
             } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
@@ -1491,6 +1495,122 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (IOException e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
         }
+    }
+
+    public static void logOsgiStatusDiagnostics() {
+        try {
+            Bundle ctrlBundle = Platform.getBundle("eu.kalafatic.evolution.controller");
+            BundleContext bc = ctrlBundle != null ? ctrlBundle.getBundleContext() : null;
+            if (bc == null) {
+                Bundle serverBundle = FrameworkUtil.getBundle(EvolutionServer.class);
+                if (serverBundle != null) bc = serverBundle.getBundleContext();
+            }
+            if (bc == null) return;
+
+            Bundle[] bundles = bc.getBundles();
+            if (bundles == null) return;
+
+            int active = 0, resolved = 0, installed = 0;
+            List<String> unresolvedDetails = new ArrayList<>();
+
+            for (Bundle b : bundles) {
+                int st = b.getState();
+                if (st == Bundle.ACTIVE) active++;
+                else if (st == Bundle.RESOLVED) resolved++;
+                else if (st == Bundle.INSTALLED) {
+                    installed++;
+                    String name = b.getSymbolicName() != null ? b.getSymbolicName() : "unknown";
+                    java.util.Dictionary<String, String> h = b.getHeaders();
+                    String req = h != null ? h.get("Require-Bundle") : null;
+                    String imp = h != null ? h.get("Import-Package") : null;
+                    unresolvedDetails.add("[EVO-OSGI] UNRESOLVED BUNDLE: " + name + " (v" + b.getVersion() + ")\n" +
+                            "  State: INSTALLED (RESOLVED: NO)\n" +
+                            (req != null ? "  Require-Bundle: " + req + "\n" : "") +
+                            (imp != null ? "  Import-Package: " + imp + "\n" : ""));
+                }
+            }
+
+            System.out.println("[EVO-OSGI] Runtime Bundle Diagnostics: Total=" + bundles.length + " Active=" + active + " Resolved=" + resolved + " Installed(Unresolved)=" + installed);
+            for (String detail : unresolvedDetails) {
+                System.out.println(detail);
+            }
+        } catch (Exception e) {
+            System.err.println("[EVO-OSGI] Error logging bundle diagnostics: " + e.getMessage());
+        }
+    }
+
+    private Response handleGetOsgiStatus() {
+        JSONObject result = new JSONObject();
+        JSONArray bundlesArray = new JSONArray();
+
+        BundleContext bc = null;
+        Bundle serverBundle = FrameworkUtil.getBundle(EvolutionServer.class);
+        if (serverBundle != null) {
+            bc = serverBundle.getBundleContext();
+        }
+        if (bc == null) {
+            Bundle ctrlBundle = Platform.getBundle("eu.kalafatic.evolution.controller");
+            if (ctrlBundle != null) bc = ctrlBundle.getBundleContext();
+        }
+
+        if (bc == null) {
+            result.put("error", "BundleContext not available");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", result.toString());
+        }
+
+        Bundle[] bundles = bc.getBundles();
+        int total = bundles != null ? bundles.length : 0;
+        int activeCount = 0;
+        int resolvedCount = 0;
+        int installedCount = 0;
+
+        if (bundles != null) {
+            for (Bundle b : bundles) {
+                JSONObject bObj = new JSONObject();
+                bObj.put("id", b.getBundleId());
+                bObj.put("symbolicName", b.getSymbolicName() != null ? b.getSymbolicName() : "N/A");
+                bObj.put("version", b.getVersion() != null ? b.getVersion().toString() : "0.0.0");
+                bObj.put("location", b.getLocation() != null ? b.getLocation() : "");
+
+                int state = b.getState();
+                String stateStr = switch (state) {
+                    case Bundle.ACTIVE -> "ACTIVE";
+                    case Bundle.RESOLVED -> "RESOLVED";
+                    case Bundle.INSTALLED -> "INSTALLED";
+                    case Bundle.STARTING -> "STARTING";
+                    case Bundle.STOPPING -> "STOPPING";
+                    case Bundle.UNINSTALLED -> "UNINSTALLED";
+                    default -> "UNKNOWN (" + state + ")";
+                };
+                bObj.put("state", stateStr);
+                bObj.put("stateRaw", state);
+                boolean isResolved = (state == Bundle.RESOLVED || state == Bundle.ACTIVE);
+                bObj.put("resolved", isResolved);
+
+                if (state == Bundle.ACTIVE) activeCount++;
+                else if (state == Bundle.RESOLVED) resolvedCount++;
+                else if (state == Bundle.INSTALLED) installedCount++;
+
+                if (state == Bundle.INSTALLED) {
+                    java.util.Dictionary<String, String> headers = b.getHeaders();
+                    if (headers != null) {
+                        if (headers.get("Require-Bundle") != null) bObj.put("requireBundle", headers.get("Require-Bundle"));
+                        if (headers.get("Import-Package") != null) bObj.put("importPackage", headers.get("Import-Package"));
+                        if (headers.get("Fragment-Host") != null) bObj.put("fragmentHost", headers.get("Fragment-Host"));
+                    }
+                }
+
+                bundlesArray.put(bObj);
+            }
+        }
+
+        result.put("totalBundles", total);
+        result.put("activeBundles", activeCount);
+        result.put("resolvedBundles", resolvedCount);
+        result.put("installedBundles", installedCount);
+        result.put("bundles", bundlesArray);
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
     }
 
     private Response handleGetServerStatus() {

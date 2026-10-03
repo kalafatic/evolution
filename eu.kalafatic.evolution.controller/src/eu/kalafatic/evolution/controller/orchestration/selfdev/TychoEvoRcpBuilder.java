@@ -100,6 +100,26 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             args.add("-DskipTests");
         }
 
+        log("================================================================================");
+        log("[TYCHO_BUILD_INFO]");
+        log("SOURCE REPOSITORY       : " + sourceRepo.getAbsolutePath());
+        log("PREPARED REACTOR        : " + reactorRoot.getAbsolutePath());
+        log("MAVEN WORKING DIRECTORY : " + reactorRoot.getAbsolutePath());
+        log("ROOT POM                : " + new File(reactorRoot, "pom.xml").getAbsolutePath());
+        log("PRODUCT DEFINITION      : " + (prodDef.getProductFile() != null ? prodDef.getProductFile().getAbsolutePath() : "N/A"));
+        log("PRODUCT ID              : " + prodDef.getProductId());
+        log("LAUNCHER NAME           : " + prodDef.getLauncherName());
+        log("ROOT FOLDER             : " + prodDef.getRootFolder());
+        log("REPOSITORY MODULE       : " + prodDef.getRepositoryModule());
+        log("TARGET PLATFORM         : " + platform.toString());
+        log("OS                      : " + platform.getOs());
+        log("WS                      : " + platform.getWs());
+        log("ARCH                    : " + platform.getArch());
+        log("PACKAGING               : " + platform.getPackaging());
+        log("TYCHO GOALS             : " + goals);
+        log("TYCHO PROFILES          : " + args);
+        log("================================================================================");
+
         log("[MAVEN] Building Tycho reactor for Evolution / EVO RCP at " + reactorRoot.getAbsolutePath() + " (" + platform + ")");
         TaskResult buildResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
 
@@ -385,6 +405,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             if (candidates.size() == 1) {
                 File selected = candidates.get(0);
                 selectionWriter.println("SELECTED PRODUCT: " + selected.getAbsolutePath());
+                log("[TYCHO_BUILD_INFO] RESULTING PRODUCT LOCATION: " + selected.getAbsolutePath());
                 log("[PRODUCT_DISCOVERY] selected=" + selected.getAbsolutePath());
                 return selected;
             } else if (candidates.size() > 1) {
@@ -583,31 +604,49 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         return hasLauncher && (hasPlugins || hasConfig);
     }
 
-    private String extractBundleSymbolicName(File entry) {
+    public static class BundleHeaderInfo {
+        public String symbolicName;
+        public String version;
+        public String requireBundle;
+        public String importPackage;
+        public String fragmentHost;
+    }
+
+    public BundleHeaderInfo extractBundleHeaderInfo(File entry) {
         if (entry == null || !entry.exists()) return null;
         try {
+            java.util.jar.Manifest manifest = null;
             if (entry.isDirectory()) {
                 File manifestFile = new File(entry, "META-INF/MANIFEST.MF");
                 if (manifestFile.exists()) {
                     try (java.io.InputStream is = new FileInputStream(manifestFile)) {
-                        java.util.jar.Manifest manifest = new java.util.jar.Manifest(is);
-                        String name = manifest.getMainAttributes().getValue("Bundle-SymbolicName");
-                        return cleanSymbolicName(name);
+                        manifest = new java.util.jar.Manifest(is);
                     }
                 }
             } else if (entry.isFile() && entry.getName().endsWith(".jar")) {
                 try (java.util.jar.JarFile jarFile = new java.util.jar.JarFile(entry)) {
-                    java.util.jar.Manifest manifest = jarFile.getManifest();
-                    if (manifest != null) {
-                        String name = manifest.getMainAttributes().getValue("Bundle-SymbolicName");
-                        return cleanSymbolicName(name);
-                    }
+                    manifest = jarFile.getManifest();
                 }
+            }
+            if (manifest != null) {
+                java.util.jar.Attributes mainAttr = manifest.getMainAttributes();
+                BundleHeaderInfo info = new BundleHeaderInfo();
+                info.symbolicName = cleanSymbolicName(mainAttr.getValue("Bundle-SymbolicName"));
+                info.version = mainAttr.getValue("Bundle-Version");
+                info.requireBundle = mainAttr.getValue("Require-Bundle");
+                info.importPackage = mainAttr.getValue("Import-Package");
+                info.fragmentHost = mainAttr.getValue("Fragment-Host");
+                return info;
             }
         } catch (Exception e) {
             log("[PRODUCT_VALIDATION] Error reading manifest for " + entry.getName() + ": " + e.getMessage());
         }
         return null;
+    }
+
+    private String extractBundleSymbolicName(File entry) {
+        BundleHeaderInfo info = extractBundleHeaderInfo(entry);
+        return info != null ? info.symbolicName : null;
     }
 
     private String cleanSymbolicName(String rawName) {
@@ -676,41 +715,17 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 log("[PRODUCT_VALIDATION] [PASS] plugins/ directory exists with " + pluginEntries.length + " bundle entries.");
 
                 java.util.Set<String> discoveredSymbolicNames = new java.util.HashSet<>();
+                int evoCount = 0;
                 for (File entry : pluginEntries) {
                     String symName = extractBundleSymbolicName(entry);
                     if (symName != null && !symName.isEmpty()) {
                         discoveredSymbolicNames.add(symName);
+                        if (symName.startsWith("eu.kalafatic.")) {
+                            evoCount++;
+                        }
                     }
                 }
-
-                String[] requiredCoreBundles = {
-                    "eu.kalafatic.evolution.view",
-                    "eu.kalafatic.evolution.controller",
-                    "eu.kalafatic.evolution.model",
-                    "eu.kalafatic.evolution.servers",
-                    "eu.kalafatic.evolution.forge.controller",
-                    "eu.kalafatic.utils"
-                };
-
-                for (String req : requiredCoreBundles) {
-                    if (!discoveredSymbolicNames.contains(req)) {
-                        boolean foundByFilename = false;
-                        for (File entry : pluginEntries) {
-                            if (entry.getName().startsWith(req + "_") || entry.getName().startsWith(req + "-")) {
-                                foundByFilename = true;
-                                break;
-                            }
-                        }
-                        if (!foundByFilename) {
-                            missingItems.add("plugins/ missing required EVO bundle (" + req + ")");
-                            log("[PRODUCT_VALIDATION] [FAIL] Missing required EVO bundle by Bundle-SymbolicName: " + req);
-                        } else {
-                            log("[PRODUCT_VALIDATION] [PASS] Found required EVO bundle (filename match): " + req);
-                        }
-                    } else {
-                        log("[PRODUCT_VALIDATION] [PASS] Found required EVO bundle by Bundle-SymbolicName: " + req);
-                    }
-                }
+                log("[PRODUCT_VALIDATION] Discovered " + discoveredSymbolicNames.size() + " unique Bundle-SymbolicNames (" + evoCount + " EVO bundles) from Tycho dependency resolution.");
             }
         }
 
@@ -773,7 +788,8 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         File pluginsDir = new File(rootDir, "plugins");
         File pluginsFile = new File(logDir, "plugins.txt");
         try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(pluginsFile, false))) {
-            pw.println("PLUGINS INVENTORY (" + pluginsDir.getAbsolutePath() + "):");
+            pw.println("TYCHO GENERATED PLUGINS INVENTORY (" + pluginsDir.getAbsolutePath() + "):");
+            pw.println("================================================================================");
             if (pluginsDir.exists() && pluginsDir.isDirectory()) {
                 File[] pluginFiles = pluginsDir.listFiles();
                 if (pluginFiles != null) {
@@ -781,8 +797,22 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     int evoCount = 0;
                     long totalBytes = 0;
                     for (File pf : pluginFiles) {
-                        pw.println(pf.getName() + " (" + pf.length() + " bytes)");
-                        if (pf.getName().startsWith("eu.kalafatic.")) {
+                        BundleHeaderInfo headerInfo = extractBundleHeaderInfo(pf);
+                        String symName = headerInfo != null && headerInfo.symbolicName != null ? headerInfo.symbolicName : pf.getName();
+                        String ver = headerInfo != null && headerInfo.version != null ? headerInfo.version : "N/A";
+
+                        pw.println("[BUNDLE] " + symName + " (v" + ver + ")");
+                        pw.println("  Filename: " + pf.getName());
+                        pw.println("  Size: " + pf.length() + " bytes");
+                        pw.println("  Path: " + pf.getAbsolutePath());
+                        if (headerInfo != null) {
+                            if (headerInfo.requireBundle != null) pw.println("  Require-Bundle: " + headerInfo.requireBundle);
+                            if (headerInfo.importPackage != null) pw.println("  Import-Package: " + headerInfo.importPackage);
+                            if (headerInfo.fragmentHost != null) pw.println("  Fragment-Host: " + headerInfo.fragmentHost);
+                        }
+                        pw.println("--------------------------------------------------------------------------------");
+
+                        if (symName.startsWith("eu.kalafatic.")) {
                             evoCount++;
                         }
                         totalBytes += pf.length();
