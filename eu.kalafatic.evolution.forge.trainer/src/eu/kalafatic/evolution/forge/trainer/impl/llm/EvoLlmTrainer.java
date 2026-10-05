@@ -17,9 +17,9 @@ public class EvoLlmTrainer {
     }
 
     public enum TrainingProfile {
-        EVO_FAST(2e-4f, 1e-5f, 0.01f),
-        EVO_CODER(1e-4f, 1e-5f, 0.1f),
-        EVO_FINETUNE(2e-5f, 1e-6f, 0.01f);
+        EVO_FAST(1e-3f, 5e-5f, 0.01f),
+        EVO_CODER(5e-4f, 1e-5f, 0.1f),
+        EVO_FINETUNE(1e-4f, 1e-6f, 0.01f);
 
         public final float initialLr;
         public final float minLr;
@@ -48,6 +48,7 @@ public class EvoLlmTrainer {
     private LossReduction lossReduction = LossReduction.MEAN_PER_TOKEN;
     private ProgressListener progressListener;
     private final List<Double> lossHistory = new ArrayList<>();
+    private volatile boolean stopRequested = false;
 
     public EvoLlmTrainer(EvoLlmModel model, TrainingProfile profile) {
         if (model == null) throw new IllegalArgumentException("EvoLlmModel cannot be null");
@@ -71,6 +72,9 @@ public class EvoLlmTrainer {
     public void setBaseSeed(long seed) { this.baseSeed = seed; }
     public void setProgressListener(ProgressListener listener) { this.progressListener = listener; }
     public List<Double> getLossHistory() { return lossHistory; }
+    public void requestStop() { this.stopRequested = true; }
+    public void finishTraining() { this.stopRequested = true; }
+    public boolean isStopRequested() { return stopRequested; }
 
     public void train(List<?> rawSamples, int epochs) {
         if (rawSamples == null || rawSamples.isEmpty()) return;
@@ -136,6 +140,10 @@ public class EvoLlmTrainer {
         lossHistory.clear();
 
         for (int epoch = 0; epoch < epochs; epoch++) {
+            if (stopRequested) {
+                System.out.printf("[EVO Trainer] Graceful finish requested before epoch %d/%d. Completing training state.%n", epoch + 1, epochs);
+                break;
+            }
             Collections.shuffle(trainSamples, new Random(baseSeed + epoch + 1));
             List<TrainingBatch> batches = buildBatches(trainSamples, microBatchSize);
 
@@ -150,6 +158,10 @@ public class EvoLlmTrainer {
             int optStep = epoch * stepsPerEpoch;
 
             for (int bIdx = 0; bIdx < batches.size(); bIdx += accumulationSteps) {
+                if (stopRequested) {
+                    System.out.printf("[EVO Trainer] Graceful finish requested during epoch %d. Exiting batch loop early.%n", epoch + 1);
+                    break;
+                }
                 optStep++;
                 float currentLr = computeScheduledLr(optStep, totalOptimizationSteps, warmupSteps);
                 optimizer.setLr(currentLr);

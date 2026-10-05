@@ -24,6 +24,7 @@ public class ForgeSessionManager {
     private static ForgeSessionManager instance;
     private Orchestrator orchestrator;
     private final java.util.Map<String, List<RuntimeEvent>> eventBuffer = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer> activeTrainers = new java.util.concurrent.ConcurrentHashMap<>();
     private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
 
     private ForgeSessionManager() {}
@@ -263,6 +264,45 @@ public class ForgeSessionManager {
 
     public String generateSyntheticDataset(String type) {
         return "{\"type\": \"" + type + "\", \"samples\": 1000, \"status\": \"generated\"}";
+    }
+
+    public void registerActiveTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer) {
+        if (sessionId != null && trainer != null) {
+            activeTrainers.put(sessionId, trainer);
+        }
+    }
+
+    public void unregisterActiveTrainer(String sessionId) {
+        if (sessionId != null) {
+            activeTrainers.remove(sessionId);
+        }
+    }
+
+    public boolean requestFinish(String sessionId) {
+        boolean requested = false;
+        if (sessionId != null) {
+            eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.get(sessionId);
+            if (trainer != null) {
+                trainer.requestStop();
+                requested = true;
+            }
+            ForgeSession session = findSession(sessionId);
+            if (session != null) {
+                eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer sessionTrainer = activeTrainers.get(session.getSessionId());
+                if (sessionTrainer != null) {
+                    sessionTrainer.requestStop();
+                    requested = true;
+                }
+                updateWorkflowStatus(session.getSessionId(), "FINISHING_EXPORTING");
+            }
+        }
+        if (!requested && !activeTrainers.isEmpty()) {
+            for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer t : activeTrainers.values()) {
+                t.requestStop();
+                requested = true;
+            }
+        }
+        return requested;
     }
 
     public void addExperiment(String sessionId, String modelId, String datasetId, String metrics) {

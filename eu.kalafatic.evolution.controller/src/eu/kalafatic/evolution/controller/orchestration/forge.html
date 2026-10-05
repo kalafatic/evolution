@@ -984,6 +984,7 @@
                 <h3>Training & Execution</h3>
                 <div style="display: flex; gap: 5px;">
                     <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
+                    <button id="finish-btn" class="btn btn-primary" style="flex: 1;" onclick="finishTraining()" disabled data-guidance="Gracefully finish training at the current epoch/state and export all model files (.evo, GGUF, report).">FINISH</button>
                     <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Immediately halt the current training run. Current weights will be preserved but training progress will stop.">STOP</button>
                 </div>
                 <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
@@ -1799,6 +1800,11 @@
             });
 
             if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "TRAINING" }));
+            const finishBtn = document.getElementById('finish-btn');
+            if (finishBtn) {
+                finishBtn.disabled = false;
+                finishBtn.innerText = 'FINISH';
+            }
 
             // Update session status in local state for immediate guidance refresh
             if (session) session.status = 'TRAINING';
@@ -1806,10 +1812,37 @@
             await fetchModel(activeSessionId);
         }
 
+        async function finishTraining() {
+            if (!activeSessionId) return;
+            try {
+                const finishBtn = document.getElementById('finish-btn');
+                if (finishBtn) {
+                    finishBtn.disabled = true;
+                    finishBtn.innerText = 'FINISHING...';
+                }
+                log("Requesting graceful training finish...");
+                const res = await fetch(getBaseUrl() + '/forge/session/' + activeSessionId + '/finish', { method: 'POST' });
+                const data = await res.json();
+                log("Finish requested: " + (data.message || "Completing current epoch and exporting files."));
+            } catch (e) {
+                log("Error requesting finish: " + e.message);
+                const finishBtn = document.getElementById('finish-btn');
+                if (finishBtn) {
+                    finishBtn.disabled = false;
+                    finishBtn.innerText = 'FINISH';
+                }
+            }
+        }
+
         function stopTraining() {
             if (!activeSessionId) return;
             isTraining = false;
             document.getElementById('train-btn').disabled = false;
+            const finishBtn = document.getElementById('finish-btn');
+            if (finishBtn) {
+                finishBtn.disabled = true;
+                finishBtn.innerText = 'FINISH';
+            }
             document.getElementById('stop-btn').disabled = true;
             log("Training stopped.");
             if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "IDLE" }));

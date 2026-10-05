@@ -198,6 +198,12 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             );
 
             EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
+            try {
+                Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                Object mgr = fsmClass.getMethod("getInstance").invoke(null);
+                fsmClass.getMethod("registerActiveTrainer", String.class, EvoLlmTrainer.class).invoke(mgr, job.getJobId(), trainer);
+            } catch (Exception ignored) {}
+
             List<NormalizedSample> normSamples = (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null)
                     ? prepResult.getArtifact().getSamples() : java.util.Collections.emptyList();
 
@@ -223,10 +229,22 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                         .collect(Collectors.toList());
             }
 
-            trainer.train(trainingSamples, job.getTrainingConfig().getEpochs());
+            try {
+                trainer.train(trainingSamples, job.getTrainingConfig().getEpochs());
+            } finally {
+                try {
+                    Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                    Object mgr = fsmClass.getMethod("getInstance").invoke(null);
+                    fsmClass.getMethod("unregisterActiveTrainer", String.class).invoke(mgr, job.getJobId());
+                } catch (Exception ignored) {}
+            }
             List<Double> losses = trainer.getLossHistory();
             double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : 0.05;
-            logToFile(logFile, "Training complete. Recorded final loss: " + finalLoss);
+            if (trainer.isStopRequested()) {
+                logToFile(logFile, "Training gracefully finished early upon user request. Recorded final loss: " + finalLoss);
+            } else {
+                logToFile(logFile, "Training complete. Recorded final loss: " + finalLoss);
+            }
 
             // STAGE 5: EVALUATION
             job.setState(JobState.EVALUATING);
