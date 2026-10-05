@@ -62,8 +62,10 @@ public class IntentReconstructionEngine extends ADarwinEngine {
 
         processBatch(batch);
 
-        // Update Orchestration State with current findings
+        // Update Orchestration State with current findings and target purpose summary
+        String targetSummary = buildTargetSummary();
         context.getOrchestrationState().getMetadata().put("reconstructedDesignModel", designModel);
+        context.getOrchestrationState().getMetadata().put("intentTargetSummary", targetSummary);
 
         EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         res.setSuccess(true);
@@ -170,11 +172,13 @@ public class IntentReconstructionEngine extends ADarwinEngine {
 
     private double scoreFileName(File file) {
         String name = file.getName();
-        if (name.contains("Application") || name.contains("Main")) return 10;
-        if (name.contains("Controller") || name.contains("Resource")) return 9;
-        if (name.contains("Service")) return 8;
-        if (name.contains("Repository") || name.contains("Dao")) return 7;
-        if (name.contains("Config")) return 6;
+        if (name.contains("Application") || name.contains("Main") || name.equals("main.js") || name.equals("index.js")) return 10;
+        if (name.equalsIgnoreCase("README.md") || name.contains("ARCHITECTURE") || name.equals("package.json") || name.equals("pom.xml")) return 10;
+        if (name.contains("Controller") || name.contains("Resource") || name.contains("Router")) return 9;
+        if (name.contains("Service") || name.contains("Manager") || name.contains("Handler")) return 8;
+        if (name.contains("Repository") || name.contains("Dao") || name.contains("Model")) return 7;
+        if (name.contains("Config") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".yml")) return 6;
+        if (name.endsWith(".md") || name.endsWith(".txt")) return 5;
         if (name.contains("Util")) return 1;
         return 5;
     }
@@ -204,14 +208,21 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         record.setId(meta.getPath());
         record.setName(file.getName());
 
-        // Heuristic: Controllers, Resources, Services, and Handlers are candidates for Use Cases in this mode
         String name = file.getName();
+        String lowerName = name.toLowerCase();
+
+        // Categorize component type based on structure or document nature
         if (name.endsWith("Controller.java") || name.endsWith("Resource.java") ||
             name.endsWith("Service.java") || name.endsWith("UseCase.java") ||
             name.endsWith("Handler.java") || name.endsWith("Facade.java") ||
-            name.endsWith("Application.java")) {
+            name.endsWith("Application.java") || lowerName.endsWith("router.js") ||
+            lowerName.endsWith("controller.js") || lowerName.endsWith("app.js")) {
             record.setType("USE_CASE");
-        } else if (file.isDirectory() || meta.getRole() != null && meta.getRole().equalsIgnoreCase("subsystem")) {
+        } else if (lowerName.endsWith(".md") || lowerName.endsWith(".txt") || "documentation".equalsIgnoreCase(meta.getRole())) {
+            record.setType("DOCUMENTATION");
+        } else if (lowerName.endsWith(".json") || lowerName.endsWith(".csv") || lowerName.endsWith(".evodata") || "data".equalsIgnoreCase(meta.getRole())) {
+            record.setType("DATASET");
+        } else if (file.isDirectory() || "subsystem".equalsIgnoreCase(meta.getRole())) {
             record.setType("SUBSYSTEM");
         } else {
             record.setType(meta.getRole() != null ? meta.getRole().toUpperCase() : "COMPONENT");
@@ -221,13 +232,16 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         record.setPath(meta.getPath());
         record.setImportanceScore(meta.getImportanceScore());
 
-        // Extract method intent if possible
+        // Extract method or topic intent
         if (meta.getSummary() != null) {
             String summary = meta.getSummary().toLowerCase();
             if (summary.contains("create") || summary.contains("post") || summary.contains("save")) record.getUseCases().add("Command: Create/Save");
             if (summary.contains("find") || summary.contains("get") || summary.contains("search")) record.getUseCases().add("Query: Find/Search");
             if (summary.contains("delete") || summary.contains("remove")) record.getUseCases().add("Command: Delete/Remove");
             if (summary.contains("update") || summary.contains("put") || summary.contains("patch")) record.getUseCases().add("Command: Update");
+            if (summary.contains("orchestrat") || summary.contains("workflow")) record.getUseCases().add("Process: Orchestration/Workflow");
+            if (summary.contains("chat") || summary.contains("conversation")) record.getUseCases().add("Interaction: Chat/Messaging");
+            if (summary.contains("model") || summary.contains("train") || summary.contains("infer")) record.getUseCases().add("AI/ML: Training/Inference");
         }
 
         designModel.getComponents().add(record);
@@ -288,6 +302,61 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     private boolean isExcluded(String name) {
         return name.startsWith(".") || name.equals("target") || name.equals("build")
                 || name.equals("node_modules") || name.equals("bin");
+    }
+
+    private String buildTargetSummary() {
+        File root = context.getProjectRoot();
+        long useCaseCount = designModel.getComponents().stream().filter(c -> "USE_CASE".equals(c.getType())).count();
+        long subsystemCount = designModel.getComponents().stream().filter(c -> "SUBSYSTEM".equals(c.getType()) || "DOMAIN".equals(c.getType())).count();
+        long docCount = designModel.getComponents().stream().filter(c -> "DOCUMENTATION".equals(c.getType())).count();
+        long dataCount = designModel.getComponents().stream().filter(c -> "DATASET".equals(c.getType()) || "DATA".equals(c.getType())).count();
+
+        List<String> topComponents = designModel.getComponents().stream()
+                .filter(c -> c.getName() != null && !c.getName().isEmpty())
+                .limit(10)
+                .map(c -> c.getName() + " (" + c.getType() + (c.getDescription() != null && !c.getDescription().isEmpty() ? ": " + limitString(c.getDescription(), 80) : "") + ")")
+                .collect(Collectors.toList());
+
+        List<String> discoveredUseCases = designModel.getComponents().stream()
+                .flatMap(c -> c.getUseCases().stream())
+                .distinct()
+                .limit(10)
+                .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Reconstructed Target Purpose & Knowledge:\n");
+        sb.append("Target Path: ").append(root != null ? root.getAbsolutePath() : "Unknown").append("\n");
+
+        if (useCaseCount > 0 || subsystemCount > 0) {
+            sb.append("Target Nature: Structured Codebase (Subsystems: ").append(subsystemCount).append(", Use Cases/Endpoints: ").append(useCaseCount).append(")\n");
+        } else if (docCount > 0 || dataCount > 0) {
+            sb.append("Target Nature: Knowledge/Document Repository (Docs: ").append(docCount).append(", Datasets: ").append(dataCount).append(")\n");
+        } else {
+            sb.append("Target Nature: Heterogeneous Artifact Repository (Analyzed Components: ").append(designModel.getComponents().size()).append(")\n");
+        }
+
+        if (!topComponents.isEmpty()) {
+            sb.append("Discovered Core Artifacts:\n");
+            for (String comp : topComponents) {
+                sb.append(" - ").append(comp).append("\n");
+            }
+        }
+
+        if (!discoveredUseCases.isEmpty()) {
+            sb.append("Discovered Capability Actions:\n");
+            for (String uc : discoveredUseCases) {
+                sb.append(" - ").append(uc).append("\n");
+            }
+        }
+
+        return sb.toString().trim();
+    }
+
+    private String limitString(String str, int max) {
+        if (str == null) return "";
+        String trimmed = str.trim().replaceAll("\\s+", " ");
+        if (trimmed.length() <= max) return trimmed;
+        return trimmed.substring(0, max) + "...";
     }
 
     @Override

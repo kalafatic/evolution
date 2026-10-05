@@ -125,7 +125,7 @@ public class FinalResponseAssembler {
         final eu.kalafatic.evolution.controller.kernel.EvolutionProfile finalProfile = profile;
         if (finalProfile.shouldShowEvolutionSummary() || !isChat) {
             sb.append("\n\n---\n## 🧬 Evolution Summary\n\n");
-            sb.append("### Goal\n---\n").append(state.getRawInput()).append("\n\n");
+            sb.append("### Goal\n---\n").append(cleanGoalDisplay(context)).append("\n\n");
 
             sb.append("### Iterations\n---\n").append(state.getIterationCount()).append("\n\n");
 
@@ -357,6 +357,26 @@ public class FinalResponseAssembler {
             .count();
 
         return "I have completed " + completedTasks + " of " + tasks.size() + " tasks.";
+    }
+
+    private String cleanGoalDisplay(TaskContext context) {
+        OrchestrationState state = context.getOrchestrationState();
+        Object targetSummary = state.getMetadata().get("intentTargetSummary");
+        if (targetSummary instanceof String && !((String) targetSummary).trim().isEmpty()) {
+            return ((String) targetSummary).trim();
+        }
+
+        String rawInput = state.getRawInput();
+        if (rawInput == null || rawInput.trim().isEmpty()) {
+            return "Reconstruct Project Intent & Purpose";
+        }
+
+        String cleaned = rawInput.trim();
+        if (cleaned.startsWith("# Intent Discovery") || cleaned.contains("You are an experienced software architect")) {
+            return "Discover target project purpose, architecture, and primary use cases.";
+        }
+
+        return cleaned;
     }
 
     private String buildAccomplishments(TaskContext context) {
