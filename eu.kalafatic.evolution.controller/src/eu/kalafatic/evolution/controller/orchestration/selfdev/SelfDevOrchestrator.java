@@ -95,6 +95,15 @@ public class SelfDevOrchestrator {
         SelfDevTask genome = new GenomeCheckTask("GENOME");
         SelfDevTask permissions = new PermissionsCheckTask("PERMISSIONS");
 
+        SelfDevTask createProject = new CreateEvoProjectTask("CREATE_EVO_PROJECT");
+        createProject.addDependency("START_EVO");
+
+        SelfDevTask createInference = new CreateInferenceTask("CREATE_INFERENCE_TASK");
+        createInference.addDependency("CREATE_EVO_PROJECT");
+
+        SelfDevTask analyticChat = new AnalyticChatValidationTask("ANALYTIC_CHAT_VALIDATION");
+        analyticChat.addDependency("CREATE_INFERENCE_TASK");
+
         SelfDevTask llm = new LlmCheckTask("LLM");
         SelfDevTask supervisorLoop = new SupervisorLoopTask("SUPERVISOR_LOOP");
         SelfDevTask selfDevLoop = new SelfDevLoopTask("SELF_DEV_LOOP");
@@ -129,6 +138,10 @@ public class SelfDevOrchestrator {
         taskRegistry.put("SUPERVISOR", supervisorCheck);
         taskRegistry.put("GENOME", genome);
         taskRegistry.put("PERMISSIONS", permissions);
+
+        taskRegistry.put("CREATE_EVO_PROJECT", createProject);
+        taskRegistry.put("CREATE_INFERENCE_TASK", createInference);
+        taskRegistry.put("ANALYTIC_CHAT_VALIDATION", analyticChat);
 
         taskRegistry.put("LLM", llm);
         taskRegistry.put("SUPERVISOR_LOOP", supervisorLoop);

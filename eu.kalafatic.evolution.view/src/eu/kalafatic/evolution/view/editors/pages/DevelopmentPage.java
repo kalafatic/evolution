@@ -88,6 +88,9 @@ public class DevelopmentPage extends AEvoPage {
 		public static final String START_EVO = "Start Evo Product";
 		public static final String START_EVO_PRODUCT_SUPERVISOR = "Start Evo Product (Supervisor)";
 		public static final String STOP_EVO_PRODUCT_SUPERVISOR = "Stop Evo Product (Supervisor)";
+		public static final String CREATE_EVO_PROJECT = "Create EVO Project";
+		public static final String CREATE_INFERENCE_TASK = "Create Local Inference Task";
+		public static final String ANALYTIC_CHAT_VALIDATION = "Analytic Chat Validation";
 		public static final String SUPERVISOR_LOOP = "Supervisor Engine";
 		public static final String SELF_DEV_LOOP = "Self-Dev Loop";
 
@@ -365,6 +368,9 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(row++, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port 8099", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "START_EVO", SelfDevRow.START_EVO, "./evo --port 48091", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "CREATE_EVO_PROJECT", SelfDevRow.CREATE_EVO_PROJECT, "curl -X POST http://localhost:48091/server/project/create -d '{\"name\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "CREATE_INFERENCE_TASK", SelfDevRow.CREATE_INFERENCE_TASK, "curl -X POST http://localhost:48091/task -d '{\"prompt\":\"hi\",\"sessionId\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "ANALYTIC_CHAT_VALIDATION", SelfDevRow.ANALYTIC_CHAT_VALIDATION, "curl -s http://localhost:48091/server/conversation/SelfDevProject", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "SUPERVISOR_LOOP", SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "SELF_DEV_LOOP", SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
@@ -751,6 +757,12 @@ public class DevelopmentPage extends AEvoPage {
 			"FROM Workspace Export Directory TO Active Process: Launches EVO RCP product process on offset port directly.";
 		case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR ->
 			"FROM Workspace Export Directory TO Active Process: Launches EVO RCP product via Supervisor runner and verifies startup.";
+		case SelfDevRow.CREATE_EVO_PROJECT ->
+			"Creates a new EVO project session ('SelfDevProject') on EVO RCP via HTTP request after process startup.";
+		case SelfDevRow.CREATE_INFERENCE_TASK ->
+			"Submits a simple 'hi' local inference prompt inside the active EVO project session via HTTP.";
+		case SelfDevRow.ANALYTIC_CHAT_VALIDATION ->
+			"Polls and retrieves chat conversation history, waiting for terminal response and validating the final chat result.";
 		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR ->
 			"Sends graceful stop request to running EVO RCP product via Supervisor.";
 		case SelfDevRow.SUPERVISOR_LOOP -> "Starts continuous Supervisor process monitoring loop for EVO RCP runtime.";
