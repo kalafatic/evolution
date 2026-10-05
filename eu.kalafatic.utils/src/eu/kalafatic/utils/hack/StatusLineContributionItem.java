@@ -201,13 +201,15 @@ public class StatusLineContributionItem extends ContributionItem {
 	 * @param text the new text
 	 */
 	public void setText(String text) {
-		Assert.isNotNull(text);
+		if (text == null) {
+			text = Util.ZERO_LENGTH_STRING;
+		}
 
 		this.text = LegacyActionTools.escapeMnemonics(text);
 
 		if (label != null && !label.isDisposed()) {
 
-			if (this.text.length() == 0) {
+			if (this.text.length() == 0 && this.bgImage == null) {
 				setVisible(false);
 			} else {
 				setVisible(true);
@@ -232,13 +234,11 @@ public class StatusLineContributionItem extends ContributionItem {
 	 * @param image the new image
 	 */
 	public void setImage(Image image) {
-		Assert.isNotNull(image);
-
 		this.bgImage = image;
 
 		if (label != null && !label.isDisposed()) {
 
-			if (this.text.length() == 0) {
+			if (this.text.length() == 0 && this.bgImage == null) {
 				setVisible(false);
 			} else {
 				setVisible(true);
