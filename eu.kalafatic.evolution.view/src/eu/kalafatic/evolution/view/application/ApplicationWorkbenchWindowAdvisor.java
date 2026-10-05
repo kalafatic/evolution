@@ -204,6 +204,9 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 		new ProjectManager().refreshAllProjects();
 
+		// Install Global EVO Context Menu Listener across all controls
+		eu.kalafatic.evolution.view.menu.EvoGlobalContextMenuManager.getInstance().install();
+
 		Job initJob = new Job("Evolution Repositories Initialization") {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
