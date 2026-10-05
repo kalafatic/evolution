@@ -213,4 +213,37 @@ public class OllamaFallbackTest {
         assertEquals("Fallback success", result);
         assertNotEquals("evo-data-v15000-e512-l8-h8-050926_153844", orchestrator.getOllama().getModel());
     }
+
+    @Test
+    public void testTimeoutDiagnosticsHandling() {
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
+        ollama.setUrl("http://localhost:" + port);
+        ollama.setModel("gemma3:1b");
+        orchestrator.setOllama(ollama);
+
+        OllamaProvider provider = new OllamaProvider();
+        TaskContext context = new TaskContext(orchestrator, null);
+
+        java.net.http.HttpTimeoutException timeoutException = new java.net.http.HttpTimeoutException("request timed out");
+
+        try {
+            // Calling showDetailedOllamaError via reflection since it's private
+            java.lang.reflect.Method method = OllamaProvider.class.getDeclaredMethod("showDetailedOllamaError", Orchestrator.class, String.class, Throwable.class, TaskContext.class);
+            method.setAccessible(true);
+            method.invoke(provider, orchestrator, "gemma3:1b", timeoutException, context);
+        } catch (Exception e) {
+            fail("Reflection invocation failed: " + e.getMessage());
+        }
+
+        // Verify that context logs contained timeout diagnostics
+        boolean loggedTimeout = false;
+        for (String log : context.getLogs()) {
+            if (log.contains("Ollama request TIMED OUT") || log.contains("TIMED OUT")) {
+                loggedTimeout = true;
+                break;
+            }
+        }
+        assertTrue("Expected context logs to contain timeout diagnostic cause", loggedTimeout);
+    }
 }

@@ -93,6 +93,24 @@ public class OllamaProvider implements ILlmProvider {
             temp = temp.getCause();
         }
 
+        boolean isTimeout = false;
+        temp = error;
+        while (temp != null) {
+            if (temp instanceof java.net.http.HttpTimeoutException || temp instanceof java.net.SocketTimeoutException) {
+                isTimeout = true;
+                break;
+            }
+            String msg = temp.getMessage();
+            if (msg != null) {
+                String lower = msg.toLowerCase();
+                if (lower.contains("timed out") || lower.contains("timeout")) {
+                    isTimeout = true;
+                    break;
+                }
+            }
+            temp = temp.getCause();
+        }
+
         if (isConnection) {
             detectedCause = "Ollama server is OFFLINE or UNREACHABLE.\n"
                     + "The application was unable to establish a connection to the Ollama service on "
@@ -100,6 +118,13 @@ public class OllamaProvider implements ILlmProvider {
             suggestions = "1. Please check if Ollama is running on your machine.\n"
                     + "2. Start it using 'ollama serve' or open the Ollama desktop application.\n"
                     + "3. Verify that the Ollama URL setting in the Evolution editor matches your running Ollama server.";
+        } else if (isTimeout) {
+            detectedCause = "Ollama request TIMED OUT while processing model '" + model + "'.\n"
+                    + "The Ollama server did not complete the response within the configured timeout period.";
+            suggestions = "1. Verify that Ollama is responsive and not frozen or overloaded with heavy prompts/models.\n"
+                    + "2. Try running 'ollama run " + model + "' in terminal to verify model responsiveness.\n"
+                    + "3. If the model is large or CPU inference is slow, consider using a smaller parameter model or enabling GPU acceleration in Ollama.\n"
+                    + "4. Unload inactive models from memory using 'ollama stop <model>' or restarting the Ollama server.";
         } else if (errorMsg.contains("not found") || errorMsg.contains("404")) {
             detectedCause = "The model '" + model + "' was NOT FOUND or is NOT REGISTERED in Ollama.\n"
                     + "Self-healing registration was either not triggered, or failed to complete.";
