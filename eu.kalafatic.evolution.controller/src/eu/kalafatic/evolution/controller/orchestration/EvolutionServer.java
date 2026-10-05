@@ -301,6 +301,8 @@ public class EvolutionServer extends NanoHTTPD {
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/session/") && uri.endsWith("/generate-architecture")) {
                 String id = uri.substring("/forge/session/".length(), uri.length() - "/generate-architecture".length());
                 return handleGenerateArchitecture(id, session);
+            } else if (Method.POST.equals(method) && ("/forge/finish".equals(uri) || "/server/forge/finish".equals(uri))) {
+                return handleForgeFinish(session, null);
             } else if (Method.POST.equals(method) && "/forge/save-all".equals(uri)) {
                 return handleForgeSaveAll();
             } else if (uri.startsWith("/forge/session/")) {
@@ -327,6 +329,7 @@ public class EvolutionServer extends NanoHTTPD {
                         if (subAction.equals("/clone")) return handleCloneForgeSession(id, session);
                         if (subAction.startsWith("/uistate/")) return handleUpdateUiState(id, parts[2], session);
                         if (subAction.equals("/forging/start")) return handleStartForging(id);
+                        if (subAction.equals("/forging/finish") || subAction.equals("/finish")) return handleForgeFinish(session, id);
                         if (subAction.equals("/demo")) return handleRunForgeDemo(id);
                         if (subAction.equals("/generate-architecture")) return handleGenerateArchitecture(id, session);
                         if (subAction.equals("/open-folder")) return handleOpenFolder(id);
@@ -1785,6 +1788,40 @@ public class EvolutionServer extends NanoHTTPD {
             body.getString("name"), body.getString("modelType"), isDemo);
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("id", s.getSessionId()).toString());
+    }
+
+    private Response handleForgeFinish(IHTTPSession session, String sessionIdOverride) {
+        try {
+            String sessionId = sessionIdOverride;
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                try {
+                    Map<String, String> files = new HashMap<>();
+                    session.parseBody(files);
+                    String body = files.get("postData");
+                    if (body != null && !body.trim().isEmpty()) {
+                        JSONObject json = new JSONObject(body);
+                        sessionId = json.optString("sessionId", null);
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                Map<String, String> params = session.getParms();
+                if (params != null) {
+                    sessionId = params.get("sessionId");
+                }
+            }
+            boolean requested = ForgeSessionManager.getInstance().requestFinish(sessionId);
+            JSONObject res = new JSONObject();
+            res.put("status", "FINISHING");
+            res.put("message", "Gracefully finishing current epoch and exporting all model files.");
+            res.put("sessionId", sessionId != null ? sessionId : "active");
+            res.put("requested", requested);
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            JSONObject err = new JSONObject();
+            err.put("error", e.getMessage());
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", err.toString());
+        }
     }
 
     private Response handleForgeSaveAll() {

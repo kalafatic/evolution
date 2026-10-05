@@ -1031,17 +1031,22 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
-		trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
-			int logInterval = Math.max(1, Math.max(1, totalSamples / 10));
-			if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-				double pct = (double) sampleIndex / totalSamples * 100.0;
-				context.log(String.format(
-						"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-						epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
-			}
-		});
-		int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
-		trainer.train(samples, finalEpochs);
+		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
+		try {
+			trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
+				int logInterval = Math.max(1, Math.max(1, totalSamples / 10));
+				if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+					double pct = (double) sampleIndex / totalSamples * 100.0;
+					context.log(String.format(
+							"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+							epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+				}
+			});
+			int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
+			trainer.train(samples, finalEpochs);
+		} finally {
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
+		}
 
 		List<Double> lossHist = trainer.getLossHistory();
 		if (lossHist != null && !lossHist.isEmpty()) {
@@ -1341,29 +1346,34 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			}
 
 			trainer = new EvoLlmTrainer(model);
-			trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
-				int logInterval = Math.max(1, totalSamples / 10);
-				if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-					double pct = (double) sampleIndex / totalSamples * 100.0;
-					context.log(String.format(
-							"[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-							epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
-				}
-			});
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
 			double trainLoss = 2.5;
-			if (!trainSamples.isEmpty()) {
-				trainer.train(trainSamples, config.epochs);
-				trainLoss = trainer.getLossHistory().isEmpty() ? 2.5
-						: trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
-
-				List<Double> candLossHist = trainer.getLossHistory();
-				if (candLossHist != null && !candLossHist.isEmpty()) {
-					org.json.JSONArray lossArr = new org.json.JSONArray();
-					for (Double l : candLossHist) {
-						lossArr.put(l);
+			try {
+				trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
+					int logInterval = Math.max(1, totalSamples / 10);
+					if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+						double pct = (double) sampleIndex / totalSamples * 100.0;
+						context.log(String.format(
+								"[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+								epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
 					}
-					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
+				});
+				if (!trainSamples.isEmpty()) {
+					trainer.train(trainSamples, config.epochs);
 				}
+			} finally {
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
+			}
+			trainLoss = trainer.getLossHistory().isEmpty() ? 2.5
+					: trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+
+			List<Double> candLossHist = trainer.getLossHistory();
+			if (candLossHist != null && !candLossHist.isEmpty()) {
+				org.json.JSONArray lossArr = new org.json.JSONArray();
+				for (Double l : candLossHist) {
+					lossArr.put(l);
+				}
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
 			}
 
 			// Compute Validation Loss (forward pass only, no gradient backpropagation)

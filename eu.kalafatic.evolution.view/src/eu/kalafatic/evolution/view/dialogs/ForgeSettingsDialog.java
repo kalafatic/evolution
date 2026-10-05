@@ -1026,4 +1026,42 @@ public class ForgeSettingsDialog extends Dialog {
         }
         return arr.toString();
     }
+
+    @Override
+    protected void createButtonsForButtonBar(Composite parent) {
+        Button finishBtn = createButton(parent, 1001, "🏁 Finish Training", false);
+        finishBtn.setToolTipText("Gracefully finish training at current state/epoch and export all model files");
+        finishBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleFinishTraining(finishBtn);
+            }
+        });
+        super.createButtonsForButtonBar(parent);
+    }
+
+    private void handleFinishTraining(Button btn) {
+        try {
+            Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            Object mgr = managerClass.getMethod("getInstance").invoke(null);
+            Boolean requested = (Boolean) managerClass.getMethod("requestFinish", String.class).invoke(mgr, (Object) null);
+
+            if (btn != null && !btn.isDisposed()) {
+                btn.setText("Finishing Epoch...");
+                btn.setEnabled(false);
+            }
+            if (Boolean.TRUE.equals(requested)) {
+                MessageDialog.openInformation(getShell(), "Finishing Training",
+                    "Training finish requested!\n\n" +
+                    "The trainer will complete its current step/epoch, retain all learned weights, " +
+                    "and proceed immediately to compile, save, and export all model files (.evo, GGUF, report).");
+            } else {
+                MessageDialog.openInformation(getShell(), "No Active Trainer",
+                    "No active training run detected in progress.\n" +
+                    "When training is running, clicking this button gracefully finishes the current epoch and exports all files.");
+            }
+        } catch (Exception ex) {
+            MessageDialog.openError(getShell(), "Error", "Failed to request finish: " + ex.getMessage());
+        }
+    }
 }
