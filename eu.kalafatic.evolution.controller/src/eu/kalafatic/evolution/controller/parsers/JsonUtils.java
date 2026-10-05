@@ -84,6 +84,14 @@ public class JsonUtils {
             try {
                 return new JSONObject(fullPart);
             } catch (JSONException e) {
+                // If org.json failed (e.g. due to duplicate keys), try Jackson deduplication first
+                try {
+                    com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(fullPart);
+                    if (node != null && node.isObject()) {
+                        return new JSONObject(mapper.writeValueAsString(node));
+                    }
+                } catch (Exception ignored) {}
+
                 // Greedy failed, likely multiple objects or nested content.
                 // Attempt to find the first valid one using balanced brace matching.
                 int searchPos = firstStart;

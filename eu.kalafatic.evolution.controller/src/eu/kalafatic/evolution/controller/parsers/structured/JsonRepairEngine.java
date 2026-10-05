@@ -28,7 +28,26 @@ public class JsonRepairEngine {
         // 5. Repair malformed brackets and truncated objects
         repaired = repairStructure(repaired);
 
+        // 6. Deduplicate keys to avoid org.json JSONException on duplicate keys
+        repaired = deduplicateKeys(repaired);
+
         return repaired;
+    }
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper MAPPER = new com.fasterxml.jackson.databind.ObjectMapper()
+            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    private String deduplicateKeys(String json) {
+        if (json == null || json.isEmpty()) return json;
+        try {
+            com.fasterxml.jackson.databind.JsonNode node = MAPPER.readTree(json);
+            if (node != null && (node.isObject() || node.isArray())) {
+                return MAPPER.writeValueAsString(node);
+            }
+        } catch (Exception ignored) {
+            // If Jackson cannot parse it yet, return as-is
+        }
+        return json;
     }
 
     private String removeMarkdown(String text) {

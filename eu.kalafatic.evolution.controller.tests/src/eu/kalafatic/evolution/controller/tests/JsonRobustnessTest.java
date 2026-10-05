@@ -64,4 +64,23 @@ public class JsonRobustnessTest {
         JSONArray all = JsonUtils.extractJsonArrayFlexible(text);
         assertEquals(2, all.length());
     }
+
+    @Test
+    public void testDuplicateKeysDeduplication() {
+        String jsonWithDuplicateKeys = "{\n" +
+                "  \"intent\": \"CHAT\",\n" +
+                "  \"confidence\": 0.8,\n" +
+                "  \"confidence\": 0.95,\n" +
+                "  \"unresolvedDimensions\": [\"a\"],\n" +
+                "  \"unresolvedDimensions\": [\"b\"]\n" +
+                "}";
+
+        eu.kalafatic.evolution.controller.parsers.structured.JsonRepairEngine repairEngine = new eu.kalafatic.evolution.controller.parsers.structured.JsonRepairEngine();
+        String repaired = repairEngine.repair(jsonWithDuplicateKeys);
+        assertNotNull(repaired);
+
+        JSONObject obj = JsonUtils.extractJsonObject(repaired);
+        assertNotNull(obj);
+        assertEquals(0.95, obj.getDouble("confidence"), 0.001);
+    }
 }

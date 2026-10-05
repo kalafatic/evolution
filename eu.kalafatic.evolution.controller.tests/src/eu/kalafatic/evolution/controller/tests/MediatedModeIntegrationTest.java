@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.tests;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
@@ -198,6 +200,26 @@ public class MediatedModeIntegrationTest {
             assertTrue("pom.xml should be in ZIP", foundPom);
             assertTrue("sloeber.ino should be in ZIP", foundIno);
         }
+    }
+
+    @Test
+    public void testMediatedModeSingleIterationTermination() throws Exception {
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+
+        context.getOrchestrationState().setExecutionProfile(
+            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null));
+
+        IterationManager manager = KernelFactory.create("Analyze my architecture", context, session, aiService);
+
+        TaskRequest request = new TaskRequest();
+        request.setPrompt("Analyze my architecture");
+
+        OrchestratorResponse response = manager.handle(request);
+
+        assertNotNull("Response should not be null", response);
+        assertNotNull("Summary should not be null", response.getSummary());
+        assertFalse("Summary should not be generic unfinished status", response.getSummary().startsWith("Evolution completed at phase:"));
+        assertEquals("State should be DONE", eu.kalafatic.evolution.controller.orchestration.SystemState.DONE, context.getStateHolder().getState());
     }
 
     private static class MockLlmProvider {
