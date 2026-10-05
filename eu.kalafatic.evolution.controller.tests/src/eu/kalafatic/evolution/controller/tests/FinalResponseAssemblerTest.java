@@ -132,4 +132,30 @@ public class FinalResponseAssemblerTest {
         assertTrue("Output should contain Modified Files block", output.contains("Modified Files"));
         assertTrue("Output should contain file links", output.contains("file://"));
     }
+
+    @Test
+    public void testAssembleIntentReconstructionTargetSummary() throws Exception {
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.setSessionId("test-session-intent");
+        String rawPrompt = "# Intent Discovery\n\nYou are an experienced software architect performing reverse engineering on an unknown software project.\nYour goal is to discover the project's purpose...";
+        context.getOrchestrationState().setRawInput(rawPrompt);
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-intent");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.INTENT_RECONSTRUCTION);
+
+        PlatformMode platformMode = new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, null, 1, false);
+        context.setPlatformMode(platformMode);
+
+        // Put intentTargetSummary in metadata
+        String targetSummary = "Reconstructed Target Purpose & Knowledge:\nTarget Nature: Structured Codebase\nDiscovered Core Artifacts:\n - AppController.java (USE_CASE)";
+        context.getOrchestrationState().getMetadata().put("intentTargetSummary", targetSummary);
+
+        FinalResponseAssembler assembler = new FinalResponseAssembler();
+        FinalResponse response = assembler.assemble(context, "Completed intent discovery", true, Instant.now());
+
+        assertNotNull(response);
+        String summaryText = response.getSummary();
+        assertTrue("Summary should contain reconstructed target purpose", summaryText.contains("Reconstructed Target Purpose & Knowledge"));
+        assertFalse("Summary should not echo raw prompt instructions", summaryText.contains("You are an experienced software architect"));
+    }
 }
