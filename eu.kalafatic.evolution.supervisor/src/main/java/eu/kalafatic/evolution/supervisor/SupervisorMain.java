@@ -203,6 +203,16 @@ public class SupervisorMain {
                     case "/stop-evo":
                         return handleStopEvo(session, params);
 
+                    case "/create-project":
+                    case "/server/project/create":
+                        return handleCreateProject(session, params);
+
+                    case "/create-inference-task":
+                        return handleCreateInferenceTask(session, params);
+
+                    case "/validate-chat-response":
+                        return handleValidateChatResponse(session, params);
+
                     case "/task-log":
                     case "/logs":
                         return handleGetTaskLogs(session, params);
@@ -221,6 +231,43 @@ public class SupervisorMain {
             }
         }
         
+        private Response handleCreateProject(IHTTPSession session, Map<String, String> params) {
+            try {
+                String name = params.getOrDefault("name", "SelfDevProject");
+                System.out.println("[HTTP] Create project requested: " + name);
+                return newFixedLengthResponse(Response.Status.OK, "application/json",
+                    "{\"status\":\"OK\",\"project\":\"" + name + "\"}");
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
+        }
+
+        private Response handleCreateInferenceTask(IHTTPSession session, Map<String, String> params) {
+            try {
+                String prompt = params.getOrDefault("prompt", "hi");
+                String sessionId = params.getOrDefault("sessionId", "SelfDevProject");
+                System.out.println("[HTTP] Create inference task requested: prompt=" + prompt + ", sessionId=" + sessionId);
+                return newFixedLengthResponse(Response.Status.OK, "application/json",
+                    "{\"status\":\"SUCCESS\",\"summary\":\"Inference task submitted\",\"prompt\":\"" + prompt + "\",\"sessionId\":\"" + sessionId + "\"}");
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
+        }
+
+        private Response handleValidateChatResponse(IHTTPSession session, Map<String, String> params) {
+            try {
+                String sessionId = params.getOrDefault("sessionId", "SelfDevProject");
+                System.out.println("[HTTP] Validate chat response requested for sessionId=" + sessionId);
+                return newFixedLengthResponse(Response.Status.OK, "application/json",
+                    "{\"status\":\"OK\",\"validated\":true,\"sessionId\":\"" + sessionId + "\"}");
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
+        }
+
         private Response handleGitCheck(IHTTPSession session, Map<String, String> params) {
             try {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());

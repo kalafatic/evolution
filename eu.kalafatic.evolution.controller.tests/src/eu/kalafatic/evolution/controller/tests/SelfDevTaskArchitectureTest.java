@@ -61,7 +61,8 @@ public class SelfDevTaskArchitectureTest {
             "LLM", "GIT_EVO", "MAVEN_EVO", "COPY_SUPERVISOR", "BUILD_SUPERVISOR_LOCAL",
             "SUPERVISOR", "GIT_SUPERVISOR", "MAVEN_SUPERVISOR", "GENOME", "PERMISSIONS",
             "COPY", "BUILD_EVO", "BUILD_SUPERVISOR", "EXPORT_EVO", "EXPORT_SUPERVISOR",
-            "START_SUPERVISOR", "START_EVO", "START_EVO_SUPERVISOR", "SUPERVISOR_LOOP", "SELF_DEV_LOOP", "STOP_EVO_SUPERVISOR"
+            "START_SUPERVISOR", "START_EVO", "START_EVO_SUPERVISOR", "CREATE_EVO_PROJECT",
+            "CREATE_INFERENCE_TASK", "ANALYTIC_CHAT_VALIDATION", "SUPERVISOR_LOOP", "SELF_DEV_LOOP", "STOP_EVO_SUPERVISOR"
         };
 
         for (String taskId : requiredTaskIds) {
@@ -84,6 +85,21 @@ public class SelfDevTaskArchitectureTest {
 
         TychoEvoRcpBuilder evoBuilder = (TychoEvoRcpBuilder) builderObj;
         assertTrue("TychoEvoRcpBuilder must default skipTests to true for MAVEN_EVO", evoBuilder.isSkipTests());
+    }
+
+    @Test
+    public void testNewSelfDevTasksDependencies() {
+        SelfDevTask createProject = orchestrator.getTaskRegistry().get("CREATE_EVO_PROJECT");
+        assertNotNull(createProject);
+        assertTrue("CREATE_EVO_PROJECT must depend on START_EVO", createProject.getDependencies().contains("START_EVO"));
+
+        SelfDevTask createInference = orchestrator.getTaskRegistry().get("CREATE_INFERENCE_TASK");
+        assertNotNull(createInference);
+        assertTrue("CREATE_INFERENCE_TASK must depend on CREATE_EVO_PROJECT", createInference.getDependencies().contains("CREATE_EVO_PROJECT"));
+
+        SelfDevTask analyticChat = orchestrator.getTaskRegistry().get("ANALYTIC_CHAT_VALIDATION");
+        assertNotNull(analyticChat);
+        assertTrue("ANALYTIC_CHAT_VALIDATION must depend on CREATE_INFERENCE_TASK", analyticChat.getDependencies().contains("CREATE_INFERENCE_TASK"));
     }
 
     @Test

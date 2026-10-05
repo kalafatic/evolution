@@ -249,6 +249,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetEvolutionTreePage();
             } else if (Method.GET.equals(method) && "/evolution/tree".equals(uri)) {
                 return handleGetEvolutionTreeJson(session);
+            } else if (Method.POST.equals(method) && ("/server/project/create".equals(uri) || "/project/create".equals(uri))) {
+                return handleCreateProject(session);
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.GET.equals(method) && "/server/osgi".equals(uri)) {
@@ -388,6 +390,32 @@ public class EvolutionServer extends NanoHTTPD {
         }
 
         OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
+
+        if (sid != null && !sid.isEmpty()) {
+            ConversationOutputController.getInstance().submitMessage(
+                sid,
+                "turn-1",
+                "USER",
+                request.getPrompt(),
+                "USER",
+                MessagePriority.NORMAL,
+                false,
+                null,
+                null
+            );
+            String summary = response.getSummary() != null ? response.getSummary() : "Task completed";
+            ConversationOutputController.getInstance().submitMessage(
+                sid,
+                "turn-1",
+                "ASSISTANT",
+                summary,
+                "SYSTEM",
+                MessagePriority.FINAL,
+                true,
+                null,
+                null
+            );
+        }
 
         JSONObject jsonRes = new JSONObject();
         jsonRes.put("summary", response.getSummary());
@@ -549,6 +577,33 @@ public class EvolutionServer extends NanoHTTPD {
             return childPath.startsWith(parentPath);
         } catch (IOException e) {
             return false;
+        }
+    }
+
+    private Response handleCreateProject(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+
+        String name = json.optString("name", "SelfDevProject");
+        try {
+            eu.kalafatic.evolution.model.orchestration.EvoProject project = ProjectModelManager.getInstance().createProject(name);
+            Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.eResource() != null) {
+                ProjectModelManager.getInstance().saveResource(orch.eResource());
+            }
+
+            JSONObject res = new JSONObject();
+            res.put("status", "OK");
+            res.put("project", name);
+            if (project != null) {
+                res.put("projectName", project.getName() != null ? project.getName() : name);
+            }
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    new JSONObject().put("status", "ERROR").put("error", e.getMessage()).toString());
         }
     }
 
