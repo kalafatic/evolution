@@ -660,6 +660,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		}
 	}
 
+	public void switchToPageIndex(int pageIndex) {
+		if (pageIndex >= 0 && pageIndex < getPageCount()) {
+			setActivePage(pageIndex);
+		}
+	}
+
 	private void setActivePageByControl(Control control) {
 		for (int i = 0; i < getPageCount(); i++) {
 			if (getControl(i) == control) {
