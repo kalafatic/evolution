@@ -623,6 +623,13 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				}
 			}
 
+			// In Mediated Mode, task execution is intentionally skipped and cognitive analysis is complete
+			if (ModeRecognizer.isMediatedMode(context) && result != null && result.isSuccess()) {
+				context.log("[DARWIN] Mediated Mode: Analysis and proposal generation complete at iteration "
+						+ safetyCounter + ". Finalizing analysis result.");
+				break;
+			}
+
 			// If we reached a terminal phase during the iteration, break the loop if min
 			// iterations met
 			String currentPhaseStr = state.getCurrentPhase();
@@ -658,9 +665,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			response.setResultType(ResultType.CHAT);
 			// DO NOT transition to DONE - keep waiting state
 		} else if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
-				|| state.getCurrentPhase().contains("DESIGN_SATISFIED"))
+				|| state.getCurrentPhase().contains("DESIGN_SATISFIED") || ModeRecognizer.isMediatedMode(context))
 				&& response.getResultType() != ResultType.ERROR) {
-			if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
+			if (ModeRecognizer.isMediatedMode(context)
+					|| context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
 				summary = iterationManager.performMediatedExportConvergence(request, context);
 			} else if (context.getMetadata().containsKey("testMode")) {
 				summary = "Evolution completed (Test Mode).";

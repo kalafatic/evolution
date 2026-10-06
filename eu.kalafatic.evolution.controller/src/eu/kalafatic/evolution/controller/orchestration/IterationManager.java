@@ -1219,7 +1219,6 @@ public class IterationManager {
 	}
 
 	public void refineTargetReality(String goal, TaskContext context) throws Exception {
-		context.log("[KERNEL] Recursive Discovery: Refining Target Reality Model based on new iteration evidence.");
 		TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata()
 				.get("mediatedSnapshot");
 		TargetRealityModel existingModel = (TargetRealityModel) context.getOrchestrationState().getMetadata()
@@ -1228,8 +1227,16 @@ public class IterationManager {
 		if (snapshot == null || existingModel == null)
 			return;
 
-		// Recursive Reconstruction Loop: iterate discovery until completeness threshold
-		// or convergence
+		// In Mediated Mode, initial discovery already populated TargetRealityModel and snapshot.
+		// Avoid re-running heavy multi-pass discovery loops.
+		if (eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer.isMediatedMode(context)) {
+			context.log("[KERNEL] Mediated Mode: Target Reality Model already established. Skipping redundant discovery refinement.");
+			return;
+		}
+
+		context.log("[KERNEL] Recursive Discovery: Refining Target Reality Model based on new iteration evidence.");
+
+		// Recursive Reconstruction Loop: iterate discovery until completeness threshold or convergence
 		double lastCompleteness = existingModel.getRealityCompleteness();
 		int pass = 1;
 		while (pass <= 3 && existingModel.getRealityCompleteness() < 0.85) {

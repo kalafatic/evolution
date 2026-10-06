@@ -176,8 +176,12 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         context.log("[DISCOVERY] Pass 2: Local Information Discovery.");
         if (snapshot == null) return;
 
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+        int intensity = (profile != null) ? profile.getIntensity() : 2;
+        int maxCandidates = intensity <= 3 ? 3 : 5;
+
         // Prioritize hotspots and high-centrality nodes
-        List<SemanticNode> candidates = getTopCentralNodes(snapshot, 10);
+        List<SemanticNode> candidates = getTopCentralNodes(snapshot, maxCandidates);
         for (SemanticNode node : candidates) {
             // Check if we already have facts about this node
             boolean known = model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()));
@@ -254,8 +258,16 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         context.log("[DISCOVERY] Pass 3: Relationship Discovery & Semantic Influence.");
         if (snapshot == null) return;
 
-        List<SemanticNode> influentialNodes = getTopCentralNodes(snapshot, 15);
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+        int intensity = (profile != null) ? profile.getIntensity() : 2;
+        int maxNodes = intensity <= 3 ? 3 : 5;
+
+        List<SemanticNode> influentialNodes = getTopCentralNodes(snapshot, maxNodes);
         for (SemanticNode node : influentialNodes) {
+            // Skip if relationships or influence for this node have already been analyzed
+            boolean knownRel = model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()) && f.getPredicate() != null && f.getPredicate().contains(":"));
+            if (knownRel) continue;
+
             context.log("[DISCOVERY] Analyzing relationships and influence for: " + node.getPath());
 
             List<SemanticEdge> incoming = snapshot.getEdges().stream().filter(e -> e.getTargetId().equals(node.getId())).collect(Collectors.toList());
