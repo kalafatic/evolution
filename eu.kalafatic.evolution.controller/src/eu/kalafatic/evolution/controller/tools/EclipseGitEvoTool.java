@@ -302,10 +302,12 @@ public class EclipseGitEvoTool {
 		}
 		lockMasterBranchForPush();
 		
-		// Force multiple refresh attempts with increasing delays
-		Display.getDefault().timerExec(1000, () -> forceRefreshGitView());
-		Display.getDefault().timerExec(3000, () -> forceRefreshGitView());
-		Display.getDefault().timerExec(5000, () -> forceRefreshGitView());
+		// Force multiple refresh attempts with increasing delays safely dispatched on UI thread
+		Display.getDefault().asyncExec(() -> {
+			Display.getDefault().timerExec(1000, () -> forceRefreshGitView());
+			Display.getDefault().timerExec(3000, () -> forceRefreshGitView());
+			Display.getDefault().timerExec(5000, () -> forceRefreshGitView());
+		});
 		
 		
 		
@@ -375,7 +377,7 @@ public class EclipseGitEvoTool {
 		for (String id : registry.keySet())
 			registerRepositoriesInGitView(id);
 		
-		Display.getDefault().timerExec(3000, () -> forceRefreshGitView());
+		Display.getDefault().asyncExec(() -> Display.getDefault().timerExec(3000, () -> forceRefreshGitView()));
 		
 		return new GitOpResult(OpStatus.SUCCESS, "All repositories registered");
 	}
