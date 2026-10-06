@@ -35,7 +35,7 @@ public class InstructionsGroup extends AEvoGroup {
     private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
     private org.eclipse.swt.widgets.Combo maxIterationsCombo;
     private Scale expansionScale;
-    private Button sendButton, pauseButton, stopButton, attachButton;
+    private Button sendButton, pauseButton, finishButton, stopButton, attachButton;
     private Composite attachmentArea;
     private List<String> instructionFiles = new ArrayList<>();
     private AiChatPage page;
@@ -157,6 +157,32 @@ public class InstructionsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.handlePause();
+            }
+        });
+
+        finishButton = GUIFactory.INSTANCE.createButton(btnComp, "🏁 Finish");
+        finishButton.setEnabled(true);
+        finishButton.setToolTipText("Gracefully finish training at current state/epoch and export all model files");
+        finishButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                try {
+                    Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                    Object mgr = managerClass.getMethod("getInstance").invoke(null);
+                    String sessionName = page != null ? page.getCurrentSessionName() : null;
+                    Boolean requested = (Boolean) managerClass.getMethod("requestFinish", String.class).invoke(mgr, sessionName);
+                    if (Boolean.TRUE.equals(requested)) {
+                        org.eclipse.jface.dialogs.MessageDialog.openInformation(page.getShell(), "Finishing Training",
+                            "Training finish requested!\n\n" +
+                            "The trainer will complete its current step/epoch, retain all learned weights, " +
+                            "and proceed immediately to compile, save, and export all model files (.evo, GGUF, report).");
+                    } else {
+                        org.eclipse.jface.dialogs.MessageDialog.openInformation(page.getShell(), "Finish Requested",
+                            "Finish signal sent to active training session.");
+                    }
+                } catch (Exception ex) {
+                    org.eclipse.jface.dialogs.MessageDialog.openError(page.getShell(), "Error", "Failed to request finish: " + ex.getMessage());
+                }
             }
         });
 
@@ -499,6 +525,7 @@ public class InstructionsGroup extends AEvoGroup {
     public void setOrchestrationRunning(boolean running) {
         setEnabledSafe(sendButton, !running);
         setEnabledSafe(pauseButton, true);
+        setEnabledSafe(finishButton, true);
         setEnabledSafe(stopButton, true);
         setTextSafe(pauseButton, "⏸️ Pause");
     }
