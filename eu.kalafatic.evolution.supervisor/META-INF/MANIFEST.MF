@@ -5,9 +5,14 @@ Bundle-SymbolicName: eu.kalafatic.evolution.supervisor
 Bundle-Version: 2.6.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: eu.kalafatic.evolution.supervisor
-Require-Bundle: eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.5"
+Require-Bundle: eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.5",
+ org.eclipse.swt;resolution:=optional,
+ org.eclipse.equinox.app;resolution:=optional,
+ org.eclipse.core.runtime;resolution:=optional,
+ org.eclipse.jface;resolution:=optional
 Export-Package: eu.kalafatic.evolution.supervisor,
  eu.kalafatic.evolution.supervisor.bootstrap,
+ eu.kalafatic.evolution.supervisor.ui,
  fi.iki.elonen,
  com.fasterxml.jackson.annotation,
  com.fasterxml.jackson.core,
@@ -51,4 +56,3 @@ Bundle-ClassPath: .,
  lib/jackson-databind-2.20.0.jar,
  lib/jbcrypt-0.4.jar,
  lib/nanohttpd-2.3.1.jar
- 
