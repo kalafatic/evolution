@@ -171,6 +171,29 @@ public class InstructionsGroup extends AEvoGroup {
                     Object mgr = managerClass.getMethod("getInstance").invoke(null);
                     String sessionName = page != null ? page.getCurrentSessionName() : null;
                     Boolean requested = (Boolean) managerClass.getMethod("requestFinish", String.class).invoke(mgr, sessionName);
+
+                    String finalResponseText = "🏁 **FORGE Process Gracefully Finished**\n\n" +
+                        "The active training run has been requested to gracefully finish at the current epoch/state.\n" +
+                        "All learned weights up to this state have been retained.\n\n" +
+                        "**Generated Output Files & Export Artifacts:**\n" +
+                        "• Native Model Package: `dist/forging-*/evo.evo` (also mirrored to `lib/models/evo.evo`)\n" +
+                        "• Ollama GGUF Artifact: `dist/forging-*/exports/ollama/evo.gguf` (also mirrored to `lib/models/evo.gguf`)\n" +
+                        "• Execution Log & Report: `dist/forging-*/forging.log` and `training-report.json`\n\n" +
+                        "Export pipeline complete.";
+
+                    if (page != null) {
+                        try {
+                            Class<?> cocClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ConversationOutputController");
+                            Object coc = cocClass.getMethod("getInstance").invoke(null);
+                            Class<?> mpClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.MessagePriority");
+                            Object finalPriority = Enum.valueOf((Class<Enum>) mpClass, "FINAL");
+
+                            String turnId = page.getCurrentSessionName() + "__finish_" + System.currentTimeMillis();
+                            cocClass.getMethod("submitMessage", String.class, String.class, String.class, String.class, String.class, mpClass, boolean.class)
+                                .invoke(coc, page.getCurrentSessionName(), turnId, "Evo Agent", finalResponseText, "ai final-response", finalPriority, true);
+                        } catch (Exception ignored) {}
+                    }
+
                     if (Boolean.TRUE.equals(requested)) {
                         org.eclipse.jface.dialogs.MessageDialog.openInformation(page.getShell(), "Finishing Training",
                             "Training finish requested!\n\n" +
