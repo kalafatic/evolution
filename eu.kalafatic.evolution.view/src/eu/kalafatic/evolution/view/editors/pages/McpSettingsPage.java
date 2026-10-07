@@ -1,5 +1,9 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
@@ -7,6 +11,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -45,65 +50,101 @@ public class McpSettingsPage extends AEvoPage {
 			eu.kalafatic.evolution.controller.log.Log.log("MCP Server URL cannot be empty.");
 			return;
 		}
-		new Thread(() -> {
-			try {
-				McpClient client = new McpClient(url);
-				String response = client.initialize();
-				configGroup.setStatus(true, "Connected");
+		Job job = new Job("MCP Test Connection: " + url) {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				System.out.println("[MCP][START] Test connection URL=" + url);
+				String orchId = orchestrator != null ? orchestrator.getName() : "MCP";
+				OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Testing MCP connection to " + url);
 
-				String additionalInfo = "";
-				if (url.contains("38080")) {
-					try {
-						String docContent = client.readResource("docs://README.md");
-						if (docContent != null && !docContent.isEmpty()) {
-							additionalInfo = "\n\nDemo Resource (README.md):\n"
-									+ (docContent.length() > 200 ? docContent.substring(0, 200) + "..." : docContent);
+				try {
+					McpClient client = new McpClient(url);
+					String response = client.initialize();
+					configGroup.setStatus(true, "Connected");
+
+					String additionalInfo = "";
+					if (url.contains("38080")) {
+						try {
+							String docContent = client.readResource("docs://README.md");
+							if (docContent != null && !docContent.isEmpty()) {
+								additionalInfo = "\n\nDemo Resource (README.md):\n"
+										+ (docContent.length() > 200 ? docContent.substring(0, 200) + "..." : docContent);
+							}
+						} catch (Exception e) {
+							additionalInfo = "\n\nCould not read demo resource: " + e.getMessage();
 						}
-					} catch (Exception e) {
-						additionalInfo = "\n\nCould not read demo resource: " + e.getMessage();
 					}
-				}
 
-				String finalAdditionalInfo = additionalInfo;
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed())
-						return;
-					MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-					mb.setText("Success");
-					mb.setMessage("Connected to MCP server successfully.\n" + response + finalAdditionalInfo);
-					mb.open();
-				});
-			} catch (Exception ex) {
-				String errorMsg = ex.getMessage() != null ? ex.getMessage() : ex.toString();
-				configGroup.setStatus(false, "Error: " + errorMsg);
-				eu.kalafatic.evolution.controller.log.Log.log(this, ex);
+					String finalAdditionalInfo = additionalInfo;
+					Display.getDefault().asyncExec(() -> {
+						if (isDisposed())
+							return;
+						MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+						mb.setText("Success");
+						mb.setMessage("Connected to MCP server successfully.\n" + response + finalAdditionalInfo);
+						mb.open();
+					});
+
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Test connection success durationMs=" + duration);
+					OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "MCP Connection verified");
+					return Status.OK_STATUS;
+				} catch (Exception ex) {
+					long duration = System.currentTimeMillis() - startTime;
+					String errorMsg = ex.getMessage() != null ? ex.getMessage() : ex.toString();
+					configGroup.setStatus(false, "Error: " + errorMsg);
+					System.out.println("[MCP][END] Test connection failed durationMs=" + duration + " Error=" + errorMsg);
+					OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "MCP Connection error: " + errorMsg);
+					eu.kalafatic.evolution.controller.log.Log.log(McpSettingsPage.this, ex);
+					return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", errorMsg, ex);
+				}
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	public void startDemoServer() {
-		new Thread(() -> {
-			try {
-				eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed())
-						return;
-					configGroup.updateDemoStatus();
-					refreshUI();
-					MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-					mb.setText("Success");
-					mb.setMessage("MCP Demo Documentation Server started on port 38080.");
-					mb.open();
-				});
-			} catch (Exception ex) {
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed())
-						return;
-					configGroup.updateDemoStatus();
-				});
-				eu.kalafatic.evolution.controller.log.Log.log(this, ex);
+		Job job = new Job("Start MCP Demo Server") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				System.out.println("[MCP][START] Starting demo server");
+				String orchId = orchestrator != null ? orchestrator.getName() : "MCP";
+				OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Starting MCP Demo Server");
+
+				try {
+					eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
+					Display.getDefault().asyncExec(() -> {
+						if (isDisposed())
+							return;
+						configGroup.updateDemoStatus();
+						refreshUI();
+						MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+						mb.setText("Success");
+						mb.setMessage("MCP Demo Documentation Server started on port 38080.");
+						mb.open();
+					});
+
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Demo server started durationMs=" + duration);
+					OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "MCP Demo Server running");
+					return Status.OK_STATUS;
+				} catch (Exception ex) {
+					Display.getDefault().asyncExec(() -> {
+						if (isDisposed())
+							return;
+						configGroup.updateDemoStatus();
+					});
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Demo server failed durationMs=" + duration + " Error=" + ex.getMessage());
+					OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "MCP Demo Server start failed");
+					eu.kalafatic.evolution.controller.log.Log.log(McpSettingsPage.this, ex);
+					return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+				}
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	public void openRequestDialog(String url) {
@@ -129,31 +170,37 @@ public class McpSettingsPage extends AEvoPage {
 	}
 
 	private void sendCustomRequest(String url, String method, String params) {
-		new Thread(() -> {
-			try {
-				McpClient client = new McpClient(url);
-				JSONObject jsonParams = new JSONObject(params);
-				// We need a way to send generic request in McpClient or use the existing ones
-				// if they match
-				// For simplicity, let's assume we can use a generic method if we add it to
-				// McpClient
-				// But since I don't want to change McpClient too much, I'll use reflection or
-				// just call the right one
-				String response = client.sendGenericRequest(method, jsonParams);
+		Job job = new Job("MCP Request: " + method) {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				System.out.println("[MCP][START] Request method=" + method + " URL=" + url);
 
-				String finalResponse = response;
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed())
-						return;
-					MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-					mb.setText("Request Success");
-					mb.setMessage("Method: " + method + "\nResponse:\n" + finalResponse);
-					mb.open();
-				});
-			} catch (Exception ex) {
-				eu.kalafatic.evolution.controller.log.Log.log(this, ex);
+				try {
+					McpClient client = new McpClient(url);
+					JSONObject jsonParams = new JSONObject(params);
+					String response = client.sendGenericRequest(method, jsonParams);
+
+					String finalResponse = response;
+					Display.getDefault().asyncExec(() -> {
+						if (isDisposed())
+							return;
+						MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+						mb.setText("Request Success");
+						mb.setMessage("Method: " + method + "\nResponse:\n" + finalResponse);
+						mb.open();
+					});
+
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Request success method=" + method + " durationMs=" + duration);
+					return Status.OK_STATUS;
+				} catch (Exception ex) {
+					eu.kalafatic.evolution.controller.log.Log.log(McpSettingsPage.this, ex);
+					return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+				}
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	public void refreshResources() {
@@ -163,31 +210,43 @@ public class McpSettingsPage extends AEvoPage {
 		if (url.isEmpty())
 			return;
 		resourcesGroup.clear();
-		new Thread(() -> {
-			try {
-				McpClient client = new McpClient(url);
-				client.initialize();
-				String resourcesJson = client.listResources();
-				JSONArray resources = new JSONArray(resourcesJson);
-				Display.getDefault().asyncExec(() -> {
-					if (resourcesGroup == null || resourcesGroup.isDisposed())
-						return;
-					resourcesGroup.getGroup().setBackground(null);
-					for (int i = 0; i < resources.length(); i++) {
-						JSONObject res = resources.getJSONObject(i);
-						resourcesGroup.addItem(res.optString("name", "N/A"), res.optString("uri", "N/A"),
-								res.optString("mimeType", "N/A"), res.optString("description", ""));
-					}
-				});
-			} catch (Exception ex) {
-				Display.getDefault().asyncExec(() -> {
-					if (resourcesGroup == null || resourcesGroup.isDisposed())
-						return;
-					resourcesGroup.getGroup().setBackground(lightRed);
-					handleRefreshError("Failed to list resources", ex);
-				});
+		Job job = new Job("MCP Refresh Resources") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				System.out.println("[MCP][START] Refresh resources URL=" + url);
+
+				try {
+					McpClient client = new McpClient(url);
+					client.initialize();
+					String resourcesJson = client.listResources();
+					JSONArray resources = new JSONArray(resourcesJson);
+					Display.getDefault().asyncExec(() -> {
+						if (resourcesGroup == null || resourcesGroup.isDisposed())
+							return;
+						resourcesGroup.getGroup().setBackground(null);
+						for (int i = 0; i < resources.length(); i++) {
+							JSONObject res = resources.getJSONObject(i);
+							resourcesGroup.addItem(res.optString("name", "N/A"), res.optString("uri", "N/A"),
+									res.optString("mimeType", "N/A"), res.optString("description", ""));
+						}
+					});
+
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Refresh resources count=" + resources.length() + " durationMs=" + duration);
+					return Status.OK_STATUS;
+				} catch (Exception ex) {
+					Display.getDefault().asyncExec(() -> {
+						if (resourcesGroup == null || resourcesGroup.isDisposed())
+							return;
+						resourcesGroup.getGroup().setBackground(lightRed);
+						handleRefreshError("Failed to list resources", ex);
+					});
+					return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+				}
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	public void refreshTools() {
@@ -197,32 +256,44 @@ public class McpSettingsPage extends AEvoPage {
 		if (url.isEmpty())
 			return;
 		toolsGroup.clear();
-		new Thread(() -> {
-			try {
-				McpClient client = new McpClient(url);
-				client.initialize();
-				String toolsJson = client.listTools();
-				JSONArray tools = new JSONArray(toolsJson);
-				Display.getDefault().asyncExec(() -> {
-					if (toolsGroup == null || toolsGroup.isDisposed())
-						return;
-					toolsGroup.getGroup().setBackground(null);
-					for (int i = 0; i < tools.length(); i++) {
-						JSONObject tool = tools.getJSONObject(i);
-						toolsGroup.addItem(tool.optString("name", "N/A"), tool.optString("description", ""),
-								tool.optJSONObject("inputSchema") != null ? tool.optJSONObject("inputSchema").toString()
-										: "{}");
-					}
-				});
-			} catch (Exception ex) {
-				Display.getDefault().asyncExec(() -> {
-					if (toolsGroup == null || toolsGroup.isDisposed())
-						return;
-					toolsGroup.getGroup().setBackground(lightRed);
-					handleRefreshError("Failed to list tools", ex);
-				});
+		Job job = new Job("MCP Refresh Tools") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				System.out.println("[MCP][START] Refresh tools URL=" + url);
+
+				try {
+					McpClient client = new McpClient(url);
+					client.initialize();
+					String toolsJson = client.listTools();
+					JSONArray tools = new JSONArray(toolsJson);
+					Display.getDefault().asyncExec(() -> {
+						if (toolsGroup == null || toolsGroup.isDisposed())
+							return;
+						toolsGroup.getGroup().setBackground(null);
+						for (int i = 0; i < tools.length(); i++) {
+							JSONObject tool = tools.getJSONObject(i);
+							toolsGroup.addItem(tool.optString("name", "N/A"), tool.optString("description", ""),
+									tool.optJSONObject("inputSchema") != null ? tool.optJSONObject("inputSchema").toString()
+											: "{}");
+						}
+					});
+
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Refresh tools count=" + tools.length() + " durationMs=" + duration);
+					return Status.OK_STATUS;
+				} catch (Exception ex) {
+					Display.getDefault().asyncExec(() -> {
+						if (toolsGroup == null || toolsGroup.isDisposed())
+							return;
+						toolsGroup.getGroup().setBackground(lightRed);
+						handleRefreshError("Failed to list tools", ex);
+					});
+					return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+				}
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	public void refreshPrompts() {
@@ -232,32 +303,44 @@ public class McpSettingsPage extends AEvoPage {
 		if (url.isEmpty())
 			return;
 		promptsGroup.clear();
-		new Thread(() -> {
-			try {
-				McpClient client = new McpClient(url);
-				client.initialize();
-				String promptsJson = client.listPrompts();
-				JSONArray prompts = new JSONArray(promptsJson);
-				Display.getDefault().asyncExec(() -> {
-					if (promptsGroup == null || promptsGroup.isDisposed())
-						return;
-					promptsGroup.getGroup().setBackground(null);
-					for (int i = 0; i < prompts.length(); i++) {
-						JSONObject prompt = prompts.getJSONObject(i);
-						promptsGroup.addItem(prompt.optString("name", "N/A"), prompt.optString("description", ""),
-								prompt.optJSONArray("arguments") != null ? prompt.optJSONArray("arguments").toString()
-										: "[]");
-					}
-				});
-			} catch (Exception ex) {
-				Display.getDefault().asyncExec(() -> {
-					if (promptsGroup == null || promptsGroup.isDisposed())
-						return;
-					promptsGroup.getGroup().setBackground(lightRed);
-					handleRefreshError("Failed to list prompts", ex);
-				});
+		Job job = new Job("MCP Refresh Prompts") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				System.out.println("[MCP][START] Refresh prompts URL=" + url);
+
+				try {
+					McpClient client = new McpClient(url);
+					client.initialize();
+					String promptsJson = client.listPrompts();
+					JSONArray prompts = new JSONArray(promptsJson);
+					Display.getDefault().asyncExec(() -> {
+						if (promptsGroup == null || promptsGroup.isDisposed())
+							return;
+						promptsGroup.getGroup().setBackground(null);
+						for (int i = 0; i < prompts.length(); i++) {
+							JSONObject prompt = prompts.getJSONObject(i);
+							promptsGroup.addItem(prompt.optString("name", "N/A"), prompt.optString("description", ""),
+									prompt.optJSONArray("arguments") != null ? prompt.optJSONArray("arguments").toString()
+											: "[]");
+						}
+					});
+
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[MCP][END] Refresh prompts count=" + prompts.length() + " durationMs=" + duration);
+					return Status.OK_STATUS;
+				} catch (Exception ex) {
+					Display.getDefault().asyncExec(() -> {
+						if (promptsGroup == null || promptsGroup.isDisposed())
+							return;
+						promptsGroup.getGroup().setBackground(lightRed);
+						handleRefreshError("Failed to list prompts", ex);
+					});
+					return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+				}
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	private void handleRefreshError(String prefix, Exception ex) {

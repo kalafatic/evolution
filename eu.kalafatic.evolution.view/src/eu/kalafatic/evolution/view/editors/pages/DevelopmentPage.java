@@ -23,8 +23,13 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.IFileEditorInput;
 import org.json.JSONArray;
@@ -584,17 +589,37 @@ public class DevelopmentPage extends AEvoPage {
 		System.out.println("[DevelopmentPage] [BACKGROUND_TASK_START] Submitting execution for taskId: " + row.taskId + ", row: " + row.name);
 		row.status = "running";
 		selfDevTable.refresh(row);
-		new Thread(() -> {
-			eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
-			String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
-			System.out.println("[DevelopmentPage] [BACKGROUND_TASK_END] Task " + row.taskId + " finished with status: " + res.getStatus() + ", message: " + res.getMessage());
-			Display.getDefault().asyncExec(() -> {
-				if (!selfDevTable.getTable().isDisposed()) {
-					row.status = statusStr;
-					selfDevTable.refresh(row);
-				}
-			});
-		}).start();
+
+		Job job = new Job("Self-Dev Task: " + row.name) {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				long startTime = System.currentTimeMillis();
+				String orchId = orchestrator != null ? orchestrator.getName() : "SelfDev";
+				OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.1, "Running " + row.name + " (" + row.taskId + ")");
+				System.out.println("[SELF-DEV][START] Task=" + row.taskId + " Name=" + row.name + " Command=" + row.command + " Path=" + row.path);
+				monitor.beginTask("Executing " + row.name, 100);
+				monitor.worked(20);
+
+				eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
+				monitor.worked(80);
+
+				String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
+				long duration = System.currentTimeMillis() - startTime;
+				System.out.println("[SELF-DEV][END] Task=" + row.taskId + " Name=" + row.name + " DurationMs=" + duration + " Status=" + res.getStatus() + " Message=" + res.getMessage());
+
+				OrchestrationStatusManager.getInstance().updateStatus(orchId, res.isSuccess() ? 1.0 : 0.0, "Task " + row.name + " " + statusStr);
+				monitor.done();
+
+				Display.getDefault().asyncExec(() -> {
+					if (!selfDevTable.getTable().isDisposed()) {
+						row.status = statusStr;
+						selfDevTable.refresh(row);
+					}
+				});
+				return res.isSuccess() ? Status.OK_STATUS : new Status(IStatus.WARNING, "eu.kalafatic.evolution.view", res.getMessage());
+			}
+		};
+		job.schedule();
 	}
 
 	private void openRowEditDialog(SelfDevRow row) {
@@ -933,23 +958,51 @@ public class DevelopmentPage extends AEvoPage {
 		selectedRows.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		if (selectedRows.isEmpty()) return;
 
-		new Thread(() -> {
-			for (SelfDevRow row : selectedRows) {
-				if (row.taskId == null) continue;
-				Display.getDefault().syncExec(() -> {
-					row.status = "running";
-					selfDevTable.refresh(row);
-				});
-				eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
-				String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
-				Display.getDefault().syncExec(() -> {
-					if (!selfDevTable.getTable().isDisposed()) {
-						row.status = statusStr;
-						selfDevTable.refresh(row);
+		Job job = new Job("Self-Dev Run Selected (" + selectedRows.size() + " tasks)") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				monitor.beginTask("Running Selected Self-Dev Tasks", selectedRows.size() * 100);
+				String orchId = orchestrator != null ? orchestrator.getName() : "SelfDev";
+				System.out.println("[SELF-DEV][START_BATCH] Selected count=" + selectedRows.size());
+
+				for (int i = 0; i < selectedRows.size(); i++) {
+					SelfDevRow row = selectedRows.get(i);
+					if (row.taskId == null) continue;
+					if (monitor.isCanceled()) {
+						System.out.println("[SELF-DEV][CANCEL_BATCH] Batch execution canceled at step " + (i + 1));
+						break;
 					}
-				});
+
+					Display.getDefault().syncExec(() -> {
+						row.status = "running";
+						selfDevTable.refresh(row);
+					});
+
+					long startTime = System.currentTimeMillis();
+					double progressFrac = (double) i / selectedRows.size();
+					OrchestrationStatusManager.getInstance().updateStatus(orchId, progressFrac, "Step " + (i + 1) + "/" + selectedRows.size() + ": " + row.name);
+					System.out.println("[SELF-DEV][STAGE] Step " + (i + 1) + "/" + selectedRows.size() + " Task=" + row.taskId + " Name=" + row.name);
+
+					eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
+					String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
+					long duration = System.currentTimeMillis() - startTime;
+					System.out.println("[SELF-DEV][STAGE_END] Step " + (i + 1) + "/" + selectedRows.size() + " Task=" + row.taskId + " DurationMs=" + duration + " Status=" + res.getStatus());
+
+					monitor.worked(100);
+					Display.getDefault().syncExec(() -> {
+						if (!selfDevTable.getTable().isDisposed()) {
+							row.status = statusStr;
+							selfDevTable.refresh(row);
+						}
+					});
+				}
+
+				OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Batch Self-Dev Execution Complete");
+				monitor.done();
+				return Status.OK_STATUS;
 			}
-		}).start();
+		};
+		job.schedule();
 	}
 
 	private void stopSelected() {

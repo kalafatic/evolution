@@ -1,5 +1,9 @@
 package eu.kalafatic.evolution.view.editors.pages.properties;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -465,68 +469,84 @@ public class DatasetEditorGroup extends AEvoGroup {
                 "- Target Size: " + sizeMbStr + " MB\n" +
                 "- Preferred Split: " + request.getPreferredSplit() + "\n\nSearching...\n");
 
-        new Thread(() -> {
-            try {
-                HuggingFaceDatasetProvider provider = new HuggingFaceDatasetProvider();
-                List<DatasetCandidate> discovered = provider.search(request);
+        Job job = new Job("Discover Remote Datasets") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                String query = repo.isEmpty() ? domain : repo;
+                System.out.println("[DATASET][START] Discovering datasets query=" + query + " task=" + task + " domain=" + domain);
+                OrchestrationStatusManager.getInstance().updateStatus(getOrchestratorId(), 0.3, "Searching remote datasets for " + query);
 
-                ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
-                DatasetCandidateManager.getInstance().addCandidates(activeSession, discovered);
+                try {
+                    HuggingFaceDatasetProvider provider = new HuggingFaceDatasetProvider();
+                    List<DatasetCandidate> discovered = provider.search(request);
 
-                Display.getDefault().asyncExec(() -> {
-                    updateProgress(100);
-                    updateStatusText("Status: Dataset Discovery Complete");
-                    setProgressBarVisible(false);
-                    if (!reportArea.isDisposed()) {
-                        refreshCandidatesTableFromEmf();
+                    ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+                    DatasetCandidateManager.getInstance().addCandidates(activeSession, discovered);
 
-                        int maxRepoWidth = 28;
-                        for (DatasetCandidate c : discovered) {
-                            if (c.getRepository() != null) {
-                                maxRepoWidth = Math.max(maxRepoWidth, c.getRepository().length());
+                    Display.getDefault().asyncExec(() -> {
+                        updateProgress(100);
+                        updateStatusText("Status: Dataset Discovery Complete");
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            refreshCandidatesTableFromEmf();
+
+                            int maxRepoWidth = 28;
+                            for (DatasetCandidate c : discovered) {
+                                if (c.getRepository() != null) {
+                                    maxRepoWidth = Math.max(maxRepoWidth, c.getRepository().length());
+                                }
                             }
+
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("========================================================================================================\n");
+                            sb.append("REMOTE DATASET DISCOVERY COMPLETED\n");
+                            sb.append("========================================================================================================\n");
+                            sb.append(String.format(Locale.US, "- Search Query: '%s' | Task: %s | Domain: %s\n", query, task, domain));
+                            sb.append(String.format(Locale.US, "- Target Usable Size: %s MB | Preferred Split: %s\n", sizeMbStr, request.getPreferredSplit()));
+                            sb.append(String.format(Locale.US, "- Discovered Candidates: %d | Saved to EMF Session: %s\n\n",
+                                    discovered.size(), activeSession != null ? activeSession.getSessionId() : "Active"));
+
+                            String formatHeader = String.format(Locale.US, "#%-2s | %-" + maxRepoWidth + "s | COMPAT | %-10s | %-11s | TASK / FORMAT\n",
+                                    "", "DATASET REPOSITORY ID", "SIZE", "STATUS");
+                            sb.append(formatHeader);
+                            String divider = "-".repeat(Math.max(80, formatHeader.length() - 1)) + "\n";
+                            sb.append(divider);
+
+                            for (int i = 0; i < Math.min(15, discovered.size()); i++) {
+                                DatasetCandidate c = discovered.get(i);
+                                String sizeFormatted = DatasetCandidate.formatCandidateSize(c.getSizeBytes());
+                                sb.append(String.format(Locale.US, "#%-2d | %-" + maxRepoWidth + "s |   %3d%% | %-10s | %-11s | %s / %s\n",
+                                        (i + 1), c.getRepository(), c.getCompatibilityScore(), sizeFormatted, c.getStatus(), c.getTask(), c.getFormat()));
+                            }
+                            sb.append("========================================================================================================\n");
+                            sb.append("Tip: Double-click any table row below or click 'Use as Dataset Source' to set as active dataset.\n");
+                            reportArea.setText(sb.toString());
+
+                            MessageDialog.openInformation(group.getShell(), "Dataset Discovery Complete",
+                                    "Discovered " + discovered.size() + " compatible remote dataset candidates!\nResults evaluated and persisted in EMF.");
                         }
+                    });
 
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("========================================================================================================\n");
-                        sb.append("REMOTE DATASET DISCOVERY COMPLETED\n");
-                        sb.append("========================================================================================================\n");
-                        sb.append(String.format(Locale.US, "- Search Query: '%s' | Task: %s | Domain: %s\n", repo.isEmpty() ? domain : repo, task, domain));
-                        sb.append(String.format(Locale.US, "- Target Usable Size: %s MB | Preferred Split: %s\n", sizeMbStr, request.getPreferredSplit()));
-                        sb.append(String.format(Locale.US, "- Discovered Candidates: %d | Saved to EMF Session: %s\n\n",
-                                discovered.size(), activeSession != null ? activeSession.getSessionId() : "Active"));
-
-                        String formatHeader = String.format(Locale.US, "#%-2s | %-" + maxRepoWidth + "s | COMPAT | %-10s | %-11s | TASK / FORMAT\n",
-                                "", "DATASET REPOSITORY ID", "SIZE", "STATUS");
-                        sb.append(formatHeader);
-                        String divider = "-".repeat(Math.max(80, formatHeader.length() - 1)) + "\n";
-                        sb.append(divider);
-
-                        for (int i = 0; i < Math.min(15, discovered.size()); i++) {
-                            DatasetCandidate c = discovered.get(i);
-                            String sizeFormatted = DatasetCandidate.formatCandidateSize(c.getSizeBytes());
-                            sb.append(String.format(Locale.US, "#%-2d | %-" + maxRepoWidth + "s |   %3d%% | %-10s | %-11s | %s / %s\n",
-                                    (i + 1), c.getRepository(), c.getCompatibilityScore(), sizeFormatted, c.getStatus(), c.getTask(), c.getFormat()));
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] Discovery complete query=" + query + " candidates=" + discovered.size() + " durationMs=" + duration);
+                    OrchestrationStatusManager.getInstance().updateStatus(getOrchestratorId(), 1.0, "Discovered " + discovered.size() + " candidates");
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    OrchestrationStatusManager.getInstance().updateStatus(getOrchestratorId(), 0.0, "Discovery Error: " + ex.getMessage());
+                    Display.getDefault().asyncExec(() -> {
+                        updateStatusText("Status: Discovery Error - " + ex.getMessage());
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("Discovery Error: " + ex.getMessage());
+                            MessageDialog.openError(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage());
                         }
-                        sb.append("========================================================================================================\n");
-                        sb.append("Tip: Double-click any table row below or click 'Use as Dataset Source' to set as active dataset.\n");
-                        reportArea.setText(sb.toString());
-
-                        MessageDialog.openInformation(group.getShell(), "Dataset Discovery Complete",
-                                "Discovered " + discovered.size() + " compatible remote dataset candidates!\nResults evaluated and persisted in EMF.");
-                    }
-                });
-            } catch (Exception ex) {
-                Display.getDefault().asyncExec(() -> {
-                    updateStatusText("Status: Discovery Error - " + ex.getMessage());
-                    setProgressBarVisible(false);
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("Discovery Error: " + ex.getMessage());
-                        MessageDialog.openError(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage());
-                    }
-                });
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
             }
-        }).start();
+        };
+        job.schedule();
     }
 
     private void handleUseCandidateAsSource() {
@@ -754,90 +774,102 @@ public class DatasetEditorGroup extends AEvoGroup {
 
         int port = getServerPort();
         final long finalMaxBytes = maxBytes;
-        new Thread(() -> {
-            try {
-                org.json.JSONObject req = new org.json.JSONObject();
-                req.put("sourceType", sourceType);
-                req.put("repository", repo);
-                req.put("split", split);
-                req.put("maxSamples", Long.parseLong(samples));
-                req.put("maxBytes", finalMaxBytes);
-                req.put("targetUsableBytes", finalMaxBytes);
-                req.put("outputDir", resolvedOutputDir);
-                req.put("downloadOnly", true);
+        Job job = new Job("Download Dataset: " + repo) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                System.out.println("[DATASET][START] Downloading dataset repo=" + repo + " split=" + split + " maxBytes=" + finalMaxBytes + " outputDir=" + resolvedOutputDir);
 
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.4, "Fetching dataset chunks for " + repo + "...");
-                updateProgress(50);
-                updateStatusText("Status: Fetching dataset chunks...");
+                try {
+                    org.json.JSONObject req = new org.json.JSONObject();
+                    req.put("sourceType", sourceType);
+                    req.put("repository", repo);
+                    req.put("split", split);
+                    req.put("maxSamples", Long.parseLong(samples));
+                    req.put("maxBytes", finalMaxBytes);
+                    req.put("targetUsableBytes", finalMaxBytes);
+                    req.put("outputDir", resolvedOutputDir);
+                    req.put("downloadOnly", true);
 
-                String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.4, "Fetching dataset chunks for " + repo + "...");
+                    updateProgress(50);
+                    updateStatusText("Status: Fetching dataset chunks...");
 
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Download Complete");
-                updateProgress(100);
-                updateStatusText("Status: Download Completed");
+                    String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
 
-                Display.getDefault().asyncExec(() -> {
-                    setProgressBarVisible(false);
-                    if (!reportArea.isDisposed()) {
-                        File downloadedDir = targetDatasetDir;
-                        long actualBytesOnDisk = calculateDirectoryOrFileSize(downloadedDir);
-                        double actualMbOnDisk = actualBytesOnDisk / (1024.0 * 1024.0);
-                        int dataFiles = countDataFiles(downloadedDir);
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Download Complete");
+                    updateProgress(100);
+                    updateStatusText("Status: Download Completed");
 
-                        // Use actual properties in UI
-                        repoText.setText(repo);
-                        outputDirText.setText(downloadedDir.getAbsolutePath());
-                        if (actualMbOnDisk > 0.0) {
-                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
-                        }
+                    Display.getDefault().asyncExec(() -> {
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            File downloadedDir = targetDatasetDir;
+                            long actualBytesOnDisk = calculateDirectoryOrFileSize(downloadedDir);
+                            double actualMbOnDisk = actualBytesOnDisk / (1024.0 * 1024.0);
+                            int dataFiles = countDataFiles(downloadedDir);
 
-                        StringBuilder reportSb = new StringBuilder();
-                        reportSb.append("ACTUAL DATASET PROPERTIES (DOWNLOADED):\n");
-                        reportSb.append("- Name / Target ID: ").append(repo).append("\n");
-                        reportSb.append("- Location on Disk: ").append(downloadedDir.getAbsolutePath()).append("\n");
-                        reportSb.append("- Actual Size: ").append(String.format(Locale.US, "%.2f MB (%d bytes)", actualMbOnDisk, actualBytesOnDisk)).append("\n");
-                        reportSb.append("- Total Data Files: ").append(dataFiles).append("\n");
-                        reportSb.append("- Split: ").append(split).append("\n\n");
-                        reportSb.append("DATASET DOWNLOAD RESPONSE:\n").append(res);
-
-                        reportArea.setText(reportSb.toString());
-
-                        try {
-                            org.json.JSONObject resJson = new org.json.JSONObject(res);
-                            String status = resJson.optString("status", "READY");
-                            long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
-                            long actualBytes = resJson.optLong("actualUsableBytes", 0);
-
-                            if ("FAILED".equalsIgnoreCase(status) || "SOURCE_EMPTY".equalsIgnoreCase(status)) {
-                                MessageDialog.openError(group.getShell(), "Dataset Download Failed",
-                                    "Dataset download failed or source was empty.\n\nStatus: " + status);
-                            } else if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (requestedBytes > 0 && actualBytes < requestedBytes)) {
-                                double reqMb = requestedBytes / (1024.0 * 1024.0);
-                                double actMb = actualBytes / (1024.0 * 1024.0);
-                                MessageDialog.openWarning(group.getShell(), "Dataset Source Exhausted",
-                                    String.format("Dataset download completed, but source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Downloaded: %.2f MB\nShortfall: %.2f MB\nLocation: %s\nStatus: %s",
-                                        reqMb, actMb, Math.max(0, reqMb - actMb), downloadedDir.getAbsolutePath(), status));
-                            } else {
-                                MessageDialog.openInformation(group.getShell(), "Dataset Downloaded",
-                                    "Dataset " + repo + " downloaded successfully!\n\nLocation: " + downloadedDir.getAbsolutePath() + "\nSize: " + String.format(Locale.US, "%.2f MB", actualMbOnDisk));
+                            // Use actual properties in UI
+                            repoText.setText(repo);
+                            outputDirText.setText(downloadedDir.getAbsolutePath());
+                            if (actualMbOnDisk > 0.0) {
+                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
                             }
-                        } catch (Exception ex) {
-                            MessageDialog.openError(group.getShell(), "Dataset Download Error", "Error processing download response: " + ex.getMessage());
+
+                            StringBuilder reportSb = new StringBuilder();
+                            reportSb.append("ACTUAL DATASET PROPERTIES (DOWNLOADED):\n");
+                            reportSb.append("- Name / Target ID: ").append(repo).append("\n");
+                            reportSb.append("- Location on Disk: ").append(downloadedDir.getAbsolutePath()).append("\n");
+                            reportSb.append("- Actual Size: ").append(String.format(Locale.US, "%.2f MB (%d bytes)", actualMbOnDisk, actualBytesOnDisk)).append("\n");
+                            reportSb.append("- Total Data Files: ").append(dataFiles).append("\n");
+                            reportSb.append("- Split: ").append(split).append("\n\n");
+                            reportSb.append("DATASET DOWNLOAD RESPONSE:\n").append(res);
+
+                            reportArea.setText(reportSb.toString());
+
+                            try {
+                                org.json.JSONObject resJson = new org.json.JSONObject(res);
+                                String status = resJson.optString("status", "READY");
+                                long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
+                                long actualBytes = resJson.optLong("actualUsableBytes", 0);
+
+                                if ("FAILED".equalsIgnoreCase(status) || "SOURCE_EMPTY".equalsIgnoreCase(status)) {
+                                    MessageDialog.openError(group.getShell(), "Dataset Download Failed",
+                                        "Dataset download failed or source was empty.\n\nStatus: " + status);
+                                } else if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (requestedBytes > 0 && actualBytes < requestedBytes)) {
+                                    double reqMb = requestedBytes / (1024.0 * 1024.0);
+                                    double actMb = actualBytes / (1024.0 * 1024.0);
+                                    MessageDialog.openWarning(group.getShell(), "Dataset Source Exhausted",
+                                        String.format("Dataset download completed, but source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Downloaded: %.2f MB\nShortfall: %.2f MB\nLocation: %s\nStatus: %s",
+                                            reqMb, actMb, Math.max(0, reqMb - actMb), downloadedDir.getAbsolutePath(), status));
+                                } else {
+                                    MessageDialog.openInformation(group.getShell(), "Dataset Downloaded",
+                                        "Dataset " + repo + " downloaded successfully!\n\nLocation: " + downloadedDir.getAbsolutePath() + "\nSize: " + String.format(Locale.US, "%.2f MB", actualMbOnDisk));
+                                }
+                            } catch (Exception ex) {
+                                MessageDialog.openError(group.getShell(), "Dataset Download Error", "Error processing download response: " + ex.getMessage());
+                            }
                         }
-                    }
-                });
-            } catch (Exception ex) {
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Download Error: " + ex.getMessage());
-                Display.getDefault().asyncExec(() -> {
-                    updateStatusText("Status: Download Error - " + ex.getMessage());
-                    setProgressBarVisible(false);
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("Download Error: " + ex.getMessage());
-                        MessageDialog.openError(group.getShell(), "Dataset Download Error", "Download failed: " + ex.getMessage());
-                    }
-                });
+                    });
+
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] Download complete repo=" + repo + " durationMs=" + duration);
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Download Error: " + ex.getMessage());
+                    Display.getDefault().asyncExec(() -> {
+                        updateStatusText("Status: Download Error - " + ex.getMessage());
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("Download Error: " + ex.getMessage());
+                            MessageDialog.openError(group.getShell(), "Dataset Download Error", "Error downloading dataset: " + ex.getMessage());
+                        }
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
             }
-        }).start();
+        };
+        job.schedule();
     }
 
     private void handleExportEvodata() {
@@ -870,64 +902,76 @@ public class DatasetEditorGroup extends AEvoGroup {
         reportArea.setText("Starting Native .evodata Export for " + repoOrPath + "...\nTarget Output Directory: " + targetDatasetDir.getAbsolutePath() + "\n");
 
         final File outputDir = targetDatasetDir;
-        new Thread(() -> {
-            try {
-                        updateProgress(50);
-                        updateStatusText("Status: Compiling .evodata container...");
-                eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService service = new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
-                eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext context = new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
-                eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult result = service.prepareDatasets(apiItems, context, outputDir);
+        Job job = new Job("Export .evodata Artifact: " + repoOrPath) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                System.out.println("[DATASET][START] Exporting .evodata target=" + repoOrPath + " outputDir=" + outputDir.getAbsolutePath());
 
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Export Complete");
-                        updateProgress(100);
-                        updateStatusText("Status: Export Complete");
+                try {
+                    updateProgress(50);
+                    updateStatusText("Status: Compiling .evodata container...");
+                    eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService service = new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
+                    eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext context = new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
+                    eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult result = service.prepareDatasets(apiItems, context, outputDir);
 
-                Display.getDefault().asyncExec(() -> {
-                            setProgressBarVisible(false);
-                    if (!reportArea.isDisposed()) {
-                        if (result.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.SUCCESS && result.getOutputPath() != null) {
-                            File evodataFile = new File(result.getOutputPath());
-                            double sizeMb = evodataFile.length() / (1024.0 * 1024.0);
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Export Complete");
+                    updateProgress(100);
+                    updateStatusText("Status: Export Complete");
 
-                            // Update UI fields with actual properties of exported dataset
-                            repoText.setText(repoOrPath);
-                            outputDirText.setText(evodataFile.getParentFile().getAbsolutePath());
-                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", sizeMb));
+                    Display.getDefault().asyncExec(() -> {
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            if (result.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.SUCCESS && result.getOutputPath() != null) {
+                                File evodataFile = new File(result.getOutputPath());
+                                double sizeMb = evodataFile.length() / (1024.0 * 1024.0);
 
-                            String reportText = String.format(Locale.US,
-                                "EXPORT TO .EVODATA SUCCESSFUL:\n" +
-                                "- Output File: %s\n" +
-                                "- Target Name: %s\n" +
-                                "- Records Accepted: %d\n" +
-                                "- Usable Bytes: %d (%.2f MB)\n" +
-                                "- Status: %s\n",
-                                evodataFile.getAbsolutePath(), repoOrPath, result.getRecordsAccepted(), result.getAcceptedBytes(), sizeMb, result.getStatus());
-                            reportArea.setText(reportText);
+                                // Update UI fields with actual properties of exported dataset
+                                repoText.setText(repoOrPath);
+                                outputDirText.setText(evodataFile.getParentFile().getAbsolutePath());
+                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", sizeMb));
 
-                            MessageDialog.openInformation(group.getShell(), "Dataset Exported",
-                                "Native .evodata artifact created successfully!\n\n" +
-                                "Output File: " + evodataFile.getAbsolutePath() + "\n" +
-                                "Records Accepted: " + result.getRecordsAccepted() + "\n" +
-                                "Usable Bytes: " + result.getAcceptedBytes() + " (" + String.format(Locale.US, "%.2f", sizeMb) + " MB)");
-                        } else {
-                            String errorMsg = !result.getErrors().isEmpty() ? String.join("\n", result.getErrors()) : "Status: " + result.getStatus();
-                            reportArea.setText("EXPORT TO .EVODATA FAILED:\n" + errorMsg);
-                            MessageDialog.openError(group.getShell(), "Dataset Export Failed", "Failed to create .evodata artifact:\n" + errorMsg);
+                                String reportText = String.format(Locale.US,
+                                    "EXPORT TO .EVODATA SUCCESSFUL:\n" +
+                                    "- Output File: %s\n" +
+                                    "- Target Name: %s\n" +
+                                    "- Records Accepted: %d\n" +
+                                    "- Usable Bytes: %d (%.2f MB)\n" +
+                                    "- Status: %s\n",
+                                    evodataFile.getAbsolutePath(), repoOrPath, result.getRecordsAccepted(), result.getAcceptedBytes(), sizeMb, result.getStatus());
+                                reportArea.setText(reportText);
+
+                                MessageDialog.openInformation(group.getShell(), "Dataset Exported",
+                                    "Native .evodata artifact created successfully!\n\n" +
+                                    "Output File: " + evodataFile.getAbsolutePath() + "\n" +
+                                    "Records Accepted: " + result.getRecordsAccepted() + "\n" +
+                                    "Usable Bytes: " + result.getAcceptedBytes() + " (" + String.format(Locale.US, "%.2f", sizeMb) + " MB)");
+                            } else {
+                                String errorMsg = !result.getErrors().isEmpty() ? String.join("\n", result.getErrors()) : "Status: " + result.getStatus();
+                                reportArea.setText("EXPORT TO .EVODATA FAILED:\n" + errorMsg);
+                                MessageDialog.openError(group.getShell(), "Dataset Export Failed", "Failed to create .evodata artifact:\n" + errorMsg);
+                            }
                         }
-                    }
-                });
-            } catch (Exception ex) {
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Export Error: " + ex.getMessage());
-                Display.getDefault().asyncExec(() -> {
-                    updateStatusText("Status: Export Error - " + ex.getMessage());
-                    setProgressBarVisible(false);
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("EXPORT ERROR: " + ex.getMessage());
-                        MessageDialog.openError(group.getShell(), "Error Exporting Dataset", "Error creating .evodata artifact: " + ex.getMessage());
-                    }
-                });
+                    });
+
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] Export .evodata complete target=" + repoOrPath + " durationMs=" + duration + " status=" + result.getStatus());
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Export Error: " + ex.getMessage());
+                    Display.getDefault().asyncExec(() -> {
+                        updateStatusText("Status: Export Error - " + ex.getMessage());
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("EXPORT ERROR: " + ex.getMessage());
+                            MessageDialog.openError(group.getShell(), "Error Exporting Dataset", "Error creating .evodata artifact: " + ex.getMessage());
+                        }
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
             }
-        }).start();
+        };
+        job.schedule();
     }
 
     private void handleAddTaskToStack() {
@@ -985,28 +1029,40 @@ public class DatasetEditorGroup extends AEvoGroup {
         reportArea.setText("Fetching sample preview for " + repo + " (" + split + ")...\n");
 
         int port = getServerPort();
-        new Thread(() -> {
-            try {
-                org.json.JSONObject req = new org.json.JSONObject();
-                req.put("repository", repo);
-                req.put("split", split);
-                req.put("count", 5);
+        Job job = new Job("Preview Dataset: " + repo) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                System.out.println("[DATASET][START] Fetching preview repo=" + repo + " split=" + split);
 
-                String res = postHttp("http://localhost:" + port + "/forge/dataset/hf/preview", req.toString());
-                String tableText = formatAsTable(res);
-                Display.getDefault().asyncExec(() -> {
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("DATASET SAMPLE PREVIEW:\n" + tableText);
-                    }
-                });
-            } catch (Exception ex) {
-                Display.getDefault().asyncExec(() -> {
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("Preview Error: " + ex.getMessage());
-                    }
-                });
+                try {
+                    org.json.JSONObject req = new org.json.JSONObject();
+                    req.put("repository", repo);
+                    req.put("split", split);
+                    req.put("count", 5);
+
+                    String res = postHttp("http://localhost:" + port + "/forge/dataset/hf/preview", req.toString());
+                    String tableText = formatAsTable(res);
+                    Display.getDefault().asyncExec(() -> {
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("DATASET SAMPLE PREVIEW:\n" + tableText);
+                        }
+                    });
+
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] Preview complete repo=" + repo + " durationMs=" + duration);
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    Display.getDefault().asyncExec(() -> {
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("Preview Error: " + ex.getMessage());
+                        }
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
             }
-        }).start();
+        };
+        job.schedule();
     }
 
     private String formatAsTable(String jsonStr) {
@@ -1058,131 +1114,155 @@ public class DatasetEditorGroup extends AEvoGroup {
 
         int port = getServerPort();
         final long finalMaxBytes = maxBytes;
-        new Thread(() -> {
-            try {
-                org.json.JSONObject req = new org.json.JSONObject();
-                req.put("sourceType", sourceType);
-                req.put("repository", repo);
-                req.put("split", split);
-                req.put("maxSamples", Long.parseLong(samples));
-                req.put("maxBytes", finalMaxBytes);
-                req.put("targetUsableBytes", finalMaxBytes);
-                req.put("outputDir", resolvedOutputDir);
-                req.put("minQuality", 0.5);
+        Job job = new Job("Prepare Dataset (.evodata): " + repo) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                System.out.println("[DATASET][START] Preparing dataset repo=" + repo + " split=" + split + " maxBytes=" + finalMaxBytes + " outputDir=" + resolvedOutputDir);
 
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.5, "Building EVO dataset artifact (.evodata)...");
+                try {
+                    org.json.JSONObject req = new org.json.JSONObject();
+                    req.put("sourceType", sourceType);
+                    req.put("repository", repo);
+                    req.put("split", split);
+                    req.put("maxSamples", Long.parseLong(samples));
+                    req.put("maxBytes", finalMaxBytes);
+                    req.put("targetUsableBytes", finalMaxBytes);
+                    req.put("outputDir", resolvedOutputDir);
+                    req.put("minQuality", 0.5);
 
-                String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.5, "Building EVO dataset artifact (.evodata)...");
 
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Preparation Complete");
+                    String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
 
-                Display.getDefault().asyncExec(() -> {
-                    if (!reportArea.isDisposed()) {
-                        File preparedDir = targetDatasetDir;
-                        long actualBytesOnDisk = calculateDirectoryOrFileSize(preparedDir);
-                        double actualMbOnDisk = actualBytesOnDisk / (1024.0 * 1024.0);
-                        int dataFiles = countDataFiles(preparedDir);
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Preparation Complete");
 
-                        // Update actual properties in UI
-                        repoText.setText(repo);
-                        outputDirText.setText(preparedDir.getAbsolutePath());
-                        if (actualMbOnDisk > 0.0) {
-                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
-                        }
+                    Display.getDefault().asyncExec(() -> {
+                        if (!reportArea.isDisposed()) {
+                            File preparedDir = targetDatasetDir;
+                            long actualBytesOnDisk = calculateDirectoryOrFileSize(preparedDir);
+                            double actualMbOnDisk = actualBytesOnDisk / (1024.0 * 1024.0);
+                            int dataFiles = countDataFiles(preparedDir);
 
-                        StringBuilder reportSb = new StringBuilder();
-                        reportSb.append("ACTUAL PREPARED DATASET PROPERTIES:\n");
-                        reportSb.append("- Name / Target ID: ").append(repo).append("\n");
-                        reportSb.append("- Location on Disk: ").append(preparedDir.getAbsolutePath()).append("\n");
-                        reportSb.append("- Actual Size: ").append(String.format(Locale.US, "%.2f MB (%d bytes)", actualMbOnDisk, actualBytesOnDisk)).append("\n");
-                        reportSb.append("- Total Data Files: ").append(dataFiles).append("\n\n");
-                        reportSb.append("DATASET PREPARATION RESULT:\n").append(res);
-
-                        reportArea.setText(reportSb.toString());
-
-                        try {
-                            org.json.JSONObject resJson = new org.json.JSONObject(res);
-                            String status = resJson.optString("status", "READY");
-                            boolean sourceExhausted = resJson.optBoolean("sourceExhausted", false);
-                            long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
-                            long actualBytes = resJson.optLong("actualUsableBytes", 0);
-
-                            if ("FAILED".equalsIgnoreCase(status) || "SOURCE_EMPTY".equalsIgnoreCase(status)) {
-                                MessageDialog.openError(group.getShell(), "Dataset Preparation Failed",
-                                    "Dataset preparation failed or source was empty.\n\nStatus: " + status);
-                            } else if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (sourceExhausted && actualBytes < requestedBytes) || (requestedBytes > 0 && actualBytes < requestedBytes)) {
-                                double reqMb = requestedBytes / (1024.0 * 1024.0);
-                                double actMb = actualBytes / (1024.0 * 1024.0);
-                                MessageDialog.openWarning(group.getShell(), "Source Data Shortfall Warning",
-                                    String.format("Dataset source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Collected: %.2f MB\nShortfall: %.2f MB\nLocation: %s\nStatus: %s",
-                                        reqMb, actMb, Math.max(0, reqMb - actMb), preparedDir.getAbsolutePath(), status));
-                            } else {
-                                MessageDialog.openInformation(group.getShell(), "Dataset Prepared",
-                                    "EVO Training Dataset artifact built successfully!\n\nLocation: " + preparedDir.getAbsolutePath() + "\nSize: " + String.format(Locale.US, "%.2f MB", actualMbOnDisk));
+                            // Update actual properties in UI
+                            repoText.setText(repo);
+                            outputDirText.setText(preparedDir.getAbsolutePath());
+                            if (actualMbOnDisk > 0.0) {
+                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
                             }
-                        } catch (Exception ex) {
-                            MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Error processing preparation response: " + ex.getMessage());
+
+                            StringBuilder reportSb = new StringBuilder();
+                            reportSb.append("ACTUAL PREPARED DATASET PROPERTIES:\n");
+                            reportSb.append("- Name / Target ID: ").append(repo).append("\n");
+                            reportSb.append("- Location on Disk: ").append(preparedDir.getAbsolutePath()).append("\n");
+                            reportSb.append("- Actual Size: ").append(String.format(Locale.US, "%.2f MB (%d bytes)", actualMbOnDisk, actualBytesOnDisk)).append("\n");
+                            reportSb.append("- Total Data Files: ").append(dataFiles).append("\n\n");
+                            reportSb.append("DATASET PREPARATION RESULT:\n").append(res);
+
+                            reportArea.setText(reportSb.toString());
+
+                            try {
+                                org.json.JSONObject resJson = new org.json.JSONObject(res);
+                                String status = resJson.optString("status", "READY");
+                                boolean sourceExhausted = resJson.optBoolean("sourceExhausted", false);
+                                long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
+                                long actualBytes = resJson.optLong("actualUsableBytes", 0);
+
+                                if ("FAILED".equalsIgnoreCase(status) || "SOURCE_EMPTY".equalsIgnoreCase(status)) {
+                                    MessageDialog.openError(group.getShell(), "Dataset Preparation Failed",
+                                        "Dataset preparation failed or source was empty.\n\nStatus: " + status);
+                                } else if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (sourceExhausted && actualBytes < requestedBytes) || (requestedBytes > 0 && actualBytes < requestedBytes)) {
+                                    double reqMb = requestedBytes / (1024.0 * 1024.0);
+                                    double actMb = actualBytes / (1024.0 * 1024.0);
+                                    MessageDialog.openWarning(group.getShell(), "Source Data Shortfall Warning",
+                                        String.format("Dataset source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Collected: %.2f MB\nShortfall: %.2f MB\nLocation: %s\nStatus: %s",
+                                            reqMb, actMb, Math.max(0, reqMb - actMb), preparedDir.getAbsolutePath(), status));
+                                } else {
+                                    MessageDialog.openInformation(group.getShell(), "Dataset Prepared",
+                                        "EVO Training Dataset artifact built successfully!\n\nLocation: " + preparedDir.getAbsolutePath() + "\nSize: " + String.format(Locale.US, "%.2f MB", actualMbOnDisk));
+                                }
+                            } catch (Exception ex) {
+                                MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Error processing preparation response: " + ex.getMessage());
+                            }
                         }
-                    }
-                });
-            } catch (Exception ex) {
-                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Preparation Error: " + ex.getMessage());
-                Display.getDefault().asyncExec(() -> {
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("Preparation Error: " + ex.getMessage());
-                        MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Preparation failed: " + ex.getMessage());
-                    }
-                });
+                    });
+
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] Prepare dataset complete repo=" + repo + " durationMs=" + duration);
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Preparation Error: " + ex.getMessage());
+                    Display.getDefault().asyncExec(() -> {
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("Preparation Error: " + ex.getMessage());
+                            MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Preparation failed: " + ex.getMessage());
+                        }
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
             }
-        }).start();
+        };
+        job.schedule();
     }
 
     private void handleListDatasets() {
         int port = getServerPort();
-        new Thread(() -> {
-            try {
-                String serverRes = getHttp("http://localhost:" + port + "/forge/dataset/artifacts");
+        Job job = new Job("List Dataset Artifacts") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                System.out.println("[DATASET][START] Listing dataset artifacts");
 
-                // Scan local dataset output directories as well
-                String customOutputDir = outputDirText.getText().trim();
-                File targetDir = new File(customOutputDir);
-                List<File> localArtifacts = scanLocalDatasetFiles(targetDir);
+                try {
+                    String serverRes = getHttp("http://localhost:" + port + "/forge/dataset/artifacts");
 
-                Display.getDefault().asyncExec(() -> {
-                    if (!reportArea.isDisposed()) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("AVAILABLE EVO DATASET ARTIFACTS & DOWNLOADED LOCATIONS:\n");
-                        sb.append("=========================================================\n");
+                    // Scan local dataset output directories as well
+                    String customOutputDir = outputDirText.getText().trim();
+                    File targetDir = new File(customOutputDir);
+                    List<File> localArtifacts = scanLocalDatasetFiles(targetDir);
 
-                        if (localArtifacts != null && !localArtifacts.isEmpty()) {
-                            sb.append("LOCAL DISCOVERED DATASETS / ARTIFACTS:\n");
-                            for (File f : localArtifacts) {
-                                double mb = f.length() / (1024.0 * 1024.0);
-                                sb.append(String.format(Locale.US, "- %-30s | %-60s | %.2f MB\n", f.getName(), f.getAbsolutePath(), mb));
+                    Display.getDefault().asyncExec(() -> {
+                        if (!reportArea.isDisposed()) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("AVAILABLE EVO DATASET ARTIFACTS & DOWNLOADED LOCATIONS:\n");
+                            sb.append("=========================================================\n");
+
+                            if (localArtifacts != null && !localArtifacts.isEmpty()) {
+                                sb.append("LOCAL DISCOVERED DATASETS / ARTIFACTS:\n");
+                                for (File f : localArtifacts) {
+                                    double mb = f.length() / (1024.0 * 1024.0);
+                                    sb.append(String.format(Locale.US, "- %-30s | %-60s | %.2f MB\n", f.getName(), f.getAbsolutePath(), mb));
+                                }
+                                sb.append("\n");
+
+                                // Use actual properties of first discovered local dataset if available
+                                File first = localArtifacts.get(0);
+                                double firstMb = first.length() / (1024.0 * 1024.0);
+                                outputDirText.setText(first.getParentFile().getAbsolutePath());
+                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", firstMb));
+                                String nameWithoutExt = first.getName().replaceAll("\\.(evodata|jsonl|parquet|txt)$", "");
+                                repoText.setText(nameWithoutExt);
                             }
-                            sb.append("\n");
 
-                            // Use actual properties of first discovered local dataset if available
-                            File first = localArtifacts.get(0);
-                            double firstMb = first.length() / (1024.0 * 1024.0);
-                            outputDirText.setText(first.getParentFile().getAbsolutePath());
-                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", firstMb));
-                            String nameWithoutExt = first.getName().replaceAll("\\.(evodata|jsonl|parquet|txt)$", "");
-                            repoText.setText(nameWithoutExt);
+                            sb.append("SERVER REGISTERED ARTIFACTS:\n").append(serverRes);
+                            reportArea.setText(sb.toString());
                         }
+                    });
 
-                        sb.append("SERVER REGISTERED ARTIFACTS:\n").append(serverRes);
-                        reportArea.setText(sb.toString());
-                    }
-                });
-            } catch (Exception ex) {
-                Display.getDefault().asyncExec(() -> {
-                    if (!reportArea.isDisposed()) {
-                        reportArea.setText("Error listing datasets: " + ex.getMessage());
-                    }
-                });
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] List dataset artifacts complete durationMs=" + duration);
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    Display.getDefault().asyncExec(() -> {
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("List Datasets Error: " + ex.getMessage());
+                        }
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
             }
-        }).start();
+        };
+        job.schedule();
     }
 
     private List<File> scanLocalDatasetFiles(File baseDir) {
