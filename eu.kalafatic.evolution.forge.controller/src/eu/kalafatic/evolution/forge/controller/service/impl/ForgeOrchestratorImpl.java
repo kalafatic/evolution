@@ -43,7 +43,11 @@ import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
 import eu.kalafatic.evolution.forge.model.source.ForgeModelSource;
 import eu.kalafatic.evolution.forge.model.source.ForgeModelSourceFactory;
+import eu.kalafatic.evolution.forge.model.target.EvoModelValidator;
+import eu.kalafatic.evolution.forge.model.target.EvoModelValidator.ModelValidationResult;
 import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
+import eu.kalafatic.evolution.forge.trainer.api.TrainingResult;
+import eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
 
 public class ForgeOrchestratorImpl implements ForgeOrchestrator {
@@ -186,7 +190,7 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setState(JobState.TRAINING);
             job.setProgressPercent(60);
             job.setCurrentStageDescription("Training EVO LLM model...");
-            logToFile(logFile, "Stage 4: Training starting.");
+            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] START plannedEpochs=%d", job.getJobId(), job.getTrainingConfig().getEpochs()));
 
             EvoLlmModel model = modelSource.createOrRestoreModel(
                     tokenizer.getVocabSize(),
@@ -199,9 +203,20 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
 
             EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
             try {
-                Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-                Object mgr = fsmClass.getMethod("getInstance").invoke(null);
-                fsmClass.getMethod("registerActiveTrainer", String.class, EvoLlmTrainer.class).invoke(mgr, job.getJobId(), trainer);
+                Class<?> fsmClass = null;
+                try {
+                    fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                } catch (ClassNotFoundException e) {
+                    if (Thread.currentThread().getContextClassLoader() != null) {
+                        try {
+                            fsmClass = Thread.currentThread().getContextClassLoader().loadClass("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                        } catch (ClassNotFoundException ignored) {}
+                    }
+                }
+                if (fsmClass != null) {
+                    Object mgr = fsmClass.getMethod("getInstance").invoke(null);
+                    fsmClass.getMethod("registerActiveTrainer", String.class, EvoLlmTrainer.class).invoke(mgr, job.getJobId(), trainer);
+                }
             } catch (Exception ignored) {}
 
             List<NormalizedSample> normSamples = (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null)
@@ -229,42 +244,74 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                         .collect(Collectors.toList());
             }
 
+            TrainingResult trainResult;
             try {
-                trainer.train(trainingSamples, job.getTrainingConfig().getEpochs());
+                trainResult = trainer.train(trainingSamples, job.getTrainingConfig().getEpochs());
             } finally {
                 try {
-                    Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-                    Object mgr = fsmClass.getMethod("getInstance").invoke(null);
-                    fsmClass.getMethod("unregisterActiveTrainer", String.class).invoke(mgr, job.getJobId());
+                    Class<?> fsmClass = null;
+                    try {
+                        fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                    } catch (ClassNotFoundException e) {
+                        if (Thread.currentThread().getContextClassLoader() != null) {
+                            try {
+                                fsmClass = Thread.currentThread().getContextClassLoader().loadClass("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                            } catch (ClassNotFoundException ignored) {}
+                        }
+                    }
+                    if (fsmClass != null) {
+                        Object mgr = fsmClass.getMethod("getInstance").invoke(null);
+                        fsmClass.getMethod("unregisterActiveTrainer", String.class).invoke(mgr, job.getJobId());
+                    }
                 } catch (Exception ignored) {}
             }
+            job.setTrainingResult(trainResult);
+
             List<Double> losses = trainer.getLossHistory();
-            double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : 0.05;
-            if (trainer.isStopRequested()) {
-                logToFile(logFile, "Training gracefully finished early upon user request. Recorded final loss: " + finalLoss);
-            } else {
-                logToFile(logFile, "Training complete. Recorded final loss: " + finalLoss);
+            double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : (trainResult != null ? trainResult.getLastLoss() : 0.05);
+
+            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d",
+                    job.getJobId(), trainResult.getTerminationStatus(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+
+            // STAGE 5: MODEL VALIDATION BEFORE EXPORT
+            logToFile(logFile, String.format("[FORGE][MODEL][RUN=%s] FINALIZE_START", job.getJobId()));
+            EvoModelValidator modelValidator = new EvoModelValidator();
+            ModelValidationResult modelValRes = modelValidator.validateModel(model, tokenizer.getVocab());
+
+            if (trainResult.isFailed() || !modelValRes.isPassed()) {
+                String failureDetails = trainResult.isFailed()
+                        ? trainResult.getFailureDetails()
+                        : "Model validation failed: " + String.join("; ", modelValRes.getErrors());
+                logToFile(logFile, String.format("[FORGE][MODEL][RUN=%s] VALIDATION_FAILURE details=%s", job.getJobId(), failureDetails));
+                logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] EXPORT_BLOCKED reason=CORRUPTED_OR_FAILED_MODEL", job.getJobId()));
+
+                job.setState(JobState.FAILED);
+                job.setJobResultSummary("FAILED");
+                job.setFailureReason(failureDetails);
+                logToFile(logFile, String.format("[FORGE][RUN=%s] FINAL_STATUS=FAILED", job.getJobId()));
+                return job;
             }
 
-            // STAGE 5: EVALUATION
+            logToFile(logFile, String.format("[FORGE][MODEL][RUN=%s] VALIDATION_SUCCESS params=%d", job.getJobId(), modelValRes.getParameterCount()));
+
+            // STAGE 5.5: EVALUATION
             job.setState(JobState.EVALUATING);
             job.setProgressPercent(75);
             job.setCurrentStageDescription("Evaluating model loss and quality...");
-            logToFile(logFile, "Stage 5: Evaluation starting.");
 
             EvaluationResult eval = new EvaluationResult();
             eval.setTrainLoss(finalLoss);
-            eval.setValLoss(finalLoss * 1.05);
+            eval.setValLoss(trainResult.getValLoss() > 0 ? trainResult.getValLoss() : finalLoss * 1.05);
             eval.setQualityScore(Math.max(0.5, 1.0 - (finalLoss / 10.0)));
             eval.setOverfittingDetected(false);
-            eval.setSummary(String.format("Model loss converged to %.4f steadily.", finalLoss));
+            eval.setSummary(String.format("Model loss converged to %.4f (epochs: %d/%d).",
+                    finalLoss, trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
             job.setEvaluationResult(eval);
 
             // STAGE 6: FINALIZING & PERSISTENCE
             job.setState(JobState.FINALIZING);
             job.setProgressPercent(85);
             job.setCurrentStageDescription("Serializing .evo model and GGUF exports...");
-            logToFile(logFile, "Stage 6: Finalizing & Export starting.");
 
             String dateVersion = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date(timestamp));
             String modelName = "evo-" + job.getJobId() + "-" + dateVersion;
@@ -275,6 +322,16 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             artifact.initializeFromModel(modelName, model, tokenizer.getVocab());
             artifact.getMetadata().put("forge_mode", job.getTrainingConfig().getForgeMode());
             artifact.getMetadata().put("objective", job.getObjective().name());
+
+            // Provenance and Early Termination Metadata
+            artifact.getMetadata().put("trainingStatus", trainResult.getTerminationStatus().name());
+            artifact.getMetadata().put("terminationReason", trainResult.getTerminationReason().name());
+            artifact.getMetadata().put("plannedEpochs", String.valueOf(trainResult.getPlannedEpochs()));
+            artifact.getMetadata().put("completedEpochs", String.valueOf(trainResult.getCompletedEpochs()));
+            artifact.getMetadata().put("plannedSteps", String.valueOf(trainResult.getPlannedSteps()));
+            artifact.getMetadata().put("completedSteps", String.valueOf(trainResult.getCompletedSteps()));
+            artifact.getMetadata().put("trainingDurationMs", String.valueOf(trainResult.getTrainingDurationMs()));
+            artifact.getMetadata().put("earlyStop", String.valueOf(trainResult.isStoppedEarly()));
 
             // Record Git EVO Model Lineage & Reproducibility Chain
             String gitCommit = resolveGitCommit(projectPath.toFile());
@@ -291,19 +348,23 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             artifact.recalculateManifestAndHash();
             artifact.getMetadata().put("resulting_model_hash", artifact.getModelContentHash() != null ? artifact.getModelContentHash() : "");
 
+            logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] EVO_EXPORT_START", job.getJobId()));
             artifact.save(runFolder.resolve(modelName + ".evo"));
             artifact.save(runFolder.resolve("evo.evo"));
             Files.createDirectories(exportPath);
             artifact.save(exportPath.resolve(modelName + ".evo"));
             artifact.save(exportPath.resolve("evo.evo"));
+            logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] EVO_EXPORT_SUCCESS", job.getJobId()));
 
+            logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] GGUF_EXPORT_START", job.getJobId()));
             OllamaExporter exporter = new OllamaExporter();
             exporter.export(modelName, exportPath, model, tokenizer.getInvVocab());
+            logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] GGUF_EXPORT_SUCCESS", job.getJobId()));
 
             // Mirror artifacts to controller models directory
             mirrorArtifactsToControllerModels(exportPath, modelName, logFile);
 
-            // STAGE 7: MODEL VALIDATION & NATIVE INFERENCE SMOKE TEST
+            // STAGE 7: NATIVE INFERENCE SMOKE TEST
             job.setState(JobState.VALIDATING);
             job.setProgressPercent(95);
             job.setCurrentStageDescription("Executing native inference smoke test...");
@@ -318,11 +379,21 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 logToFile(logFile, "Native inference smoke test PASSED. Generated output: " + smokeTest.getGeneratedText());
             }
 
-            // COMPLETED
-            job.setState(JobState.COMPLETED);
-            job.setProgressPercent(100);
-            job.setCurrentStageDescription("Forge job completed successfully!");
-            logToFile(logFile, "Forge job completed successfully: " + modelName);
+            // FINAL RESULT DETERMINATION
+            if (trainResult.isStoppedEarly()) {
+                job.setState(JobState.STOPPED);
+                job.setJobResultSummary("SUCCESS_WITH_EARLY_STOP");
+                job.setProgressPercent(100);
+                job.setCurrentStageDescription(String.format("Training stopped cleanly after %d/%d epochs (%s). Valid model exported.",
+                        trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs(), trainResult.getTerminationReason()));
+                logToFile(logFile, String.format("[FORGE][RUN=%s] FINAL_STATUS=SUCCESS_WITH_EARLY_STOP", job.getJobId()));
+            } else {
+                job.setState(JobState.COMPLETED);
+                job.setJobResultSummary("SUCCESS");
+                job.setProgressPercent(100);
+                job.setCurrentStageDescription("Forge job completed successfully!");
+                logToFile(logFile, String.format("[FORGE][RUN=%s] FINAL_STATUS=SUCCESS", job.getJobId()));
+            }
 
             return job;
 

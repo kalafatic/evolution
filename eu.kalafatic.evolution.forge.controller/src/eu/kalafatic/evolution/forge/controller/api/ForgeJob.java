@@ -19,6 +19,7 @@ public class ForgeJob {
         FINALIZING,
         VALIDATING,
         COMPLETED,
+        STOPPED,
         FAILED,
         CANCELLED
     }
@@ -242,8 +243,10 @@ public class ForgeJob {
     private PreflightResult preflightResult = new PreflightResult();
     private EvaluationResult evaluationResult = new EvaluationResult();
     private SmokeTestResult smokeTestResult = new SmokeTestResult();
+    private eu.kalafatic.evolution.forge.trainer.api.TrainingResult trainingResult;
     private Path runDirectory;
     private String outputModelName;
+    private String jobResultSummary = "";
     private String failureReason;
     private int progressPercent = 0;
     private String currentStageDescription = "";
@@ -324,6 +327,12 @@ public class ForgeJob {
 
     public SmokeTestResult getSmokeTestResult() { return smokeTestResult; }
     public void setSmokeTestResult(SmokeTestResult smokeTestResult) { this.smokeTestResult = smokeTestResult; }
+
+    public eu.kalafatic.evolution.forge.trainer.api.TrainingResult getTrainingResult() { return trainingResult; }
+    public void setTrainingResult(eu.kalafatic.evolution.forge.trainer.api.TrainingResult trainingResult) { this.trainingResult = trainingResult; }
+
+    public String getJobResultSummary() { return jobResultSummary; }
+    public void setJobResultSummary(String jobResultSummary) { this.jobResultSummary = jobResultSummary; }
 
     public Path getRunDirectory() { return runDirectory; }
     public void setRunDirectory(Path runDirectory) { this.runDirectory = runDirectory; }

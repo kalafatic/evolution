@@ -7,6 +7,9 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.trainer.api.LossReduction;
+import eu.kalafatic.evolution.forge.trainer.api.TerminationReason;
+import eu.kalafatic.evolution.forge.trainer.api.TrainingResult;
+import eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus;
 
 import java.util.*;
 
@@ -49,6 +52,7 @@ public class EvoLlmTrainer {
     private ProgressListener progressListener;
     private final List<Double> lossHistory = new ArrayList<>();
     private volatile boolean stopRequested = false;
+    private TrainingResult lastResult;
 
     public EvoLlmTrainer(EvoLlmModel model, TrainingProfile profile) {
         if (model == null) throw new IllegalArgumentException("EvoLlmModel cannot be null");
@@ -75,9 +79,21 @@ public class EvoLlmTrainer {
     public void requestStop() { this.stopRequested = true; }
     public void finishTraining() { this.stopRequested = true; }
     public boolean isStopRequested() { return stopRequested; }
+    public TrainingResult getLastTrainingResult() { return lastResult; }
 
-    public void train(List<?> rawSamples, int epochs) {
-        if (rawSamples == null || rawSamples.isEmpty()) return;
+    public TrainingResult train(List<?> rawSamples, int epochs) {
+        long startTime = System.currentTimeMillis();
+        TrainingResult result = new TrainingResult();
+        result.setPlannedEpochs(epochs);
+
+        if (rawSamples == null || rawSamples.isEmpty()) {
+            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_FAILED);
+            result.setTerminationReason(TerminationReason.NO_TRAINING_SAMPLES);
+            result.setModelValid(false);
+            result.setFailureDetails("No training samples provided to trainer.");
+            this.lastResult = result;
+            return result;
+        }
 
         List<TrainingSample> samples = new ArrayList<>();
         for (Object item : rawSamples) {
@@ -125,7 +141,14 @@ public class EvoLlmTrainer {
             }
         }
 
-        if (samples.isEmpty()) return;
+        if (samples.isEmpty()) {
+            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_FAILED);
+            result.setTerminationReason(TerminationReason.NO_TRAINING_SAMPLES);
+            result.setModelValid(false);
+            result.setFailureDetails("Training samples list became empty after filtering.");
+            this.lastResult = result;
+            return result;
+        }
 
         List<TrainingSample> dataset = new ArrayList<>(samples);
         Collections.shuffle(dataset, new Random(baseSeed));
@@ -139,82 +162,142 @@ public class EvoLlmTrainer {
 
         lossHistory.clear();
 
-        for (int epoch = 0; epoch < epochs; epoch++) {
-            if (stopRequested) {
-                System.out.printf("[EVO Trainer] Graceful finish requested before epoch %d/%d. Completing training state.%n", epoch + 1, epochs);
-                break;
-            }
-            Collections.shuffle(trainSamples, new Random(baseSeed + epoch + 1));
-            List<TrainingBatch> batches = buildBatches(trainSamples, microBatchSize);
+        List<TrainingBatch> initialBatches = buildBatches(trainSamples, microBatchSize);
+        int stepsPerEpoch = (initialBatches.size() + accumulationSteps - 1) / accumulationSteps;
+        int totalOptimizationSteps = epochs * stepsPerEpoch;
+        result.setPlannedSteps(totalOptimizationSteps);
 
-            int stepsPerEpoch = (batches.size() + accumulationSteps - 1) / accumulationSteps;
-            int totalOptimizationSteps = epochs * stepsPerEpoch;
-            int warmupSteps = Math.max(1, (int) (totalOptimizationSteps * 0.03f));
-
-            double epochTotalLoss = 0.0;
-            long epochValidTokens = 0;
-            long startTime = System.currentTimeMillis();
-
-            int optStep = epoch * stepsPerEpoch;
-
-            for (int bIdx = 0; bIdx < batches.size(); bIdx += accumulationSteps) {
-                if (stopRequested) {
-                    System.out.printf("[EVO Trainer] Graceful finish requested during epoch %d. Exiting batch loop early.%n", epoch + 1);
+        try {
+            for (int epoch = 0; epoch < epochs; epoch++) {
+                if (Thread.currentThread().isInterrupted()) {
+                    System.out.printf("[EVO Trainer] Thread interrupted before epoch %d/%d.%n", epoch + 1, epochs);
+                    result.setTerminationStatus(TrainingTerminationStatus.TRAINING_INTERRUPTED);
+                    result.setTerminationReason(TerminationReason.THREAD_INTERRUPTED);
                     break;
                 }
-                optStep++;
-                float currentLr = computeScheduledLr(optStep, totalOptimizationSteps, warmupSteps);
-                optimizer.setLr(currentLr);
+                if (stopRequested) {
+                    System.out.printf("[EVO Trainer] Graceful finish requested before epoch %d/%d. Completing training state.%n", epoch + 1, epochs);
+                    result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
+                    result.setTerminationReason(TerminationReason.USER_REQUEST);
+                    break;
+                }
+                Collections.shuffle(trainSamples, new Random(baseSeed + epoch + 1));
+                List<TrainingBatch> batches = buildBatches(trainSamples, microBatchSize);
 
-                paramGroups.zeroGradAll();
+                int warmupSteps = Math.max(1, (int) (totalOptimizationSteps * 0.03f));
 
-                int windowEnd = Math.min(bIdx + accumulationSteps, batches.size());
-                List<TrainingBatch> accumulationWindow = batches.subList(bIdx, windowEnd);
+                double epochTotalLoss = 0.0;
+                long epochValidTokens = 0;
+                long epochStartTime = System.currentTimeMillis();
 
-                long windowValidTokens = 0;
-                for (TrainingBatch batch : accumulationWindow) {
-                    for (float[] maskRow : batch.lossMask) {
-                        for (float m : maskRow) {
-                            if (m > 0.0f) windowValidTokens++;
+                int optStep = epoch * stepsPerEpoch;
+                boolean epochStoppedEarly = false;
+
+                for (int bIdx = 0; bIdx < batches.size(); bIdx += accumulationSteps) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        System.out.printf("[EVO Trainer] Thread interrupted during epoch %d.%n", epoch + 1);
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_INTERRUPTED);
+                        result.setTerminationReason(TerminationReason.THREAD_INTERRUPTED);
+                        epochStoppedEarly = true;
+                        break;
+                    }
+                    if (stopRequested) {
+                        System.out.printf("[EVO Trainer] Stop requested. Finishing current epoch %d boundary cleanly.%n", epoch + 1);
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
+                        result.setTerminationReason(TerminationReason.USER_REQUEST);
+                        epochStoppedEarly = true;
+                        break;
+                    }
+                    optStep++;
+                    float currentLr = computeScheduledLr(optStep, totalOptimizationSteps, warmupSteps);
+                    optimizer.setLr(currentLr);
+
+                    paramGroups.zeroGradAll();
+
+                    int windowEnd = Math.min(bIdx + accumulationSteps, batches.size());
+                    List<TrainingBatch> accumulationWindow = batches.subList(bIdx, windowEnd);
+
+                    long windowValidTokens = 0;
+                    for (TrainingBatch batch : accumulationWindow) {
+                        for (float[] maskRow : batch.lossMask) {
+                            for (float m : maskRow) {
+                                if (m > 0.0f) windowValidTokens++;
+                            }
                         }
+                    }
+
+                    if (windowValidTokens == 0) continue;
+
+                    double windowLoss = 0.0;
+                    for (TrainingBatch batch : accumulationWindow) {
+                        windowLoss += processMicroBatch(batch, windowValidTokens);
+                    }
+
+                    if (Double.isNaN(windowLoss) || Double.isInfinite(windowLoss)) {
+                        System.err.printf("[EVO Trainer] NaN/Inf loss encountered during epoch %d opt step %d.%n", epoch + 1, optStep);
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_FAILED);
+                        result.setTerminationReason(TerminationReason.NAN_OR_INF_LOSS);
+                        result.setModelValid(false);
+                        result.setFailureDetails("NaN or Infinity loss value encountered during optimization step " + optStep);
+                        epochStoppedEarly = true;
+                        break;
+                    }
+
+                    epochTotalLoss += windowLoss;
+                    epochValidTokens += windowValidTokens;
+
+                    optimizer.step(paramGroups, maxGradNorm);
+
+                    if (progressListener != null) {
+                        double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
+                        int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
+                        progressListener.onProgress(epoch, epochs, sampleIndex, trainSamples.size(), currentLoss);
+                    } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
+                        double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
+                        int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
+                        System.out.printf("[EVO Trainer] Epoch %d/%d | Samples %d/%d | Batch Loss: %.4f%n",
+                                epoch + 1, epochs, sampleIndex, trainSamples.size(), currentLoss);
                     }
                 }
 
-                if (windowValidTokens == 0) continue;
+                double avgTrainLoss = epochValidTokens > 0 ? epochTotalLoss / epochValidTokens : 0.0;
+                double avgValLoss = evaluateValidation(valSamples);
+                long epochDuration = System.currentTimeMillis() - epochStartTime;
 
-                double windowLoss = 0.0;
-                for (TrainingBatch batch : accumulationWindow) {
-                    windowLoss += processMicroBatch(batch, windowValidTokens);
-                }
+                lossHistory.add(avgTrainLoss);
+                model.getTrainingState().setEpoch(epoch + 1);
+                model.getTrainingState().setLastLoss((float) avgTrainLoss);
 
-                epochTotalLoss += windowLoss;
-                epochValidTokens += windowValidTokens;
+                result.setCompletedEpochs(epoch + 1);
+                result.setCompletedSteps(optStep);
+                result.setLastLoss(avgTrainLoss);
+                result.setValLoss(avgValLoss);
 
-                optimizer.step(paramGroups, maxGradNorm);
+                System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %d ms%n",
+                        epoch + 1, epochs, avgTrainLoss, avgValLoss, epochDuration);
 
-                if (progressListener != null) {
-                    double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
-                    int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
-                    progressListener.onProgress(epoch, epochs, sampleIndex, trainSamples.size(), currentLoss);
-                } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
-                    double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
-                    int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
-                    System.out.printf("[EVO Trainer] Epoch %d/%d | Samples %d/%d | Batch Loss: %.4f%n",
-                            epoch + 1, epochs, sampleIndex, trainSamples.size(), currentLoss);
+                if (epochStoppedEarly) {
+                    break;
                 }
             }
-
-            double avgTrainLoss = epochValidTokens > 0 ? epochTotalLoss / epochValidTokens : 0.0;
-            double avgValLoss = evaluateValidation(valSamples);
-            long duration = System.currentTimeMillis() - startTime;
-
-            lossHistory.add(avgTrainLoss);
-            model.getTrainingState().setEpoch(epoch + 1);
-            model.getTrainingState().setLastLoss((float) avgTrainLoss);
-
-            System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %d ms%n",
-                    epoch + 1, epochs, avgTrainLoss, avgValLoss, duration);
+        } catch (Exception e) {
+            System.err.printf("[EVO Trainer] Exception caught during training: %s%n", e.getMessage());
+            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_FAILED);
+            result.setTerminationReason(TerminationReason.EXCEPTION_THROWN);
+            result.setModelValid(false);
+            result.setFailureDetails("Exception caught during training loop: " + e.getMessage());
         }
+
+        if (result.getTerminationStatus() == TrainingTerminationStatus.TRAINING_COMPLETED
+                && result.getCompletedEpochs() < epochs) {
+            // Default completion set if all requested epochs ran
+            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_COMPLETED);
+            result.setTerminationReason(TerminationReason.PLANNED_COMPLETION);
+        }
+
+        result.setTrainingDurationMs(System.currentTimeMillis() - startTime);
+        this.lastResult = result;
+        return result;
     }
 
     private double processMicroBatch(TrainingBatch batch, long accumulationWindowTokens) {
