@@ -45,11 +45,19 @@ public class ForgeSettingsDialog extends Dialog {
         private boolean checked;
         private String path;
         private String type; // "FILE" or "FOLDER"
+        private long recordLimit = -1;
+        private double scaleRatio = 1.0;
 
         public DatasetItem(boolean checked, String path, String type) {
+            this(checked, path, type, -1, 1.0);
+        }
+
+        public DatasetItem(boolean checked, String path, String type, long recordLimit, double scaleRatio) {
             this.checked = checked;
             this.path = path != null ? path : "";
             this.type = type != null ? type : "FOLDER";
+            this.recordLimit = recordLimit;
+            this.scaleRatio = scaleRatio > 0 ? scaleRatio : 1.0;
         }
 
         public boolean isChecked() {
@@ -76,11 +84,29 @@ public class ForgeSettingsDialog extends Dialog {
             this.type = type;
         }
 
+        public long getRecordLimit() {
+            return recordLimit;
+        }
+
+        public void setRecordLimit(long recordLimit) {
+            this.recordLimit = recordLimit;
+        }
+
+        public double getScaleRatio() {
+            return scaleRatio;
+        }
+
+        public void setScaleRatio(double scaleRatio) {
+            this.scaleRatio = scaleRatio;
+        }
+
         public JSONObject toJsonObject() {
             JSONObject obj = new JSONObject();
             obj.put("checked", checked);
             obj.put("path", path);
             obj.put("type", type);
+            obj.put("recordLimit", recordLimit);
+            obj.put("scaleRatio", scaleRatio);
             return obj;
         }
 
@@ -88,14 +114,151 @@ public class ForgeSettingsDialog extends Dialog {
             boolean checked = obj.optBoolean("checked", true);
             String path = obj.optString("path", "");
             String type = obj.optString("type", "FOLDER");
-            return new DatasetItem(checked, path, type);
+            long recordLimit = obj.optLong("recordLimit", -1);
+            double scaleRatio = obj.optDouble("scaleRatio", 1.0);
+            return new DatasetItem(checked, path, type, recordLimit, scaleRatio);
         }
+    }
+
+    public static int getCpuCores() {
+        return Math.max(1, Runtime.getRuntime().availableProcessors());
+    }
+
+    public static long getMaxMemoryMb() {
+        return Math.max(512, Runtime.getRuntime().maxMemory() / (1024 * 1024));
+    }
+
+    public static String getHardwareProfile() {
+        return String.format("CPU: %d Cores | JVM RAM: %d MB | OS: %s (%s)",
+            getCpuCores(), getMaxMemoryMb(), System.getProperty("os.name"), System.getProperty("os.arch"));
+    }
+
+    public static double getModelComplexityFactor(String sizeName) {
+        if (sizeName == null) return 8.0;
+        String s = sizeName.toUpperCase();
+        if (s.contains("NANO")) return 1.0;
+        if (s.contains("MICRO")) return 2.0;
+        if (s.contains("MINI")) return 4.0;
+        if (s.contains("SMALL")) return 8.0;
+        if (s.contains("MEDIUM")) return 16.0;
+        if (s.contains("LARGE") && !s.contains("XLARGE")) return 32.0;
+        if (s.contains("XLARGE")) return 64.0;
+        return 8.0;
+    }
+
+    public static double getHardwareThroughputBytesPerSec(String modelSize) {
+        double complexity = getModelComplexityFactor(modelSize);
+        int cores = getCpuCores();
+        double coreScaling = Math.pow(cores, 0.75);
+        double baseRatePerCore = 250_000.0;
+        return (baseRatePerCore * coreScaling) / complexity;
+    }
+
+    public static long calculatePathSize(String path) {
+        if (path == null || path.trim().isEmpty()) return 0;
+        try {
+            File f = new File(path);
+            if (!f.exists()) return 0;
+            if (f.isFile()) return f.length();
+            if (f.isDirectory()) {
+                long total = 0;
+                File[] files = f.listFiles();
+                if (files != null) {
+                    for (File child : files) {
+                        if (child.isFile()) total += child.length();
+                    }
+                }
+                return total;
+            }
+        } catch (Exception ex) {}
+        return 0;
+    }
+
+    public long calculateTotalDatasetBytes() {
+        long totalBytes = 0;
+        for (DatasetItem item : datasetItems) {
+            if (item.isChecked() && item.getPath() != null && !item.getPath().trim().isEmpty()) {
+                long fullSize = calculatePathSize(item.getPath());
+                if (fullSize <= 0) {
+                    fullSize = 50 * 1024 * 1024L;
+                }
+                long scaledSize = (long) (fullSize * item.getScaleRatio());
+                totalBytes += Math.max(1024L, scaledSize);
+            }
+        }
+        return totalBytes;
+    }
+
+    public double getEstimatedForgingSeconds() {
+        return calculateEstimatedForgingSeconds(selectedModelSize, selectedEpochs, calculateTotalDatasetBytes());
+    }
+
+    public static double calculateEstimatedForgingSeconds(String modelSize, int epochs, long datasetBytes) {
+        double bytesPerSec = getHardwareThroughputBytesPerSec(modelSize);
+        long totalBytesToProcess = Math.max(1000L, datasetBytes) * Math.max(1, epochs);
+        return totalBytesToProcess / bytesPerSec;
+    }
+
+    public static String formatDuration(double seconds) {
+        if (seconds < 60) {
+            return String.format("%.0f seconds", seconds);
+        } else if (seconds < 3600) {
+            int mins = (int) (seconds / 60);
+            int secs = (int) (seconds % 60);
+            return String.format("%d min %d sec", mins, secs);
+        } else {
+            int hours = (int) (seconds / 3600);
+            int mins = (int) ((seconds % 3600) / 60);
+            return String.format("%d hr %d min", hours, mins);
+        }
+    }
+
+    public boolean applySmartDataScaling(double targetHours) {
+        if (targetHours <= 0) return false;
+        long totalBytes = calculateTotalDatasetBytes();
+        if (totalBytes <= 0) return false;
+
+        double bytesPerSec = getHardwareThroughputBytesPerSec(selectedModelSize);
+        double maxBytesToProcess = targetHours * 3600.0 * bytesPerSec;
+        double targetDatasetBytesPerEpoch = maxBytesToProcess / Math.max(1, selectedEpochs);
+
+        long unscaledTotal = 0;
+        for (DatasetItem item : datasetItems) {
+            if (item.isChecked()) {
+                long size = calculatePathSize(item.getPath());
+                if (size <= 0) size = 50 * 1024 * 1024L;
+                unscaledTotal += size;
+            }
+        }
+
+        if (unscaledTotal <= 0) return false;
+
+        double scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
+        if (scaleFactor < 0.05 && selectedEpochs > 4) {
+            selectedEpochs = Math.max(4, selectedEpochs / 2);
+            targetDatasetBytesPerEpoch = maxBytesToProcess / selectedEpochs;
+            scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
+        }
+
+        for (DatasetItem item : datasetItems) {
+            if (item.isChecked()) {
+                item.setScaleRatio(Math.max(0.01, scaleFactor));
+                long fullSize = calculatePathSize(item.getPath());
+                if (fullSize <= 0) fullSize = 50 * 1024 * 1024L;
+                long targetItemBytes = (long) (fullSize * scaleFactor);
+                item.setRecordLimit(Math.max(10, targetItemBytes / 200));
+            }
+        }
+        return true;
     }
 
     private Combo modelSizeCombo;
     private Combo epochCombo;
     private Combo lossThresholdCombo;
     private Combo desiredLossCombo;
+    private Combo targetTimeCombo;
+    private Label estTimeLabel;
+    private Label hwProfileLabel;
     private Browser graphBrowser;
     private Table datasetsTable;
 
@@ -103,6 +266,7 @@ public class ForgeSettingsDialog extends Dialog {
     private int selectedEpochs = 32;
     private String selectedLossThreshold = "Epoch 16-30: Loss 2-5 → Learning phrases";
     private double selectedDesiredLoss = 1.0;
+    private double selectedTargetHours = 12.0;
     private double[] lossHistory = null;
     private List<DatasetItem> datasetItems = new ArrayList<>();
 
@@ -120,6 +284,10 @@ public class ForgeSettingsDialog extends Dialog {
 
     private static final String[] DESIRED_LOSS_OPTIONS = new String[] {
         "2.0", "1.5", "1.0", "0.8", "0.5", "0.2", "0.1", "0.05"
+    };
+
+    private static final String[] TARGET_TIME_OPTIONS = new String[] {
+        "0.5 hrs (30m)", "1.0 hr", "2.0 hrs", "6.0 hrs", "12.0 hrs", "24.0 hrs", "48.0 hrs"
     };
 
     public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold) {
@@ -181,7 +349,7 @@ public class ForgeSettingsDialog extends Dialog {
 
     @Override
     protected Point getInitialSize() {
-        return new Point(980, 700);
+        return new Point(1080, 760);
     }
 
     @Override
@@ -220,6 +388,19 @@ public class ForgeSettingsDialog extends Dialog {
             }
         }
         modelSizeCombo.select(defaultSizeIdx);
+        modelSizeCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = modelSizeCombo.getSelectionIndex();
+                if (idx >= 0 && idx < ModelSizePreset.Size.values().length) {
+                    selectedModelSize = ModelSizePreset.Size.values()[idx].name();
+                } else {
+                    selectedModelSize = modelSizeCombo.getText();
+                }
+                updateHardwareAndTimeInfo();
+                updateGraphHtml();
+            }
+        });
 
         // 2. Epoch Integer Editable Combo
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Epoch Count:");
@@ -296,7 +477,40 @@ public class ForgeSettingsDialog extends Dialog {
             "• Desired Finish Loss: When actual loss drops below this target, forging stops early."
         );
 
-        // Group 2: Training Datasets (Ordered Target Data)
+        // Group 2: Hardware & Forging Time Controller Panel
+        Group hwGroup = new Group(settingsPanel, SWT.NONE);
+        hwGroup.setText("Hardware & Forging Time Controller");
+        hwGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        hwGroup.setLayout(new GridLayout(2, false));
+
+        hwProfileLabel = new Label(hwGroup, SWT.NONE);
+        hwProfileLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+
+        estTimeLabel = new Label(hwGroup, SWT.NONE);
+        estTimeLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+
+        GUIFactory.INSTANCE.createLabel(hwGroup, "Target Forging Duration:");
+        targetTimeCombo = new Combo(hwGroup, SWT.DROP_DOWN);
+        targetTimeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        for (String opt : TARGET_TIME_OPTIONS) {
+            targetTimeCombo.add(opt);
+        }
+        targetTimeCombo.select(4); // Default "12.0 hrs"
+
+        Button smartScaleBtn = GUIFactory.INSTANCE.createButton(hwGroup, "Smart Scale Data for Target Time");
+        smartScaleBtn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+        smartScaleBtn.setToolTipText("Automatically scale dataset record limits and adjust epoch parameters to fit training within the target duration.");
+        smartScaleBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleSmartScaling();
+            }
+        });
+
+        updateHardwareAndTimeInfo();
+
+        // Group 3: Training Datasets (Ordered Target Data)
         Group datasetsGroup = new Group(settingsPanel, SWT.NONE);
         datasetsGroup.setText("Training Datasets (Ordered Target Data)");
         datasetsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
@@ -327,6 +541,8 @@ public class ForgeSettingsDialog extends Dialog {
                 Object data = item.getData();
                 if (data instanceof DatasetItem) {
                     ((DatasetItem) data).setChecked(item.getChecked());
+                    updateHardwareAndTimeInfo();
+                    updateGraphHtml();
                 }
             }
         });
@@ -950,9 +1166,55 @@ public class ForgeSettingsDialog extends Dialog {
             TableItem tableItem = new TableItem(datasetsTable, SWT.NONE);
             tableItem.setChecked(item.isChecked());
             tableItem.setText(0, "");
-            tableItem.setText(1, item.getPath());
+            String pathText = item.getPath();
+            if (item.getScaleRatio() < 0.99) {
+                pathText += String.format(" (Scaled: %.0f%%)", item.getScaleRatio() * 100.0);
+            }
+            tableItem.setText(1, pathText);
             tableItem.setText(2, item.getType());
             tableItem.setData(item);
+        }
+        updateHardwareAndTimeInfo();
+    }
+
+    private void handleSmartScaling() {
+        double hours = 12.0;
+        if (targetTimeCombo != null && !targetTimeCombo.isDisposed()) {
+            String text = targetTimeCombo.getText();
+            try {
+                String clean = text.replaceAll("[^0-9.]", "");
+                if (!clean.isEmpty()) {
+                    hours = Double.parseDouble(clean);
+                }
+            } catch (Exception ex) {}
+        }
+        selectedTargetHours = hours;
+        if (applySmartDataScaling(hours)) {
+            if (epochCombo != null && !epochCombo.isDisposed()) {
+                epochCombo.setText(String.valueOf(selectedEpochs));
+            }
+            refreshDatasetsTable();
+            updateHardwareAndTimeInfo();
+            updateGraphHtml();
+            MessageDialog.openInformation(getShell(), "Smart Data Scaling Applied",
+                String.format("Training parameters and dataset sample ratios scaled for target forging time of %.1f hours.\n" +
+                    "Updated Epochs: %d\nEstimated Duration: %s",
+                    hours, selectedEpochs, formatDuration(getEstimatedForgingSeconds())));
+        } else {
+            MessageDialog.openWarning(getShell(), "Scaling Warning",
+                "Could not apply smart scaling. Ensure checked datasets are valid.");
+        }
+    }
+
+    private void updateHardwareAndTimeInfo() {
+        if (hwProfileLabel != null && !hwProfileLabel.isDisposed()) {
+            hwProfileLabel.setText("Hardware Profile: " + getHardwareProfile());
+        }
+        if (estTimeLabel != null && !estTimeLabel.isDisposed()) {
+            double estSec = getEstimatedForgingSeconds();
+            long bytes = calculateTotalDatasetBytes();
+            estTimeLabel.setText(String.format("Target Data Size: %.2f MB | Computed Forging Time: %s",
+                bytes / (1024.0 * 1024.0), formatDuration(estSec)));
         }
     }
 
