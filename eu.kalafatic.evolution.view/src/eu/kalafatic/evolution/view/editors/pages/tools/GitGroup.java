@@ -1,6 +1,14 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
-import org.eclipse.jface.dialogs.MessageDialog;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
@@ -9,30 +17,30 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
-import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.view.util.GitRegistryHelper;
 import eu.kalafatic.utils.factories.GUIFactory;
-import java.io.File;
-import java.util.List;
 
 public class GitGroup extends AToolGroup {
     private Combo repoSelector;
     private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText;
     private Combo gitLocalPathText;
     private Text branchNameText, commitMsgText;
+    private Text gitOutputText;
     private ControlDecoration urlDecorator, pathDecorator;
     
     private String currentRepoId = EclipseGitEvoTool.REPO_EVOLUTION;
@@ -157,6 +165,13 @@ public class GitGroup extends AToolGroup {
             @Override
             public void widgetSelected(SelectionEvent e) { testGit(); }
         });
+
+        GUIFactory.INSTANCE.createLabel(composite, "Output Console:");
+        gitOutputText = new Text(composite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
+        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.heightHint = 80;
+        gd.horizontalSpan = 2;
+        gitOutputText.setLayoutData(gd);
 	}
 
     private ControlDecoration createErrorDecorator(Control control, String description) {
@@ -168,35 +183,56 @@ public class GitGroup extends AToolGroup {
     }
 
     private void testGit() {
-        try {
-            String path = gitLocalPathText.getText();
-            File workingDir = (path != null && !path.isEmpty()) ? new File(path) : new File(System.getProperty("java.io.tmpdir"));
+        appendLog("[GIT] Running Git availability & connectivity test...");
+        Job job = new Job("Git Diagnostics") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    String path = gitLocalPathText.getText();
+                    File workingDir = (path != null && !path.isEmpty()) ? new File(path) : new File(System.getProperty("java.io.tmpdir"));
 
-            TaskContext context = new TaskContext(orchestrator, workingDir);
-            eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
+                    TaskContext context = new TaskContext(orchestrator, workingDir);
+                    eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
 
-            String gitVersion = shell.execute("git --version", workingDir, context);
-            StringBuilder statusMsg = new StringBuilder("Git available: " + gitVersion + "\n");
+                    String gitVersion = shell.execute("git --version", workingDir, context);
+                    appendLog("[GIT][STDOUT] Git version: " + gitVersion);
 
-            String url = gitRepoText.getText();
-            if (!url.isEmpty()) {
-                String user = gitUsernameText.getText();
-                String pass = gitPasswordText.getText();
-                String remoteUrl = url;
-                if (!user.isEmpty() && !pass.isEmpty() && url.startsWith("http")) {
-                    String proto = url.startsWith("https") ? "https://" : "http://";
-                    String rest = url.substring(proto.length());
-                    remoteUrl = proto + java.net.URLEncoder.encode(user, "UTF-8") + ":" + java.net.URLEncoder.encode(pass, "UTF-8") + "@" + rest;
+                    String url = gitRepoText.getText();
+                    if (url != null && !url.trim().isEmpty()) {
+                        String user = gitUsernameText.getText();
+                        String pass = gitPasswordText.getText();
+                        String remoteUrl = url;
+                        if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty() && url.startsWith("http")) {
+                            String proto = url.startsWith("https") ? "https://" : "http://";
+                            String rest = url.substring(proto.length());
+                            remoteUrl = proto + java.net.URLEncoder.encode(user, "UTF-8") + ":" + java.net.URLEncoder.encode(pass, "UTF-8") + "@" + rest;
+                        }
+                        appendLog("[GIT] Testing remote connectivity to " + url + "...");
+                        String lsRemoteResult = shell.execute("git ls-remote " + remoteUrl + " HEAD", workingDir, context);
+                        appendLog("[GIT][STDOUT] " + lsRemoteResult);
+                        appendLog("[GIT] Remote connection verified successfully.");
+                    }
+                } catch (Exception e) {
+                    appendLog("[GIT][ERROR] Git test failed: " + e.getMessage());
                 }
-                statusMsg.append("Testing remote connectivity...\n");
-                shell.execute("git ls-remote " + remoteUrl + " HEAD", workingDir, context);
-                statusMsg.append("Remote connection successful!");
+                return Status.OK_STATUS;
             }
+        };
+        job.schedule();
+    }
 
-            MessageDialog.openInformation(group.getShell(), "Git Test", statusMsg.toString());
-        } catch (Exception e) {
-            MessageDialog.openError(group.getShell(), "Git Test Failed", e.getMessage());
-        }
+    private void appendLog(String msg) {
+        Display.getDefault().asyncExec(() -> {
+            if (gitOutputText == null || gitOutputText.isDisposed()) return;
+            String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
+            gitOutputText.append("[" + time + "] " + msg + "\n");
+        });
+    }
+
+    @Override
+    protected void executeCommand(String command, String type) {
+        appendLog("[GIT] Command queued: " + command);
+        super.executeCommand(command, type);
     }
 
     @Override

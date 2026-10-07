@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
@@ -51,6 +52,8 @@ public class DatasetEditorGroup extends AEvoGroup {
     private Combo samplingStrategyCombo;
     private Button cleanCheck;
     private Button deduplicateCheck;
+    private ProgressBar progressBar;
+    private Label progressStatusLabel;
     private Text reportArea;
 
     private Table candidatesTable;
@@ -347,6 +350,21 @@ public class DatasetEditorGroup extends AEvoGroup {
         gdInfo.horizontalSpan = 2;
         infoDescLabel.setLayoutData(gdInfo);
 
+        Composite progressComp = toolkit.createComposite(group);
+        progressComp.setLayout(new GridLayout(1, false));
+        GridData gdProgressComp = new GridData(GridData.FILL_HORIZONTAL);
+        gdProgressComp.horizontalSpan = 2;
+        progressComp.setLayoutData(gdProgressComp);
+
+        progressStatusLabel = toolkit.createLabel(progressComp, "Status: Idle");
+        progressStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        progressBar = new ProgressBar(progressComp, SWT.HORIZONTAL | SWT.SMOOTH);
+        GridData pbGd = new GridData(GridData.FILL_HORIZONTAL);
+        pbGd.exclude = true;
+        progressBar.setLayoutData(pbGd);
+        progressBar.setVisible(false);
+
         Composite reportHeaderComp = toolkit.createComposite(group);
         reportHeaderComp.setLayout(new GridLayout(2, false));
         GridData gdRepHeader = new GridData(GridData.FILL_HORIZONTAL);
@@ -379,7 +397,37 @@ public class DatasetEditorGroup extends AEvoGroup {
         refreshCandidatesTableFromEmf();
     }
 
+    private void updateProgress(int percent) {
+        Display.getDefault().asyncExec(() -> {
+            if (progressBar != null && !progressBar.isDisposed()) {
+                progressBar.setSelection(percent);
+            }
+        });
+    }
+
+    private void updateStatusText(String status) {
+        Display.getDefault().asyncExec(() -> {
+            if (progressStatusLabel != null && !progressStatusLabel.isDisposed()) {
+                progressStatusLabel.setText(status);
+            }
+        });
+    }
+
+    private void setProgressBarVisible(boolean visible) {
+        Display.getDefault().asyncExec(() -> {
+            if (progressBar != null && !progressBar.isDisposed()) {
+                progressBar.setVisible(visible);
+                GridData gd = (GridData) progressBar.getLayoutData();
+                gd.exclude = !visible;
+                if (group != null && !group.isDisposed()) group.layout(true, true);
+            }
+        });
+    }
+
     private void handleDiscoverDatasets() {
+        setProgressBarVisible(true);
+        updateProgress(10);
+        updateStatusText("Status: Discovering remote datasets...");
         String repo = repoText.getText().trim();
         String domain = domainCombo != null ? domainCombo.getText().trim() : "General Text";
         String split = splitText.getText().trim();
@@ -426,6 +474,9 @@ public class DatasetEditorGroup extends AEvoGroup {
                 DatasetCandidateManager.getInstance().addCandidates(activeSession, discovered);
 
                 Display.getDefault().asyncExec(() -> {
+                    updateProgress(100);
+                    updateStatusText("Status: Dataset Discovery Complete");
+                    setProgressBarVisible(false);
                     if (!reportArea.isDisposed()) {
                         refreshCandidatesTableFromEmf();
 
@@ -467,6 +518,8 @@ public class DatasetEditorGroup extends AEvoGroup {
                 });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> {
+                    updateStatusText("Status: Discovery Error - " + ex.getMessage());
+                    setProgressBarVisible(false);
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Discovery Error: " + ex.getMessage());
                         MessageDialog.openError(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage());
@@ -673,6 +726,9 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handleDownloadDataset() {
+        setProgressBarVisible(true);
+        updateProgress(10);
+        updateStatusText("Status: Initiating dataset download...");
         String repo = repoText.getText().trim();
         String split = splitText.getText().trim();
         String samples = maxSamplesText.getText().trim();
@@ -711,12 +767,17 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("downloadOnly", true);
 
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.4, "Fetching dataset chunks for " + repo + "...");
+                updateProgress(50);
+                updateStatusText("Status: Fetching dataset chunks...");
 
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
 
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Download Complete");
+                updateProgress(100);
+                updateStatusText("Status: Download Completed");
 
                 Display.getDefault().asyncExec(() -> {
+                    setProgressBarVisible(false);
                     if (!reportArea.isDisposed()) {
                         File downloadedDir = targetDatasetDir;
                         long actualBytesOnDisk = calculateDirectoryOrFileSize(downloadedDir);
@@ -768,6 +829,8 @@ public class DatasetEditorGroup extends AEvoGroup {
             } catch (Exception ex) {
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Download Error: " + ex.getMessage());
                 Display.getDefault().asyncExec(() -> {
+                    updateStatusText("Status: Download Error - " + ex.getMessage());
+                    setProgressBarVisible(false);
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Download Error: " + ex.getMessage());
                         MessageDialog.openError(group.getShell(), "Dataset Download Error", "Download failed: " + ex.getMessage());
@@ -778,6 +841,9 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handleExportEvodata() {
+        setProgressBarVisible(true);
+        updateProgress(10);
+        updateStatusText("Status: Preparing .evodata export...");
         String repoOrPath = repoText.getText().trim();
         if (repoOrPath.isEmpty()) {
             MessageDialog.openWarning(group.getShell(), "No Dataset Specified", "Please specify a repository ID or target directory/file path to export.");
@@ -806,13 +872,18 @@ public class DatasetEditorGroup extends AEvoGroup {
         final File outputDir = targetDatasetDir;
         new Thread(() -> {
             try {
+                        updateProgress(50);
+                        updateStatusText("Status: Compiling .evodata container...");
                 eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService service = new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
                 eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext context = new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
                 eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult result = service.prepareDatasets(apiItems, context, outputDir);
 
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Export Complete");
+                        updateProgress(100);
+                        updateStatusText("Status: Export Complete");
 
                 Display.getDefault().asyncExec(() -> {
+                            setProgressBarVisible(false);
                     if (!reportArea.isDisposed()) {
                         if (result.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.SUCCESS && result.getOutputPath() != null) {
                             File evodataFile = new File(result.getOutputPath());
@@ -848,6 +919,8 @@ public class DatasetEditorGroup extends AEvoGroup {
             } catch (Exception ex) {
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Export Error: " + ex.getMessage());
                 Display.getDefault().asyncExec(() -> {
+                    updateStatusText("Status: Export Error - " + ex.getMessage());
+                    setProgressBarVisible(false);
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("EXPORT ERROR: " + ex.getMessage());
                         MessageDialog.openError(group.getShell(), "Error Exporting Dataset", "Error creating .evodata artifact: " + ex.getMessage());
