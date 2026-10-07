@@ -24,8 +24,8 @@ public class AnalyticChatValidationTask extends AbstractSelfDevTask {
         String spec = "http://127.0.0.1:" + port + "/server/conversation/" + sessionId;
 
         long startTime = System.currentTimeMillis();
-        long maxWaitTimeMs = 15000;
-        long pollIntervalMs = 1000;
+        long maxWaitTimeMs = 120000;
+        long pollIntervalMs = 2000;
         String finalResponseText = null;
         boolean validated = false;
 

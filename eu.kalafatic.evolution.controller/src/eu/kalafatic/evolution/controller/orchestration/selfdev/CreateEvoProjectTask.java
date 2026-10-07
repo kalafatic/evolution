@@ -49,16 +49,17 @@ public class CreateEvoProjectTask extends AbstractSelfDevTask {
                 }
             }
 
+            String respText = responseBuffer.toString().trim();
             long duration = System.currentTimeMillis() - startTime;
-            if (code == 200) {
+            if (code == 200 && (respText.contains("\"status\":\"OK\"") || respText.contains("\"status\": \"OK\"") || respText.contains("SelfDevProject"))) {
                 return new TaskResult.Builder(id)
                         .status(TaskStatus.SUCCESS)
                         .message("EVO Project '" + projectName + "' created successfully via HTTP endpoint on port " + port)
                         .duration(duration)
-                        .diagnostic("response", responseBuffer.toString())
+                        .diagnostic("response", respText)
                         .build();
             } else {
-                return TaskResult.failure(id, "Failed to create EVO Project: HTTP " + code + " - " + responseBuffer.toString().trim(), null);
+                return TaskResult.failure(id, "Failed to create EVO Project: HTTP " + code + " - " + respText, null);
             }
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;

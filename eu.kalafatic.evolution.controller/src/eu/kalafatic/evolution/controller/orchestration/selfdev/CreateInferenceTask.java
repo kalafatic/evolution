@@ -28,8 +28,8 @@ public class CreateInferenceTask extends AbstractSelfDevTask {
             URL url = new URL(spec);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(10000);
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(120000);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
