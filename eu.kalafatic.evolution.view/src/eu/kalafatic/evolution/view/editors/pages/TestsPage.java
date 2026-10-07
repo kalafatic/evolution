@@ -319,15 +319,34 @@ public class TestsPage extends AEvoPage {
 
 	public void runIterativeSimulation(Browser browser, Button runBtn, Test testModel) {
 		if (iterativeTest != null) iterativeTest.stop();
+
+		if (iterativeDevelopmentLifecycleGroup != null) {
+			iterativeDevelopmentLifecycleGroup.setProgressBarVisible(true);
+			iterativeDevelopmentLifecycleGroup.updateStatus("Status: Running Lifecycle Simulation...");
+			iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Initializing iterative development simulation...");
+		}
+
+		final int[] stepCounter = { 0 };
+
 		ITestListener listener = new ITestListener() {
 			@Override public void stepStarted(String step) {
+				stepCounter[0]++;
+				int pct = Math.min(100, (stepCounter[0] * 100) / 12);
 				Display.getDefault().asyncExec(() -> {
 					if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'active');");
+					if (iterativeDevelopmentLifecycleGroup != null) {
+						iterativeDevelopmentLifecycleGroup.updateProgress(pct);
+						iterativeDevelopmentLifecycleGroup.updateStatus("Status: Step '" + step.toUpperCase() + "' Active (" + pct + "%)");
+						iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Step STARTED: " + step);
+					}
 				});
 			}
 			@Override public void stepSuccess(String step) {
 				Display.getDefault().asyncExec(() -> {
 					if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
+					if (iterativeDevelopmentLifecycleGroup != null) {
+						iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Step SUCCESS: " + step);
+					}
 					boolean isLast = false;
 					String name = (testModel != null) ? testModel.getName() : "";
 					if ("ProjectSetupTest".equals(name) && "validate".equals(step)) isLast = true;
@@ -338,6 +357,11 @@ public class TestsPage extends AEvoPage {
 					if (isLast) {
 						if (testModel != null) { testModel.setStatus(TestStatus.PASSED); updateStatusInTable(testModel); }
 						if (runBtn != null && !runBtn.isDisposed()) runBtn.setEnabled(true);
+						if (iterativeDevelopmentLifecycleGroup != null) {
+							iterativeDevelopmentLifecycleGroup.updateStatus("Status: Simulation Completed Successfully");
+							iterativeDevelopmentLifecycleGroup.setProgressBarVisible(false);
+							iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Lifecycle simulation finished with status PASSED.");
+						}
 						refreshBrowser();
 					}
 				});
@@ -347,12 +371,20 @@ public class TestsPage extends AEvoPage {
 					if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'failed');");
 					if (runBtn != null && !runBtn.isDisposed()) runBtn.setEnabled(true);
 					if (testModel != null) { testModel.setStatus(TestStatus.FAILED); updateStatusInTable(testModel); }
+					if (iterativeDevelopmentLifecycleGroup != null) {
+						iterativeDevelopmentLifecycleGroup.updateStatus("Status: Simulation Failed at Step '" + step + "'");
+						iterativeDevelopmentLifecycleGroup.setProgressBarVisible(false);
+						iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION][ERROR] Step FAILED: " + step);
+					}
 					refreshBrowser();
 				});
 			}
 			@Override public void stepSkipped(String step) {
 				Display.getDefault().asyncExec(() -> {
 					if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'skipped');");
+					if (iterativeDevelopmentLifecycleGroup != null) {
+						iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Step SKIPPED: " + step);
+					}
 				});
 			}
 			@Override public void transitionActive(String edgeId) {
@@ -363,6 +395,9 @@ public class TestsPage extends AEvoPage {
 							if (browser != null && !browser.isDisposed()) browser.execute("setEdgeStatus('" + edgeId + "', '');");
 						});
 					}
+					if (iterativeDevelopmentLifecycleGroup != null) {
+						iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Transition active: " + edgeId);
+					}
 				});
 			}
 			@Override public void reset() {
@@ -370,6 +405,11 @@ public class TestsPage extends AEvoPage {
 					if (browser != null && !browser.isDisposed()) {
 						browser.execute("resetDiagram();");
 						if (runBtn != null && !runBtn.isDisposed()) runBtn.setEnabled(false);
+					}
+					if (iterativeDevelopmentLifecycleGroup != null) {
+						iterativeDevelopmentLifecycleGroup.updateStatus("Status: Reset");
+						iterativeDevelopmentLifecycleGroup.setProgressBarVisible(false);
+						iterativeDevelopmentLifecycleGroup.appendLog("[SIMULATION] Resetting simulation diagram.");
 					}
 				});
 			}
