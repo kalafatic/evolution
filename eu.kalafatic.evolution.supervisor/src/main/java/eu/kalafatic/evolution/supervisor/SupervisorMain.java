@@ -23,6 +23,8 @@ public class SupervisorMain {
         int supervisorPort = Integer.getInteger("port", Integer.getInteger("evo.supervisor.port", 8089));
         int controlPort = Integer.getInteger("control.port", 28080);
         boolean debugArg = Boolean.getBoolean("debug") || "debug".equalsIgnoreCase(System.getProperty("evo.mode"));
+        boolean uiMode = "rcp".equalsIgnoreCase(System.getProperty("evo.supervisor.mode"))
+                      || "ui".equalsIgnoreCase(System.getProperty("evo.supervisor.mode"));
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -36,6 +38,10 @@ public class SupervisorMain {
                 try { controlPort = Integer.parseInt(args[++i].trim()); } catch (Exception ignored) {}
             } else if ("--debug".equalsIgnoreCase(arg)) {
                 debugArg = true;
+            } else if ("--ui".equalsIgnoreCase(arg) || "--rcp".equalsIgnoreCase(arg)) {
+                uiMode = true;
+            } else if ("--headless".equalsIgnoreCase(arg)) {
+                uiMode = false;
             } else if (!arg.startsWith("-")) {
                 path = arg;
             }
@@ -47,7 +53,27 @@ public class SupervisorMain {
         System.out.println("[CONFIG] Effective Supervisor Port: " + supervisorPort);
         System.out.println("[CONFIG] Effective Control Port   : " + controlPort);
         System.out.println("[CONFIG] Debug Mode              : " + debugArg);
+        System.out.println("[CONFIG] Execution Mode          : " + (uiMode ? "UI_RCP" : "HEADLESS"));
 
+        if (uiMode) {
+            System.out.println("[SUPERVISOR] Launching Supervisor in UI RCP Mode...");
+            try {
+                eu.kalafatic.evolution.supervisor.ui.SupervisorUiWindow ui =
+                    new eu.kalafatic.evolution.supervisor.ui.SupervisorUiWindow(baseDir, supervisorPort, controlPort, debugArg);
+                ui.open(args);
+            } catch (Throwable t) {
+                System.err.println("[SUPERVISOR] UI RCP launch failed: " + t.getMessage());
+                System.out.println("[SUPERVISOR] Falling back to HEADLESS execution...");
+                runHeadless(baseDir, supervisorPort, controlPort, debugArg);
+            }
+        } else {
+            runHeadless(baseDir, supervisorPort, controlPort, debugArg);
+        }
+
+        System.out.println("=== EVO AI SUPERVISOR FINISHED ===");
+    }
+
+    private static void runHeadless(File baseDir, int supervisorPort, int controlPort, boolean debugArg) {
         // ============================================================
         // START THE HTTP SERVERS FIRST - BEFORE THE MONITORING LOOP
         // ============================================================
@@ -98,19 +124,10 @@ public class SupervisorMain {
             
         } catch (ClassNotFoundException e) {
             System.err.println("[HTTP] ERROR: NanoHTTPD class not found in classpath!");
-            System.err.println("[HTTP] This means the shaded JAR does not include NanoHTTPD.");
-            System.err.println("[HTTP] Please add the NanoHTTPD dependency to pom.xml:");
-            System.err.println("[HTTP]   <dependency>");
-            System.err.println("[HTTP]     <groupId>org.nanohttpd</groupId>");
-            System.err.println("[HTTP]     <artifactId>nanohttpd</artifactId>");
-            System.err.println("[HTTP]     <version>2.3.1</version>");
-            System.err.println("[HTTP]   </dependency>");
-            // Continue without HTTP server - file protocol still works
             System.err.println("[HTTP] Continuing with file-based protocol only.");
         } catch (Throwable t) {
             System.err.println("[HTTP] ERROR: Failed to start HTTP server: " + t.getMessage());
             t.printStackTrace();
-            // Continue without HTTP server
             System.err.println("[HTTP] Continuing with file-based protocol only.");
         }
 
@@ -120,14 +137,12 @@ public class SupervisorMain {
         System.out.println("[SUPERVISOR] Starting monitoring loop...");
         SelfDevSupervisor supervisor = new SelfDevSupervisor(baseDir);
         supervisor.run();
-
-        System.out.println("=== EVO AI SUPERVISOR FINISHED ===");
     }
     
     /**
      * NanoHTTPD server implementation for supervisor endpoints.
      */
-    private static class EVOSupervisorServer extends NanoHTTPD {
+    public static class EVOSupervisorServer extends NanoHTTPD {
         private final File baseDir;
         private final File runDir;
         private final int port;

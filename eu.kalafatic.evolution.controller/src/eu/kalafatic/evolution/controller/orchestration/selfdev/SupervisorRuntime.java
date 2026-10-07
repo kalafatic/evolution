@@ -10,6 +10,7 @@ import eu.kalafatic.evolution.controller.resource.EvoService;
 public class SupervisorRuntime implements ProcessLifecycle {
 
     private static volatile Process supervisorProcess;
+    private static volatile Process uiRcpSupervisorProcess;
     private final SupervisorClient client = new SupervisorClient();
 
     @Override
@@ -34,12 +35,17 @@ public class SupervisorRuntime implements ProcessLifecycle {
             killProcessTree(supervisorProcess);
             supervisorProcess = null;
         }
+        if (uiRcpSupervisorProcess != null) {
+            killProcessTree(uiRcpSupervisorProcess);
+            uiRcpSupervisorProcess = null;
+        }
 
         File jarFile = findSupervisorJar(context);
         if (jarFile == null || !jarFile.exists() || jarFile.length() == 0) {
             return TaskResult.failure("start_supervisor", "Supervisor JAR artifact pre-condition check failed: file missing or empty at " + (jarFile != null ? jarFile.getAbsolutePath() : "null"), null);
         }
 
+        // Process 1: Simple Java App Headless Supervisor
         List<String> cmd = new ArrayList<>();
         cmd.add("java");
         if (context.isDebugMode()) {
@@ -53,13 +59,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
         cmd.add(context.getProjectRoot().getAbsolutePath());
         cmd.add("--port=" + supervisorPort);
         cmd.add("--control-port=" + controlPort);
+        cmd.add("--headless");
         if (context.isDebugMode()) {
             cmd.add("--debug");
         }
 
         File logFile = new File(context.getLogDirectory(), "supervisor_runtime.log");
 
-        log("[START_EVO_SUPERVISOR][LAUNCH]");
+        log("[START_EVO_SUPERVISOR][LAUNCH_HEADLESS]");
         log("artifact=" + jarFile.getAbsolutePath());
         log("runtimeRoot=" + context.getRuntimeDirectory().getAbsolutePath());
         log("executable=java");
@@ -70,7 +77,6 @@ public class SupervisorRuntime implements ProcessLifecycle {
         try {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.directory(jarFile.getParentFile());
-
             pb.redirectErrorStream(true);
             pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
 
@@ -80,17 +86,59 @@ public class SupervisorRuntime implements ProcessLifecycle {
             context.setSupervisorExecutable(jarFile.getAbsolutePath());
             context.setSupervisorWorkingDirectory(jarFile.getParentFile());
 
-            log("[START_EVO_SUPERVISOR][PROCESS_STARTED]");
+            log("[START_EVO_SUPERVISOR][PROCESS_STARTED_HEADLESS]");
             log("pid=" + pid);
+
+            // In Self-Dev Debug Mode, start BOTH Simple Java App Supervisor and UI RCP Supervisor
+            if (context.isDebugMode()) {
+                int uiSupervisorPort = supervisorPort + 1;
+                int uiControlPort = controlPort + 1;
+
+                List<String> cmdUi = new ArrayList<>();
+                cmdUi.add("java");
+                cmdUi.add("-Devo.mode=debug");
+                cmdUi.add("-Ddebug=true");
+                cmdUi.add("-Devo.supervisor.mode=ui");
+                cmdUi.add("-Dport=" + uiSupervisorPort);
+                cmdUi.add("-Dcontrol.port=" + uiControlPort);
+                cmdUi.add("-jar");
+                cmdUi.add(jarFile.getAbsolutePath());
+                cmdUi.add(context.getProjectRoot().getAbsolutePath());
+                cmdUi.add("--port=" + uiSupervisorPort);
+                cmdUi.add("--control-port=" + uiControlPort);
+                cmdUi.add("--debug");
+                cmdUi.add("--ui");
+
+                File uiLogFile = new File(context.getLogDirectory(), "supervisor_ui_runtime.log");
+
+                log("[START_EVO_SUPERVISOR][LAUNCH_UI_RCP]");
+                log("effectiveUiPort=" + uiSupervisorPort);
+                log("uiCommand=" + String.join(" ", cmdUi));
+
+                ProcessBuilder pbUi = new ProcessBuilder(cmdUi);
+                pbUi.directory(jarFile.getParentFile());
+                pbUi.redirectErrorStream(true);
+                pbUi.redirectOutput(ProcessBuilder.Redirect.appendTo(uiLogFile));
+
+                uiRcpSupervisorProcess = pbUi.start();
+                long uiPid = uiRcpSupervisorProcess.pid();
+
+                log("[START_EVO_SUPERVISOR][PROCESS_STARTED_UI_RCP]");
+                log("uiPid=" + uiPid);
+            }
 
             TaskResult readyRes = waitUntilReady(context, 15);
             long duration = System.currentTimeMillis() - startTime;
 
             if (readyRes.isSuccess()) {
                 String serviceUrl = activeClient.getBaseUrl();
+                String msg = "Supervisor started successfully and responding on " + serviceUrl;
+                if (context.isDebugMode()) {
+                    msg += " (Started both Headless PID " + pid + " and UI RCP PID " + (uiRcpSupervisorProcess != null ? uiRcpSupervisorProcess.pid() : "N/A") + ")";
+                }
                 return new TaskResult.Builder("start_supervisor")
                         .status(TaskStatus.SUCCESS)
-                        .message("Supervisor started successfully and responding on " + serviceUrl)
+                        .message(msg)
                         .duration(duration)
                         .command(String.join(" ", cmd))
                         .workingDirectory(jarFile.getParentFile())
@@ -107,6 +155,10 @@ public class SupervisorRuntime implements ProcessLifecycle {
                 String logSnippet = getRecentLogSnippet(logFile);
                 killProcessTree(supervisorProcess);
                 supervisorProcess = null;
+                if (uiRcpSupervisorProcess != null) {
+                    killProcessTree(uiRcpSupervisorProcess);
+                    uiRcpSupervisorProcess = null;
+                }
 
                 String failMsg = "Supervisor process started but failed ping check: " + readyRes.getMessage();
                 if (exitCode != -1) {
@@ -130,6 +182,10 @@ public class SupervisorRuntime implements ProcessLifecycle {
             String logSnippet = getRecentLogSnippet(logFile);
             killProcessTree(supervisorProcess);
             supervisorProcess = null;
+            if (uiRcpSupervisorProcess != null) {
+                killProcessTree(uiRcpSupervisorProcess);
+                uiRcpSupervisorProcess = null;
+            }
             return new TaskResult.Builder("start_supervisor")
                     .status(TaskStatus.FAILED)
                     .message("Failed to start Supervisor process: " + e.getMessage())
@@ -145,7 +201,8 @@ public class SupervisorRuntime implements ProcessLifecycle {
 
     @Override
     public boolean isAlive() {
-        return supervisorProcess != null && supervisorProcess.isAlive();
+        return (supervisorProcess != null && supervisorProcess.isAlive())
+            || (uiRcpSupervisorProcess != null && uiRcpSupervisorProcess.isAlive());
     }
 
     @Override
@@ -191,7 +248,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
         SupervisorClient activeClient = new SupervisorClient(context);
         long targetPid = context != null ? context.getSupervisorPid() : -1;
 
-        if (supervisorProcess == null && !activeClient.ping()) {
+        if (supervisorProcess == null && uiRcpSupervisorProcess == null && !activeClient.ping()) {
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
                     .message("Supervisor is not running.")
@@ -213,6 +270,11 @@ public class SupervisorRuntime implements ProcessLifecycle {
                     p.descendants().forEach(ProcessHandle::destroyForcibly);
                     p.destroyForcibly();
                 });
+            }
+
+            if (uiRcpSupervisorProcess != null) {
+                killProcessTree(uiRcpSupervisorProcess);
+                uiRcpSupervisorProcess = null;
             }
 
             if (context != null) {
@@ -276,6 +338,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
             } catch (Throwable ignored) {}
         }
         return -1;
+    }
+
+    public static Process getSupervisorProcess() {
+        return supervisorProcess;
+    }
+
+    public static Process getUiRcpSupervisorProcess() {
+        return uiRcpSupervisorProcess;
     }
 
     public SupervisorClient getClient() {
