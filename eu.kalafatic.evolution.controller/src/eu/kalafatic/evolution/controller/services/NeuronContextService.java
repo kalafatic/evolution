@@ -69,23 +69,35 @@ public class NeuronContextService {
     }
 
     public String getLearnedContext() {
-        if (!neuronFile.exists()) {
-            return "";
-        }
-        try {
-            List<?> insights = mapper.readValue(neuronFile, List.class);
-            if (insights == null || insights.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("### LEARNED BEHAVIOR CONTEXT (NEURON)\n");
-            sb.append("Based on past successful iterations, prefer these patterns:\n");
-            for (Object insight : insights) {
-                sb.append("- ").append(insight.toString()).append("\n");
+        // 1. Memory Subsystem Context
+        try {
+            eu.kalafatic.evolution.controller.memory.MemoryContextProvider memoryProvider = new eu.kalafatic.evolution.controller.memory.MemoryContextProvider();
+            String memoryContext = memoryProvider.buildMemoryContext("");
+            if (memoryContext != null && !memoryContext.isEmpty()) {
+                sb.append(memoryContext).append("\n\n");
             }
-            return sb.toString();
-        } catch (IOException e) {
-            Log.log("NeuronContext: Failed to load neuron context: " + e.getMessage());
-            return "";
+        } catch (Exception e) {
+            Log.log("NeuronContext: Failed to build memory context: " + e.getMessage());
         }
+
+        // 2. Learned Behavior Context
+        if (neuronFile.exists()) {
+            try {
+                List<?> insights = mapper.readValue(neuronFile, List.class);
+                if (insights != null && !insights.isEmpty()) {
+                    sb.append("### LEARNED BEHAVIOR CONTEXT (NEURON)\n");
+                    sb.append("Based on past successful iterations, prefer these patterns:\n");
+                    for (Object insight : insights) {
+                        sb.append("- ").append(insight.toString()).append("\n");
+                    }
+                }
+            } catch (IOException e) {
+                Log.log("NeuronContext: Failed to load neuron context: " + e.getMessage());
+            }
+        }
+
+        return sb.toString().trim();
     }
 }
