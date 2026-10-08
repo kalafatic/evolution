@@ -7,6 +7,8 @@ import eu.kalafatic.evolution.selfdev.genome.core.MediatedPackageArtifact;
 import eu.kalafatic.evolution.selfdev.genome.event.GenomeEvent;
 import eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus;
 import eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor;
+import eu.kalafatic.evolution.selfdev.genome.milestone.GenomeGenerationProgressListener;
+import eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator;
 import eu.kalafatic.evolution.selfdev.genome.repository.GenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine;
@@ -99,8 +101,12 @@ public class SelfDevGenomeHub {
     }
 
     public synchronized GenomeUpdateResult updateGenome(File root, String projectName, String version) {
-        eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator mg = new eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator();
-        GenomeUpdateResult result = mg.generateMilestone(root, projectName, version);
+        return updateGenome(root, projectName, version, null);
+    }
+
+    public synchronized GenomeUpdateResult updateGenome(File root, String projectName, String version, GenomeGenerationProgressListener progressListener) {
+        MilestoneGenerator mg = new MilestoneGenerator();
+        GenomeUpdateResult result = mg.generateMilestone(root, projectName, version, progressListener);
 
         if (eventBus != null) {
             eventBus.publish(new GenomeEvent(
@@ -115,6 +121,11 @@ public class SelfDevGenomeHub {
 
     public synchronized GenomeUpdateResult updateGenome(File root) {
         String name = (root != null) ? root.getName() : "EVO";
-        return updateGenome(root, name, "v1.0.0");
+        return updateGenome(root, name, "v1.0.0", null);
+    }
+
+    public synchronized GenomeUpdateResult updateGenome(File root, GenomeGenerationProgressListener progressListener) {
+        String name = (root != null) ? root.getName() : "EVO";
+        return updateGenome(root, name, "v1.0.0", progressListener);
     }
 }

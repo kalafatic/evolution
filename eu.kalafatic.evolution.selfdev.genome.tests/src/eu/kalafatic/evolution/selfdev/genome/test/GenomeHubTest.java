@@ -10,13 +10,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.junit.Test;
 
+import eu.kalafatic.evolution.selfdev.genome.milestone.GenomeGenerationProgressListener;
+import eu.kalafatic.evolution.selfdev.genome.milestone.GenomeGenerationStage;
 import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult;
+import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult.GenomeUpdateStatus;
 
 import eu.kalafatic.evolution.selfdev.genome.core.GenomeArtifact;
 import eu.kalafatic.evolution.selfdev.genome.core.MediatedPackageArtifact;
@@ -92,7 +96,7 @@ public class GenomeHubTest {
     }
 
     @Test
-    public void testUpdateGenomeLifecycle() throws IOException {
+    public void testUpdateGenomeLifecycleWithProgressListener() throws IOException {
         File repoDir = createTempRepo();
         try {
             LocalGenomeRepository repository = new LocalGenomeRepository();
@@ -101,14 +105,43 @@ public class GenomeHubTest {
             SecondhandUpgradeEngine upgradeEngine = new SecondhandUpgradeEngine(repository);
             SelfDevGenomeHub hub = new SelfDevGenomeHub(repository, eventBus, processor, upgradeEngine);
 
+            List<GenomeGenerationStage> startedStages = new ArrayList<>();
+            List<GenomeGenerationStage> completedStages = new ArrayList<>();
+
+            GenomeGenerationProgressListener listener = new GenomeGenerationProgressListener() {
+                @Override
+                public void onStageStarted(GenomeGenerationStage stage, String message) {
+                    startedStages.add(stage);
+                }
+
+                @Override
+                public void onProgress(GenomeGenerationStage stage, long current, long total, String message) {
+                }
+
+                @Override
+                public void onStageCompleted(GenomeGenerationStage stage, String message) {
+                    completedStages.add(stage);
+                }
+
+                @Override
+                public void onError(GenomeGenerationStage stage, String message, Throwable error) {
+                }
+            };
+
             // 1. Initial Update Genome
-            GenomeUpdateResult res1 = hub.updateGenome(repoDir, "TestRepo", "v1.0.0");
+            GenomeUpdateResult res1 = hub.updateGenome(repoDir, "TestRepo", "v1.0.0", listener);
             assertNotNull(res1);
             assertTrue(res1.isSuccess());
+            assertEquals(GenomeUpdateStatus.SUCCESS, res1.getStatus());
             assertTrue(res1.isHasChanges());
             assertTrue(res1.getScannedFiles() >= 2);
             assertTrue(res1.getNewFiles() >= 2);
             assertFalse(res1.getUpdatedDocuments().isEmpty());
+
+            assertTrue(startedStages.contains(GenomeGenerationStage.VALIDATING));
+            assertTrue(startedStages.contains(GenomeGenerationStage.SCANNING_FILES));
+            assertTrue(startedStages.contains(GenomeGenerationStage.GENERATING_ARTIFACTS));
+            assertTrue(startedStages.contains(GenomeGenerationStage.COMPLETED));
 
             File liveGenome = new File(repoDir, "genome/current/genome.json");
             File liveArch = new File(repoDir, "genome/current/architecture.md");
@@ -120,14 +153,19 @@ public class GenomeHubTest {
             assertTrue(archContent.contains("## Architectural Observations (OBSERVATION)"));
 
             // 2. Idempotency Verification: Second run with NO changes
-            GenomeUpdateResult res2 = hub.updateGenome(repoDir, "TestRepo", "v1.0.0");
+            startedStages.clear();
+            completedStages.clear();
+
+            GenomeUpdateResult res2 = hub.updateGenome(repoDir, "TestRepo", "v1.0.0", listener);
             assertNotNull(res2);
             assertTrue(res2.isSuccess());
+            assertEquals(GenomeUpdateStatus.UNCHANGED, res2.getStatus());
             assertFalse(res2.isHasChanges());
             assertEquals(0, res2.getNewFiles());
             assertEquals(0, res2.getChangedFiles());
             assertEquals(0, res2.getRemovedFiles());
             assertTrue(res2.getUpdatedDocuments().isEmpty());
+            assertTrue(startedStages.contains(GenomeGenerationStage.UNCHANGED));
 
             // 3. Incremental Change Detection: Add, Modify, Delete files
             File newFile = new File(repoDir, "src/NewClass.java");
@@ -142,6 +180,7 @@ public class GenomeHubTest {
             GenomeUpdateResult res3 = hub.updateGenome(repoDir, "TestRepo", "v1.0.0");
             assertNotNull(res3);
             assertTrue(res3.isSuccess());
+            assertEquals(GenomeUpdateStatus.SUCCESS, res3.getStatus());
             assertTrue(res3.isHasChanges());
             assertEquals(1, res3.getNewFiles());
             assertEquals(1, res3.getChangedFiles());

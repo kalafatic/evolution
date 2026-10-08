@@ -8,6 +8,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
@@ -35,7 +39,12 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub;
+import eu.kalafatic.evolution.selfdev.genome.milestone.GenomeGenerationProgressListener;
+import eu.kalafatic.evolution.selfdev.genome.milestone.GenomeGenerationStage;
 import eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator;
+import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult;
+import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult.GenomeUpdateStatus;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.factories.GUIFactory;
 
@@ -292,6 +301,8 @@ public class ArchitecturePage extends AEvoPage {
 
     private void handleUpdateGenome() {
         if (currentTargetPath == null) return;
+        java.io.File root = new java.io.File(currentTargetPath);
+        String projectName = (orchestrator != null && orchestrator.getName() != null) ? orchestrator.getName() : root.getName();
 
         // SAVE INTENT MODEL TO GENOME: Prior to standard genome update, ensure intent model is cached
         DesignModel intentModel = extractModel();
@@ -304,8 +315,83 @@ public class ArchitecturePage extends AEvoPage {
             saveModelToCache(ctx, intentModel);
         }
 
-        new eu.kalafatic.evolution.controller.orchestration.ArchitectureController().renderArchitecture(orchestrator, currentTargetPath, "UPDATE_GENOME");
-        scheduleRefresh();
+        if (browser != null && !browser.isDisposed()) {
+            browser.execute("if(window.showPopup) { window.showPopup('Updating Genome Repository', ['Initializing Genome update lifecycle...', 'Progress will update dynamically.']); }");
+        }
+
+        Job job = new Job("Updating Genome Repository: " + projectName) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                monitor.beginTask("Updating Genome Repository", 100);
+
+                GenomeGenerationProgressListener listener = new GenomeGenerationProgressListener() {
+                    @Override
+                    public void onStageStarted(GenomeGenerationStage stage, String message) {
+                        monitor.subTask("[" + stage.name() + "] " + message);
+                        updateBrowserPopup("Genome Update: " + stage.name(), message);
+                    }
+
+                    @Override
+                    public void onProgress(GenomeGenerationStage stage, long current, long total, String message) {
+                        if (total > 0) {
+                            int pct = (int) ((current * 100) / total);
+                            monitor.subTask(String.format("[%s] %s (%d/%d)", stage.name(), message, current, total));
+                        } else {
+                            monitor.subTask("[" + stage.name() + "] " + message);
+                        }
+                        updateBrowserPopup("Genome Update: " + stage.name(), message);
+                    }
+
+                    @Override
+                    public void onStageCompleted(GenomeGenerationStage stage, String message) {
+                        monitor.worked(8);
+                        updateBrowserPopup("Genome Update: " + stage.name(), "✓ " + message);
+                    }
+
+                    @Override
+                    public void onError(GenomeGenerationStage stage, String message, Throwable error) {
+                        updateBrowserPopup("Genome Update Error: " + stage.name(), "✕ " + message);
+                    }
+                };
+
+                try {
+                    GenomeUpdateResult result = SelfDevGenomeHub.getInstance().updateGenome(root, projectName, "v1.0.0", listener);
+
+                    Display.getDefault().asyncExec(() -> {
+                        scheduleRefresh();
+                        if (browser != null && !browser.isDisposed()) {
+                            String title;
+                            if (result.getStatus() == GenomeUpdateStatus.UNCHANGED) {
+                                title = "Genome Up To Date";
+                            } else if (result.getStatus() == GenomeUpdateStatus.SUCCESS) {
+                                title = "Genome Update Complete";
+                            } else {
+                                title = "Genome Update Failed";
+                            }
+                            String summary = result.toSummaryString().replace("'", "\\'").replace("\n", "<br/>");
+                            browser.execute("if(window.showPopup) { window.showPopup('" + title + "', ['" + summary + "']); }");
+                        }
+                    });
+
+                    return Status.OK_STATUS;
+                } catch (Exception e) {
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Genome update failed", e);
+                } finally {
+                    monitor.done();
+                }
+            }
+        };
+        job.schedule();
+    }
+
+    private void updateBrowserPopup(String title, String message) {
+        Display.getDefault().asyncExec(() -> {
+            if (browser != null && !browser.isDisposed()) {
+                String safeTitle = title.replace("'", "\\'");
+                String safeMsg = message.replace("'", "\\'").replace("\n", " ");
+                browser.execute("if(window.showPopup) { window.showPopup('" + safeTitle + "', ['" + safeMsg + "']); }");
+            }
+        });
     }
 
     private void handleSelectSnapshot(String timestamp) {

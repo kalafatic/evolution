@@ -29,6 +29,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult;
+import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult.GenomeUpdateStatus;
 import eu.kalafatic.evolution.selfdev.genome.model.KnowledgeMetadata;
 import eu.kalafatic.utils.semantic.AIContextTool;
 import eu.kalafatic.utils.semantic.EvoMetadata;
@@ -73,185 +74,334 @@ public class MilestoneGenerator {
     }
 
     public GenomeUpdateResult generateMilestone(File root, String projectName, String version) {
+        return generateMilestone(root, projectName, version, null);
+    }
+
+    public GenomeUpdateResult generateMilestone(File root, String projectName, String version, GenomeGenerationProgressListener progressListener) {
         long startTime = System.currentTimeMillis();
         GenomeUpdateResult result = new GenomeUpdateResult();
         result.setProjectName(projectName);
 
+        // STAGE 1: VALIDATING
+        notifyStageStarted(progressListener, GenomeGenerationStage.VALIDATING, "Validating repository...");
+        notifyProgress(progressListener, GenomeGenerationStage.VALIDATING, 0, 1, "Repository: " + (root != null ? root.getAbsolutePath() : "null"));
+
         if (root == null || !root.exists()) {
+            String errorMsg = "Repository root directory does not exist: " + (root != null ? root.getAbsolutePath() : "null");
             result.setSuccess(false);
-            result.setErrorMessage("Repository root directory does not exist.");
+            result.setStatus(GenomeUpdateStatus.FAILED);
+            result.setErrorMessage(errorMsg);
+            notifyError(progressListener, GenomeGenerationStage.VALIDATING, errorMsg, null);
+            notifyStageStarted(progressListener, GenomeGenerationStage.FAILED, errorMsg);
             return result;
         }
-
-        // 1. Extract Git Metadata
-        GitMetadata gitMeta = extractGitMetadata(root);
-        result.setBranch(gitMeta.branch);
-        result.setCommitHash(gitMeta.commitHash);
-        result.setCommitTimestamp(gitMeta.commitTimestamp);
-
-        // 2. Scan source file inventory & calculate SHA-256 hashes
-        Map<String, FileInventoryItem> currentInventory = scanFileInventory(root);
-        result.setScannedFiles(currentInventory.size());
-
-        // 3. Load previous genome.json state if present
-        File currentDir = new File(new File(root, "genome"), "current");
-        File previousGenomeFile = new File(currentDir, "genome.json");
-        Map<String, String> previousHashes = loadPreviousFileInventory(previousGenomeFile);
-
-        // 4. Perform incremental change detection
-        int newCount = 0;
-        int changedCount = 0;
-        int unchangedCount = 0;
-        Set<String> previousPaths = new HashSet<>(previousHashes.keySet());
-
-        for (Map.Entry<String, FileInventoryItem> entry : currentInventory.entrySet()) {
-            String path = entry.getKey();
-            String currentHash = entry.getValue().hash;
-            if (!previousHashes.containsKey(path)) {
-                newCount++;
-                entry.getValue().status = "NEW";
-            } else {
-                previousPaths.remove(path);
-                if (currentHash.equals(previousHashes.get(path))) {
-                    unchangedCount++;
-                    entry.getValue().status = "UNCHANGED";
-                } else {
-                    changedCount++;
-                    entry.getValue().status = "MODIFIED";
-                }
-            }
-        }
-        int removedCount = previousPaths.size();
-
-        result.setNewFiles(newCount);
-        result.setChangedFiles(changedCount);
-        result.setUnchangedFiles(unchangedCount);
-        result.setRemovedFiles(removedCount);
-
-        boolean hasChanges = (newCount > 0 || changedCount > 0 || removedCount > 0 || !previousGenomeFile.exists());
-        result.setHasChanges(hasChanges);
-
-        // 5. Idempotency Check: if no changes occurred and current genome exists, return unchanged result
-        if (!hasChanges && previousGenomeFile.exists()) {
-            result.setElapsedTimeMs(System.currentTimeMillis() - startTime);
-            result.getUpdatedDocuments().clear(); // no documents updated
-            result.setHistoricalSnapshotPath("genome/current");
-            result.setAnalyticalSnapshotPath(getAnalyticalSnapshotPath(root));
-            return result;
-        }
-
-        // 6. Deep Scan: Architecture & Metadata
-        List<EvoMetadata> allMetadata = scanAllMetadata(root);
-        DiscoveredArchitecture arch = discoverArchitectureData(root, allMetadata);
-
-        // Timestamps & Folders
-        LocalDateTime now = LocalDateTime.now();
-        String year = String.valueOf(now.getYear());
-        String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        String analyticalDateStr = now.format(DateTimeFormatter.ofPattern("ddMMYYYY"));
-        String timestamp = now.format(DateTimeFormatter.ofPattern("ddMMyy_HHmmss"));
-
-        File genomeRoot = new File(root, "genome");
-        File historyDir = new File(new File(genomeRoot, "history"), year);
-        File dailyDir = new File(historyDir, date);
-        File snapshotDir = new File(dailyDir, timestamp);
-
-        File analyticalRootDir = new File(root, "genome-docs");
-        File analyticalSnapDir = new File(analyticalRootDir, analyticalDateStr);
-
-        // 7. Atomic Writes to Temporary Staging Directory
-        File stagingDir = new File(genomeRoot, "current_tmp_" + timestamp);
-        stagingDir.mkdirs();
+        notifyStageCompleted(progressListener, GenomeGenerationStage.VALIDATING, "Repository validation completed.");
 
         try {
-            List<String> docNames = generateArtifactsToStaging(
-                    stagingDir, projectName, version, timestamp, gitMeta, currentInventory, allMetadata, arch,
-                    newCount, changedCount, removedCount, unchangedCount
-            );
+            // STAGE 2: GIT_METADATA
+            notifyStageStarted(progressListener, GenomeGenerationStage.GIT_METADATA, "Reading Git metadata...");
+            GitMetadata gitMeta = extractGitMetadata(root, progressListener);
+            result.setBranch(gitMeta.branch);
+            result.setCommitHash(gitMeta.commitHash);
+            result.setCommitTimestamp(gitMeta.commitTimestamp);
+            notifyStageCompleted(progressListener, GenomeGenerationStage.GIT_METADATA,
+                    String.format("Branch: %s, Commit: %s, Status: %s", gitMeta.branch, gitMeta.commitHash, gitMeta.status));
 
-            // Commit Staging to Live 'current' atomically
-            currentDir.mkdirs();
-            for (String docName : docNames) {
-                File src = new File(stagingDir, docName);
-                File dst = new File(currentDir, docName);
-                Files.copy(src.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            // STAGE 3: SCANNING_FILES
+            notifyStageStarted(progressListener, GenomeGenerationStage.SCANNING_FILES, "Scanning source files...");
+            Map<String, FileInventoryItem> currentInventory = scanFileInventory(root, progressListener);
+            result.setScannedFiles(currentInventory.size());
+            notifyStageCompleted(progressListener, GenomeGenerationStage.SCANNING_FILES,
+                    "Source file scan completed. Total files: " + currentInventory.size());
+
+            // STAGE 4: LOADING_PREVIOUS_GENOME
+            notifyStageStarted(progressListener, GenomeGenerationStage.LOADING_PREVIOUS_GENOME, "Loading previous genome.json...");
+            File currentDir = new File(new File(root, "genome"), "current");
+            File previousGenomeFile = new File(currentDir, "genome.json");
+            Map<String, String> previousHashes = loadPreviousFileInventory(previousGenomeFile);
+            notifyStageCompleted(progressListener, GenomeGenerationStage.LOADING_PREVIOUS_GENOME,
+                    "Previous genome loaded (" + previousHashes.size() + " previous items).");
+
+            // STAGE 5: CALCULATING_CHANGES
+            notifyStageStarted(progressListener, GenomeGenerationStage.CALCULATING_CHANGES, "Calculating change metrics...");
+            int newCount = 0;
+            int changedCount = 0;
+            int unchangedCount = 0;
+            Set<String> previousPaths = new HashSet<>(previousHashes.keySet());
+
+            for (Map.Entry<String, FileInventoryItem> entry : currentInventory.entrySet()) {
+                String path = entry.getKey();
+                String currentHash = entry.getValue().hash;
+                if (!previousHashes.containsKey(path)) {
+                    newCount++;
+                    entry.getValue().status = "NEW";
+                } else {
+                    previousPaths.remove(path);
+                    if (currentHash.equals(previousHashes.get(path))) {
+                        unchangedCount++;
+                        entry.getValue().status = "UNCHANGED";
+                    } else {
+                        changedCount++;
+                        entry.getValue().status = "MODIFIED";
+                    }
+                }
+            }
+            int removedCount = previousPaths.size();
+
+            result.setNewFiles(newCount);
+            result.setChangedFiles(changedCount);
+            result.setUnchangedFiles(unchangedCount);
+            result.setRemovedFiles(removedCount);
+
+            boolean hasChanges = (newCount > 0 || changedCount > 0 || removedCount > 0 || !previousGenomeFile.exists());
+            result.setHasChanges(hasChanges);
+
+            String changeSummary = String.format("Change detection completed: NEW=%d, MODIFIED=%d, REMOVED=%d, UNCHANGED=%d",
+                    newCount, changedCount, removedCount, unchangedCount);
+            notifyStageCompleted(progressListener, GenomeGenerationStage.CALCULATING_CHANGES, changeSummary);
+
+            // STAGE 5b: IDEMPOTENCY CHECK
+            if (!hasChanges && previousGenomeFile.exists()) {
+                String msg = "Genome is already up to date. No source changes detected.";
+                result.setStatus(GenomeUpdateStatus.UNCHANGED);
+                result.setSuccess(true);
+                result.setElapsedTimeMs(System.currentTimeMillis() - startTime);
+                result.getUpdatedDocuments().clear();
+                result.setHistoricalSnapshotPath("genome/current");
+                result.setAnalyticalSnapshotPath(getAnalyticalSnapshotPath(root));
+
+                notifyStageStarted(progressListener, GenomeGenerationStage.UNCHANGED, msg);
+                notifyStageCompleted(progressListener, GenomeGenerationStage.UNCHANGED, msg);
+                return result;
             }
 
-            // Also copy to History Snapshot
-            snapshotDir.mkdirs();
-            for (String docName : docNames) {
-                File src = new File(stagingDir, docName);
-                File dst = new File(snapshotDir, docName);
-                Files.copy(src.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            // STAGE 6: SCANNING_METADATA
+            notifyStageStarted(progressListener, GenomeGenerationStage.SCANNING_METADATA, "Loading AI metadata...");
+            List<EvoMetadata> allMetadata = scanAllMetadata(root);
+            result.setMetadataCount(allMetadata.size());
+            notifyStageCompleted(progressListener, GenomeGenerationStage.SCANNING_METADATA, "Metadata loaded: " + allMetadata.size());
+
+            // STAGE 7: DISCOVERING_ARCHITECTURE
+            notifyStageStarted(progressListener, GenomeGenerationStage.DISCOVERING_ARCHITECTURE, "Discovering architecture...");
+            DiscoveredArchitecture arch = discoverArchitectureData(root, allMetadata);
+
+            long modCount = arch.components.stream().filter(c -> "MODULE".equals(c.type) || "MAVEN_MODULE".equals(c.type)).count();
+            long bundleCount = arch.components.stream().filter(c -> "BUNDLE".equals(c.type)).count();
+            long classCount = arch.components.stream().filter(c -> "CLASS".equals(c.type) || "INTERFACE".equals(c.type) || "ENUM".equals(c.type) || "RECORD".equals(c.type)).count();
+
+            result.setDiscoveredModulesCount((int) modCount);
+            result.setDiscoveredBundlesCount((int) bundleCount);
+            result.setDiscoveredClassesCount((int) classCount);
+            result.setDiscoveredRelationshipsCount(arch.relationshipSummaries.size());
+
+            notifyStageCompleted(progressListener, GenomeGenerationStage.DISCOVERING_ARCHITECTURE,
+                    String.format("Architecture discovered: Modules: %d, Bundles: %d, Classes: %d, Relationships: %d",
+                            modCount, bundleCount, classCount, arch.relationshipSummaries.size()));
+
+            // Timestamps & Folders
+            LocalDateTime now = LocalDateTime.now();
+            String year = String.valueOf(now.getYear());
+            String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            String analyticalDateStr = now.format(DateTimeFormatter.ofPattern("ddMMYYYY"));
+            String timestamp = now.format(DateTimeFormatter.ofPattern("ddMMyy_HHmmss"));
+
+            File genomeRoot = new File(root, "genome");
+            File historyDir = new File(new File(genomeRoot, "history"), year);
+            File dailyDir = new File(historyDir, date);
+            File snapshotDir = new File(dailyDir, timestamp);
+
+            File analyticalRootDir = new File(root, "genome-docs");
+            File analyticalSnapDir = new File(analyticalRootDir, analyticalDateStr);
+
+            File stagingDir = new File(genomeRoot, "current_tmp_" + timestamp);
+            stagingDir.mkdirs();
+
+            try {
+                // STAGE 8: GENERATING_ARTIFACTS
+                notifyStageStarted(progressListener, GenomeGenerationStage.GENERATING_ARTIFACTS, "Generating artifacts...");
+                List<String> docNames = generateArtifactsToStaging(
+                        stagingDir, projectName, version, timestamp, gitMeta, currentInventory, allMetadata, arch,
+                        newCount, changedCount, removedCount, unchangedCount, progressListener
+                );
+                notifyStageCompleted(progressListener, GenomeGenerationStage.GENERATING_ARTIFACTS, "All artifacts generated successfully.");
+
+                // STAGE 9: COMMITTING_CURRENT
+                notifyStageStarted(progressListener, GenomeGenerationStage.COMMITTING_CURRENT, "Committing generated genome to current...");
+                currentDir.mkdirs();
+                for (String docName : docNames) {
+                    File src = new File(stagingDir, docName);
+                    File dst = new File(currentDir, docName);
+                    Files.copy(src.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    notifyProgress(progressListener, GenomeGenerationStage.COMMITTING_CURRENT, docNames.indexOf(docName) + 1, docNames.size(), "✓ genome/current/" + docName);
+                }
+                notifyStageCompleted(progressListener, GenomeGenerationStage.COMMITTING_CURRENT, "Committed to genome/current.");
+
+                // STAGE 10: CREATING_HISTORY
+                notifyStageStarted(progressListener, GenomeGenerationStage.CREATING_HISTORY, "Creating historical snapshot...");
+                snapshotDir.mkdirs();
+                for (String docName : docNames) {
+                    File src = new File(stagingDir, docName);
+                    File dst = new File(snapshotDir, docName);
+                    Files.copy(src.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                String histPath = "genome/history/" + year + "/" + date + "/" + timestamp;
+                notifyStageCompleted(progressListener, GenomeGenerationStage.CREATING_HISTORY, "✓ " + histPath);
+
+                // STAGE 11: CREATING_ANALYTICAL_SNAPSHOT
+                notifyStageStarted(progressListener, GenomeGenerationStage.CREATING_ANALYTICAL_SNAPSHOT, "Creating analytical snapshot...");
+                analyticalSnapDir.mkdirs();
+                generateAnalyticalSnapshots(analyticalSnapDir, analyticalDateStr, projectName, version, gitMeta, result, arch, currentInventory);
+                String analyticalPath = "genome-docs/" + analyticalDateStr;
+                notifyStageCompleted(progressListener, GenomeGenerationStage.CREATING_ANALYTICAL_SNAPSHOT, "✓ " + analyticalPath);
+
+                deleteDirectory(stagingDir);
+
+                result.setSuccess(true);
+                result.setStatus(GenomeUpdateStatus.SUCCESS);
+                result.setUpdatedDocuments(docNames);
+                result.setHistoricalSnapshotPath(histPath);
+                result.setAnalyticalSnapshotPath(analyticalPath);
+                result.setElapsedTimeMs(System.currentTimeMillis() - startTime);
+
+                notifyStageStarted(progressListener, GenomeGenerationStage.COMPLETED, "Genome update completed in " + result.getElapsedTimeMs() + " ms");
+                notifyStageCompleted(progressListener, GenomeGenerationStage.COMPLETED, "Genome update completed.");
+
+                return result;
+
+            } catch (Exception e) {
+                deleteDirectory(stagingDir);
+                result.setSuccess(false);
+                result.setStatus(GenomeUpdateStatus.FAILED);
+                result.setErrorMessage("Failed to generate genome artifacts: " + e.getMessage());
+                result.setElapsedTimeMs(System.currentTimeMillis() - startTime);
+
+                notifyError(progressListener, GenomeGenerationStage.GENERATING_ARTIFACTS, "Generation failed: " + e.getMessage(), e);
+                notifyStageStarted(progressListener, GenomeGenerationStage.FAILED, e.getMessage());
+
+                return result;
             }
-
-            // Generate Analytical Snapshot in genome-docs/DDMMYYYY/
-            analyticalSnapDir.mkdirs();
-            generateAnalyticalSnapshots(analyticalSnapDir, analyticalDateStr, projectName, version, gitMeta, result, arch, currentInventory);
-
-            deleteDirectory(stagingDir);
-
-            result.setUpdatedDocuments(docNames);
-            result.setHistoricalSnapshotPath("genome/history/" + year + "/" + date + "/" + timestamp);
-            result.setAnalyticalSnapshotPath("genome-docs/" + analyticalDateStr);
-            result.setElapsedTimeMs(System.currentTimeMillis() - startTime);
-            return result;
 
         } catch (Exception e) {
-            deleteDirectory(stagingDir);
             result.setSuccess(false);
-            result.setErrorMessage("Failed to generate genome artifacts: " + e.getMessage());
+            result.setStatus(GenomeUpdateStatus.FAILED);
+            result.setErrorMessage("Genome milestone generation failed: " + e.getMessage());
             result.setElapsedTimeMs(System.currentTimeMillis() - startTime);
+
+            notifyError(progressListener, GenomeGenerationStage.FAILED, e.getMessage(), e);
+            notifyStageStarted(progressListener, GenomeGenerationStage.FAILED, e.getMessage());
+
             return result;
         }
     }
 
-    private GitMetadata extractGitMetadata(File root) {
+    private GitMetadata extractGitMetadata(File root, GenomeGenerationProgressListener progressListener) {
         GitMetadata meta = new GitMetadata();
         File gitDir = new File(root, ".git");
-        if (!gitDir.exists()) return meta;
+        if (!gitDir.exists()) {
+            notifyProgress(progressListener, GenomeGenerationStage.GIT_METADATA, 0, 0, "No .git directory found at root.");
+            return meta;
+        }
 
         try {
-            meta.branch = runCommand(root, "git", "rev-parse", "--abbrev-ref", "HEAD");
+            meta.branch = runCommand(root, "git rev-parse --abbrev-ref HEAD", "git", "rev-parse", "--abbrev-ref", "HEAD");
             if (meta.branch == null || meta.branch.isEmpty() || "HEAD".equals(meta.branch)) {
                 meta.branch = "main";
             }
-            meta.commitHash = runCommand(root, "git", "rev-parse", "HEAD");
+            meta.commitHash = runCommand(root, "git rev-parse HEAD", "git", "rev-parse", "HEAD");
             if (meta.commitHash == null || meta.commitHash.isEmpty()) {
                 meta.commitHash = "UNKNOWN";
             }
-            meta.commitTimestamp = runCommand(root, "git", "log", "-1", "--format=%cI");
+            meta.commitTimestamp = runCommand(root, "git log -1 --format=%cI", "git", "log", "-1", "--format=%cI");
             if (meta.commitTimestamp == null) meta.commitTimestamp = "";
-            String statusOut = runCommand(root, "git", "status", "--porcelain");
+            String statusOut = runCommand(root, "git status --porcelain", "git", "status", "--porcelain");
             meta.status = (statusOut != null && !statusOut.trim().isEmpty()) ? "CHANGED" : "CLEAN";
+
+            notifyProgress(progressListener, GenomeGenerationStage.GIT_METADATA, 1, 1,
+                    String.format("Branch: %s | Commit: %s | Status: %s", meta.branch, meta.commitHash, meta.status));
         } catch (Exception e) {
             meta.branch = "main";
             meta.commitHash = "UNKNOWN";
+            notifyError(progressListener, GenomeGenerationStage.GIT_METADATA, "Failed to extract Git metadata: " + e.getMessage(), e);
         }
         return meta;
     }
 
-    private String runCommand(File workingDir, String... cmd) {
+    private String runCommand(File workingDir, String commandLabel, String... cmd) {
+        StringBuilder stdout = new StringBuilder();
+        StringBuilder stderr = new StringBuilder();
         try {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.directory(workingDir);
             Process process = pb.start();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line = br.readLine();
-                return line != null ? line.trim() : "";
+
+            Thread stdoutReader = new Thread(() -> {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        if (stdout.length() > 0) stdout.append("\n");
+                        stdout.append(line.trim());
+                    }
+                } catch (IOException ignored) {}
+            });
+
+            Thread stderrReader = new Thread(() -> {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        if (stderr.length() > 0) stderr.append("\n");
+                        stderr.append(line.trim());
+                    }
+                } catch (IOException ignored) {}
+            });
+
+            stdoutReader.start();
+            stderrReader.start();
+
+            int exitCode = process.waitFor();
+            stdoutReader.join(1000);
+            stderrReader.join(1000);
+
+            if (exitCode != 0) {
+                System.err.println(String.format("Git command '%s' FAILED (exitCode %d): %s", commandLabel, exitCode, stderr.toString()));
+                return "";
             }
+            return stdout.toString().trim();
         } catch (Exception e) {
+            System.err.println(String.format("Git command '%s' EXCEPTION: %s", commandLabel, e.getMessage()));
             return "";
         }
     }
 
-    private Map<String, FileInventoryItem> scanFileInventory(File root) {
+    private Map<String, FileInventoryItem> scanFileInventory(File root, GenomeGenerationProgressListener progressListener) {
         Map<String, FileInventoryItem> inventory = new TreeMap<>();
-        scanDirectoryRecursive(root, root, inventory);
+        List<File> allAnalyzableFiles = new ArrayList<>();
+        collectAnalyzableFiles(root, root, allAnalyzableFiles);
+
+        int total = allAnalyzableFiles.size();
+        int count = 0;
+        long lastReportTime = System.currentTimeMillis();
+
+        for (File file : allAnalyzableFiles) {
+            count++;
+            String relPath = getRelativePath(root, file);
+            FileInventoryItem item = new FileInventoryItem();
+            item.relativePath = relPath;
+            item.lastModified = file.lastModified();
+            item.size = file.length();
+            item.hash = computeSha256(file);
+            inventory.put(relPath, item);
+
+            long now = System.currentTimeMillis();
+            if (count % 250 == 0 || (now - lastReportTime) > 200 || count == total) {
+                notifyProgress(progressListener, GenomeGenerationStage.SCANNING_FILES, count, total,
+                        String.format("Scanning source files: %d / %d", count, total));
+                lastReportTime = now;
+            }
+        }
         return inventory;
     }
 
-    private void scanDirectoryRecursive(File current, File root, Map<String, FileInventoryItem> inventory) {
+    private void collectAnalyzableFiles(File current, File root, List<File> result) {
         if (!current.exists()) return;
         String name = current.getName();
         if (current.isDirectory()) {
@@ -259,18 +409,12 @@ public class MilestoneGenerator {
             File[] children = current.listFiles();
             if (children != null) {
                 for (File child : children) {
-                    scanDirectoryRecursive(child, root, inventory);
+                    collectAnalyzableFiles(child, root, result);
                 }
             }
         } else {
             if (isAnalyzableFile(name)) {
-                String relPath = getRelativePath(root, current);
-                FileInventoryItem item = new FileInventoryItem();
-                item.relativePath = relPath;
-                item.lastModified = current.lastModified();
-                item.size = current.length();
-                item.hash = computeSha256(current);
-                inventory.put(relPath, item);
+                result.add(current);
             }
         }
     }
@@ -322,7 +466,6 @@ public class MilestoneGenerator {
     private DiscoveredArchitecture discoverArchitectureData(File root, List<EvoMetadata> metadataList) {
         DiscoveredArchitecture arch = new DiscoveredArchitecture();
 
-        // 1. Try reflection to RepoArchitectureScanner in controller bundle
         try {
             Class<?> scannerCls = Class.forName("eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner");
             Object scanner = scannerCls.getDeclaredConstructor().newInstance();
@@ -365,7 +508,6 @@ public class MilestoneGenerator {
             // Fallback to local scanner if RepoArchitectureScanner is not available
         }
 
-        // 2. Fallback Local Discovery
         scanLocalFallbackArchitecture(root, root, arch);
         return arch;
     }
@@ -428,16 +570,50 @@ public class MilestoneGenerator {
     private List<String> generateArtifactsToStaging(
             File stagingDir, String projectName, String version, String timestamp, GitMetadata gitMeta,
             Map<String, FileInventoryItem> inventory, List<EvoMetadata> metadataList, DiscoveredArchitecture arch,
-            int newCount, int changedCount, int removedCount, int unchangedCount
+            int newCount, int changedCount, int removedCount, int unchangedCount,
+            GenomeGenerationProgressListener progressListener
     ) throws IOException {
 
-        generateGenomeJson(stagingDir, projectName, version, timestamp, gitMeta, inventory, metadataList, arch, newCount, changedCount, removedCount, unchangedCount);
-        generateArchitectureMd(stagingDir, projectName, gitMeta, metadataList, arch, inventory, newCount, changedCount, removedCount, unchangedCount);
-        generateUseCasesMd(stagingDir, projectName, gitMeta, metadataList, arch);
-        generateMilestoneV1Md(stagingDir, projectName, gitMeta, metadataList, arch);
-        generateDashboardHtml(stagingDir, projectName, timestamp);
+        List<String> artifacts = List.of("genome.json", "architecture.md", "use_cases.md", "milestone_v1.md", "milestone_dashboard.html");
+        int total = artifacts.size();
 
-        return List.of("genome.json", "architecture.md", "use_cases.md", "milestone_v1.md", "milestone_dashboard.html");
+        int idx = 1;
+        generateArtifactWithFeedback("genome.json", idx++, total, progressListener, () ->
+            generateGenomeJson(stagingDir, projectName, version, timestamp, gitMeta, inventory, metadataList, arch, newCount, changedCount, removedCount, unchangedCount)
+        );
+
+        generateArtifactWithFeedback("architecture.md", idx++, total, progressListener, () ->
+            generateArchitectureMd(stagingDir, projectName, gitMeta, metadataList, arch, inventory, newCount, changedCount, removedCount, unchangedCount)
+        );
+
+        generateArtifactWithFeedback("use_cases.md", idx++, total, progressListener, () ->
+            generateUseCasesMd(stagingDir, projectName, gitMeta, metadataList, arch)
+        );
+
+        generateArtifactWithFeedback("milestone_v1.md", idx++, total, progressListener, () ->
+            generateMilestoneV1Md(stagingDir, projectName, gitMeta, metadataList, arch)
+        );
+
+        generateArtifactWithFeedback("milestone_dashboard.html", idx++, total, progressListener, () ->
+            generateDashboardHtml(stagingDir, projectName, timestamp)
+        );
+
+        return artifacts;
+    }
+
+    @FunctionalInterface
+    private interface ArtifactAction {
+        void execute() throws IOException;
+    }
+
+    private void generateArtifactWithFeedback(String name, int current, int total, GenomeGenerationProgressListener listener, ArtifactAction action) throws IOException {
+        try {
+            action.execute();
+            notifyProgress(listener, GenomeGenerationStage.GENERATING_ARTIFACTS, current, total, "✓ " + name);
+        } catch (IOException e) {
+            notifyProgress(listener, GenomeGenerationStage.GENERATING_ARTIFACTS, current, total, "✕ " + name + " (" + e.getMessage() + ")");
+            throw e;
+        }
     }
 
     private void generateGenomeJson(
@@ -684,5 +860,37 @@ public class MilestoneGenerator {
             for (File child : children) deleteDirectory(child);
         }
         dir.delete();
+    }
+
+    private void notifyStageStarted(GenomeGenerationProgressListener listener, GenomeGenerationStage stage, String message) {
+        if (listener != null) {
+            try {
+                listener.onStageStarted(stage, message);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void notifyProgress(GenomeGenerationProgressListener listener, GenomeGenerationStage stage, long current, long total, String message) {
+        if (listener != null) {
+            try {
+                listener.onProgress(stage, current, total, message);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void notifyStageCompleted(GenomeGenerationProgressListener listener, GenomeGenerationStage stage, String message) {
+        if (listener != null) {
+            try {
+                listener.onStageCompleted(stage, message);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void notifyError(GenomeGenerationProgressListener listener, GenomeGenerationStage stage, String message, Throwable error) {
+        if (listener != null) {
+            try {
+                listener.onError(stage, message, error);
+            } catch (Exception ignored) {}
+        }
     }
 }

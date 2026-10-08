@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub;
+import eu.kalafatic.evolution.selfdev.genome.milestone.GenomeGenerationProgressListener;
 import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult;
 
 /**
@@ -28,13 +29,17 @@ public class GenomeUpdateAgent extends BaseAiAgent {
     }
 
     public GenomeUpdateResult runUpdate(File root, String projectName) {
+        return runUpdate(root, projectName, null);
+    }
+
+    public GenomeUpdateResult runUpdate(File root, String projectName, GenomeGenerationProgressListener progressListener) {
         long start = System.currentTimeMillis();
         System.out.println("UPDATE_GENOME START");
         System.out.println("Source/Repository: " + (root != null ? root.getAbsolutePath() : "NULL"));
 
         publishEvent("ANALYZING_CHANGES");
 
-        GenomeUpdateResult result = SelfDevGenomeHub.getInstance().updateGenome(root, projectName, "v1.0.0");
+        GenomeUpdateResult result = SelfDevGenomeHub.getInstance().updateGenome(root, projectName, "v1.0.0", progressListener);
 
         System.out.println("Branch: " + result.getBranch() + " | Commit: " + result.getCommitHash());
         System.out.println("Scanned: " + result.getScannedFiles() + " | Added: " + result.getNewFiles() +
