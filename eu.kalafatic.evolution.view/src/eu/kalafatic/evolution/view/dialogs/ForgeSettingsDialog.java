@@ -34,6 +34,7 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent;
 import eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
 import eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService;
@@ -41,7 +42,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
 
 public class ForgeSettingsDialog extends Dialog {
 
-    public static class DatasetItem {
+    public static class DatasetItem implements ForgeTrainingEstimationAgent.IDatasetTargetItem {
         private boolean checked;
         private String path;
         private String type; // "FILE" or "FOLDER"
@@ -121,100 +122,39 @@ public class ForgeSettingsDialog extends Dialog {
     }
 
     public static int getCpuCores() {
-        return Math.max(1, Runtime.getRuntime().availableProcessors());
+        return ForgeTrainingEstimationAgent.getInstance().getCpuCores();
     }
 
     public static long getMaxMemoryMb() {
-        return Math.max(512, Runtime.getRuntime().maxMemory() / (1024 * 1024));
+        return ForgeTrainingEstimationAgent.getInstance().getMaxMemoryMb();
     }
 
     public static String getHardwareProfile() {
-        return String.format("CPU: %d Cores | JVM RAM: %d MB | OS: %s (%s)",
-            getCpuCores(), getMaxMemoryMb(), System.getProperty("os.name"), System.getProperty("os.arch"));
+        return ForgeTrainingEstimationAgent.getInstance().getHardwareProfile();
     }
 
     public static double getModelComplexityFactor(String sizeName) {
-        if (sizeName == null) return 8.0;
-        String s = sizeName.toUpperCase();
-        if (s.contains("NANO")) return 1.0;
-        if (s.contains("MICRO")) return 2.0;
-        if (s.contains("MINI")) return 4.0;
-        if (s.contains("SMALL")) return 8.0;
-        if (s.contains("MEDIUM")) return 16.0;
-        if (s.contains("LARGE") && !s.contains("XLARGE")) return 32.0;
-        if (s.contains("XLARGE")) return 64.0;
-        return 8.0;
+        return ForgeTrainingEstimationAgent.getInstance().getModelComplexityFactor(sizeName);
     }
 
     public static double getModelParameterCount(String modelSize) {
-        String s = modelSize != null ? modelSize.toUpperCase() : "SMALL";
-        if (s.contains("NANO")) return 500_000.0;
-        if (s.contains("MICRO")) return 2_000_000.0;
-        if (s.contains("MINI")) return 8_000_000.0;
-        if (s.contains("SMALL")) return 25_000_000.0;
-        if (s.contains("MEDIUM")) return 75_000_000.0;
-        if (s.contains("LARGE") && !s.contains("XLARGE")) return 200_000_000.0;
-        if (s.contains("XLARGE")) return 500_000_000.0;
-        return 25_000_000.0;
+        return ForgeTrainingEstimationAgent.getInstance().getModelParameterCount(modelSize);
     }
 
     public static double getBaselineTokensPerSecond(String modelSize) {
-        double params = getModelParameterCount(modelSize);
-        int cores = getCpuCores();
-        double flopsPerCore = 600_000_000.0; // ~600 MFLOPs/sec effective per CPU core for Transformer forward+backward
-        double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.2); // diminishing returns on multi-core CPU
-        double flopsPerToken = 6.0 * params; // Standard LLM training FLOPs estimate = 6 * parameters per token
-        return Math.max(100.0, totalFlops / flopsPerToken);
+        return ForgeTrainingEstimationAgent.getInstance().getBaselineTokensPerSecond(modelSize);
     }
 
     public static long calculatePathSize(String path) {
-        if (path == null || path.trim().isEmpty()) return 0;
-        try {
-            File f = new File(path);
-            if (!f.exists()) return 0;
-            if (f.isFile()) return f.length();
-            if (f.isDirectory()) {
-                return calculateDirectorySizeRecursive(f);
-            }
-        } catch (Exception ex) {}
-        return 0;
-    }
-
-    private static long calculateDirectorySizeRecursive(File dir) {
-        long total = 0;
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File child : files) {
-                if (child.isFile()) {
-                    total += child.length();
-                } else if (child.isDirectory()) {
-                    total += calculateDirectorySizeRecursive(child);
-                }
-            }
-        }
-        return total;
+        return ForgeTrainingEstimationAgent.getInstance().calculatePathSize(path);
     }
 
     public long calculateTotalDatasetBytes() {
-        long totalBytes = 0;
-        for (DatasetItem item : datasetItems) {
-            if (item.isChecked() && item.getPath() != null && !item.getPath().trim().isEmpty()) {
-                long fullSize = calculatePathSize(item.getPath());
-                if (fullSize <= 0) {
-                    fullSize = 50 * 1024 * 1024L;
-                }
-                long scaledSize = (long) (fullSize * item.getScaleRatio());
-                totalBytes += Math.max(1024L, scaledSize);
-            }
-        }
-        return totalBytes;
+        return ForgeTrainingEstimationAgent.getInstance().calculateTotalDatasetBytes(datasetItems);
     }
 
     public long estimateTotalTrainingTokens() {
-        long datasetBytes = calculateTotalDatasetBytes();
-        long tokensPerByte = 4L; // ~1 token per 4 bytes of text/json
-        long estimatedDatasetTokens = Math.max(250L, datasetBytes / tokensPerByte);
-        return estimatedDatasetTokens * Math.max(1, selectedEpochs);
+        return ForgeTrainingEstimationAgent.getInstance().estimateTotalTrainingTokens(datasetItems, selectedEpochs);
     }
 
     public double getEstimatedForgingSeconds() {
@@ -222,66 +162,15 @@ public class ForgeSettingsDialog extends Dialog {
     }
 
     public static double calculateEstimatedForgingSeconds(String modelSize, int epochs, long datasetBytes) {
-        long estimatedDatasetTokens = Math.max(250L, datasetBytes / 4L);
-        long totalTokensToTrain = estimatedDatasetTokens * Math.max(1, epochs);
-        double tokPerSec = getBaselineTokensPerSecond(modelSize);
-        return totalTokensToTrain / tokPerSec;
+        return ForgeTrainingEstimationAgent.getInstance().calculateEstimatedForgingSeconds(modelSize, epochs, datasetBytes);
     }
 
     public static String formatDuration(double seconds) {
-        if (seconds < 60) {
-            return String.format("%.0f seconds", seconds);
-        } else if (seconds < 3600) {
-            int mins = (int) (seconds / 60);
-            int secs = (int) (seconds % 60);
-            return String.format("%d min %d sec", mins, secs);
-        } else {
-            int hours = (int) (seconds / 3600);
-            int mins = (int) ((seconds % 3600) / 60);
-            return String.format("%d hr %d min", hours, mins);
-        }
+        return ForgeTrainingEstimationAgent.getInstance().formatDuration(seconds);
     }
 
     public boolean applySmartDataScaling(double targetHours) {
-        if (targetHours <= 0) return false;
-        long totalBytes = calculateTotalDatasetBytes();
-        if (totalBytes <= 0) return false;
-
-        double tokPerSec = getBaselineTokensPerSecond(selectedModelSize);
-        double maxTokensToTrain = targetHours * 3600.0 * tokPerSec;
-        double targetDatasetTokensPerEpoch = maxTokensToTrain / Math.max(1, selectedEpochs);
-        double targetDatasetBytesPerEpoch = targetDatasetTokensPerEpoch * 4.0;
-
-        long unscaledTotal = 0;
-        for (DatasetItem item : datasetItems) {
-            if (item.isChecked()) {
-                long size = calculatePathSize(item.getPath());
-                if (size <= 0) size = 50 * 1024 * 1024L;
-                unscaledTotal += size;
-            }
-        }
-
-        if (unscaledTotal <= 0) return false;
-
-        double scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
-        if (scaleFactor < 0.05 && selectedEpochs > 4) {
-            selectedEpochs = Math.max(4, selectedEpochs / 2);
-            targetDatasetTokensPerEpoch = maxTokensToTrain / selectedEpochs;
-            targetDatasetBytesPerEpoch = targetDatasetTokensPerEpoch * 4.0;
-            scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
-        }
-
-        for (DatasetItem item : datasetItems) {
-            if (item.isChecked()) {
-                item.setScaleRatio(Math.max(0.01, scaleFactor));
-                long fullSize = calculatePathSize(item.getPath());
-                if (fullSize <= 0) fullSize = 50 * 1024 * 1024L;
-                long targetItemBytes = (long) (fullSize * scaleFactor);
-                long targetItemTokens = targetItemBytes / 4L;
-                item.setRecordLimit(Math.max(10, targetItemTokens / 50L));
-            }
-        }
-        return true;
+        return ForgeTrainingEstimationAgent.getInstance().applySmartDataScaling(datasetItems, selectedModelSize, selectedEpochs, targetHours).isSuccess();
     }
 
     private Combo modelSizeCombo;
@@ -529,6 +418,14 @@ public class ForgeSettingsDialog extends Dialog {
             targetTimeCombo.add(opt);
         }
         targetTimeCombo.select(4); // Default "12.0 hrs"
+        targetTimeCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                selectedTargetHours = ForgeTrainingEstimationAgent.getInstance().parseHoursOption(targetTimeCombo.getText());
+                updateHardwareAndTimeInfo();
+                updateGraphHtml();
+            }
+        });
 
         Button smartScaleBtn = GUIFactory.INSTANCE.createButton(hwGroup, "Smart Scale Data for Target Time");
         smartScaleBtn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
@@ -1212,16 +1109,15 @@ public class ForgeSettingsDialog extends Dialog {
     private void handleSmartScaling() {
         double hours = 12.0;
         if (targetTimeCombo != null && !targetTimeCombo.isDisposed()) {
-            String text = targetTimeCombo.getText();
-            try {
-                String clean = text.replaceAll("[^0-9.]", "");
-                if (!clean.isEmpty()) {
-                    hours = Double.parseDouble(clean);
-                }
-            } catch (Exception ex) {}
+            hours = ForgeTrainingEstimationAgent.getInstance().parseHoursOption(targetTimeCombo.getText());
         }
         selectedTargetHours = hours;
-        if (applySmartDataScaling(hours)) {
+
+        ForgeTrainingEstimationAgent.SmartScalingResult result =
+            ForgeTrainingEstimationAgent.getInstance().applySmartDataScaling(datasetItems, selectedModelSize, selectedEpochs, hours);
+
+        if (result.isSuccess()) {
+            selectedEpochs = result.getUpdatedEpochs();
             if (epochCombo != null && !epochCombo.isDisposed()) {
                 epochCombo.setText(String.valueOf(selectedEpochs));
             }

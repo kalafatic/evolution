@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.tests;
 
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent;
 import eu.kalafatic.evolution.view.dialogs.ForgeSettingsDialog;
 import eu.kalafatic.evolution.view.dialogs.ForgeSettingsDialog.DatasetItem;
 
@@ -30,15 +31,20 @@ public class ForgeSettingsDialogHardwareEstimationTest {
 
     @Test
     public void testGetHardwareProfile() {
-        int cores = ForgeSettingsDialog.getCpuCores();
-        long maxMemMb = ForgeSettingsDialog.getMaxMemoryMb();
-        String hwProfile = ForgeSettingsDialog.getHardwareProfile();
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        int cores = agent.getCpuCores();
+        long maxMemMb = agent.getMaxMemoryMb();
+        String hwProfile = agent.getHardwareProfile();
 
         assertTrue("CPU cores must be >= 1", cores >= 1);
         assertTrue("Max RAM must be >= 512 MB", maxMemMb >= 512);
         assertNotNull("Hardware profile must not be null", hwProfile);
         assertTrue("Hardware profile must contain CPU cores", hwProfile.contains("CPU:"));
         assertTrue("Hardware profile must contain RAM", hwProfile.contains("RAM:"));
+
+        assertEquals(cores, ForgeSettingsDialog.getCpuCores());
+        assertEquals(maxMemMb, ForgeSettingsDialog.getMaxMemoryMb());
+        assertEquals(hwProfile, ForgeSettingsDialog.getHardwareProfile());
     }
 
     @Test
@@ -56,6 +62,23 @@ public class ForgeSettingsDialogHardwareEstimationTest {
 
         assertTrue("Throughput for simpler models must be higher", nanoRate > smallRate);
         assertTrue("Throughput must be positive", nanoRate > 0);
+    }
+
+    @Test
+    public void testHoursOptionParsing() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        assertEquals(0.5, agent.parseHoursOption("0.5 hrs (30m)"), 0.001);
+        assertEquals(1.0, agent.parseHoursOption("1.0 hr"), 0.001);
+        assertEquals(12.0, agent.parseHoursOption("12.0 hrs"), 0.001);
+        assertEquals(48.0, agent.parseHoursOption("48.0 hrs"), 0.001);
+        assertEquals(12.0, agent.parseHoursOption("Invalid Option"), 0.001);
+    }
+
+    @Test
+    public void testNonExistentFileSizingReturnsZero() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        long size = agent.calculatePathSize("/path/to/non_existent_file_xyz.txt");
+        assertEquals(0L, size);
     }
 
     @Test
