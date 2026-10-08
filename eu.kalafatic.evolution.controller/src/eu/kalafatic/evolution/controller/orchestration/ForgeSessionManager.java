@@ -145,11 +145,36 @@ public class ForgeSessionManager {
     }
 
     public boolean deleteSession(String sessionId) {
+        if (sessionId == null) return false;
         Orchestrator orch = getOrchestratorModel();
         if (orch == null) return false;
-        ForgeSession toRemove = findSession(sessionId);
+
+        ForgeSession toRemove = findSessionById(sessionId);
+        if (toRemove == null) {
+            toRemove = findSession(sessionId);
+        }
+
         if (toRemove != null) {
-            orch.getForgeSessions().remove(toRemove);
+            String resolvedId = toRemove.getSessionId();
+            synchronized (orch.getForgeSessions()) {
+                orch.getForgeSessions().remove(toRemove);
+            }
+
+            // Stop active trainer for deleted session
+            eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.remove(resolvedId);
+            if (trainer != null) {
+                trainer.requestStop();
+            }
+            if (!resolvedId.equals(sessionId)) {
+                activeTrainers.remove(sessionId);
+            }
+
+            // Clean up event buffer for deleted session
+            eventBuffer.remove(resolvedId);
+            if (!resolvedId.equals(sessionId)) {
+                eventBuffer.remove(sessionId);
+            }
+
             publishEvent(toRemove, RuntimeEventType.VIEW_UPDATED, "SESSION_DELETED");
             return true;
         }
@@ -157,36 +182,77 @@ public class ForgeSessionManager {
     }
 
     public ForgeSession cloneSession(String sessionId, String newName) {
-        ForgeSession original = findSession(sessionId);
+        ForgeSession original = findSessionById(sessionId);
+        if (original == null) {
+            original = findSession(sessionId);
+        }
         if (original == null) return null;
 
         ForgeSession clone = createSession(newName, original.getSelectedModelType());
-        clone.getModelState().setModelGraph(original.getModelState().getModelGraph());
-        clone.getModelState().setHyperparameters(original.getModelState().getHyperparameters());
-        clone.getModelState().setDatasetBindings(original.getModelState().getDatasetBindings());
+        if (original.getModelState() != null && clone.getModelState() != null) {
+            clone.getModelState().setModelGraph(original.getModelState().getModelGraph());
+            clone.getModelState().setHyperparameters(original.getModelState().getHyperparameters());
+            clone.getModelState().setDatasetBindings(original.getModelState().getDatasetBindings());
+        }
 
         publishEvent(clone, RuntimeEventType.VIEW_UPDATED, "SESSION_CLONED");
         return clone;
     }
 
-    public ForgeSession findSession(String sessionId) {
+    public ForgeSession findSessionById(String sessionId) {
+        if (sessionId == null) return null;
         Orchestrator orch = getOrchestratorModel();
         if (orch == null) return null;
-        ForgeSession found = orch.getForgeSessions().stream()
-                .filter(s -> s.getSessionId().equals(sessionId))
-                .findFirst().orElse(null);
+        synchronized (orch.getForgeSessions()) {
+            return orch.getForgeSessions().stream()
+                    .filter(s -> s != null && sessionId.equals(s.getSessionId()))
+                    .findFirst().orElse(null);
+        }
+    }
+
+    public ForgeSession findSession(String sessionId) {
+        if (sessionId == null) {
+            return getFallbackSession(null);
+        }
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return null;
+
+        ForgeSession found = findSessionById(sessionId);
         if (found != null) return found;
 
-        found = orch.getForgeSessions().stream()
-                .filter(s -> s.getName() != null && s.getName().equalsIgnoreCase(sessionId))
-                .findFirst().orElse(null);
+        synchronized (orch.getForgeSessions()) {
+            found = orch.getForgeSessions().stream()
+                    .filter(s -> s != null && s.getName() != null && s.getName().equalsIgnoreCase(sessionId))
+                    .findFirst().orElse(null);
+        }
         if (found != null) return found;
 
-        if (!orch.getForgeSessions().isEmpty()) {
-            return orch.getForgeSessions().get(0);
+        return getFallbackSession(sessionId);
+    }
+
+    private ForgeSession getFallbackSession(String requestedId) {
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return null;
+
+        ForgeSession fallback = null;
+        synchronized (orch.getForgeSessions()) {
+            if (!orch.getForgeSessions().isEmpty()) {
+                fallback = orch.getForgeSessions().get(0);
+            }
         }
 
-        return createSession("Active Forge Session", "SELF_EVO");
+        if (fallback == null) {
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found and no sessions exist. Creating 'Active Forge Session'.");
+            fallback = createSession("Active Forge Session", "SELF_EVO");
+        } else {
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found. Falling back to default session '" + fallback.getName() + "' (" + fallback.getSessionId() + ").");
+        }
+
+        if (fallback != null) {
+            publishEvent(fallback, RuntimeEventType.VIEW_UPDATED, "SESSION_LOOKUP_FALLBACK");
+        }
+
+        return fallback;
     }
 
     public void updateModel(String sessionId, String modelGraph) {
@@ -279,25 +345,41 @@ public class ForgeSessionManager {
     }
 
     public boolean requestFinish(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return false;
+        }
         boolean requested = false;
-        if (sessionId != null) {
-            eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.get(sessionId);
-            if (trainer != null) {
-                trainer.requestStop();
+
+        // Target trainer registered directly under sessionId
+        eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.get(sessionId);
+        if (trainer != null) {
+            trainer.requestStop();
+            requested = true;
+        }
+
+        // Target trainer registered under actual resolved session UUID
+        ForgeSession session = findSessionById(sessionId);
+        if (session == null) {
+            session = findSession(sessionId);
+        }
+
+        if (session != null) {
+            String actualId = session.getSessionId();
+            eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer sessionTrainer = activeTrainers.get(actualId);
+            if (sessionTrainer != null && sessionTrainer != trainer) {
+                sessionTrainer.requestStop();
                 requested = true;
             }
-            ForgeSession session = findSession(sessionId);
-            if (session != null) {
-                eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer sessionTrainer = activeTrainers.get(session.getSessionId());
-                if (sessionTrainer != null) {
-                    sessionTrainer.requestStop();
-                    requested = true;
-                }
-                updateWorkflowStatus(session.getSessionId(), "FINISHING_EXPORTING");
-            }
+            updateWorkflowStatus(actualId, "FINISHING_EXPORTING");
         }
-        if (!requested && !activeTrainers.isEmpty()) {
-            for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer t : activeTrainers.values()) {
+
+        return requested;
+    }
+
+    public boolean requestFinishAll() {
+        boolean requested = false;
+        for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer t : activeTrainers.values()) {
+            if (t != null) {
                 t.requestStop();
                 requested = true;
             }
@@ -321,43 +403,75 @@ public class ForgeSessionManager {
     }
 
     public SessionSnapshot createSnapshot(String sessionId, String genomeSnapshotId) {
-        ForgeSession session = findSession(sessionId);
+        ForgeSession session = findSessionById(sessionId);
+        if (session == null) {
+            session = findSession(sessionId);
+        }
         if (session == null) return null;
 
         SessionSnapshot snapshot = OrchestrationFactory.eINSTANCE.createSessionSnapshot();
         snapshot.setId(UUID.randomUUID().toString());
-        snapshot.setSessionId(sessionId);
+        snapshot.setSessionId(session.getSessionId());
         snapshot.setGenomeSnapshotId(genomeSnapshotId);
         snapshot.setTimestamp(System.currentTimeMillis());
-        // For now, full state is just the model graph
-        snapshot.setFullSerializedState(session.getModelState().getModelGraph());
 
-        session.getSnapshots().add(snapshot);
+        JSONObject stateJson = new JSONObject();
+        if (session.getModelState() != null) {
+            stateJson.put("modelGraph", session.getModelState().getModelGraph());
+            stateJson.put("hyperparameters", session.getModelState().getHyperparameters());
+            stateJson.put("datasetBindings", session.getModelState().getDatasetBindings());
+        }
+        stateJson.put("selectedModelType", session.getSelectedModelType());
+        if (session.getStatus() != null) {
+            stateJson.put("status", session.getStatus().getName());
+        }
+
+        snapshot.setFullSerializedState(stateJson.toString());
+
+        synchronized (session.getSnapshots()) {
+            session.getSnapshots().add(snapshot);
+        }
         publishEvent(session, RuntimeEventType.FORGE_SNAPSHOT_CREATED, "SNAPSHOT_CREATED");
         return snapshot;
     }
 
     public void runE2EDemo(String sessionId) {
-        ForgeSession session = findSession(sessionId);
+        ForgeSession session = findSessionById(sessionId);
+        if (session == null) {
+            session = findSession(sessionId);
+        }
         if (session == null) return;
 
-        new Thread(() -> {
+        final String targetSessionId = session.getSessionId();
+
+        Thread demoThread = new Thread(() -> {
             try {
+                ForgeSession current = findSessionById(targetSessionId);
+                if (current == null) return;
+
                 // 1. Initializing Architecture
-                String type = session.getSelectedModelType() != null ? session.getSelectedModelType() : "MLP";
-                generateArchitecture(session, type);
-                publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
+                String type = current.getSelectedModelType() != null ? current.getSelectedModelType() : "MLP";
+                generateArchitecture(current, type);
+                publishEvent(current, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
                 Thread.sleep(1500);
+
+                current = findSessionById(targetSessionId);
+                if (current == null) return;
 
                 // 2. Loading Data
-                publishEvent(session, RuntimeEventType.FORGE_DATASET_IMPORTED, "DEMO_DATA_LOADED");
+                publishEvent(current, RuntimeEventType.FORGE_DATASET_IMPORTED, "DEMO_DATA_LOADED");
                 Thread.sleep(1500);
 
+                current = findSessionById(targetSessionId);
+                if (current == null) return;
+
                 // 3. Training
-                publishEvent(session, RuntimeEventType.FORGE_TRAINING_STARTED, "DEMO_TRAINING_STARTED");
+                publishEvent(current, RuntimeEventType.FORGE_TRAINING_STARTED, "DEMO_TRAINING_STARTED");
                 for (int i = 0; i < 5; i++) {
                     Thread.sleep(1000);
-                    publishEvent(session, RuntimeEventType.EVOLUTION_PROGRESS, "DEMO_TRAINING_PROGRESS_" + i);
+                    current = findSessionById(targetSessionId);
+                    if (current == null) return;
+                    publishEvent(current, RuntimeEventType.EVOLUTION_PROGRESS, "DEMO_TRAINING_PROGRESS_" + i);
                 }
 
                 // 4. Exporting
@@ -369,19 +483,29 @@ public class ForgeSessionManager {
                 try (FileWriter writer = new FileWriter(modelFile)) {
                     writer.write("DUMMY OLLAMA MODEL CONTENT FOR DEMO");
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.err.println("[FORGE_DEMO] Failed to write demo model artifact: " + e.getMessage());
                 }
 
-                publishEvent(session, RuntimeEventType.EXPORT_READY, modelFile.getAbsolutePath());
+                current = findSessionById(targetSessionId);
+                if (current == null) return;
+
+                publishEvent(current, RuntimeEventType.EXPORT_READY, modelFile.getAbsolutePath());
                 Thread.sleep(2000);
 
+                current = findSessionById(targetSessionId);
+                if (current == null) return;
+
                 // 5. Finalizing
-                publishEvent(session, RuntimeEventType.VIEW_UPDATED, "DEMO_COMPLETED");
+                publishEvent(current, RuntimeEventType.VIEW_UPDATED, "DEMO_COMPLETED");
 
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                System.err.println("[FORGE_DEMO] Demo task interrupted for session: " + targetSessionId);
             }
-        }).start();
+        }, "Forge-E2E-Demo-" + targetSessionId);
+
+        demoThread.setDaemon(true);
+        demoThread.start();
     }
 
     public List<RuntimeEvent> getRecentEvents(String sessionId) {
