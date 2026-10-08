@@ -1,12 +1,13 @@
-# System Architecture Overview - AI Evolution Platform (090626)
+# System Architecture Overview - AI Evolution Platform (090626 / Evolved 08102026)
 
 ## 1. System Overview (Ground Truth)
-The AI Evolution Platform is a deterministic, state-transition-based evolution kernel designed to coordinate small local LLMs for autonomous software development. It operates as an **Orchestration-First Modular Monolith**, leveraging Eclipse RCP/Tycho for plugin management and the Eclipse Modeling Framework (EMF) for state representation.
+The AI Evolution Platform is a deterministic, state-transition-based evolution kernel designed to coordinate small local LLMs for autonomous software development. It operates as an **Orchestration-First Modular Monolith**, leveraging Eclipse RCP/Tycho for plugin management, the Eclipse Modeling Framework (EMF) for state representation, and the Genome module (`eu.kalafatic.evolution.selfdev.genome`) for structural evolution tracking.
 
 ## 2. Architecture Classification
 - **Type:** Modular OSGi Monolith.
 - **Architectural Style:** State-Transition Orchestration with Throttled Category-Based Signaling.
 - **Decision Authority:** Centralized `IterationManager` with human-in-the-loop (Mediated) or autonomous selection.
+- **Tracking Milestone:** 08102026 (Reverse-engineered codebase analysis update).
 
 ## 3. Component Map (Logical Grouping)
 
@@ -22,11 +23,11 @@ The AI Evolution Platform is a deterministic, state-transition-based evolution k
 - **`SessionBoundaryGuard`**: Enforces strict session isolation using `ThreadLocal<String> currentSessionId`.
 - **`RuntimeInvariant`**: Validates session integrity and prohibits global state drift.
 
-### Evolutionary Engine (`eu.kalafatic.evolution.controller.engine`)
+### Evolutionary Engine & Subsystems (`eu.kalafatic.evolution.controller.engine`, `eu.kalafatic.evolution.forge.*`)
 - **`DarwinEngine`**: The materializer of architectural lineages.
-- **`TrajectoryTerritoryMapper`**: Discovers conceptual blueprints via bulk LLM requests, mapping divergent quadrants of the "Target Reality".
-- **`DarwinDiversityAnalyzer`**: Ensures conceptual distance using a 10-dimension vector (Modularity, Resilience, Abstraction, etc.).
-- **`DarwinFitnessRanker`**: Scores trajectories based on information density and architectural influence.
+- **`ForgeOrchestratorImpl`**: End-to-end LLM trainer, dataset acquisition, and model exporter (`.evo`, GGUF).
+- **`SelfDevOrchestrator`**: Task engine running workspace evolution runs.
+- **`SelfDevGenomeHub`**: Genome evolution repository and milestone tracking engine.
 
 ### Semantic Reasoning Layer
 - **`SemanticWorkspace`**: Persistent reasoning context. Implements **Memory Decay** (factor 0.95) to prune stale artifacts.
@@ -54,7 +55,7 @@ The AI Evolution Platform is a deterministic, state-transition-based evolution k
 - **`eu.kalafatic.evolution.model`**: EMF-based state definitions (XMI persistence).
 - **`eu.kalafatic.evolution.controller`**: Core logic (Kernel, Engine, Agents, Workflow).
 - **`eu.kalafatic.evolution.view`**: Eclipse RCP UI (Chat, Architecture Diagram, Progress Monitor).
-- **`eu.kalafatic.evolution.selfdev.genome`**: High-level upgrade compiler for cross-project evolution.
+- **`eu.kalafatic.evolution.selfdev.genome`**: High-level upgrade compiler and milestone tracking for cross-project evolution.
 
 ## 7. Integration Points
 - **VCS**: Native Git integration (JGit).
