@@ -161,8 +161,14 @@ public class OllamaProvider implements ILlmProvider {
             context.log("  > Suggestions:\n" + suggestions);
         }
 
-        // 2. Show detailed message box
-        if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+        boolean isAutomated = (context != null && context.isAutoApprove())
+                || !org.eclipse.ui.PlatformUI.isWorkbenchRunning()
+                || "SELF_DEV".equalsIgnoreCase(System.getProperty("evo.mode"))
+                || "debug".equalsIgnoreCase(System.getProperty("evo.mode"))
+                || "true".equalsIgnoreCase(System.getProperty("evo.automated"));
+
+        // 2. Show detailed message box if not automated
+        if (!isAutomated && org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
             final String finalCause = detectedCause;
             final String finalSuggestions = suggestions;
             org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
@@ -406,6 +412,19 @@ public class OllamaProvider implements ILlmProvider {
         String baseUrl = orchestrator.getOllama().getUrl();
         String model = orchestrator.getOllama().getModel();
 
+        // Auto-resolve local or auto model requests to available Ollama models
+        if (model == null || model.isEmpty() || "local".equalsIgnoreCase(model) || "auto".equalsIgnoreCase(model)) {
+            OllamaService service = OllamaManager.getInstance().getService(baseUrl);
+            String autoModel = findWorkingFallbackModel(service, null, context);
+            if (autoModel != null && !autoModel.isEmpty()) {
+                model = autoModel;
+                updateOrchestratorModel(orchestrator, model);
+                if (context != null) {
+                    context.log("Ollama: Automatically resolved model selection to: " + model);
+                }
+            }
+        }
+
         // Determine target inference engine (from context config or auto-detected)
         String configuredEngine = null;
         if (context != null) {
@@ -583,8 +602,15 @@ public class OllamaProvider implements ILlmProvider {
                 final String fallbackModel = findWorkingFallbackModel(service, model, context);
                 if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
                     boolean approved = false;
-                    if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+                    boolean isAutomated = (context != null && context.isAutoApprove())
+                            || !org.eclipse.ui.PlatformUI.isWorkbenchRunning()
+                            || "SELF_DEV".equalsIgnoreCase(System.getProperty("evo.mode"))
+                            || "debug".equalsIgnoreCase(System.getProperty("evo.mode"))
+                            || "true".equalsIgnoreCase(System.getProperty("evo.automated"));
+
+                    if (!isAutomated && org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
                         final boolean[] approvedArr = new boolean[1];
+                        final String failingModelName = model;
                         org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
                             org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
                             if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
@@ -592,7 +618,7 @@ public class OllamaProvider implements ILlmProvider {
                             }
                             approvedArr[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
                                 "Ollama Model Load Failure",
-                                "The model '" + model + "' failed to load. Do you want to switch to the working fallback model '" + fallbackModel + "'?");
+                                "The model '" + failingModelName + "' failed to load. Do you want to switch to the working fallback model '" + fallbackModel + "'?");
                         });
                         approved = approvedArr[0];
                     } else {
@@ -600,7 +626,7 @@ public class OllamaProvider implements ILlmProvider {
                     }
 
                     if (approved) {
-                        if (context != null) context.log("Ollama: 'evo' model failed to load. Falling back to working model: " + fallbackModel);
+                        if (context != null) context.log("Ollama: Automatically falling back to working model: " + fallbackModel);
                         updateOrchestratorModel(orchestrator, fallbackModel);
                         return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
                     } else {
@@ -616,9 +642,16 @@ public class OllamaProvider implements ILlmProvider {
                 memoryFallbackModel = findFallbackModel(service, errorBody, context);
                 if (memoryFallbackModel != null && !memoryFallbackModel.equals(model)) {
                     boolean approved = false;
-                    if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+                    boolean isAutomated = (context != null && context.isAutoApprove())
+                            || !org.eclipse.ui.PlatformUI.isWorkbenchRunning()
+                            || "SELF_DEV".equalsIgnoreCase(System.getProperty("evo.mode"))
+                            || "debug".equalsIgnoreCase(System.getProperty("evo.mode"))
+                            || "true".equalsIgnoreCase(System.getProperty("evo.automated"));
+
+                    if (!isAutomated && org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
                         final boolean[] approvedArr = new boolean[1];
                         final String finalMemModel = memoryFallbackModel;
+                        final String failingMemModelName = model;
                         org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
                             org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
                             if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
@@ -626,7 +659,7 @@ public class OllamaProvider implements ILlmProvider {
                             }
                             approvedArr[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
                                 "Ollama Out of Memory",
-                                "The model '" + model + "' requires more system memory than is available. Do you want to switch to the fallback model '" + finalMemModel + "'?");
+                                "The model '" + failingMemModelName + "' requires more system memory than is available. Do you want to switch to the fallback model '" + finalMemModel + "'?");
                         });
                         approved = approvedArr[0];
                     } else {
