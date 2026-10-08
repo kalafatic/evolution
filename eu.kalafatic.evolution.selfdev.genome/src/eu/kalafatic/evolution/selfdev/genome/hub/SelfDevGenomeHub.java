@@ -11,9 +11,8 @@ import eu.kalafatic.evolution.selfdev.genome.repository.GenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradeContext;
+import eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradePlan;
-
-
 
 public class SelfDevGenomeHub {
 
@@ -99,8 +98,23 @@ public class SelfDevGenomeHub {
         return upgradeEngine;
     }
 
-    public void updateGenome(File root, String projectName, String version) {
+    public synchronized GenomeUpdateResult updateGenome(File root, String projectName, String version) {
         eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator mg = new eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator();
-        mg.generateMilestone(root, projectName, version);
+        GenomeUpdateResult result = mg.generateMilestone(root, projectName, version);
+
+        if (eventBus != null) {
+            eventBus.publish(new GenomeEvent(
+                "GENOME_UPDATED",
+                projectName != null ? projectName : (root != null ? root.getName() : "root"),
+                result.toSummaryString()
+            ));
+        }
+
+        return result;
+    }
+
+    public synchronized GenomeUpdateResult updateGenome(File root) {
+        String name = (root != null) ? root.getName() : "EVO";
+        return updateGenome(root, name, "v1.0.0");
     }
 }

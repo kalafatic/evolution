@@ -120,17 +120,29 @@ public class ArchitectureController {
         File root = new File(targetPath);
         if (!root.exists()) return;
 
+        eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult result = null;
+
         if (orchestrator != null) {
             SessionContainer session = SessionManager.getInstance().getSession(orchestrator.getId());
             if (session != null) {
                 GenomeUpdateAgent agent = new GenomeUpdateAgent(session);
-                agent.runUpdate(root, root.getName());
+                result = agent.runUpdate(root, root.getName());
 
-                session.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FORGE_SNAPSHOT_CREATED, orchestrator.getId(), "ArchitectureController", "GENOME_UPDATED"));
+                session.getEventBus().publish(new RuntimeEvent(
+                    RuntimeEventType.FORGE_SNAPSHOT_CREATED,
+                    orchestrator.getId(),
+                    "ArchitectureController",
+                    result != null ? result.toSummaryString() : "GENOME_UPDATED"
+                ));
+            } else {
+                result = eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance().updateGenome(root, root.getName(), "v1.0.0");
             }
         } else {
-            eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub hub = eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance();
-            hub.updateGenome(root, root.getName(), "v1.0.0");
+            result = eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance().updateGenome(root, root.getName(), "v1.0.0");
+        }
+
+        if (result != null) {
+            System.out.println(result.toSummaryString());
         }
     }
 
