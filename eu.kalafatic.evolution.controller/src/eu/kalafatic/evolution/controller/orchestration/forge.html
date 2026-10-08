@@ -1820,10 +1820,10 @@
                     finishBtn.disabled = true;
                     finishBtn.innerText = 'FINISHING...';
                 }
-                log("Requesting graceful training finish...");
+                log("Stop requested. Finishing current epoch...");
                 const res = await fetch(getBaseUrl() + '/forge/session/' + activeSessionId + '/finish', { method: 'POST' });
                 const data = await res.json();
-                log("Finish requested: " + (data.message || "Completing current epoch and exporting files."));
+                log("Finish requested: " + (data.message || "Finishing current epoch and validating model state before export."));
             } catch (e) {
                 log("Error requesting finish: " + e.message);
                 const finishBtn = document.getElementById('finish-btn');

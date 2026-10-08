@@ -390,7 +390,7 @@ public class ForgeSessionManager {
 
     private void publishEvent(ForgeSession session, RuntimeEventType type, String action) {
         Orchestrator orch = getOrchestratorModel();
-        if (orch == null) return;
+        if (orch == null || orch.getId() == null) return;
 
         RuntimeEvent event = new RuntimeEvent(type, orch.getId(), "ForgeSessionManager", action)
                 .withEntityId(session.getSessionId())
