@@ -51,8 +51,8 @@ public class ForgeSettingsDialogHardwareEstimationTest {
         assertEquals(8.0, smallComp, 0.001);
         assertEquals(64.0, xlargeComp, 0.001);
 
-        double nanoRate = ForgeSettingsDialog.getHardwareThroughputBytesPerSec("NANO");
-        double smallRate = ForgeSettingsDialog.getHardwareThroughputBytesPerSec("SMALL");
+        double nanoRate = ForgeSettingsDialog.getBaselineTokensPerSecond("NANO");
+        double smallRate = ForgeSettingsDialog.getBaselineTokensPerSecond("SMALL");
 
         assertTrue("Throughput for simpler models must be higher", nanoRate > smallRate);
         assertTrue("Throughput must be positive", nanoRate > 0);
