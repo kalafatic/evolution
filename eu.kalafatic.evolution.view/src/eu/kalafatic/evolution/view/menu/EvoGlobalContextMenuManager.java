@@ -100,6 +100,10 @@ public class EvoGlobalContextMenuManager {
             return;
         }
 
+        IWorkbenchPart activePart = getActivePart();
+        String partName = (activePart != null) ? activePart.getTitle() : "Workbench";
+        Log.log("[EVO_CONTEXT_MENU] part=" + partName + " control=" + control.getClass().getSimpleName());
+
         Menu existingMenu = control.getMenu();
         if (existingMenu != null && !existingMenu.isDisposed()) {
             IMenuManager menuMgr = findMenuManager(control, existingMenu);
