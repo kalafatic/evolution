@@ -390,31 +390,43 @@ public class ArchitecturePage extends AEvoPage {
 
     private void synchronizeSnapshotsWithDisk() {
         if (currentTargetPath == null || orchestrator == null) return;
-        java.io.File milestonesDir = new java.io.File(currentTargetPath, "milestones");
-        if (!milestonesDir.exists()) return;
+        java.io.File root = new java.io.File(currentTargetPath);
+        Map<String, String> snapshotDashboardMap = new HashMap<>();
 
-        java.io.File[] dirs = milestonesDir.listFiles(java.io.File::isDirectory);
-        if (dirs == null) return;
+        // 1. Scan genome/history
+        java.io.File genomeHistory = new java.io.File(root, "genome/history");
+        if (genomeHistory.exists() && genomeHistory.isDirectory()) {
+            scanSnapshotDirectories(genomeHistory, root, snapshotDashboardMap);
+        }
 
-        java.util.List<String> diskSnapshots = java.util.Arrays.stream(dirs)
-                .filter(d -> d.getName().startsWith("genome_"))
-                .map(d -> d.getName().replace("genome_", ""))
-                .collect(java.util.stream.Collectors.toList());
+        // 2. Scan legacy milestones
+        java.io.File milestonesDir = new java.io.File(root, "milestones");
+        if (milestonesDir.exists() && milestonesDir.isDirectory()) {
+            scanSnapshotDirectories(milestonesDir, root, snapshotDashboardMap);
+        }
+
+        if (snapshotDashboardMap.isEmpty()) return;
+
+        java.util.Set<String> diskTimestamps = snapshotDashboardMap.keySet();
 
         // Remove from model if not on disk
-        orchestrator.getGenomeSnapshots().removeIf(s -> !diskSnapshots.contains(s.getTimestamp()));
+        orchestrator.getGenomeSnapshots().removeIf(s -> !diskTimestamps.contains(s.getTimestamp()));
 
         // Add to model if on disk but not in model
-        for (String ts : diskSnapshots) {
+        for (Map.Entry<String, String> entry : snapshotDashboardMap.entrySet()) {
+            String ts = entry.getKey();
+            String dashRelPath = entry.getValue();
+            String dirRelPath = dashRelPath.contains("/") ? dashRelPath.substring(0, dashRelPath.lastIndexOf('/')) : "";
+
             boolean exists = orchestrator.getGenomeSnapshots().stream().anyMatch(s -> ts.equals(s.getTimestamp()));
             if (!exists) {
                 GenomeSnapshot snapshot = OrchestrationFactory.eINSTANCE.createGenomeSnapshot();
                 snapshot.setTimestamp(ts);
-                snapshot.setArchitectureArtifact("milestones/genome_" + ts + "/architecture.md");
-                snapshot.setUseCaseArtifact("milestones/genome_" + ts + "/use_cases.md");
-                snapshot.setMilestoneArtifact("milestones/genome_" + ts + "/milestone_v1.md");
-                snapshot.setGenomeArtifact("milestones/genome_" + ts + "/genome.json");
-                snapshot.setDashboardArtifact("milestones/genome_" + ts + "/milestone_dashboard.html");
+                snapshot.setArchitectureArtifact(dirRelPath + "/architecture.md");
+                snapshot.setUseCaseArtifact(dirRelPath + "/use_cases.md");
+                snapshot.setMilestoneArtifact(dirRelPath + "/milestone_v1.md");
+                snapshot.setGenomeArtifact(dirRelPath + "/genome.json");
+                snapshot.setDashboardArtifact(dashRelPath);
                 orchestrator.getGenomeSnapshots().add(snapshot);
             }
         }
@@ -423,6 +435,88 @@ public class ArchitecturePage extends AEvoPage {
         java.util.Collections.sort(orchestrator.getGenomeSnapshots(), (a, b) -> a.getTimestamp().compareTo(b.getTimestamp()));
         while (orchestrator.getGenomeSnapshots().size() > 8) {
             orchestrator.getGenomeSnapshots().remove(0);
+        }
+    }
+
+    private void scanSnapshotDirectories(java.io.File current, java.io.File root, Map<String, String> map) {
+        if (!current.exists() || !current.isDirectory()) return;
+        java.io.File dash = new java.io.File(current, "milestone_dashboard.html");
+        if (dash.exists()) {
+            String name = current.getName();
+            String ts = name.startsWith("genome_") ? name.substring("genome_".length()) : name;
+            String relPath = getRelativePath(root, dash);
+            map.put(ts, relPath);
+            return;
+        }
+        java.io.File[] children = current.listFiles(java.io.File::isDirectory);
+        if (children != null) {
+            for (java.io.File child : children) {
+                scanSnapshotDirectories(child, root, map);
+            }
+        }
+    }
+
+    private java.io.File resolveDashboardFile(GenomeSnapshot snapshot) {
+        if (currentTargetPath == null || snapshot == null) return null;
+
+        // 1. Direct path check
+        if (snapshot.getDashboardArtifact() != null && !snapshot.getDashboardArtifact().isEmpty()) {
+            java.io.File f = new java.io.File(currentTargetPath, snapshot.getDashboardArtifact());
+            if (f.exists()) return f;
+        }
+
+        String ts = snapshot.getTimestamp();
+        if (ts == null || ts.isEmpty()) return null;
+
+        // 2. Search in genome/history
+        java.io.File genomeHistory = new java.io.File(currentTargetPath, "genome/history");
+        if (genomeHistory.exists() && genomeHistory.isDirectory()) {
+            java.io.File match = findSnapshotDirByTimestamp(genomeHistory, ts);
+            if (match != null) {
+                java.io.File dash = new java.io.File(match, "milestone_dashboard.html");
+                if (dash.exists()) {
+                    String relPath = getRelativePath(new java.io.File(currentTargetPath), dash);
+                    snapshot.setDashboardArtifact(relPath);
+                    return dash;
+                }
+            }
+        }
+
+        // 3. Search in genome/current
+        java.io.File currentDash = new java.io.File(currentTargetPath, "genome/current/milestone_dashboard.html");
+        if (currentDash.exists()) {
+            return currentDash;
+        }
+
+        // 4. Search in milestones/ genome_<ts>
+        java.io.File legacyDash = new java.io.File(currentTargetPath, "milestones/genome_" + ts + "/milestone_dashboard.html");
+        if (legacyDash.exists()) {
+            return legacyDash;
+        }
+
+        return null;
+    }
+
+    private java.io.File findSnapshotDirByTimestamp(java.io.File dir, String timestamp) {
+        if (!dir.exists() || !dir.isDirectory()) return null;
+        if (dir.getName().equals(timestamp) || dir.getName().equals("genome_" + timestamp)) {
+            return dir;
+        }
+        java.io.File[] children = dir.listFiles(java.io.File::isDirectory);
+        if (children != null) {
+            for (java.io.File child : children) {
+                java.io.File res = findSnapshotDirByTimestamp(child, timestamp);
+                if (res != null) return res;
+            }
+        }
+        return null;
+    }
+
+    private String getRelativePath(java.io.File root, java.io.File file) {
+        try {
+            return root.toPath().toAbsolutePath().relativize(file.toPath().toAbsolutePath()).toString().replace('\\', '/');
+        } catch (Exception e) {
+            return file.getName();
         }
     }
 
@@ -617,15 +711,18 @@ public class ArchitecturePage extends AEvoPage {
                         computedTimestamp = new java.text.SimpleDateFormat("ddMMyy_HHmmss").format(new java.util.Date());
                     }
                     final String timestamp = computedTimestamp;
+                    final String historyPath = (gResult != null && gResult.getHistoricalSnapshotPath() != null && !gResult.getHistoricalSnapshotPath().isEmpty())
+                            ? gResult.getHistoricalSnapshotPath()
+                            : "genome/history/" + timestamp;
 
                     Display.getDefault().asyncExec(() -> {
                         GenomeSnapshot snapshot = OrchestrationFactory.eINSTANCE.createGenomeSnapshot();
                         snapshot.setTimestamp(timestamp);
-                        snapshot.setArchitectureArtifact("milestones/genome_" + timestamp + "/architecture.md");
-                        snapshot.setUseCaseArtifact("milestones/genome_" + timestamp + "/use_cases.md");
-                        snapshot.setMilestoneArtifact("milestones/genome_" + timestamp + "/milestone_v1.md");
-                        snapshot.setGenomeArtifact("milestones/genome_" + timestamp + "/genome.json");
-                        snapshot.setDashboardArtifact("milestones/genome_" + timestamp + "/milestone_dashboard.html");
+                        snapshot.setArchitectureArtifact(historyPath + "/architecture.md");
+                        snapshot.setUseCaseArtifact(historyPath + "/use_cases.md");
+                        snapshot.setMilestoneArtifact(historyPath + "/milestone_v1.md");
+                        snapshot.setGenomeArtifact(historyPath + "/genome.json");
+                        snapshot.setDashboardArtifact(historyPath + "/milestone_dashboard.html");
 
                         orchestrator.getGenomeSnapshots().add(snapshot);
 
@@ -672,8 +769,8 @@ public class ArchitecturePage extends AEvoPage {
     private void loadMilestoneDashboard(GenomeSnapshot snapshot) {
         if (currentTargetPath == null || browser == null || browser.isDisposed()) return;
 
-        java.io.File dashboardFile = new java.io.File(currentTargetPath, snapshot.getDashboardArtifact());
-        if (dashboardFile.exists()) {
+        java.io.File dashboardFile = resolveDashboardFile(snapshot);
+        if (dashboardFile != null && dashboardFile.exists()) {
             try {
                 String html = java.nio.file.Files.readString(dashboardFile.toPath());
                 browser.setText(html);
@@ -684,7 +781,7 @@ public class ArchitecturePage extends AEvoPage {
         } else {
             MessageBox box = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
             box.setText("Dashboard Missing");
-            box.setMessage("Milestone dashboard HTML not found: " + snapshot.getDashboardArtifact());
+            box.setMessage("Milestone dashboard HTML not found: " + (snapshot != null ? snapshot.getDashboardArtifact() : "null"));
             box.open();
         }
     }
