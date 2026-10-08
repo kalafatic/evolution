@@ -143,7 +143,11 @@ public class ProjectModelManager {
 
     public void saveResource(Resource resource) throws IOException {
         if (resource != null) {
-            resource.save(Collections.EMPTY_MAP);
+            try {
+                resource.save(Collections.EMPTY_MAP);
+            } catch (org.eclipse.core.runtime.AssertionFailedException afe) {
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] AssertionFailedException caught during resource save: " + afe.getMessage());
+            }
         }
     }
 

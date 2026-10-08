@@ -354,8 +354,12 @@ public class ArchitecturePage extends AEvoPage {
         if (orchestrator != null) {
             orchestrator.setDefaultTarget(path);
             try {
-                ProjectModelManager.getInstance().saveResource(orchestrator.eResource());
-            } catch (java.io.IOException e) {
+                if (editor != null) {
+                    editor.doSave(new org.eclipse.core.runtime.NullProgressMonitor());
+                } else if (orchestrator.eResource() != null) {
+                    ProjectModelManager.getInstance().saveResource(orchestrator.eResource());
+                }
+            } catch (Exception e) {
                 eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Failed to save orchestrator resource: " + e.getMessage());
             }
 
@@ -627,7 +631,11 @@ public class ArchitecturePage extends AEvoPage {
 
                         // Explicit save
                         try {
-                            eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().saveResource(orchestrator.eResource());
+                            if (editor != null) {
+                                editor.doSave(new org.eclipse.core.runtime.NullProgressMonitor());
+                            } else if (orchestrator != null && orchestrator.eResource() != null) {
+                                eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().saveResource(orchestrator.eResource());
+                            }
                         } catch (Exception ex) {
                             ex.printStackTrace();
                         }
