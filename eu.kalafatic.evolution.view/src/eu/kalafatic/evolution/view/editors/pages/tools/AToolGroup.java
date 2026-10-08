@@ -66,6 +66,11 @@ public abstract class AToolGroup extends AEvoGroup {
         org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Tool Action: " + command) {
             @Override
             protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                String orchId = orchestrator != null ? orchestrator.getName() : "ToolAction";
+                System.out.println("[TOOL][START] Action=" + command + " Type=" + type);
+                eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Executing " + type + " command: " + command);
+
                 try {
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
                     java.io.File workingDir = getProjectDir();
@@ -73,20 +78,28 @@ public abstract class AToolGroup extends AEvoGroup {
                     eu.kalafatic.evolution.controller.orchestration.TaskRequest request = new eu.kalafatic.evolution.controller.orchestration.TaskRequest(command, workingDir);
                     request.getContext().put("orchestrator", orchestrator);
 
-                   OrchestratorResponse response =
-                       OrchestratorServiceImpl.getInstance().handle(request);
+                    OrchestratorResponse response =
+                        OrchestratorServiceImpl.getInstance().handle(request);
 
-                    if (response.getResultType() ==ResultType.ERROR) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    if (response.getResultType() == ResultType.ERROR) {
                         task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+                        System.out.println("[TOOL][END] Action=" + command + " FAILED durationMs=" + duration + " Summary=" + response.getSummary());
+                        eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Tool command failed: " + command);
                         return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", response.getSummary());
                     }
 
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
                     task.setResponse(response.getSummary());
+                    System.out.println("[TOOL][END] Action=" + command + " SUCCESS durationMs=" + duration);
+                    eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Tool command finished: " + command);
 
                     return org.eclipse.core.runtime.Status.OK_STATUS;
                 } catch (Exception e) {
+                    long duration = System.currentTimeMillis() - startTime;
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+                    System.out.println("[TOOL][END] Action=" + command + " EXCEPTION durationMs=" + duration + " Error=" + e.getMessage());
+                    eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Tool command error: " + e.getMessage());
                     return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", e.getMessage(), e);
                 }
             }
