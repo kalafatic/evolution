@@ -136,6 +136,19 @@ public class ContextBuilder {
             pkg.setAttachmentContext(attachmentContext);
         }
 
+        // 5b. MEMORY CONTEXT RETRIEVAL
+        try {
+            eu.kalafatic.evolution.controller.memory.MemoryContextProvider memoryProvider = new eu.kalafatic.evolution.controller.memory.MemoryContextProvider();
+            String queryText = (task != null ? task.getName() + " " + task.getGoal() : pkg.getGoal());
+            String memContext = memoryProvider.buildMemoryContext(queryText, null, context != null ? context.getSessionId() : null, 8);
+            if (memContext != null && !memContext.isEmpty()) {
+                pkg.setMemoryContext(memContext);
+                state.addDiagnostic("ContextBuilder: Injected persistent memory context.");
+            }
+        } catch (Exception e) {
+            if (context != null) context.log("ContextBuilder: Could not assemble memory context: " + e.getMessage());
+        }
+
         // 6. ASSEMBLY (Handled in buildPrompt)
         ArchitectureContext arch = new ArchitectureContext();
         arch.getKeyRules().add("Single Transition Authority: ONLY IterationManager may change system state");
@@ -243,6 +256,10 @@ public class ContextBuilder {
         for (String c : ctx.getConstraints()) sb.append("- ").append(c).append("\n");
 
         sb.append("\n### DEPENDENCIES\n").append(ctx.getDependencies()).append("\n");
+
+        if (ctx.getMemoryContext() != null && !ctx.getMemoryContext().isEmpty()) {
+            sb.append(ctx.getMemoryContext()).append("\n\n");
+        }
 
         if (ctx.getAttachmentContext() != null && !ctx.getAttachmentContext().isEmpty()) {
             sb.append("### ATTACHMENTS\n").append(ctx.getAttachmentContext()).append("\n");

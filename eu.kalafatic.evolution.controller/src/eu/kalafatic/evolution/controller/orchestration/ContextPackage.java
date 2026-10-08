@@ -18,6 +18,7 @@ public class ContextPackage {
     private String dependencies;
     private List<String> constraints = new ArrayList<>();
     private String attachmentContext;
+    private String memoryContext;
     private int attempt;
     private String lastFeedback;
 
@@ -101,6 +102,14 @@ public class ContextPackage {
         this.attachmentContext = attachmentContext;
     }
 
+    public String getMemoryContext() {
+        return memoryContext;
+    }
+
+    public void setMemoryContext(String memoryContext) {
+        this.memoryContext = memoryContext;
+    }
+
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
@@ -113,6 +122,7 @@ public class ContextPackage {
         json.put("dependencies", dependencies);
         json.put("constraints", new JSONArray(constraints));
         json.put("attachmentContext", attachmentContext);
+        json.put("memoryContext", memoryContext);
         json.put("attempt", attempt);
         json.put("lastFeedback", lastFeedback);
         return json;
