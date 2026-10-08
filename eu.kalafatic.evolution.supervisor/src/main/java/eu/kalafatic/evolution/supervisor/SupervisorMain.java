@@ -222,6 +222,7 @@ public class SupervisorMain {
                     case "/server/project/create":
                         return handleCreateProject(session, params);
 
+                    case "/task":
                     case "/create-inference-task":
                         return handleCreateInferenceTask(session, params);
 

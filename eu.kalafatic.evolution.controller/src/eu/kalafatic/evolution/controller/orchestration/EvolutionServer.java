@@ -392,33 +392,17 @@ public class EvolutionServer extends NanoHTTPD {
             request.getContext().put("branch", json.getString("branch"));
         }
 
-        OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
-
         if (sid != null && !sid.isEmpty()) {
-            ConversationOutputController.getInstance().submitMessage(
-                sid,
-                "turn-1",
-                "USER",
-                request.getPrompt(),
-                "USER",
-                MessagePriority.NORMAL,
-                false,
-                null,
-                null
-            );
-            String summary = response.getSummary() != null ? response.getSummary() : "Task completed";
-            ConversationOutputController.getInstance().submitMessage(
-                sid,
-                "turn-1",
-                "ASSISTANT",
-                summary,
-                "SYSTEM",
-                MessagePriority.FINAL,
-                true,
-                null,
-                null
-            );
+            OrchestratorServiceImpl.getInstance().submit(sid, request);
+            JSONObject jsonRes = new JSONObject();
+            jsonRes.put("status", "SUCCESS");
+            jsonRes.put("summary", "Inference task submitted");
+            jsonRes.put("sessionId", sid);
+            jsonRes.put("prompt", request.getPrompt());
+            return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
         }
+
+        OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
 
         JSONObject jsonRes = new JSONObject();
         jsonRes.put("summary", response.getSummary());
