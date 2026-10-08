@@ -232,6 +232,25 @@ public class UserMemoryGroup extends AEvoGroup {
         deleteBtn.setEnabled(hasSelection);
     }
 
+    public void setContext(MemoryScope scope, String associatedId) {
+        if (scopeFilterCombo != null && !scopeFilterCombo.isDisposed()) {
+            if (scope != null) {
+                int idx = scopeFilterCombo.indexOf(scope.name());
+                if (idx >= 0) {
+                    scopeFilterCombo.select(idx);
+                }
+            } else {
+                scopeFilterCombo.select(0);
+            }
+        }
+        if (searchInput != null && !searchInput.isDisposed()) {
+            if (associatedId != null && !associatedId.trim().isEmpty()) {
+                searchInput.setText(associatedId.trim());
+            }
+        }
+        refreshUI();
+    }
+
     @Override
     protected void refreshUI() {
         if (memoryTable == null || memoryTable.isDisposed()) return;
@@ -271,5 +290,7 @@ public class UserMemoryGroup extends AEvoGroup {
             String contextText = provider.buildMemoryContext(searchInput.getText().trim());
             setTextSafe(promptPreview, contextText);
         }
+
+        System.out.println("MEMORY_UI_REFRESH: Rendered " + entries.size() + " memory entries");
     }
 }

@@ -44,6 +44,7 @@ public class ServerPage extends AEvoPage {
     private ClientsGroup clientsGroup;
     private ResourcesGroup resourcesGroup;
     private MonitoringGroup monitoringGroup;
+    private ServerMemoryContextGroup serverMemoryContextGroup;
 
     public ServerPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -78,6 +79,7 @@ public class ServerPage extends AEvoPage {
         clientsGroup = new ClientsGroup(toolkit, comp, editor, orchestrator, successColor);
         resourcesGroup = new ResourcesGroup(toolkit, comp, editor, orchestrator, successColor);
         monitoringGroup = new MonitoringGroup(toolkit, comp, editor, orchestrator, successColor);
+        serverMemoryContextGroup = new ServerMemoryContextGroup(toolkit, comp, editor, orchestrator, successColor);
 
         ModifyListener ml = e -> {
             if (orchestrator != null && !isUpdating) {
@@ -104,6 +106,7 @@ public class ServerPage extends AEvoPage {
         clientsGroup.updateUI();
         resourcesGroup.updateUI();
         monitoringGroup.updateUI();
+        if (serverMemoryContextGroup != null) serverMemoryContextGroup.updateUI();
         isUpdating = false;
     }
 
@@ -200,6 +203,7 @@ public class ServerPage extends AEvoPage {
         if (clientsGroup != null) clientsGroup.setOrchestrator(orchestrator);
         if (resourcesGroup != null) resourcesGroup.setOrchestrator(orchestrator);
         if (monitoringGroup != null) monitoringGroup.setOrchestrator(orchestrator);
+        if (serverMemoryContextGroup != null) serverMemoryContextGroup.setOrchestrator(orchestrator);
     }
 
     private void updateBanner() {

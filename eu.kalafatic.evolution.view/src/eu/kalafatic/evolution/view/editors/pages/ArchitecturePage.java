@@ -606,7 +606,13 @@ public class ArchitecturePage extends AEvoPage {
             @Override
             protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
                 try {
-                    String timestamp = milestoneGenerator.generateMilestone(root, projectName, "v1");
+                    eu.kalafatic.evolution.selfdev.genome.model.GenomeUpdateResult gResult = milestoneGenerator.generateMilestone(root, projectName, "v1");
+                    String path = gResult != null ? gResult.getHistoricalSnapshotPath() : "";
+                    String computedTimestamp = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+                    if (computedTimestamp.isEmpty()) {
+                        computedTimestamp = new java.text.SimpleDateFormat("ddMMyy_HHmmss").format(new java.util.Date());
+                    }
+                    final String timestamp = computedTimestamp;
 
                     Display.getDefault().asyncExec(() -> {
                         GenomeSnapshot snapshot = OrchestrationFactory.eINSTANCE.createGenomeSnapshot();

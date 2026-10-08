@@ -31,6 +31,7 @@ public class PropertiesPage extends AEvoPage {
 	private AiChatModelsGroup aiChatModelsGroup;
 	private ModelsGroup modelsGroup;
 	private DatasetEditorGroup datasetEditorGroup;
+	private MemoryContextGroup memoryContextGroup;
 
 	public PropertiesPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
@@ -105,6 +106,7 @@ public class PropertiesPage extends AEvoPage {
 		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, editor, orchestrator);
 		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, editor, orchestrator, this);
 		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, editor, orchestrator, this);
+		memoryContextGroup = new MemoryContextGroup(toolkit, comp, editor, orchestrator);
 
 		ModifyListener ml = e -> {
 			if (orchestrator != null && !isUpdating) {
@@ -144,6 +146,7 @@ public class PropertiesPage extends AEvoPage {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
 		orchestratorGroup.updateUI(); llmSettingsGroup.updateUI(); ollamaSettingsGroup.updateUI(); agentsGroup.updateUI(); contextAssistGroup.updateUI(); additionalAiToolsGroup.updateUI(); mcpOpenAiGroup.updateUI(); aiChatModelsGroup.updateUI(); modelsGroup.updateUI();
+		if (memoryContextGroup != null) memoryContextGroup.updateUI();
 		isUpdating = false;
 		updateModeDisplay();
 	}
@@ -177,5 +180,6 @@ public class PropertiesPage extends AEvoPage {
 		if (mcpOpenAiGroup != null) mcpOpenAiGroup.setOrchestrator(orchestrator);
 		if (aiChatModelsGroup != null) aiChatModelsGroup.setOrchestrator(orchestrator);
 		if (modelsGroup != null) modelsGroup.setOrchestrator(orchestrator);
+		if (memoryContextGroup != null) memoryContextGroup.setOrchestrator(orchestrator);
 	}
 }

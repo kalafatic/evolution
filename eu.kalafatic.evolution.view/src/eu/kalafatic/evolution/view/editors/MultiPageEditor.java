@@ -823,6 +823,21 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		return taskStackPage;
 	}
 
+	public Orchestrator getOrchestrator() {
+		return orchestrator;
+	}
+
+	public void showContextPage() {
+		showContextPage(null, null);
+	}
+
+	public void showContextPage(eu.kalafatic.evolution.controller.memory.MemoryScope scope, String associatedId) {
+		if (contextPage != null) {
+			setActivePageByControl(contextPage);
+			contextPage.setContext(scope, associatedId);
+		}
+	}
+
 	/**
 	 * Nested text editor that explicitly delegates its undo context to the parent
 	 * MultiPageEditor. This ensures that document changes in the text editor are
