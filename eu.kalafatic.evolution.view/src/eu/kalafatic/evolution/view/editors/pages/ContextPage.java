@@ -50,4 +50,10 @@ public class ContextPage extends Composite {
         if (bestPracticesGroup != null) bestPracticesGroup.setOrchestrator(orchestrator);
         if (neuronContextGroup != null) neuronContextGroup.setOrchestrator(orchestrator);
     }
+
+    public void setContext(eu.kalafatic.evolution.controller.memory.MemoryScope scope, String associatedId) {
+        if (userMemoryGroup != null) {
+            userMemoryGroup.setContext(scope, associatedId);
+        }
+    }
 }

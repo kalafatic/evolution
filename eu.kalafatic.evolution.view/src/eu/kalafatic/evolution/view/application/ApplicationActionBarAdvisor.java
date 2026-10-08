@@ -102,11 +102,108 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		// super.fillMenuBar(menuBar);
 
 		IWorkbenchWindow window = getActionBarConfigurer().getWindowConfigurer().getWindow();
+		menuBar.add(createEvolutionMenu(window));
 		menuBar.add(createFileMenu(window));
+		menuBar.add(createEditMenu(window));
+		menuBar.add(createServerMenu(window));
 		menuBar.add(createExplorerMenu(window));
 		menuBar.add(createToolsMenu(window));
 		menuBar.add(createWindowMenu(window));
 		menuBar.add(createHelpMenu(window));
+	}
+
+	// ---------------------------------------------------------------
+
+	private IMenuManager createEvolutionMenu(final IWorkbenchWindow window) {
+		MenuManager menuManager = new MenuManager("&Evolution", "eu.kalafatic.evolution.menu.evolution");
+		menuManager.add(new GroupMarker("evoStart"));
+
+		IAction memoryContextAction = builder.createAction(window, "eu.kalafatic.evolution.view.openMemoryContext");
+		if (memoryContextAction != null) {
+			menuManager.add(memoryContextAction);
+		}
+
+		IAction newSessionAction = builder.createAction(window, "eu.kalafatic.evolution.view.newAiSession");
+		if (newSessionAction != null) {
+			menuManager.add(newSessionAction);
+		}
+
+		IAction orchestrateAction = builder.createAction(window, "eu.kalafatic.evolution.controller.orchestrationCommand");
+		if (orchestrateAction != null) {
+			menuManager.add(orchestrateAction);
+		}
+
+		menuManager.add(new Separator());
+
+		IAction setupOllamaAction = builder.createAction(window, "eu.kalafatic.evolution.view.setupOllama");
+		if (setupOllamaAction != null) {
+			menuManager.add(setupOllamaAction);
+		}
+
+		IAction setupLLMAction = builder.createAction(window, "eu.kalafatic.evolution.view.setupLLM");
+		if (setupLLMAction != null) {
+			menuManager.add(setupLLMAction);
+		}
+
+		IAction setupWorkspaceAction = builder.createAction(window, "eu.kalafatic.evolution.view.setupWorkspace");
+		if (setupWorkspaceAction != null) {
+			menuManager.add(setupWorkspaceAction);
+		}
+
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+		menuManager.add(new GroupMarker("evoEnd"));
+		return menuManager;
+	}
+
+	private IMenuManager createEditMenu(final IWorkbenchWindow window) {
+		MenuManager menuManager = new MenuManager("&Edit", IWorkbenchActionConstants.M_EDIT);
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.EDIT_START));
+
+		IAction undoAction = ActionFactory.UNDO.create(window);
+		register(undoAction);
+		menuManager.add(undoAction);
+
+		IAction redoAction = ActionFactory.REDO.create(window);
+		register(redoAction);
+		menuManager.add(redoAction);
+
+		menuManager.add(new Separator());
+
+		IAction cutAction = ActionFactory.CUT.create(window);
+		register(cutAction);
+		menuManager.add(cutAction);
+
+		IAction copyAction = ActionFactory.COPY.create(window);
+		register(copyAction);
+		menuManager.add(copyAction);
+
+		IAction pasteAction = ActionFactory.PASTE.create(window);
+		register(pasteAction);
+		menuManager.add(pasteAction);
+
+		menuManager.add(new Separator());
+
+		IAction selectAllAction = ActionFactory.SELECT_ALL.create(window);
+		register(selectAllAction);
+		menuManager.add(selectAllAction);
+
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.EDIT_END));
+		return menuManager;
+	}
+
+	private IMenuManager createServerMenu(final IWorkbenchWindow window) {
+		MenuManager menuManager = new MenuManager("&Server", "Server");
+		menuManager.add(new GroupMarker("serverStart"));
+
+		IAction serverMemoryAction = builder.createAction(window, "eu.kalafatic.evolution.view.openMemoryContext");
+		if (serverMemoryAction != null) {
+			menuManager.add(serverMemoryAction);
+		}
+
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+		menuManager.add(new GroupMarker("serverEnd"));
+		return menuManager;
 	}
 
 	// ---------------------------------------------------------------

@@ -265,17 +265,37 @@
       <menuContribution
             locationURI="menu:org.eclipse.ui.main.menu">
          <menu
-               id="setup"
-               label="Setup">
+               id="eu.kalafatic.evolution.menu.evolution"
+               label="Evolution">
+            <command
+                  commandId="eu.kalafatic.evolution.view.openMemoryContext"
+                  icon="icons/evo_settings.svg"
+                  label="Memory / Context"
+                  style="push">
+               <parameter
+                     name="eu.kalafatic.evolution.view.openMemoryContext.caller"
+                     value="MAIN_MENU">
+               </parameter>
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.newAiSession"
+                  label="New AI Session"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+                  icon="icons/evo_orchestrate.svg"
+                  label="Orchestrate"
+                  style="push">
+            </command>
+            <separator
+                  name="setupSeparator"
+                  visible="true">
+            </separator>
             <command
                   commandId="eu.kalafatic.evolution.view.setupOllama"
                   icon="icons/evo_settings.svg"
                   label="Setup Ollama"
-                  style="push">
-            </command>
-            <command
-                  commandId="eu.kalafatic.evolution.view.setupOllamaModel"
-                  label="Setup Ollama Model"
                   style="push">
             </command>
             <command
@@ -338,6 +358,24 @@
                <parameter
                      name="exportWizardId"
                      value="eu.kalafatic.evolution.view.exportEvoTasksWizard">
+               </parameter>
+            </command>
+         </menu>
+         <menu
+               id="server"
+               label="Server">
+            <command
+                  commandId="eu.kalafatic.evolution.view.openMemoryContext"
+                  icon="icons/evo_settings.svg"
+                  label="Memory / Context"
+                  style="push">
+               <parameter
+                     name="eu.kalafatic.evolution.view.openMemoryContext.caller"
+                     value="SERVER">
+               </parameter>
+               <parameter
+                     name="eu.kalafatic.evolution.view.openMemoryContext.scope"
+                     value="SESSION">
                </parameter>
             </command>
          </menu>
@@ -681,6 +719,25 @@
             id="eu.kalafatic.utils.p2.install"
             name="Install New Software...">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.openMemoryContext"
+            name="Memory / Context">
+         <commandParameter
+               id="eu.kalafatic.evolution.view.openMemoryContext.scope"
+               name="Scope"
+               optional="true">
+         </commandParameter>
+         <commandParameter
+               id="eu.kalafatic.evolution.view.openMemoryContext.associatedId"
+               name="Associated ID"
+               optional="true">
+         </commandParameter>
+         <commandParameter
+               id="eu.kalafatic.evolution.view.openMemoryContext.caller"
+               name="Caller"
+               optional="true">
+         </commandParameter>
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -735,6 +792,10 @@
       <handler
             class="eu.kalafatic.utils.p2.InstallHandler"
             commandId="eu.kalafatic.utils.p2.install">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.OpenMemoryContextHandler"
+            commandId="eu.kalafatic.evolution.view.openMemoryContext">
       </handler>
    </extension>
    <extension
