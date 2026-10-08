@@ -100,7 +100,22 @@ public class EvoGlobalContextMenuManager {
             return;
         }
 
-        // Build context menu
+        Menu existingMenu = control.getMenu();
+        if (existingMenu != null && !existingMenu.isDisposed()) {
+            IMenuManager menuMgr = findMenuManager(control, existingMenu);
+            if (menuMgr != null) {
+                // Attach listener to existing JFace MenuManager to merge EVO context actions alongside default actions
+                attachEvoMenuListener(menuMgr, control);
+            } else {
+                // Attach SWT menu listener to existing SWT Menu to append EVO context actions
+                attachEvoSwtMenuListener(existingMenu, control);
+            }
+            // Do NOT suppress native/default menu - allow standard context menu to be shown
+            event.doit = true;
+            return;
+        }
+
+        // If no existing context menu, create and show standalone EVO context menu
         MenuManager menuMgr = new MenuManager("#EvoGlobalContextMenu");
         menuMgr.setRemoveAllWhenShown(true);
         menuMgr.addMenuListener(manager -> fillGlobalContextMenu(manager, control, event));
@@ -122,8 +137,95 @@ public class EvoGlobalContextMenuManager {
         menu.setLocation(mouseLoc);
         menu.setVisible(true);
 
-        // Suppress native popup to use standard unified EVO menu
+        // Suppress native popup since no standard menu existed and standalone EVO menu was created
         event.doit = false;
+    }
+
+    public IMenuManager findMenuManager(Control control, Menu menu) {
+        if (menu != null && !menu.isDisposed()) {
+            Object data = menu.getData();
+            if (data instanceof IMenuManager) {
+                return (IMenuManager) data;
+            }
+            Object mgrData = menu.getData("org.eclipse.jface.action.MenuManager");
+            if (mgrData instanceof IMenuManager) {
+                return (IMenuManager) mgrData;
+            }
+        }
+        if (control != null && !control.isDisposed()) {
+            Object data = control.getData();
+            if (data instanceof IMenuManager) {
+                return (IMenuManager) data;
+            }
+            Object mgrData = control.getData("org.eclipse.jface.action.MenuManager");
+            if (mgrData instanceof IMenuManager) {
+                return (IMenuManager) mgrData;
+            }
+        }
+        return null;
+    }
+
+    private void attachEvoMenuListener(IMenuManager manager, Control control) {
+        if (Boolean.TRUE.equals(control.getData("EVO_MENU_LISTENER_ADDED"))) {
+            return;
+        }
+        control.setData("EVO_MENU_LISTENER_ADDED", Boolean.TRUE);
+
+        manager.addMenuListener(m -> fillEvoContextMenuSection(m, control));
+    }
+
+    private void attachEvoSwtMenuListener(Menu menu, Control control) {
+        if (Boolean.TRUE.equals(menu.getData("EVO_SWT_LISTENER_ADDED"))) {
+            return;
+        }
+        menu.setData("EVO_SWT_LISTENER_ADDED", Boolean.TRUE);
+
+        menu.addMenuListener(new org.eclipse.swt.events.MenuAdapter() {
+            @Override
+            public void menuShown(org.eclipse.swt.events.MenuEvent e) {
+                fillEvoSwtMenuItems(menu, control);
+            }
+        });
+    }
+
+    private void fillEvoSwtMenuItems(Menu menu, Control control) {
+        if (Boolean.TRUE.equals(menu.getData("EVO_SWT_POPULATED"))) {
+            return;
+        }
+        menu.setData("EVO_SWT_POPULATED", Boolean.TRUE);
+
+        MenuManager tempMgr = new MenuManager();
+        fillEvoContextMenuSection(tempMgr, control);
+        tempMgr.fill(menu, -1);
+    }
+
+    /**
+     * Appends the EVO platform context section (EVO_SECTION, Process actions, AI smart proposals, Quick navigation)
+     * onto an existing MenuManager alongside default/standard context actions.
+     */
+    public void fillEvoContextMenuSection(IMenuManager manager, Control control) {
+        if (manager.find("EVO_SECTION") != null) {
+            return;
+        }
+
+        manager.add(new Separator("EVO_SECTION"));
+
+        String controlType = (control != null) ? control.getClass().getSimpleName() : "Control";
+        IWorkbenchPart activePart = getActivePart();
+        String partName = (activePart != null) ? activePart.getTitle() : "Workbench";
+
+        Action headerAction = new Action("EVO Platform [" + partName + " • " + controlType + "]") {};
+        headerAction.setEnabled(false);
+        manager.add(headerAction);
+
+        manager.add(new Separator("PROCESS"));
+        addProcessAndSessionActions(manager, control);
+
+        manager.add(new Separator("AI_ASSIST"));
+        addAiSmartProposals(manager, control);
+
+        manager.add(new Separator("NAVIGATION"));
+        addQuickNavigationActions(manager);
     }
 
     /**
