@@ -146,12 +146,25 @@ public class ForgeSettingsDialog extends Dialog {
         return 8.0;
     }
 
-    public static double getHardwareThroughputBytesPerSec(String modelSize) {
-        double complexity = getModelComplexityFactor(modelSize);
+    public static double getModelParameterCount(String modelSize) {
+        String s = modelSize != null ? modelSize.toUpperCase() : "SMALL";
+        if (s.contains("NANO")) return 500_000.0;
+        if (s.contains("MICRO")) return 2_000_000.0;
+        if (s.contains("MINI")) return 8_000_000.0;
+        if (s.contains("SMALL")) return 25_000_000.0;
+        if (s.contains("MEDIUM")) return 75_000_000.0;
+        if (s.contains("LARGE") && !s.contains("XLARGE")) return 200_000_000.0;
+        if (s.contains("XLARGE")) return 500_000_000.0;
+        return 25_000_000.0;
+    }
+
+    public static double getBaselineTokensPerSecond(String modelSize) {
+        double params = getModelParameterCount(modelSize);
         int cores = getCpuCores();
-        double coreScaling = Math.pow(cores, 0.75);
-        double baseRatePerCore = 250_000.0;
-        return (baseRatePerCore * coreScaling) / complexity;
+        double flopsPerCore = 600_000_000.0; // ~600 MFLOPs/sec effective per CPU core for Transformer forward+backward
+        double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.2); // diminishing returns on multi-core CPU
+        double flopsPerToken = 6.0 * params; // Standard LLM training FLOPs estimate = 6 * parameters per token
+        return Math.max(100.0, totalFlops / flopsPerToken);
     }
 
     public static long calculatePathSize(String path) {
@@ -161,17 +174,25 @@ public class ForgeSettingsDialog extends Dialog {
             if (!f.exists()) return 0;
             if (f.isFile()) return f.length();
             if (f.isDirectory()) {
-                long total = 0;
-                File[] files = f.listFiles();
-                if (files != null) {
-                    for (File child : files) {
-                        if (child.isFile()) total += child.length();
-                    }
-                }
-                return total;
+                return calculateDirectorySizeRecursive(f);
             }
         } catch (Exception ex) {}
         return 0;
+    }
+
+    private static long calculateDirectorySizeRecursive(File dir) {
+        long total = 0;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File child : files) {
+                if (child.isFile()) {
+                    total += child.length();
+                } else if (child.isDirectory()) {
+                    total += calculateDirectorySizeRecursive(child);
+                }
+            }
+        }
+        return total;
     }
 
     public long calculateTotalDatasetBytes() {
@@ -189,14 +210,22 @@ public class ForgeSettingsDialog extends Dialog {
         return totalBytes;
     }
 
+    public long estimateTotalTrainingTokens() {
+        long datasetBytes = calculateTotalDatasetBytes();
+        long tokensPerByte = 4L; // ~1 token per 4 bytes of text/json
+        long estimatedDatasetTokens = Math.max(250L, datasetBytes / tokensPerByte);
+        return estimatedDatasetTokens * Math.max(1, selectedEpochs);
+    }
+
     public double getEstimatedForgingSeconds() {
         return calculateEstimatedForgingSeconds(selectedModelSize, selectedEpochs, calculateTotalDatasetBytes());
     }
 
     public static double calculateEstimatedForgingSeconds(String modelSize, int epochs, long datasetBytes) {
-        double bytesPerSec = getHardwareThroughputBytesPerSec(modelSize);
-        long totalBytesToProcess = Math.max(1000L, datasetBytes) * Math.max(1, epochs);
-        return totalBytesToProcess / bytesPerSec;
+        long estimatedDatasetTokens = Math.max(250L, datasetBytes / 4L);
+        long totalTokensToTrain = estimatedDatasetTokens * Math.max(1, epochs);
+        double tokPerSec = getBaselineTokensPerSecond(modelSize);
+        return totalTokensToTrain / tokPerSec;
     }
 
     public static String formatDuration(double seconds) {
@@ -218,9 +247,10 @@ public class ForgeSettingsDialog extends Dialog {
         long totalBytes = calculateTotalDatasetBytes();
         if (totalBytes <= 0) return false;
 
-        double bytesPerSec = getHardwareThroughputBytesPerSec(selectedModelSize);
-        double maxBytesToProcess = targetHours * 3600.0 * bytesPerSec;
-        double targetDatasetBytesPerEpoch = maxBytesToProcess / Math.max(1, selectedEpochs);
+        double tokPerSec = getBaselineTokensPerSecond(selectedModelSize);
+        double maxTokensToTrain = targetHours * 3600.0 * tokPerSec;
+        double targetDatasetTokensPerEpoch = maxTokensToTrain / Math.max(1, selectedEpochs);
+        double targetDatasetBytesPerEpoch = targetDatasetTokensPerEpoch * 4.0;
 
         long unscaledTotal = 0;
         for (DatasetItem item : datasetItems) {
@@ -236,7 +266,8 @@ public class ForgeSettingsDialog extends Dialog {
         double scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
         if (scaleFactor < 0.05 && selectedEpochs > 4) {
             selectedEpochs = Math.max(4, selectedEpochs / 2);
-            targetDatasetBytesPerEpoch = maxBytesToProcess / selectedEpochs;
+            targetDatasetTokensPerEpoch = maxTokensToTrain / selectedEpochs;
+            targetDatasetBytesPerEpoch = targetDatasetTokensPerEpoch * 4.0;
             scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
         }
 
@@ -246,7 +277,8 @@ public class ForgeSettingsDialog extends Dialog {
                 long fullSize = calculatePathSize(item.getPath());
                 if (fullSize <= 0) fullSize = 50 * 1024 * 1024L;
                 long targetItemBytes = (long) (fullSize * scaleFactor);
-                item.setRecordLimit(Math.max(10, targetItemBytes / 200));
+                long targetItemTokens = targetItemBytes / 4L;
+                item.setRecordLimit(Math.max(10, targetItemTokens / 50L));
             }
         }
         return true;
@@ -1213,8 +1245,9 @@ public class ForgeSettingsDialog extends Dialog {
         if (estTimeLabel != null && !estTimeLabel.isDisposed()) {
             double estSec = getEstimatedForgingSeconds();
             long bytes = calculateTotalDatasetBytes();
-            estTimeLabel.setText(String.format("Target Data Size: %.2f MB | Computed Forging Time: %s",
-                bytes / (1024.0 * 1024.0), formatDuration(estSec)));
+            long tokens = estimateTotalTrainingTokens();
+            estTimeLabel.setText(String.format("Data: %.2f MB | Training Tokens: %.2f M | Estimated Time: %s",
+                bytes / (1024.0 * 1024.0), tokens / 1_000_000.0, formatDuration(estSec)));
         }
     }
 
