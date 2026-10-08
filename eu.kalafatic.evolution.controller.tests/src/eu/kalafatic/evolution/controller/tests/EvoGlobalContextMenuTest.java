@@ -63,4 +63,69 @@ public class EvoGlobalContextMenuTest {
             shell.dispose();
         });
     }
+
+    @Test
+    public void testEvoContextMenuSectionAppendedToExistingMenuManager() {
+        Display display = Display.getDefault();
+        if (display == null) {
+            return;
+        }
+
+        display.syncExec(() -> {
+            Shell shell = new Shell(display);
+            Text textControl = new Text(shell, SWT.MULTI);
+
+            EvoGlobalContextMenuManager manager = EvoGlobalContextMenuManager.getInstance();
+
+            // Create a mock default context menu with standard Git actions
+            MenuManager defaultGitMenuMgr = new MenuManager();
+            org.eclipse.jface.action.Action gitCommitAction = new org.eclipse.jface.action.Action("Git Commit...") {};
+            gitCommitAction.setId("git.commit");
+            org.eclipse.jface.action.Action gitPushAction = new org.eclipse.jface.action.Action("Git Push...") {};
+            gitPushAction.setId("git.push");
+
+            defaultGitMenuMgr.add(gitCommitAction);
+            defaultGitMenuMgr.add(gitPushAction);
+
+            // Verify initial state: standard Git actions present
+            assertNotNull("Git Commit action present", defaultGitMenuMgr.find("git.commit"));
+            assertNotNull("Git Push action present", defaultGitMenuMgr.find("git.push"));
+
+            // Append EVO context menu section
+            manager.fillEvoContextMenuSection(defaultGitMenuMgr, textControl);
+
+            // Verify both standard Git actions AND EVO context actions are present
+            assertNotNull("Git Commit action preserved", defaultGitMenuMgr.find("git.commit"));
+            assertNotNull("Git Push action preserved", defaultGitMenuMgr.find("git.push"));
+            assertNotNull("EVO section separator present", defaultGitMenuMgr.find("EVO_SECTION"));
+            assertNotNull("AI Smart Assistance submenu present", defaultGitMenuMgr.find("ai_smart_assistance"));
+            assertNotNull("Quick Navigation submenu present", defaultGitMenuMgr.find("quick_navigation"));
+
+            shell.dispose();
+        });
+    }
+
+    @Test
+    public void testFindMenuManagerFromExistingMenu() {
+        Display display = Display.getDefault();
+        if (display == null) {
+            return;
+        }
+
+        display.syncExec(() -> {
+            Shell shell = new Shell(display);
+            Text textControl = new Text(shell, SWT.MULTI);
+
+            EvoGlobalContextMenuManager manager = EvoGlobalContextMenuManager.getInstance();
+
+            MenuManager menuMgr = new MenuManager("#TestMenu");
+            org.eclipse.swt.widgets.Menu contextMenu = menuMgr.createContextMenu(textControl);
+            textControl.setMenu(contextMenu);
+
+            org.eclipse.jface.action.IMenuManager found = manager.findMenuManager(textControl, contextMenu);
+            assertNotNull("Should resolve IMenuManager from context menu", found);
+
+            shell.dispose();
+        });
+    }
 }
