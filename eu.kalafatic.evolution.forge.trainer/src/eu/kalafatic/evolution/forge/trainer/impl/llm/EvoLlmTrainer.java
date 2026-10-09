@@ -90,6 +90,7 @@ public class EvoLlmTrainer {
 
     public TrainingResult train(List<?> rawSamples, int epochs) {
         long startTime = System.currentTimeMillis();
+        this.stopRequested = false;
         TrainingResult result = new TrainingResult();
         result.setPlannedEpochs(epochs);
 
@@ -219,6 +220,7 @@ public class EvoLlmTrainer {
                 long epochStartTime = System.currentTimeMillis();
 
                 int optStep = epoch * stepsPerEpoch;
+                int actualCompletedSteps = 0;
                 boolean epochStoppedEarly = false;
 
                 for (int bIdx = 0; bIdx < batches.size(); bIdx += accumulationSteps) {
@@ -275,6 +277,7 @@ public class EvoLlmTrainer {
                     epochValidTokens += windowValidTokens;
 
                     optimizer.step(paramGroups, maxGradNorm);
+                    actualCompletedSteps++;
 
                     totalProcessedTokens += windowValidTokens;
 
@@ -325,7 +328,7 @@ public class EvoLlmTrainer {
                 model.getTrainingState().setLastLoss((float) avgTrainLoss);
 
                 result.setCompletedEpochs(epoch + 1);
-                result.setCompletedSteps(optStep);
+                result.setCompletedSteps(actualCompletedSteps);
                 result.setLastLoss(avgTrainLoss);
                 result.setValLoss(avgValLoss);
 
