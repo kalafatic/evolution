@@ -838,6 +838,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		}
 	}
 
+	public void updateContextualHelp(eu.kalafatic.evolution.controller.orchestration.ContextualHelpService.ContextualHelpResult result) {
+		if (contextPage != null && !contextPage.isDisposed()) {
+			contextPage.updateContextualHelp(result);
+		}
+	}
+
 	/**
 	 * Nested text editor that explicitly delegates its undo context to the parent
 	 * MultiPageEditor. This ensures that document changes in the text editor are

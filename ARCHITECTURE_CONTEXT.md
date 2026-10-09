@@ -9,6 +9,39 @@ This file provides an LLM navigation map for mediated reasoning.
 * **Trajectory**: Lineage, signals, and historical memory.
 * **Execution**: Deterministic scheduling and budget control.
 
+## Contextual Help & Live Process Awareness Architecture Map
+
+### Existing Subsystems & Reused Components
+* **Memory Subsystem**:
+  * `eu.kalafatic.evolution.controller.memory.MemoryService`: Central singleton thread-safe persistent CRUD store managing `user_memory.json` in `${WORKSPACE}/shared/memory/`.
+  * `eu.kalafatic.evolution.controller.memory.MemoryEntry`: Memory model (`id`, `content`, `scope`, `type`, `source`, `importance`, `confidence`, `associatedId`, timestamps).
+  * `eu.kalafatic.evolution.controller.memory.MemoryQuery`: Query specification for filtering by scope, type, source, associatedId, minImportance, search text, and result limit.
+  * `eu.kalafatic.evolution.controller.memory.MemoryContextProvider`: Formats retrieved memory records into prompt context blocks.
+  * `eu.kalafatic.evolution.view.editors.pages.context.UserMemoryGroup`: SWT UI component for Memory inspection, creation, deletion, and search.
+* **EVO Bus & Event Subsystem**:
+  * `eu.kalafatic.evolution.controller.workflow.RuntimeEventBus`: Session-scoped throttled event dispatch bus (`sessionId`).
+  * `eu.kalafatic.evolution.controller.workflow.RuntimeEvent`: Event object with type, session ID, source, payload, timestamp, and metadata map.
+  * `eu.kalafatic.evolution.controller.workflow.RuntimeEventType`: Categorized enum (`KERNEL_*`, `FLOW_*`, `AGENT_*`, `TASK_STARTED`, `TASK_COMPLETED`, `TASK_FAILED`, `FORGE_TRAINING_*`, `SUPERVISOR_*`, `VIEW_UPDATED`).
+  * `eu.kalafatic.evolution.controller.orchestration.SessionContainer`: Holds session-scoped `RuntimeEventBus` instances (`session.getEventBus()`).
+* **Process & Task Execution Infrastructure**:
+  * `eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevOrchestrator`: Task queue and execution loop manager.
+  * `eu.kalafatic.evolution.controller.orchestration.TaskContext`: Holds active session context, task state, project root, and execution logs.
+  * `eu.kalafatic.evolution.controller.orchestration.OrchestrationStatusManager`: Tracks progress fractions and live status text by orchestrator ID.
+  * `eu.kalafatic.evolution.controller.workflow.RuntimeContextCollector`: Listens to `RuntimeEventBus` and maintains session-specific workflow state map.
+* **Selection & Workbench UI Infrastructure**:
+  * `eu.kalafatic.evolution.view.editors.MultiPageEditor`: Main editor container managing page lifecycle and workbench selection listener registration.
+  * `eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener`: Implements Eclipse `ISelectionListener` to capture workbench selection events (`IStructuredSelection`, `ITextSelection`).
+  * `eu.kalafatic.evolution.view.editors.pages.ContextPage`: Composite editor page containing context and memory UI groups (`UserMemoryGroup`, `BestPracticesGroup`, `NeuronContextGroup`).
+* **Prompt Assembly & Cognitive Assistance**:
+  * `eu.kalafatic.evolution.controller.orchestration.ContextBuilder`: Assembles `ContextPackage` from task, workspace scope, attachments, and memory context.
+  * `eu.kalafatic.evolution.controller.orchestration.ContextAssistant`: Intent analyzer mapping user prompts to platform modes.
+
+### Genuine Gaps & Target Extensions
+1. **`ContextSnapshot`**: Immutable snapshot capturing UI selection (part, element, EObject, file, selection type), active session, live running process state, and retrieved Memory records.
+2. **`ContextProcessTracker`**: Implements `RuntimeEventListener` to listen to `RuntimeEventBus` process lifecycle events (`TASK_STARTED`, `TASK_COMPLETED`, `TASK_FAILED`, `STEP_*`, `FORGE_TRAINING_*`, `FLOW_*`), maintaining live process state per session.
+3. **`ContextualHelpService`**: Central engine that resolves context snapshots, queries `MemoryService` using derived queries, checks process-selection correlation, and synthesizes 3-level help (Selection Help, Process Awareness, Cognitive Assistance) with debouncing, async execution, and stale snapshot cancellation.
+4. **`ContextualHelpGroup`**: SWT UI composite in `ContextPage` displaying current selection, live process status, evidence-backed assistance, Memory inspection/saving, and Auto-Help controls with UI-thread safety.
+
 ## High-Importance Components
 * `C:\Users\petrk\git\evolution\eu.kalafatic.evolution.controller\src\eu\kalafatic\evolution\controller\mediation\model\Subsystem.java`: package eu.kalafatic.evolution.controller.mediation.model; import java.util.ArrayList; import java.util.List; public class Subsystem { private String id; private String name; private String purpose; private String description; private List<String> boundaries = new ArrayList<>(); // major interfaces/boundaries private List<String> criticalFiles = new ArrayList<>(); // paths to critical files private List<String> responsibilities = new ArrayList<>(); private List<String> uncertainty = new ArrayList<>(); private String rationale; private double confidence; private int discoveryIteration; public Subsystem() {} public Subsystem(String id, String name) { this.id = id; this.name = name; }
 * `C:\Users\petrk\git\evolution\eu.kalafatic.evolution.model\src\eu\kalafatic\evolution\model\orchestration\impl\ChatSessionImpl.java`: package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.ChatMessage; import eu.kalafatic.evolution.model.orchestration.ChatSession; import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage; import java.util.Collection; import org.eclipse.emf.common.notify.Notification; import org.eclipse.emf.common.notify.NotificationChain; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EClass; import org.eclipse.emf.ecore.InternalEObject; import org.eclipse.emf.ecore.impl.ENotificationImpl; import org.eclipse.emf.ecore.impl.MinimalEObjectImpl; import org.eclipse.emf.ecore.util.EObjectContainmentEList; import org.eclipse.emf.ecore.util.InternalEList;
