@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -20,50 +22,95 @@ public class CreateEvoProjectTask extends AbstractSelfDevTask {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
 
-        int port = context.getEffectiveServerPort();
+        int serverPort = context.getEffectiveServerPort();
+        int supervisorPort = context.getEffectiveSupervisorPort();
+        int[] portsToTry = (serverPort != supervisorPort) ? new int[] { serverPort, supervisorPort } : new int[] { serverPort };
+
         String projectName = "SelfDevProject";
-        String spec = "http://127.0.0.1:" + port + "/server/project/create";
+        String body = "{\"name\":\"" + projectName + "\"}";
+        byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
 
         long startTime = System.currentTimeMillis();
-        try {
-            URL url = new URL(spec);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(10000);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
+        Exception lastException = null;
 
-            String body = "{\"name\":\"" + projectName + "\"}";
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
-            }
+        for (int port : portsToTry) {
+            String spec = "http://127.0.0.1:" + port + "/server/project/create";
+            logInfo("Creating EVO project via HTTP endpoint: " + spec);
 
-            int code = conn.getResponseCode();
-            StringBuilder responseBuffer = new StringBuilder();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                    code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    responseBuffer.append(line).append("\n");
+            for (int attempt = 1; attempt <= 3; attempt++) {
+                logInfo("Attempt " + attempt + "/3 on port " + port);
+                try {
+                    URL url = new URL(spec);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(10000);
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("Content-Length", String.valueOf(bodyBytes.length));
+                    conn.setFixedLengthStreamingMode(bodyBytes.length);
+                    conn.setDoOutput(true);
+
+                    try (OutputStream os = conn.getOutputStream()) {
+                        os.write(bodyBytes);
+                        os.flush();
+                    }
+
+                    int code = conn.getResponseCode();
+                    StringBuilder responseBuffer = new StringBuilder();
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                            code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream(), StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            responseBuffer.append(line).append("\n");
+                        }
+                    }
+
+                    String respText = responseBuffer.toString().trim();
+                    logInfo("HTTP Response Code: " + code + ", Body: " + respText);
+                    long duration = System.currentTimeMillis() - startTime;
+
+                    if (code == 200 && (respText.contains("\"status\":\"OK\"") || respText.contains("\"status\": \"OK\"") || respText.contains(projectName))) {
+                        return new TaskResult.Builder(id)
+                                .status(TaskStatus.SUCCESS)
+                                .message("EVO Project '" + projectName + "' created successfully via HTTP endpoint on port " + port)
+                                .duration(duration)
+                                .diagnostic("port", String.valueOf(port))
+                                .diagnostic("response", respText)
+                                .build();
+                    } else {
+                        lastException = new RuntimeException("HTTP " + code + ": " + respText);
+                    }
+                } catch (Exception e) {
+                    lastException = e;
+                    logError("Attempt " + attempt + " failed on port " + port + ": " + e.getMessage(), e);
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
-
-            String respText = responseBuffer.toString().trim();
-            long duration = System.currentTimeMillis() - startTime;
-            if (code == 200 && (respText.contains("\"status\":\"OK\"") || respText.contains("\"status\": \"OK\"") || respText.contains("SelfDevProject"))) {
-                return new TaskResult.Builder(id)
-                        .status(TaskStatus.SUCCESS)
-                        .message("EVO Project '" + projectName + "' created successfully via HTTP endpoint on port " + port)
-                        .duration(duration)
-                        .diagnostic("response", respText)
-                        .build();
-            } else {
-                return TaskResult.failure(id, "Failed to create EVO Project: HTTP " + code + " - " + respText, null);
-            }
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            return TaskResult.failure(id, "HTTP connection error during project creation on port " + port + ": " + e.getMessage(), e);
         }
+
+        long duration = System.currentTimeMillis() - startTime;
+        String errMsg = "HTTP connection error during project creation on port " + serverPort + ": " +
+                (lastException != null ? lastException.getMessage() : "All attempts failed");
+
+        StringWriter sw = new StringWriter();
+        if (lastException != null) {
+            lastException.printStackTrace(new PrintWriter(sw));
+        }
+
+        return new TaskResult.Builder(id)
+                .status(TaskStatus.FAILED)
+                .message(errMsg)
+                .duration(duration)
+                .error(lastException)
+                .diagnostic("serverPort", String.valueOf(serverPort))
+                .diagnostic("supervisorPort", String.valueOf(supervisorPort))
+                .diagnostic("stackTrace", sw.toString())
+                .build();
     }
 }

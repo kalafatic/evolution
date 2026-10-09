@@ -176,11 +176,21 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                 logTaskStep("END SUCCESS", recordedResult.getMessage());
             } else {
                 logTaskStep("END FAILED", recordedResult.getMessage());
+                if (recordedResult.getError() != null) {
+                    logError("Task [" + id + "] execution failed with exception stack trace:", recordedResult.getError());
+                }
                 if (recordedResult.getCommand() != null) {
                     logTaskStep("command", recordedResult.getCommand());
                 }
                 if (recordedResult.getLogFile() != null) {
                     logTaskStep("logFile", recordedResult.getLogFile().getAbsolutePath());
+                }
+                if (recordedResult.getDiagnostics() != null && !recordedResult.getDiagnostics().isEmpty()) {
+                    logTaskStep("DIAGNOSTICS", "--- Detailed Diagnostics Start ---");
+                    for (var entry : recordedResult.getDiagnostics().entrySet()) {
+                        logTaskStep("  " + entry.getKey(), String.valueOf(entry.getValue()));
+                    }
+                    logTaskStep("DIAGNOSTICS", "--- Detailed Diagnostics End ---");
                 }
             }
 
@@ -193,7 +203,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
         } catch (Throwable t) {
             long duration = System.currentTimeMillis() - startTime;
             status = TaskStatus.FAILED;
-            logError("<<< Task [" + id + "] threw exception: " + t.getMessage(), t);
+            logError("<<< Task [" + id + "] threw uncaught exception: " + t.getMessage(), t);
 
             TaskResult errResult = new TaskResult.Builder(id)
                     .status(TaskStatus.FAILED)
@@ -204,6 +214,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
             logTaskStep("STATE", status.name());
             logTaskStep("END FAILED", errResult.getMessage());
+            logError("Task [" + id + "] uncaught exception stack trace:", t);
 
             if (context != null) {
                 context.recordTaskResult(errResult);
@@ -253,12 +264,15 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
     protected void logError(String message) {
         System.err.println("[" + getClass().getSimpleName() + "] " + message);
+        System.out.println("[" + getClass().getSimpleName() + "] " + message);
     }
 
     protected void logError(String message, Throwable t) {
         System.err.println("[" + getClass().getSimpleName() + "] " + message);
+        System.out.println("[" + getClass().getSimpleName() + "] " + message);
         if (t != null) {
-            t.printStackTrace();
+            t.printStackTrace(System.err);
+            t.printStackTrace(System.out);
         }
     }
 }

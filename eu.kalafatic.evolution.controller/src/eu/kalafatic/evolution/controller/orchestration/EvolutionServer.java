@@ -355,61 +355,95 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetDatasetReport(session);
             }
         } catch (Exception e) {
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
-                new JSONObject().put("error", e.getMessage()).toString());
+            System.err.println("[EvolutionServer] Error serving endpoint [" + method + " " + uri + "]: " + e.getMessage());
+            System.out.println("[EvolutionServer] Error serving endpoint [" + method + " " + uri + "]: " + e.getMessage());
+            e.printStackTrace(System.err);
+            e.printStackTrace(System.out);
+
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+
+            JSONObject errJson = new JSONObject();
+            errJson.put("error", e.getMessage());
+            errJson.put("stackTrace", sw.toString());
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", errJson.toString());
         }
 
         return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not Found");
     }
 
     private Response handleCreateTask(IHTTPSession session) throws IOException, ResponseException {
-        Map<String, String> files = new HashMap<>();
-        session.parseBody(files);
-        String postData = files.get("postData");
-        JSONObject json = new JSONObject(postData);
+        try {
+            Map<String, String> files = new HashMap<>();
+            session.parseBody(files);
+            String postData = files.get("postData");
+            if (postData == null || postData.trim().isEmpty()) {
+                postData = session.getQueryParameterString();
+            }
+            if (postData == null || postData.trim().isEmpty()) {
+                postData = "{}";
+            }
+            JSONObject json = new JSONObject(postData);
 
-        TaskRequest request = new TaskRequest();
-        request.setPrompt(json.getString("prompt"));
+            TaskRequest request = new TaskRequest();
+            request.setPrompt(json.optString("prompt", "hi"));
 
-        String sid = json.optString("sessionId", null);
-        if (sid != null && !sid.isEmpty()) {
-            request.getContext().put("sessionId", sid);
-            eu.kalafatic.evolution.controller.orchestration.mutation.MutationSession mutSession =
-                eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance().getSession(sid);
-            if (mutSession != null) {
-                request.setProjectRoot(mutSession.getWorkspaceDir());
+            String sid = json.optString("sessionId", null);
+            if (sid != null && !sid.isEmpty()) {
+                request.getContext().put("sessionId", sid);
+                eu.kalafatic.evolution.controller.orchestration.mutation.MutationSession mutSession =
+                    eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance().getSession(sid);
+                if (mutSession != null) {
+                    request.setProjectRoot(mutSession.getWorkspaceDir());
+                } else {
+                    request.setProjectRoot(new File(json.optString("projectRoot", System.getProperty("user.dir"))));
+                }
             } else {
                 request.setProjectRoot(new File(json.optString("projectRoot", System.getProperty("user.dir"))));
             }
-        } else {
-            request.setProjectRoot(new File(json.optString("projectRoot", System.getProperty("user.dir"))));
-        }
 
-        if (json.has("model")) {
-            request.getContext().put("model", json.getString("model"));
-        }
-        if (json.has("branch")) {
-            request.getContext().put("branch", json.getString("branch"));
-        }
+            if (json.has("model")) {
+                request.getContext().put("model", json.getString("model"));
+            }
+            if (json.has("branch")) {
+                request.getContext().put("branch", json.getString("branch"));
+            }
 
-        if (sid != null && !sid.isEmpty()) {
-            OrchestratorServiceImpl.getInstance().submit(sid, request);
+            System.out.println("[EvolutionServer] [CREATE_TASK] Prompt=" + request.getPrompt() + ", SessionId=" + sid);
+
+            if (sid != null && !sid.isEmpty()) {
+                OrchestratorServiceImpl.getInstance().submit(sid, request);
+                JSONObject jsonRes = new JSONObject();
+                jsonRes.put("status", "SUCCESS");
+                jsonRes.put("summary", "Inference task submitted");
+                jsonRes.put("sessionId", sid);
+                jsonRes.put("prompt", request.getPrompt());
+                return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
+            }
+
+            OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
+
             JSONObject jsonRes = new JSONObject();
-            jsonRes.put("status", "SUCCESS");
-            jsonRes.put("summary", "Inference task submitted");
-            jsonRes.put("sessionId", sid);
-            jsonRes.put("prompt", request.getPrompt());
+            jsonRes.put("summary", response.getSummary());
+            jsonRes.put("type", response.getResultType().toString());
+            if (response.getContent() != null) jsonRes.put("content", response.getContent());
+
             return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
+        } catch (Exception e) {
+            System.err.println("[EvolutionServer] [CREATE_TASK_ERROR] " + e.getMessage());
+            System.out.println("[EvolutionServer] [CREATE_TASK_ERROR] " + e.getMessage());
+            e.printStackTrace(System.err);
+            e.printStackTrace(System.out);
+
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+
+            JSONObject errJson = new JSONObject();
+            errJson.put("status", "ERROR");
+            errJson.put("error", e.getMessage());
+            errJson.put("stackTrace", sw.toString());
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", errJson.toString());
         }
-
-        OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
-
-        JSONObject jsonRes = new JSONObject();
-        jsonRes.put("summary", response.getSummary());
-        jsonRes.put("type", response.getResultType().toString());
-        if (response.getContent() != null) jsonRes.put("content", response.getContent());
-
-        return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
     }
 
     private Response handleGetTask(String id) {
