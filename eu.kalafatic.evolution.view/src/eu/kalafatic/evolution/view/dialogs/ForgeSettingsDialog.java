@@ -1142,8 +1142,9 @@ public class ForgeSettingsDialog extends Dialog {
             double estSec = getEstimatedForgingSeconds();
             long bytes = calculateTotalDatasetBytes();
             long tokens = estimateTotalTrainingTokens();
-            estTimeLabel.setText(String.format("Data: %.2f MB | Training Tokens: %.2f M | Estimated Time: %s",
-                bytes / (1024.0 * 1024.0), tokens / 1_000_000.0, formatDuration(estSec)));
+            double params = getModelParameterCount(selectedModelSize);
+            estTimeLabel.setText(String.format("Data: %.2f MB | Tokens: %.2f M | Model: %s (%.1fM params) | Est. Time: %s",
+                bytes / (1024.0 * 1024.0), tokens / 1_000_000.0, selectedModelSize, params / 1_000_000.0, formatDuration(estSec)));
         }
     }
 

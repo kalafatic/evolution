@@ -17,6 +17,13 @@ public class EvoLlmTrainer {
 
     public interface ProgressListener {
         void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss);
+
+        default void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                       long processedTokens, long totalTokens,
+                                       double tokensPerSec, double stepsPerSec,
+                                       double estimatedRemainingSeconds, double currentLoss) {
+            onProgress(epoch, totalEpochs, currentStep, totalSteps, currentLoss);
+        }
     }
 
     public enum TrainingProfile {
@@ -162,10 +169,31 @@ public class EvoLlmTrainer {
 
         lossHistory.clear();
 
+        long paramCount = model.parameters().stream().mapToLong(Tensor::getSize).sum();
+        result.getMetadata().put("trainingMode", "FROM_SCRATCH");
+        result.getMetadata().put("pretrainedWeights", false);
+        result.getMetadata().put("parameterCount", paramCount);
+        result.getMetadata().put("baseSeed", baseSeed);
+
+        System.out.printf("[EVO Trainer] Mode: FROM_SCRATCH | Pretrained Weights: FALSE | Parameters: %d | Base Seed: %d%n",
+                paramCount, baseSeed);
+
         List<TrainingBatch> initialBatches = buildBatches(trainSamples, microBatchSize);
         int stepsPerEpoch = (initialBatches.size() + accumulationSteps - 1) / accumulationSteps;
         int totalOptimizationSteps = epochs * stepsPerEpoch;
         result.setPlannedSteps(totalOptimizationSteps);
+
+        long epochTokenCount = 0;
+        for (TrainingSample sample : trainSamples) {
+            epochTokenCount += sample.inputIds.length;
+        }
+        long totalTokensToTrain = epochTokenCount * (long) epochs;
+        long totalProcessedTokens = 0;
+        long lastMeasurementTime = System.currentTimeMillis();
+        long windowStartTokens = 0;
+        int windowStartStep = 0;
+        double movingAvgTokPerSec = 0.0;
+        double movingAvgStepsPerSec = 0.0;
 
         try {
             for (int epoch = 0; epoch < epochs; epoch++) {
@@ -248,15 +276,43 @@ public class EvoLlmTrainer {
 
                     optimizer.step(paramGroups, maxGradNorm);
 
+                    totalProcessedTokens += windowValidTokens;
+
+                    long now = System.currentTimeMillis();
+                    long durationMs = now - lastMeasurementTime;
+                    if (durationMs >= 500) {
+                        long windowTokens = totalProcessedTokens - windowStartTokens;
+                        int windowSteps = optStep - windowStartStep;
+                        double curTokPerSec = (windowTokens * 1000.0) / Math.max(1, durationMs);
+                        double curStepsPerSec = (windowSteps * 1000.0) / Math.max(1, durationMs);
+
+                        if (movingAvgTokPerSec <= 0.0) {
+                            movingAvgTokPerSec = curTokPerSec;
+                            movingAvgStepsPerSec = curStepsPerSec;
+                        } else {
+                            movingAvgTokPerSec = 0.7 * movingAvgTokPerSec + 0.3 * curTokPerSec;
+                            movingAvgStepsPerSec = 0.7 * movingAvgStepsPerSec + 0.3 * curStepsPerSec;
+                        }
+
+                        lastMeasurementTime = now;
+                        windowStartTokens = totalProcessedTokens;
+                        windowStartStep = optStep;
+                    }
+
+                    long remainingTokens = Math.max(0, totalTokensToTrain - totalProcessedTokens);
+                    double remainingSec = movingAvgTokPerSec > 0.0 ? (remainingTokens / movingAvgTokPerSec) : 0.0;
+
                     if (progressListener != null) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
-                        int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
-                        progressListener.onProgress(epoch, epochs, sampleIndex, trainSamples.size(), currentLoss);
+                        progressListener.onProgressMetrics(epoch, epochs, optStep, totalOptimizationSteps,
+                                totalProcessedTokens, totalTokensToTrain,
+                                movingAvgTokPerSec, movingAvgStepsPerSec,
+                                remainingSec, currentLoss);
                     } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
                         int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
-                        System.out.printf("[EVO Trainer] Epoch %d/%d | Samples %d/%d | Batch Loss: %.4f%n",
-                                epoch + 1, epochs, sampleIndex, trainSamples.size(), currentLoss);
+                        System.out.printf("[EVO Trainer] Epoch %d/%d | Step %d/%d | Samples %d/%d | Loss: %.4f | Speed: %.1f tok/s | ETA: %.1f s%n",
+                                epoch + 1, epochs, optStep, totalOptimizationSteps, sampleIndex, trainSamples.size(), currentLoss, movingAvgTokPerSec, remainingSec);
                     }
                 }
 
@@ -296,6 +352,9 @@ public class EvoLlmTrainer {
         }
 
         result.setTrainingDurationMs(System.currentTimeMillis() - startTime);
+        result.getMetadata().put("totalTokensTrained", totalProcessedTokens);
+        result.getMetadata().put("tokensPerSecond", movingAvgTokPerSec);
+        result.getMetadata().put("stepsPerSecond", movingAvgStepsPerSec);
         this.lastResult = result;
         return result;
     }
