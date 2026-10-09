@@ -60,9 +60,33 @@ public class ForgeTrainingEstimationAgent {
         return Math.max(512, Runtime.getRuntime().maxMemory() / (1024 * 1024));
     }
 
+    public boolean isGpuAvailable() {
+        String cudaVis = System.getenv("CUDA_VISIBLE_DEVICES");
+        if (cudaVis != null && !cudaVis.trim().isEmpty() && !"-1".equals(cudaVis.trim())) {
+            return true;
+        }
+        String nvidiaVis = System.getenv("NVIDIA_VISIBLE_DEVICES");
+        if (nvidiaVis != null && !nvidiaVis.trim().isEmpty() && !"none".equals(nvidiaVis.trim())) {
+            return true;
+        }
+        String evoGpu = System.getProperty("evo.gpu");
+        if ("true".equalsIgnoreCase(evoGpu) || "1".equals(evoGpu)) {
+            return true;
+        }
+        try {
+            if (new File("/usr/bin/nvidia-smi").exists() ||
+                new File("/usr/local/cuda/bin/nvcc").exists() ||
+                new File("C:\\Windows\\System32\\nvidia-smi.exe").exists()) {
+                return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     public String getHardwareProfile() {
-        return String.format("CPU: %d Cores | JVM RAM: %d MB | OS: %s (%s)",
-            getCpuCores(), getMaxMemoryMb(), System.getProperty("os.name"), System.getProperty("os.arch"));
+        String gpuInfo = isGpuAvailable() ? " | GPU: CUDA Enabled" : " | GPU: CPU Fallback";
+        return String.format("CPU: %d Cores | JVM RAM: %d MB%s | OS: %s (%s)",
+            getCpuCores(), getMaxMemoryMb(), gpuInfo, System.getProperty("os.name"), System.getProperty("os.arch"));
     }
 
     public double getModelComplexityFactor(String sizeName) {
@@ -92,11 +116,24 @@ public class ForgeTrainingEstimationAgent {
 
     public double getBaselineTokensPerSecond(String modelSize) {
         double params = getModelParameterCount(modelSize);
-        int cores = getCpuCores();
-        double flopsPerCore = 600_000_000.0; // ~600 MFLOPs/sec effective per CPU core for Transformer forward+backward
-        double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.2); // diminishing returns on multi-core CPU
-        double flopsPerToken = 6.0 * params; // Standard LLM training FLOPs estimate = 6 * parameters per token
-        return Math.max(100.0, totalFlops / flopsPerToken);
+        if (isGpuAvailable()) {
+            double gpuFlops = 15_000_000_000_000.0; // ~15 TFLOPs effective for GPU accelerated training
+            double flopsPerToken = 6.0 * params;
+            return Math.max(500.0, Math.min(200_000.0, gpuFlops / flopsPerToken));
+        } else {
+            int cores = getCpuCores();
+            double flopsPerCore = 4_000_000_000.0; // ~4 GFLOPs/sec effective per core with SIMD
+            double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.15);
+            double flopsPerToken = 6.0 * params;
+            return Math.max(250.0, Math.min(50_000.0, totalFlops / flopsPerToken));
+        }
+    }
+
+    public double calculateRemainingSecondsFromMeasuredThroughput(long remainingTokens, double measuredTokensPerSecond) {
+        if (remainingTokens <= 0 || measuredTokensPerSecond <= 0.0) {
+            return 0.0;
+        }
+        return remainingTokens / measuredTokensPerSecond;
     }
 
     public double parseHoursOption(String textOption) {
