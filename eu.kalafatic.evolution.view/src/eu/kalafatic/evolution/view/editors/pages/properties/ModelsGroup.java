@@ -34,10 +34,13 @@ import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalResult;
+import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalService;
+import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalStatus;
+import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalStepResult;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
-import eu.kalafatic.evolution.controller.tools.ShellTool;
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -55,6 +58,17 @@ public class ModelsGroup extends AEvoGroup {
     private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
     private org.eclipse.swt.widgets.Text filterText;
     private String filterPattern = "";
+
+    private Button selectAllButton;
+    private Button deselectAllButton;
+    private Button reloadButton;
+    private Button testButton;
+    private Button useButton;
+    private Button addButton;
+    private Button downloadButton;
+    private Button editButton;
+    private Button removeButton;
+    private Button saveButton;
 
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
         super(editor, orchestrator);
@@ -123,7 +137,7 @@ public class ModelsGroup extends AEvoGroup {
         buttonBar.setLayout(new GridLayout(10, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
 
-        Button selectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Select All");
+        selectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Select All");
         selectAllButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -133,7 +147,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button deselectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Deselect All");
+        deselectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Deselect All");
         deselectAllButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -143,7 +157,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Reload");
+        reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Reload");
         reloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -153,7 +167,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button testButton = GUIFactory.INSTANCE.createButton(buttonBar, "Test Model");
+        testButton = GUIFactory.INSTANCE.createButton(buttonBar, "Test Model");
         testButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -161,7 +175,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button useButton = GUIFactory.INSTANCE.createButton(buttonBar, "Use");
+        useButton = GUIFactory.INSTANCE.createButton(buttonBar, "Use");
         useButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -169,7 +183,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button addButton = GUIFactory.INSTANCE.createButton(buttonBar, "Add");
+        addButton = GUIFactory.INSTANCE.createButton(buttonBar, "Add");
         addButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -177,7 +191,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button downloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Download");
+        downloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Download");
         downloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -185,7 +199,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button editButton = GUIFactory.INSTANCE.createButton(buttonBar, "Edit");
+        editButton = GUIFactory.INSTANCE.createButton(buttonBar, "Edit");
         editButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -193,7 +207,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button removeButton = GUIFactory.INSTANCE.createButton(buttonBar, "Remove");
+        removeButton = GUIFactory.INSTANCE.createButton(buttonBar, "Remove");
         removeButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -201,7 +215,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button saveButton = GUIFactory.INSTANCE.createButton(buttonBar, "Save to Model");
+        saveButton = GUIFactory.INSTANCE.createButton(buttonBar, "Save to Model");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -947,33 +961,17 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
-    private void deleteDirectoryRecursive(File file) {
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    deleteDirectoryRecursive(f);
-                }
-            }
-        }
-        file.delete();
-    }
-
-    private void deleteFileWithLockRelease(File file) {
-        if (file == null || !file.exists()) return;
-        if (file.isDirectory()) {
-            deleteDirectoryRecursive(file);
-            return;
-        }
-        if (!file.delete()) {
-            System.gc();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {}
-            if (!file.delete()) {
-                file.deleteOnExit();
-            }
-        }
+    private void setActionButtonsEnabled(boolean enabled) {
+        if (selectAllButton != null && !selectAllButton.isDisposed()) selectAllButton.setEnabled(enabled);
+        if (deselectAllButton != null && !deselectAllButton.isDisposed()) deselectAllButton.setEnabled(enabled);
+        if (reloadButton != null && !reloadButton.isDisposed()) reloadButton.setEnabled(enabled);
+        if (testButton != null && !testButton.isDisposed()) testButton.setEnabled(enabled);
+        if (useButton != null && !useButton.isDisposed()) useButton.setEnabled(enabled);
+        if (addButton != null && !addButton.isDisposed()) addButton.setEnabled(enabled);
+        if (downloadButton != null && !downloadButton.isDisposed()) downloadButton.setEnabled(enabled);
+        if (editButton != null && !editButton.isDisposed()) editButton.setEnabled(enabled);
+        if (removeButton != null && !removeButton.isDisposed()) removeButton.setEnabled(enabled);
+        if (saveButton != null && !saveButton.isDisposed()) saveButton.setEnabled(enabled);
     }
 
     private void handleRemoveModel() {
@@ -985,253 +983,51 @@ public class ModelsGroup extends AEvoGroup {
             return;
         }
 
-        AIProvider firstProvider = selectedModels.iterator().next();
-        String ollamaUrl = getModelUrl(firstProvider);
-        if (ollamaUrl.isEmpty()) {
-            ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
-        }
-        OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
+        setActionButtonsEnabled(false);
 
-        List<String> terminalCommands = new ArrayList<>();
+        CompletableFuture.supplyAsync(() -> {
+            return ModelRemovalService.getInstance().removeModels(orchestrator, selectedModels);
+        }).thenAcceptAsync(results -> {
+            if (viewer == null || viewer.getControl().isDisposed()) return;
 
-        for (AIProvider item : selectedModels) {
-            String modelName = item.getName();
-            if (modelName == null || modelName.isEmpty()) continue;
-
-            String tempBaseName = modelName;
-            if (tempBaseName.startsWith("demo/")) {
-                tempBaseName = tempBaseName.substring(5);
-            }
-            if (tempBaseName.toLowerCase().endsWith(".evo")) {
-                tempBaseName = tempBaseName.substring(0, tempBaseName.length() - 4);
-            } else if (tempBaseName.toLowerCase().endsWith(".gguf")) {
-                tempBaseName = tempBaseName.substring(0, tempBaseName.length() - 5);
-            }
-            final String baseName = tempBaseName;
-
-            // 1. Delete direct file or directory from item.getUrl() if valid
-            if (item.getUrl() != null && !item.getUrl().isEmpty()) {
-                File directFile = new File(item.getUrl());
-                if (directFile.exists()) {
-                    deleteFileWithLockRelease(directFile);
-                }
-            }
-
-            if (item.isLocal()) {
-                // 2. Unload model from Ollama RAM/VRAM
-                if (service != null) {
-                    try {
-                        service.unloadModel(modelName);
-                        if (!modelName.equals(baseName)) {
-                            service.unloadModel(baseName);
-                        }
-                    } catch (Exception ignored) {}
-                }
-
-                // 3. Delete main path resolved via getModelPath
-                String mainPath = getModelPath(item);
-                if (mainPath != null && !mainPath.isEmpty()) {
-                    File mainFile = new File(mainPath);
-                    deleteFileWithLockRelease(mainFile);
-                }
-
-                // 4. Delete GGUF / .evo files in default Ollama directory
-                File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
-                if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
-                    deleteFileWithLockRelease(new File(ollamaHomeModelsDir, modelName + ".gguf"));
-                    deleteFileWithLockRelease(new File(ollamaHomeModelsDir, baseName + ".gguf"));
-                    deleteFileWithLockRelease(new File(ollamaHomeModelsDir, baseName + ".evo"));
-                    if ("evo".equalsIgnoreCase(baseName)) {
-                        deleteFileWithLockRelease(new File(ollamaHomeModelsDir, "evo.gguf"));
-                    }
-                }
-
-                // 5. Delete GGUF files in controller models folder and llama-cpp lib folder
-                File controllerModelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
-                if (controllerModelsDir != null && controllerModelsDir.exists()) {
-                    deleteFileWithLockRelease(new File(controllerModelsDir, modelName + ".gguf"));
-                    deleteFileWithLockRelease(new File(controllerModelsDir, baseName + ".gguf"));
-                    deleteFileWithLockRelease(new File(controllerModelsDir, baseName + ".evo"));
-                    if ("evo".equalsIgnoreCase(baseName)) {
-                        deleteFileWithLockRelease(new File(controllerModelsDir, "evo.gguf"));
-                    }
-                }
-                File llamaCppDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveLlamaCppLibDir();
-                if (llamaCppDir != null && llamaCppDir.exists()) {
-                    deleteFileWithLockRelease(new File(llamaCppDir, modelName + ".gguf"));
-                    deleteFileWithLockRelease(new File(llamaCppDir, baseName + ".gguf"));
-                    deleteFileWithLockRelease(new File(llamaCppDir, baseName + ".evo"));
-                    if ("evo".equalsIgnoreCase(baseName)) {
-                        deleteFileWithLockRelease(new File(llamaCppDir, "evo.gguf"));
-                    }
-                }
-
-                // 6. Delete GGUF / .evo files / source models
-                String codebasePath = ProjectModelManager.getCodebasePath();
-                if (codebasePath != null) {
-                    File sourceModelsDir = new File(codebasePath, "source/models");
-                    if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
-                        deleteFileWithLockRelease(new File(sourceModelsDir, modelName + ".gguf"));
-                        deleteFileWithLockRelease(new File(sourceModelsDir, baseName + ".gguf"));
-                        deleteFileWithLockRelease(new File(sourceModelsDir, baseName + ".evo"));
-                        if ("evo".equalsIgnoreCase(baseName)) {
-                            deleteFileWithLockRelease(new File(sourceModelsDir, "evo.gguf"));
-                        }
-                    }
-
-                    File distDir = new File(codebasePath, "dist");
-                    if (distDir.exists() && distDir.isDirectory()) {
-                        File[] subdirs = distDir.listFiles(File::isDirectory);
-                        if (subdirs != null) {
-                            for (File subdir : subdirs) {
-                                boolean matches = subdir.getName().equalsIgnoreCase(modelName) || subdir.getName().equalsIgnoreCase(baseName);
-                                if (!matches && (modelName.startsWith("evo-") || baseName.startsWith("evo-"))) {
-                                    String suffix = baseName.startsWith("evo-") ? baseName.substring(4) : baseName;
-                                    matches = subdir.getName().equalsIgnoreCase("forging-" + suffix);
-                                }
-                                if (matches) {
-                                    deleteDirectoryRecursive(subdir);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 7. Delete from forge-output folders across workspace and codebase
-                List<String> pathsToCheck = new ArrayList<>();
-                String workspacePath = ProjectModelManager.getWorkspacePath();
-                if (workspacePath != null) pathsToCheck.add(workspacePath);
-                if (codebasePath != null && !codebasePath.equals(workspacePath)) pathsToCheck.add(codebasePath);
-                String userDir = System.getProperty("user.dir");
-                if (userDir != null && !userDir.equals(workspacePath) && !userDir.equals(codebasePath)) pathsToCheck.add(userDir);
-
-                for (String basePath : pathsToCheck) {
-                    File forgeOutputDir = new File(basePath, "forge-output");
-                    if (forgeOutputDir.exists() && forgeOutputDir.isDirectory()) {
-                        deleteFileWithLockRelease(new File(forgeOutputDir, baseName + ".evo"));
-                        deleteFileWithLockRelease(new File(forgeOutputDir, baseName + ".gguf"));
-                        deleteFileWithLockRelease(new File(forgeOutputDir, modelName + ".evo"));
-                        deleteFileWithLockRelease(new File(forgeOutputDir, modelName + ".gguf"));
-                        File modelFolder = new File(forgeOutputDir, modelName);
-                        if (modelFolder.exists()) {
-                            deleteDirectoryRecursive(modelFolder);
-                        }
-                        File baseFolder = new File(forgeOutputDir, baseName);
-                        if (baseFolder.exists()) {
-                            deleteDirectoryRecursive(baseFolder);
-                        }
-                    }
-                }
-
-                // 8. Delete from demo folder if applicable
-                File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
-                if (demoDir.exists() && demoDir.isDirectory()) {
-                    deleteFileWithLockRelease(new File(demoDir, baseName + ".gguf"));
-                    deleteFileWithLockRelease(new File(demoDir, modelName + ".gguf"));
-                }
-
-                // 9. Unregister from Ollama via HTTP API
-                if (service != null) {
-                    try {
-                        service.deleteModel(modelName);
-                        if (!modelName.equals(baseName)) {
-                            service.deleteModel(baseName);
-                        }
-                    } catch (Exception ignored) {}
-                }
-
-                if (orchestrator != null) {
-                    AIProvider realProvider = orchestrator.getAiProviders().stream()
-                            .filter(p -> p.getName().equalsIgnoreCase(modelName) || p.getName().equalsIgnoreCase(baseName))
-                            .findFirst().orElse(null);
-
-                    if (realProvider != null) {
-                        orchestrator.getAiProviders().remove(realProvider);
-                        editor.setDirty(true);
-                    }
-                    if (modelName.equalsIgnoreCase(orchestrator.getLocalModel()) || baseName.equalsIgnoreCase(orchestrator.getLocalModel())) {
-                        ProjectModelManager.getInstance().updateLocalModel(orchestrator, "");
-                        editor.setDirty(true);
-                    }
-                }
-
-                // Queue ollama rm CLI command as fallback
-                terminalCommands.add("ollama rm " + modelName);
-                if (!modelName.equals(baseName)) {
-                    terminalCommands.add("ollama rm " + baseName);
-                }
-            } else {
-                if (orchestrator != null) {
-                    AIProvider realProvider = orchestrator.getAiProviders().stream()
-                            .filter(p -> p.getName().equalsIgnoreCase(modelName) || p.getName().equalsIgnoreCase(baseName))
-                            .findFirst().orElse(null);
-
-                    if (realProvider != null) {
-                        orchestrator.getAiProviders().remove(realProvider);
-                        editor.setDirty(true);
-                    }
-                    if (modelName.equalsIgnoreCase(orchestrator.getRemoteModel()) || baseName.equalsIgnoreCase(orchestrator.getRemoteModel())) {
-                        ProjectModelManager.getInstance().updateRemoteModel(orchestrator, "");
-                        editor.setDirty(true);
-                    }
-                }
-            }
-        }
-
-        if (service != null) {
-            service.clearCache();
-            service.refreshModels();
-        }
-
-        if (!terminalCommands.isEmpty()) {
-            runTerminalCommands(terminalCommands, () -> {
-                if (service != null) {
-                    service.clearCache();
-                    service.refreshModels();
-                }
-                load();
-            });
-        } else {
+            setActionButtonsEnabled(true);
+            editor.setDirty(true);
             load();
-        }
-    }
 
-    private void runTerminalCommands(List<String> commands, Runnable onComplete) {
-        new Thread(() -> {
-            ShellTool shell = new ShellTool();
-            File workingDir = null;
-            if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
-                workingDir = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject()
-                        .getLocation().toFile();
-            }
-            StringBuilder combinedOutput = new StringBuilder();
-            boolean errorOccurred = false;
-            for (String cmd : commands) {
-                try {
-                    String output = shell.execute(cmd, workingDir, null);
-                    if (output != null) {
-                        combinedOutput.append(output).append("\n");
-                        String lower = output.toLowerCase();
-                        if (lower.contains("error:") || lower.contains("failed")) {
-                            errorOccurred = true;
-                        }
-                    }
-                } catch (Exception e) {
-                    errorOccurred = true;
-                    combinedOutput.append("Error executing ").append(cmd).append(": ").append(e.getMessage()).append("\n");
+            StringBuilder summary = new StringBuilder();
+            boolean hasPartialOrFailed = false;
+
+            for (ModelRemovalResult res : results) {
+                summary.append("• Model: ").append(res.getModelName())
+                        .append(" [").append(res.getModelType()).append("]\n")
+                        .append("  Status: ").append(res.getStatus()).append("\n");
+
+                if (res.getStatus() != ModelRemovalStatus.SUCCESS) {
+                    hasPartialOrFailed = true;
                 }
+
+                for (ModelRemovalStepResult step : res.getStepResults()) {
+                    summary.append("  - ").append(step.stepName()).append(": ")
+                            .append(step.success() ? "OK" : "FAILED").append(" (").append(step.message()).append(")\n");
+                }
+                summary.append("\n");
             }
-            final boolean finalError = errorOccurred;
-            final String finalOutput = combinedOutput.toString().trim();
+
+            if (hasPartialOrFailed) {
+                MessageDialog.openWarning(group.getShell(), "Model Removal Results",
+                        "One or more models were partially removed or failed to complete:\n\n" + summary.toString().trim());
+            } else {
+                MessageDialog.openInformation(group.getShell(), "Model Removal Completed",
+                        "All selected models were successfully removed:\n\n" + summary.toString().trim());
+            }
+        }, Display.getDefault()::asyncExec).exceptionally(ex -> {
             Display.getDefault().asyncExec(() -> {
-                if (finalError && !finalOutput.isEmpty()) {
-                    MessageDialog.openInformation(group.getShell(), "Terminal Output", finalOutput);
-                }
-                if (onComplete != null) {
-                    onComplete.run();
-                }
+                setActionButtonsEnabled(true);
+                MessageDialog.openError(group.getShell(), "Model Removal Error",
+                        "An unexpected error occurred during model removal: " + ex.getMessage());
             });
-        }).start();
+            return null;
+        });
     }
 
     @Override

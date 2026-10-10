@@ -28,6 +28,8 @@ public class OllamaService {
     private long lastModelRefresh = 0;
     private static final long CACHE_TTL = Duration.ofSeconds(15).toMillis();
 
+    public static record OllamaOperationResult(boolean success, int statusCode, String responseBody, String message, Exception exception) {}
+
     // Advanced options
     private float temperature = 0.7f;
     private int numPredict = 4096;
@@ -423,7 +425,13 @@ public class OllamaService {
      * Unloads a model from memory/VRAM by sending keep_alive: 0.
      */
     public boolean unloadModel(String modelName) {
-        if (modelName == null || modelName.isEmpty()) return false;
+        return unloadModelEx(modelName).success();
+    }
+
+    public OllamaOperationResult unloadModelEx(String modelName) {
+        if (modelName == null || modelName.isEmpty()) {
+            return new OllamaOperationResult(false, 400, "", "Model name is empty", null);
+        }
         try {
             String genUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/generate";
             JSONObject jsonObject = new JSONObject();
@@ -438,9 +446,11 @@ public class OllamaService {
                     .build();
 
             HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() == 200;
+            boolean ok = response.statusCode() == 200;
+            return new OllamaOperationResult(ok, response.statusCode(), response.body(),
+                    ok ? "Model unloaded successfully" : "Ollama unload failed with HTTP " + response.statusCode(), null);
         } catch (Exception e) {
-            return false;
+            return new OllamaOperationResult(false, -1, "", "Exception during unloadModel: " + e.getMessage(), e);
         }
     }
 
@@ -448,7 +458,13 @@ public class OllamaService {
      * Deletes a model from Ollama registry via HTTP DELETE /api/delete.
      */
     public boolean deleteModel(String modelName) {
-        if (modelName == null || modelName.isEmpty()) return false;
+        return deleteModelEx(modelName).success();
+    }
+
+    public OllamaOperationResult deleteModelEx(String modelName) {
+        if (modelName == null || modelName.isEmpty()) {
+            return new OllamaOperationResult(false, 400, "", "Model name is empty", null);
+        }
         try {
             String deleteUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/delete";
             JSONObject jsonObject = new JSONObject();
@@ -462,10 +478,14 @@ public class OllamaService {
                     .build();
 
             HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+            boolean ok = response.statusCode() == 200;
+            clearCache();
             refreshModels();
-            return response.statusCode() == 200;
+            return new OllamaOperationResult(ok, response.statusCode(), response.body(),
+                    ok ? "Model deleted successfully from Ollama" : "Ollama delete failed with HTTP " + response.statusCode(), null);
         } catch (Exception e) {
-            return false;
+            clearCache();
+            return new OllamaOperationResult(false, -1, "", "Exception during deleteModel: " + e.getMessage(), e);
         }
     }
 
