@@ -37,6 +37,7 @@ public class TaskStackPage extends AEvoPage {
 
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
+    private FunctionalityInventoryGroup functionalityInventoryGroup;
     private List<Task> executionQueue = new ArrayList<>();
     private List<Task> activeTasks = new ArrayList<>();
 
@@ -74,10 +75,10 @@ public class TaskStackPage extends AEvoPage {
         setContent(body);
 
         taskStackGroup = new TaskStackGroup(toolkit, body, editor, orchestrator, this);
+        functionalityInventoryGroup = new FunctionalityInventoryGroup(toolkit, body, editor, orchestrator, this);
         globalActionsGroup = new GlobalActionsGroup(toolkit, body, editor, orchestrator, this);
 
         setOrchestrator(orchestrator);
-        // startTimer();
     }
 
     private String getSessionId(Task task) {
@@ -91,18 +92,18 @@ public class TaskStackPage extends AEvoPage {
     private void subscribeToTaskEvents(final Task task) {
         String sid = getSessionId(task);
         final SessionContainer session = SessionManager.getInstance().getOrCreateSession(sid);
-        
+
         RuntimeEventListener listener = new RuntimeEventListener() {
             @Override
             public void onEvent(RuntimeEvent event) {
                 if (event.getType() == RuntimeEventType.FLOW_COMPLETED ||
                     event.getType() == RuntimeEventType.TASK_COMPLETED) {
-                    
+
                     session.getEventBus().unsubscribe(this);
                     handleTaskFinished(task, true);
                 } else if (event.getType() == RuntimeEventType.TASK_FAILED ||
                            event.getType() == RuntimeEventType.COMMAND_FAILED) {
-                    
+
                     session.getEventBus().unsubscribe(this);
                     handleTaskFinished(task, false);
                 }
@@ -119,72 +120,9 @@ public class TaskStackPage extends AEvoPage {
         });
     }
 
-    private void startTimer() {
-        /*
-        Display.getDefault().timerExec(1000, new Runnable() {
-            @Override
-            public void run() {
-                if (isDisposed()) return;
-                checkAutoExecution();
-                updateUIFromModel();
-                Display.getDefault().timerExec(1000, this);
-            }
-        });
-        */
-    }
-
-    private void checkAutoExecution() {
-        /*
-        long now = System.currentTimeMillis();
-
-        // Count currently running tasks
-        long runningCount = orchestrator.getTasks().stream()
-                .filter(t -> t.getStatus() == TaskStatus.RUNNING)
-                .count();
-
-        for (Task task : orchestrator.getTasks()) {
-            if (task.getStatus() == TaskStatus.PENDING) {
-                Long execTime = autoExecuteTimes.get(task);
-                if (execTime == null) {
-                    autoExecuteTimes.put(task, now + AUTO_EXECUTION_DELAY_MS);
-                } else if (now >= execTime) {
-                    // Try to start it
-                    if (globalActionsGroup.isParallel()) {
-                        if (runningCount < MAX_PARALLEL_PLANS) {
-                            autoExecuteTimes.remove(task);
-                            runPlan(task);
-                            runningCount++; // Increment local count to prevent over-starting
-                        }
-                    } else {
-                        if (runningCount == 0) {
-                            autoExecuteTimes.remove(task);
-                            runPlan(task);
-                            runningCount++;
-                        }
-                    }
-                }
-            } else {
-                autoExecuteTimes.remove(task);
-            }
-        }
-        */
-    }
-
-    
     public String getCountdown(Task task) {
         return "";
-        /*
-        if (task.getStatus() != TaskStatus.PENDING) return "";
-        Long execTime = autoExecuteTimes.get(task);
-        if (execTime == null) return "";
-        long remaining = execTime - System.currentTimeMillis();
-        if (remaining <= 0) return "00:00";
-        long seconds = (remaining / 1000) % 60;
-        long minutes = (remaining / 1000) / 60;
-        return String.format("%02d:%02d", minutes, seconds);
-        */
     }
-
 
     @Override
     public void setVisible(boolean visible) {
@@ -213,6 +151,9 @@ public class TaskStackPage extends AEvoPage {
             taskStackGroup.getTreeViewer().setInput(orchestrator);
         }
         taskStackGroup.refreshUI();
+        if (functionalityInventoryGroup != null) {
+            functionalityInventoryGroup.refreshInventoryData();
+        }
         body.layout(true, true);
         this.setMinSize(body.computeSize(SWT.DEFAULT, SWT.DEFAULT));
         this.reflow(true);
@@ -289,7 +230,6 @@ public class TaskStackPage extends AEvoPage {
                 testPlan.setDescription(description);
                 testPlan.setPrompt(description);
 
-                // Configure BitState for PROMPT modes
                 if (mode.equals("PROMPT_CREATE_LOCAL")) {
                     testPlan.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_TASK_ORIENTED));
                     testPlan.setDarwinMode(true);
@@ -595,11 +535,11 @@ public class TaskStackPage extends AEvoPage {
         super.dispose();
     }
 
-    // Compatibility methods
-    public void registerTaskRow(Task task, org.eclipse.swt.widgets.Button check, org.eclipse.swt.widgets.Text nameText, org.eclipse.swt.widgets.Text timeText, org.eclipse.swt.widgets.Label statusLabel) {}
-    public void registerTaskRowCheck(Task task, org.eclipse.swt.widgets.Button check) {}
+    public TaskStackGroup getTaskStackGroup() {
+        return taskStackGroup;
+    }
 
-	public TaskStackGroup getTaskStackGroup() {
-		return taskStackGroup;
-	}
+    public FunctionalityInventoryGroup getFunctionalityInventoryGroup() {
+        return functionalityInventoryGroup;
+    }
 }
