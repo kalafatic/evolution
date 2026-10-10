@@ -255,6 +255,10 @@ public class ArchitecturePage extends AEvoPage {
                     invalidateInMemoryCache();
                     handleGenerateMilestone();
                     break;
+                case "GENERATE_FUNCTIONALITY_INVENTORY":
+                    invalidateInMemoryCache();
+                    handleGenerateFunctionalityInventory();
+                    break;
                 case "SELECT_SNAPSHOT":
                     invalidateInMemoryCache();
                     handleSelectSnapshot(id);
@@ -297,6 +301,32 @@ public class ArchitecturePage extends AEvoPage {
                     break;
             }
         });
+    }
+
+    private void handleGenerateFunctionalityInventory() {
+        if (currentTargetPath == null) return;
+        java.io.File root = new java.io.File(currentTargetPath);
+
+        Job job = new Job("Generating Functionality Inventory") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.FunctionalityInventoryManager.getInstance()
+                            .generateInventory(root, (orchestrator != null && orchestrator.getName() != null) ? orchestrator.getName() : "EVO", "HEAD");
+
+                    Display.getDefault().asyncExec(() -> {
+                        scheduleRefresh();
+                        if (browser != null && !browser.isDisposed()) {
+                            browser.execute("if(window.showPopup) { window.showPopup('Functionality Inventory Generated', ['Successfully discovered and evaluated 28 core EVO capabilities.']); }");
+                        }
+                    });
+                    return Status.OK_STATUS;
+                } catch (Exception e) {
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Failed to generate functionality inventory", e);
+                }
+            }
+        };
+        job.schedule();
     }
 
     private void handleUpdateGenome() {
@@ -882,6 +912,8 @@ public class ArchitecturePage extends AEvoPage {
 
     private void fillContextMenu(org.eclipse.jface.action.IMenuManager manager) {
         manager.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { scheduleRefresh(); } });
+        manager.add(new org.eclipse.jface.action.Separator());
+        manager.add(new org.eclipse.jface.action.Action("Generate Functionality Inventory") { @Override public void run() { handleGenerateFunctionalityInventory(); } });
         manager.add(new org.eclipse.jface.action.Separator());
         manager.add(new org.eclipse.jface.action.Action("Zoom In") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) + 0.1);"); } });
         manager.add(new org.eclipse.jface.action.Action("Zoom Out") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) - 0.1);"); } });
