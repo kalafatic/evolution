@@ -889,11 +889,36 @@ public class DevelopmentPage extends AEvoPage {
 						result = "FAIL: " + taskRes.getMessage();
 						failed = true;
 					}
+
+					if (failed && taskRes != null) {
+						if (taskRes.getError() != null) {
+							System.err.println("[DevelopmentPage] [RUN_DEBUG_STEP_EXCEPTION] Task [" + row.taskId + "] failed with exception:");
+							System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP_EXCEPTION] Task [" + row.taskId + "] failed with exception:");
+							taskRes.getError().printStackTrace(System.err);
+							taskRes.getError().printStackTrace(System.out);
+
+							java.io.StringWriter sw = new java.io.StringWriter();
+							taskRes.getError().printStackTrace(new java.io.PrintWriter(sw));
+							result += "\n\nStack Trace:\n" + sw.toString();
+						}
+						if (taskRes.getDiagnostics() != null && !taskRes.getDiagnostics().isEmpty()) {
+							result += "\n\nDiagnostics:\n";
+							for (var entry : taskRes.getDiagnostics().entrySet()) {
+								result += entry.getKey() + ": " + entry.getValue() + "\n";
+							}
+						}
+					}
 				} catch (Exception e) {
 					System.err.println("[DevelopmentPage] [RUN_DEBUG_STEP_ERROR] Exception in execution of phase "
 							+ row.name + " (" + row.taskId + "): " + e.getMessage());
-					e.printStackTrace();
-					result = "ERROR: " + e.getMessage();
+					System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP_ERROR] Exception in execution of phase "
+							+ row.name + " (" + row.taskId + "): " + e.getMessage());
+					e.printStackTrace(System.err);
+					e.printStackTrace(System.out);
+
+					java.io.StringWriter sw = new java.io.StringWriter();
+					e.printStackTrace(new java.io.PrintWriter(sw));
+					result = "ERROR: " + e.getMessage() + "\n\nStack Trace:\n" + sw.toString();
 					failed = true;
 				}
 				final String finalResult = result;
