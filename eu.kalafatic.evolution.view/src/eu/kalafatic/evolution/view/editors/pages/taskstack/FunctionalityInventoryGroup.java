@@ -57,6 +57,7 @@ public class FunctionalityInventoryGroup {
     private Button btnEdit;
     private Button btnAnalyze;
     private Button btnRefactor;
+    private org.eclipse.swt.widgets.Combo modeCombo;
 
     public FunctionalityInventoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TaskStackPage page) {
         this.editor = editor;
@@ -142,7 +143,7 @@ public class FunctionalityInventoryGroup {
     private void createActionsGroup(FormToolkit toolkit, Composite parent) {
         actionsGroup = new Group(parent, SWT.NONE);
         actionsGroup.setText("Inventory Management & Isolated AI Session Actions");
-        actionsGroup.setLayout(new GridLayout(8, false));
+        actionsGroup.setLayout(new GridLayout(10, false));
         actionsGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         if (toolkit != null) toolkit.adapt(actionsGroup);
 
@@ -165,21 +166,25 @@ public class FunctionalityInventoryGroup {
         btnUnselectAll.addListener(SWT.Selection, e -> setAllSelected(false));
 
         btnEdit = new Button(actionsGroup, SWT.PUSH);
-        btnEdit.setText("Edit Selected Functionality...");
+        btnEdit.setText("Edit Selected...");
         btnEdit.setEnabled(false);
         btnEdit.addListener(SWT.Selection, e -> handleEditSelectedRow());
 
         Button btnRefresh = new Button(actionsGroup, SWT.PUSH);
-        btnRefresh.setText("Generate / Refresh Inventory");
+        btnRefresh.setText("Refresh Inventory");
         btnRefresh.addListener(SWT.Selection, e -> handleRefreshInventory());
 
+        GUIFactory.INSTANCE.createLabel(actionsGroup, "AI Mode:");
+        modeCombo = GUIFactory.INSTANCE.createCombo(actionsGroup, new String[] { "SELF_DEV_MODE", "MEDIATED_MODE", "INTENT_MODE", "DARWIN_MODE" });
+        modeCombo.select(0);
+
         btnAnalyze = new Button(actionsGroup, SWT.PUSH);
-        btnAnalyze.setText("Analyze Selected in New AI Session");
+        btnAnalyze.setText("Analyze in AI Session");
         btnAnalyze.setEnabled(false);
         btnAnalyze.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("ANALYZE"));
 
         btnRefactor = new Button(actionsGroup, SWT.PUSH);
-        btnRefactor.setText("Refactor Selected in New AI Session");
+        btnRefactor.setText("Refactor in AI Session");
         btnRefactor.setEnabled(false);
         btnRefactor.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("REFACTOR"));
     }
@@ -408,6 +413,8 @@ public class FunctionalityInventoryGroup {
         if (selectedEntries == null || selectedEntries.isEmpty()) return;
 
         File repoRoot = resolveRepoRoot();
+        String selectedAiModeStr = (modeCombo != null && !modeCombo.isDisposed()) ? modeCombo.getText() : "SELF_DEV_MODE";
+
         String newSessionId = "func-session-" + System.currentTimeMillis();
         SessionContainer newSession = SessionManager.getInstance().getOrCreateSession(newSessionId);
 
@@ -418,7 +425,9 @@ public class FunctionalityInventoryGroup {
         }
 
         StringBuilder prompt = new StringBuilder();
-        prompt.append("[").append(mode).append(" MODE] Isolated AI Session Context for Selected Capabilities:\n\n");
+        prompt.append("[AI COMMANDER INSTRUCTIONS - ").append(selectedAiModeStr).append("]\n");
+        prompt.append("Selected AI Mode: ").append(selectedAiModeStr).append("\n");
+        prompt.append("Action Mode: ").append(mode).append("\n\n");
 
         for (FunctionalityEntry e : selectedEntries) {
             prompt.append("=== FUNCTIONALITY: ").append(e.name).append(" (ID: ").append(e.id).append(") ===\n");
@@ -426,6 +435,13 @@ public class FunctionalityInventoryGroup {
             prompt.append("Module: ").append(e.module).append("\n");
             prompt.append("Source Path: ").append(e.sourcePath).append("\n");
             prompt.append("Status: ").append(e.status).append("\n");
+            prompt.append("Importance: ").append(e.importance).append("\n");
+            prompt.append("Usage: ").append(e.usage).append("\n");
+            prompt.append("Complexity: ").append(e.complexity).append("\n");
+            prompt.append("References: ").append(e.references).append("\n");
+            prompt.append("Maturity: ").append(e.maturity).append("\n");
+            prompt.append("Risk: ").append(e.risk).append("\n");
+            prompt.append("Overall Score: ").append(e.calculateOverallScore()).append("\n");
             prompt.append("Rationale: ").append(e.rationale).append("\n");
             prompt.append("Description: ").append(e.description).append("\n\n");
 
@@ -444,12 +460,30 @@ public class FunctionalityInventoryGroup {
             }
         }
 
+        prompt.append("Task Instructions:\n");
+        if ("REFACTOR".equals(mode)) {
+            prompt.append("Propose concrete refactoring steps, modularization enhancements, or risk mitigations based on the source code and evaluation scores.");
+        } else {
+            prompt.append("Provide a comprehensive architectural analysis, dependency review, and correctness assessment for the primary classes above.");
+        }
+
         Task newTask = OrchestrationFactory.eINSTANCE.createTask();
         newTask.setId(newSessionId);
-        newTask.setName("[" + mode + "] " + selectedEntries.get(0).name);
+        newTask.setName("[" + selectedAiModeStr + " - " + mode + "] " + selectedEntries.get(0).name);
         newTask.setPrompt(prompt.toString());
-        newTask.setDescription("Isolated " + mode + " session for " + selectedEntries.size() + " functionalities");
+        newTask.setDescription("Isolated " + selectedAiModeStr + " session for " + selectedEntries.size() + " functionalities");
+        newTask.setType(selectedAiModeStr);
         newTask.setStatus(TaskStatus.READY);
+
+        if ("SELF_DEV_MODE".equals(selectedAiModeStr)) {
+            newTask.setSelfIterativeMode(true);
+            newTask.setDarwinMode(true);
+        } else if ("DARWIN_MODE".equals(selectedAiModeStr)) {
+            newTask.setDarwinMode(true);
+        } else if ("MEDIATED_MODE".equals(selectedAiModeStr)) {
+            newTask.setDarwinMode(true);
+            newTask.setIterativeMode(true);
+        }
 
         if (orchestrator != null) {
             orchestrator.getTasks().add(newTask);
