@@ -514,6 +514,40 @@ public class DatasetAcquisitionAndSizeTest {
         assertTrue("Loaded code must preserve tab indentation and line endings", loadedSample.getResponse().contains("\t\treturn a + b;\n"));
     }
 
+    @Test
+    public void testCodeGenericsAndXmlPreservedInCleaning() throws Exception {
+        DataCleaner cleaner = new DataCleaner();
+        String codeText = "List<String> list = new ArrayList<String>();\nif (x < 10 && y > 5) { return true; }";
+        NormalizedSample codeSample = new NormalizedSample(TrainingSampleType.CODE, codeText);
+
+        NormalizedSample cleaned = cleaner.clean(codeSample);
+        assertNotNull("Cleaned code sample must not be null", cleaned);
+        assertTrue("Code generics <String> must be preserved without HTML stripping", cleaned.toFullText().contains("<String>"));
+    }
+
+    @Test
+    public void testControlCharactersStrippedInCleaner() throws Exception {
+        DataCleaner cleaner = new DataCleaner();
+        String noisyText = "Valid text with \u0000null byte and \u0007bell character and \uFFFD replacement char.";
+        NormalizedSample sample = new NormalizedSample(TrainingSampleType.TEXT, noisyText);
+
+        NormalizedSample cleaned = cleaner.clean(sample);
+        assertNotNull("Cleaned sample must not be null", cleaned);
+        assertFalse("Unprintable control chars and replacement chars must be stripped", cleaned.toFullText().contains("\u0000"));
+        assertFalse("Unprintable control chars and replacement chars must be stripped", cleaned.toFullText().contains("\uFFFD"));
+    }
+
+    @Test
+    public void testPathologicalRepeatingWordsPenalized() throws Exception {
+        TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(0.5);
+        String repeatingText = "The word spam spam spam spam spam spam spam spam spam spam spam spam spam repeats forever.";
+        NormalizedSample sample = new NormalizedSample(TrainingSampleType.TEXT, repeatingText);
+
+        double score = scorer.calculateQualityScore(sample);
+        assertTrue("Pathological repeating words should be heavily penalized", score < 0.5);
+        assertFalse("Sample with repeating word loop should not be accepted", scorer.isAcceptable(sample));
+    }
+
     private List<NormalizedSample> createSampleBatch(int count, String prefix) {
         List<NormalizedSample> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
