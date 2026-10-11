@@ -11,5 +11,6 @@ public enum PlatformType {
     HYBRID_MANUAL_EXPORT,
     INTENT_RECONSTRUCTION,
     FORGE,
-    MUTATION
+    MUTATION,
+    DREAM_MODE
 }

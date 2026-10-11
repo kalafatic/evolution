@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.dream.DreamEngine;
 
 /**
  * Factory for creating the appropriate Darwin engine based on mode.
@@ -29,6 +30,8 @@ public class DarwinEngineFactory {
                 return new IntentReconstructionEngine(context, memoryService, stateProvider);
             case MUTATION:
                 return new MutationEngine(context, memoryService, stateProvider);
+            case DREAM_MODE:
+                return new DreamEngine(context, memoryService, stateProvider);
             default:
                 context.log("[FACTORY] Unknown mode: " + platformType + ". Defaulting to TASK.");
                 return new DarwinEngine(context, memoryService, stateProvider);
