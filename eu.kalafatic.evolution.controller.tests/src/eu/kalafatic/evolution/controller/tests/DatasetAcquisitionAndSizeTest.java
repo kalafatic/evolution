@@ -433,6 +433,87 @@ public class DatasetAcquisitionAndSizeTest {
         assertEquals("Coverage percent must be based on usable content vs target minimum", expectedCoverage, result.getCoveragePercent(), 0.01);
     }
 
+    @Test
+    public void testEvodataStructuredMetadataAndBackwardCompatibility() throws Exception {
+        File artifactFile = new File(tempFolder.getRoot(), "structured_meta.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
+
+        List<NormalizedSample> samples = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            samples.add(NormalizedSample.createTextSample("Sample content #" + i, "src"));
+        }
+
+        DatasetSourceConfig config = new DatasetSourceConfig("EVO_CODEBASE", "eu.kalafatic.evolution");
+        DatasetSourceStats stats = new DatasetSourceStats();
+        stats.setRequestedUsableBytes(50000);
+        stats.setAcceptedBytes(10000);
+        stats.setDownloadedBytes(12000);
+
+        artifact.save(samples, config, stats, 0.10);
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(artifactFile);
+        assertNotNull("Loaded artifact stats should be populated", loaded.getTrainSamples());
+        assertEquals("Train samples count should match 9 (90% of 10)", 9, loaded.getTrainSamples().size());
+        assertEquals("Validation samples count should match 1 (10% of 10)", 1, loaded.getValSamples().size());
+    }
+
+    @Test
+    public void testEvodataZipSlipProtection() throws Exception {
+        File zipSlipFile = new File(tempFolder.getRoot(), "zip_slip.evodata");
+        long fixedTimestamp = 1704067200000L;
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipSlipFile), java.nio.charset.StandardCharsets.UTF_8)) {
+            java.util.zip.ZipEntry maliciousEntry = new java.util.zip.ZipEntry("../malicious.txt");
+            maliciousEntry.setTime(fixedTimestamp);
+            zos.putNextEntry(maliciousEntry);
+            zos.write("Malicious payload".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zos.closeEntry();
+
+            java.util.zip.ZipEntry validEntry = new java.util.zip.ZipEntry("data.jsonl");
+            validEntry.setTime(fixedTimestamp);
+            zos.putNextEntry(validEntry);
+            zos.write("{\"type\":\"TEXT\",\"text\":\"Valid sample text\"}\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            zos.closeEntry();
+        }
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(zipSlipFile);
+        assertNotNull("Artifact should load safely without Zip Slip vulnerability", loaded);
+        assertEquals("Should load 1 train sample from valid entry", 1, loaded.getTrainSamples().size());
+    }
+
+    @Test
+    public void testEvodataSampleFieldCompatibilityAndIdPreservation() throws Exception {
+        File artifactFile = new File(tempFolder.getRoot(), "sample_compat.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
+
+        NormalizedSample sample = NormalizedSample.createTextSample("Test sample text with ID", "test_source");
+        sample.setId("custom-sample-id-123");
+        sample.setQualityScore(0.95);
+
+        artifact.save(List.of(sample), new DatasetSourceConfig("LOCAL", "test"), new DatasetSourceStats(), 0.0);
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(artifactFile);
+        assertEquals("Should contain 1 training sample", 1, loaded.getTrainSamples().size());
+        NormalizedSample loadedSample = loaded.getTrainSamples().get(0);
+        assertEquals("Sample ID should be preserved across round-trip", "custom-sample-id-123", loadedSample.getId());
+        assertEquals("Quality score should be preserved", 0.95, loadedSample.getQualityScore(), 0.001);
+    }
+
+    @Test
+    public void testEvodataWhitespaceAndIndentationPreservation() throws Exception {
+        File artifactFile = new File(tempFolder.getRoot(), "whitespace_code.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
+
+        String javaCode = "public class Calculator {\n\tpublic int add(int a, int b) {\n\t\treturn a + b;\n\t}\n}";
+        NormalizedSample sample = NormalizedSample.createInstructionSample("Write Calculator", javaCode, "java_source");
+
+        artifact.save(List.of(sample), new DatasetSourceConfig("LOCAL", "code"), new DatasetSourceStats(), 0.0);
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(artifactFile);
+        assertEquals("Should contain 1 training sample", 1, loaded.getTrainSamples().size());
+        NormalizedSample loadedSample = loaded.getTrainSamples().get(0);
+        assertTrue("Loaded code must preserve tab indentation and line endings", loadedSample.getResponse().contains("\t\treturn a + b;\n"));
+    }
+
     private List<NormalizedSample> createSampleBatch(int count, String prefix) {
         List<NormalizedSample> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
