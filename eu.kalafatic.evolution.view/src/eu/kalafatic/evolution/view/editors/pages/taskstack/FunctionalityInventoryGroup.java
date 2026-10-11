@@ -38,10 +38,11 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class FunctionalityInventoryGroup {
 
-    private Group mainGroup;
+    private Composite mainContainer;
     private Group tableGroup;
     private Group actionsGroup;
 
@@ -62,14 +63,11 @@ public class FunctionalityInventoryGroup {
         this.orchestrator = orchestrator;
         this.page = page;
 
-        mainGroup = new Group(parent, SWT.NONE);
-        mainGroup.setText("Functionality Intelligence Subsystem");
-        mainGroup.setLayout(new GridLayout(1, false));
-        mainGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
-        if (toolkit != null) toolkit.adapt(mainGroup);
+        mainContainer = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Functionality Intelligence Subsystem", 1, true, false);
+        mainContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        createTableGroup(toolkit, mainGroup);
-        createActionsGroup(toolkit, mainGroup);
+        createTableGroup(toolkit, mainContainer);
+        createActionsGroup(toolkit, mainContainer);
 
         refreshInventoryData();
     }
