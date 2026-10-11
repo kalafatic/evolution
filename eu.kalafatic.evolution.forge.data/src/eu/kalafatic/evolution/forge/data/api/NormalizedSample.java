@@ -202,6 +202,9 @@ public class NormalizedSample {
     public String toJsonLine() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
+        if (id != null) {
+            sb.append("\"id\":\"").append(escapeJson(id)).append("\",");
+        }
         sb.append("\"type\":\"").append(type.name()).append("\",");
         sb.append("\"text\":\"").append(escapeJson(toFullText())).append("\",");
 

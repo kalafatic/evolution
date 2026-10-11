@@ -98,30 +98,39 @@ public class EvoDatasetArtifact {
 
         // Write to temporary archive first (transactional semantics)
         File tempFile = new File(artifactFile.getAbsolutePath() + ".tmp");
+        long fixedTimestamp = 1704067200000L; // Deterministic zip entry timestamp
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(tempFile), StandardCharsets.UTF_8)) {
 
             // 1. data.jsonl
-            zos.putNextEntry(new ZipEntry("data.jsonl"));
+            ZipEntry zeData = new ZipEntry("data.jsonl");
+            zeData.setTime(fixedTimestamp);
+            zos.putNextEntry(zeData);
             for (NormalizedSample s : trainSamples) {
                 zos.write((s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8));
             }
             zos.closeEntry();
 
             // 2. val_data.jsonl
-            zos.putNextEntry(new ZipEntry("val_data.jsonl"));
+            ZipEntry zeVal = new ZipEntry("val_data.jsonl");
+            zeVal.setTime(fixedTimestamp);
+            zos.putNextEntry(zeVal);
             for (NormalizedSample s : valSamples) {
                 zos.write((s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8));
             }
             zos.closeEntry();
 
             // 3. metadata.json
-            zos.putNextEntry(new ZipEntry("metadata.json"));
+            ZipEntry zeMeta = new ZipEntry("metadata.json");
+            zeMeta.setTime(fixedTimestamp);
+            zos.putNextEntry(zeMeta);
             String metaJson = buildMetadataJson();
             zos.write(metaJson.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
 
             // 4. report.txt
-            zos.putNextEntry(new ZipEntry("report.txt"));
+            ZipEntry zeReport = new ZipEntry("report.txt");
+            zeReport.setTime(fixedTimestamp);
+            zos.putNextEntry(zeReport);
             String reportText = buildReportText();
             zos.write(reportText.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
@@ -168,7 +177,13 @@ public class EvoDatasetArtifact {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 String name = entry.getName();
-                if ("metadata.json".equals(name)) {
+                // Security check against Zip Slip path traversal
+                if (name == null || name.contains("..") || name.startsWith("/") || name.contains("\\..") || name.contains("../")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                String normalizedName = new File(name).getName();
+                if ("metadata.json".equals(normalizedName)) {
                     byte[] entryBytes = zis.readAllBytes();
                     String metaStr = new String(entryBytes, StandardCharsets.UTF_8);
                     try {
@@ -180,18 +195,33 @@ public class EvoDatasetArtifact {
                             } catch (Exception ignored) {}
                         }
                         artifact.stats = new DatasetSourceStats();
-                        artifact.stats.setRequestedUsableBytes(metaJson.optLong("requestedUsableBytes", 0));
-                        artifact.stats.setAcceptedBytes(metaJson.optLong("actualUsableBytes", metaJson.optLong("acceptedBytes", 0)));
-                        artifact.stats.setDownloadedBytes(metaJson.optLong("downloadedBytes", 0));
-                        artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", 0));
-                        artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", 0));
-                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", 0));
-                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", 0));
-                        artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", 0));
+                        JSONObject statsObj = metaJson.optJSONObject("statistics");
+
+                        long req = metaJson.optLong("requestedUsableBytes", statsObj != null ? statsObj.optLong("requestedUsableBytes", 0) : 0);
+                        long actual = metaJson.optLong("actualUsableBytes", metaJson.optLong("acceptedBytes", statsObj != null ? statsObj.optLong("acceptedBytes", 0) : 0));
+                        long dl = metaJson.optLong("downloadedBytes", 0);
+
+                        JSONArray sourcesArray = metaJson.optJSONArray("sources");
+                        if (sourcesArray != null && sourcesArray.length() > 0) {
+                            JSONObject srcObj = sourcesArray.optJSONObject(0);
+                            if (srcObj != null) {
+                                if (dl == 0) dl = srcObj.optLong("downloadedBytes", 0);
+                                if (actual == 0) actual = srcObj.optLong("acceptedBytes", 0);
+                            }
+                        }
+
+                        artifact.stats.setRequestedUsableBytes(req);
+                        artifact.stats.setAcceptedBytes(actual);
+                        artifact.stats.setDownloadedBytes(dl);
+                        artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", actual));
+                        artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", dl));
+                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", statsObj != null ? statsObj.optLong("rejectedRecords", 0) : 0));
+                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", statsObj != null ? statsObj.optLong("duplicateRecords", 0) : 0));
+                        artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", statsObj != null ? statsObj.optLong("totalTrainingBytes", 0) : 0));
                         artifact.stats.setValidationBytes(metaJson.optLong("validationBytes", 0));
                     } catch (Exception ignored) {}
-                } else if ("data.jsonl".equals(name) || "val_data.jsonl".equals(name)) {
-                    boolean isVal = "val_data.jsonl".equals(name);
+                } else if ("data.jsonl".equals(normalizedName) || "val_data.jsonl".equals(normalizedName)) {
+                    boolean isVal = "val_data.jsonl".equals(normalizedName);
                     byte[] entryBytes = zis.readAllBytes();
                     String content = new String(entryBytes, StandardCharsets.UTF_8);
                     String[] lines = content.split("\n");
@@ -202,7 +232,11 @@ public class EvoDatasetArtifact {
                             try {
                                 JSONObject json = new JSONObject(trimmed);
                                 NormalizedSample sample = new NormalizedSample();
-                                sample.setType(TrainingSampleType.fromString(json.optString("type", "TEXT")));
+                                if (json.has("id") && !json.isNull("id")) {
+                                    sample.setId(json.optString("id"));
+                                }
+                                String typeStr = json.optString("type", json.optString("sampleType", "TEXT"));
+                                sample.setType(TrainingSampleType.fromString(typeStr));
                                 String inst = json.has("instruction") && !json.isNull("instruction") ? json.optString("instruction") : null;
                                 String resp = json.has("response") && !json.isNull("response") ? json.optString("response") : null;
                                 if (inst != null || resp != null) {
@@ -268,12 +302,46 @@ public class EvoDatasetArtifact {
     }
 
     private String buildMetadataJson() {
+        long now = System.currentTimeMillis();
+        long acceptedRecs = stats != null ? stats.getAcceptedRecords() : (trainSamples.size() + valSamples.size());
+        long rejectedRecs = stats != null ? stats.getRejectedRecords() : 0;
+        long duplicateRecs = stats != null ? stats.getDuplicateRecords() : 0;
+        long acceptedB = stats != null ? stats.getAcceptedBytes() : 0;
+        long downloadedB = stats != null ? stats.getDownloadedBytes() : 0;
+        long estTokens = stats != null && stats.getEstimatedTokens() > 0 ? stats.getEstimatedTokens() : (totalTrainTokens + totalValTokens);
+
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
-        sb.append("  \"name\": \"").append(name).append("\",\n");
+        sb.append("  \"formatVersion\": \"1.0\",\n");
+        sb.append("  \"datasetId\": \"").append(name != null ? name : "evodata").append("\",\n");
+        sb.append("  \"name\": \"").append(name != null ? name : "evodata").append("\",\n");
+        sb.append("  \"createdTimestamp\": ").append(now).append(",\n");
+        sb.append("  \"timestamp\": ").append(now).append(",\n");
         sb.append("  \"status\": \"").append(status.name()).append("\",\n");
         sb.append("  \"source\": \"").append(sourceConfig != null ? sourceConfig.getSourceType() : "UNKNOWN").append("\",\n");
         sb.append("  \"repository\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
+        sb.append("  \"sources\": [\n");
+        sb.append("    {\n");
+        sb.append("      \"sourceType\": \"").append(sourceConfig != null ? sourceConfig.getSourceType() : "UNKNOWN").append("\",\n");
+        sb.append("      \"target\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
+        sb.append("      \"downloadedBytes\": ").append(downloadedB).append(",\n");
+        sb.append("      \"acceptedBytes\": ").append(acceptedB).append("\n");
+        sb.append("    }\n");
+        sb.append("  ],\n");
+        sb.append("  \"statistics\": {\n");
+        sb.append("    \"totalSamples\": ").append(trainSamples.size() + valSamples.size()).append(",\n");
+        sb.append("    \"trainSamples\": ").append(trainSamples.size()).append(",\n");
+        sb.append("    \"valSamples\": ").append(valSamples.size()).append(",\n");
+        sb.append("    \"acceptedRecords\": ").append(acceptedRecs).append(",\n");
+        sb.append("    \"rejectedRecords\": ").append(rejectedRecs).append(",\n");
+        sb.append("    \"duplicateRecords\": ").append(duplicateRecs).append(",\n");
+        sb.append("    \"totalTrainingBytes\": ").append(stats != null ? stats.getTrainingBytes() + stats.getValidationBytes() : acceptedB).append(",\n");
+        sb.append("    \"estimatedTokens\": ").append(estTokens).append("\n");
+        sb.append("  },\n");
+        sb.append("  \"schema\": {\n");
+        sb.append("    \"sampleTypes\": [\"TEXT\", \"INSTRUCTION\", \"CODE\", \"CHAT\", \"CONVERSATION\"],\n");
+        sb.append("    \"columns\": [\"id\", \"type\", \"prompt\", \"response\", \"qualityScore\"]\n");
+        sb.append("  },\n");
         if (stats != null) {
             sb.append("  \"requestedUsableBytes\": ").append(stats.getRequestedUsableBytes()).append(",\n");
             sb.append("  \"actualUsableBytes\": ").append(stats.getAcceptedBytes()).append(",\n");
@@ -293,8 +361,7 @@ public class EvoDatasetArtifact {
         sb.append("  \"trainSamples\": ").append(trainSamples.size()).append(",\n");
         sb.append("  \"valSamples\": ").append(valSamples.size()).append(",\n");
         sb.append("  \"trainTokens\": ").append(totalTrainTokens).append(",\n");
-        sb.append("  \"valTokens\": ").append(totalValTokens).append(",\n");
-        sb.append("  \"timestamp\": ").append(System.currentTimeMillis()).append("\n");
+        sb.append("  \"valTokens\": ").append(totalValTokens).append("\n");
         sb.append("}\n");
         return sb.toString();
     }
