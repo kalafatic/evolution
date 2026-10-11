@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.editors.pages.taskstack;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -40,51 +41,114 @@ import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 
 public class FunctionalityInventoryGroup {
 
-    private Group group;
+    private Group mainGroup;
+    private Group tableGroup;
+    private Group actionsGroup;
+
     private TableViewer tableViewer;
     private List<FunctionalityEntry> entries = new ArrayList<>();
     private TaskStackPage page;
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
 
+    private Button btnMoveUp;
+    private Button btnMoveDown;
+    private Button btnEdit;
+    private Button btnAnalyze;
+    private Button btnRefactor;
+
     public FunctionalityInventoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TaskStackPage page) {
         this.editor = editor;
         this.orchestrator = orchestrator;
         this.page = page;
 
-        group = new Group(parent, SWT.NONE);
-        group.setText("Functionality Intelligence Inventory (28 Core EVO Capabilities)");
-        group.setLayout(new GridLayout(1, false));
-        group.setLayoutData(new GridData(GridData.FILL_BOTH));
-        if (toolkit != null) toolkit.adapt(group);
+        mainGroup = new Group(parent, SWT.NONE);
+        mainGroup.setText("Functionality Intelligence Subsystem");
+        mainGroup.setLayout(new GridLayout(1, false));
+        mainGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+        if (toolkit != null) toolkit.adapt(mainGroup);
 
-        createTableViewer();
-        createButtons(group);
+        createTableGroup(toolkit, mainGroup);
+        createActionsGroup(toolkit, mainGroup);
 
         refreshInventoryData();
     }
 
-    private void createTableViewer() {
-        tableViewer = new TableViewer(group, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+    private void createTableGroup(FormToolkit toolkit, Composite parent) {
+        tableGroup = new Group(parent, SWT.NONE);
+        tableGroup.setText("Discovered Capabilities & Evaluation Inventory");
+        tableGroup.setLayout(new GridLayout(1, false));
+        tableGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+        if (toolkit != null) toolkit.adapt(tableGroup);
+
+        tableViewer = new TableViewer(tableGroup, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
         Table table = tableViewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        createColumn("Functionality", 220, e -> e.name);
-        createColumn("Primary Class", 180, e -> e.primaryClass);
-        createColumn("Module", 160, e -> e.module);
+        createColumn("#", 40, e -> String.valueOf(entries.indexOf(e) + 1));
+        createColumn("ID", 70, e -> e.id);
+        createColumn("Functionality", 200, e -> e.name);
+        createColumn("Primary Class", 170, e -> e.primaryClass);
+        createColumn("Module", 150, e -> e.module);
         createColumn("Importance", 80, e -> formatScore(e.importance));
-        createColumn("Usage", 70, e -> formatScore(e.usage));
-        createColumn("Size", 70, e -> formatScore(e.complexity));
+        createColumn("Usage", 65, e -> formatScore(e.usage));
+        createColumn("Size/Cmp", 70, e -> formatScore(e.complexity));
         createColumn("References", 80, e -> formatScore(e.references));
         createColumn("Maturity", 70, e -> formatScore(e.maturity));
         createColumn("Risk", 60, e -> formatScore(e.risk));
         createColumn("Overall", 60, e -> String.valueOf(e.calculateOverallScore()));
         createColumn("Status", 90, e -> e.status);
-        createColumn("Freshness", 80, e -> e.metadataFresh ? "FRESH" : "STALE");
+        createColumn("Method", 75, e -> e.method);
+        createColumn("Confidence", 80, e -> String.valueOf(e.confidence));
+        createColumn("Freshness", 75, e -> e.metadataFresh ? "FRESH" : "STALE");
+        createColumn("Rationale", 250, e -> e.rationale);
 
         tableViewer.setContentProvider(ArrayContentProvider.getInstance());
+
+        // Selection Listener
+        tableViewer.addSelectionChangedListener(event -> updateButtonEnablement());
+
+        // Double Click Listener to edit selected row
+        tableViewer.addDoubleClickListener(event -> handleEditSelectedRow());
+    }
+
+    private void createActionsGroup(FormToolkit toolkit, Composite parent) {
+        actionsGroup = new Group(parent, SWT.NONE);
+        actionsGroup.setText("Inventory Management & Isolated AI Session Actions");
+        actionsGroup.setLayout(new GridLayout(6, false));
+        actionsGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        if (toolkit != null) toolkit.adapt(actionsGroup);
+
+        btnMoveUp = new Button(actionsGroup, SWT.PUSH);
+        btnMoveUp.setText("▲ Move Up");
+        btnMoveUp.setEnabled(false);
+        btnMoveUp.addListener(SWT.Selection, e -> handleMoveRow(-1));
+
+        btnMoveDown = new Button(actionsGroup, SWT.PUSH);
+        btnMoveDown.setText("▼ Move Down");
+        btnMoveDown.setEnabled(false);
+        btnMoveDown.addListener(SWT.Selection, e -> handleMoveRow(1));
+
+        btnEdit = new Button(actionsGroup, SWT.PUSH);
+        btnEdit.setText("Edit Selected Functionality...");
+        btnEdit.setEnabled(false);
+        btnEdit.addListener(SWT.Selection, e -> handleEditSelectedRow());
+
+        Button btnRefresh = new Button(actionsGroup, SWT.PUSH);
+        btnRefresh.setText("Generate / Refresh Inventory");
+        btnRefresh.addListener(SWT.Selection, e -> handleRefreshInventory());
+
+        btnAnalyze = new Button(actionsGroup, SWT.PUSH);
+        btnAnalyze.setText("Analyze Selected in New AI Session");
+        btnAnalyze.setEnabled(false);
+        btnAnalyze.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("ANALYZE"));
+
+        btnRefactor = new Button(actionsGroup, SWT.PUSH);
+        btnRefactor.setText("Refactor Selected in New AI Session");
+        btnRefactor.setEnabled(false);
+        btnRefactor.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("REFACTOR"));
     }
 
     private void createColumn(String title, int width, java.util.function.Function<FunctionalityEntry, String> labelFunc) {
@@ -107,22 +171,54 @@ public class FunctionalityInventoryGroup {
         return val >= 0 ? String.valueOf(val) : "UNKNOWN";
     }
 
-    private void createButtons(Composite parent) {
-        Composite btnComp = new Composite(parent, SWT.NONE);
-        btnComp.setLayout(new GridLayout(3, false));
-        btnComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+    private void updateButtonEnablement() {
+        IStructuredSelection sel = (IStructuredSelection) tableViewer.getSelection();
+        boolean hasSel = !sel.isEmpty();
+        boolean singleSel = sel.size() == 1;
 
-        Button btnRefresh = new Button(btnComp, SWT.PUSH);
-        btnRefresh.setText("Generate / Refresh Inventory");
-        btnRefresh.addListener(SWT.Selection, e -> handleRefreshInventory());
+        if (btnEdit != null) btnEdit.setEnabled(singleSel);
+        if (btnAnalyze != null) btnAnalyze.setEnabled(hasSel);
+        if (btnRefactor != null) btnRefactor.setEnabled(hasSel);
 
-        Button btnAnalyze = new Button(btnComp, SWT.PUSH);
-        btnAnalyze.setText("Analyze Selected in New AI Session");
-        btnAnalyze.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("ANALYZE"));
+        if (singleSel) {
+            FunctionalityEntry selected = (FunctionalityEntry) sel.getFirstElement();
+            int idx = entries.indexOf(selected);
+            if (btnMoveUp != null) btnMoveUp.setEnabled(idx > 0);
+            if (btnMoveDown != null) btnMoveDown.setEnabled(idx >= 0 && idx < entries.size() - 1);
+        } else {
+            if (btnMoveUp != null) btnMoveUp.setEnabled(false);
+            if (btnMoveDown != null) btnMoveDown.setEnabled(false);
+        }
+    }
 
-        Button btnRefactor = new Button(btnComp, SWT.PUSH);
-        btnRefactor.setText("Refactor Selected in New AI Session");
-        btnRefactor.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("REFACTOR"));
+    private void handleMoveRow(int delta) {
+        IStructuredSelection sel = (IStructuredSelection) tableViewer.getSelection();
+        if (sel.size() != 1) return;
+
+        FunctionalityEntry selected = (FunctionalityEntry) sel.getFirstElement();
+        int idx = entries.indexOf(selected);
+        int newIdx = idx + delta;
+
+        if (newIdx >= 0 && newIdx < entries.size()) {
+            Collections.swap(entries, idx, newIdx);
+            tableViewer.refresh();
+            tableViewer.setSelection(sel, true);
+            updateButtonEnablement();
+        }
+    }
+
+    private void handleEditSelectedRow() {
+        IStructuredSelection sel = (IStructuredSelection) tableViewer.getSelection();
+        if (sel.size() != 1) return;
+
+        FunctionalityEntry selected = (FunctionalityEntry) sel.getFirstElement();
+        File repoRoot = resolveRepoRoot();
+
+        FunctionalityEditDialog dialog = new FunctionalityEditDialog(tableViewer.getTable().getShell(), selected, repoRoot);
+        if (dialog.open() == org.eclipse.jface.dialogs.Dialog.OK) {
+            tableViewer.refresh(selected);
+            if (editor != null) editor.setDirty(true);
+        }
     }
 
     public void refreshInventoryData() {
@@ -136,6 +232,7 @@ public class FunctionalityInventoryGroup {
                     if (tableViewer != null && !tableViewer.getTable().isDisposed()) {
                         tableViewer.setInput(entries);
                         tableViewer.refresh();
+                        updateButtonEnablement();
                     }
                 });
                 return Status.OK_STATUS;
@@ -157,6 +254,7 @@ public class FunctionalityInventoryGroup {
                     if (tableViewer != null && !tableViewer.getTable().isDisposed()) {
                         tableViewer.setInput(entries);
                         tableViewer.refresh();
+                        updateButtonEnablement();
                     }
                 });
                 return Status.OK_STATUS;
@@ -205,6 +303,7 @@ public class FunctionalityInventoryGroup {
             prompt.append("  • Maturity: ").append(e.maturity).append("\n");
             prompt.append("  • Maintainability Risk: ").append(e.risk).append("\n");
             prompt.append("  • Overall Score: ").append(e.calculateOverallScore()).append("\n");
+            prompt.append("Rationale: ").append(e.rationale).append("\n");
             prompt.append("Description: ").append(e.description).append("\n\n");
 
             // Attach source code snippet if available
