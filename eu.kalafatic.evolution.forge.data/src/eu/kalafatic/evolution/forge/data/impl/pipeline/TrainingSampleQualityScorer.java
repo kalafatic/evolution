@@ -52,10 +52,33 @@ public class TrainingSampleQualityScorer implements DataFilter {
             }
         }
 
-        // Signal 3: Structural validity (extreme uppercase or malformed text penalty)
-        long uppercaseCount = text.chars().filter(Character::isUpperCase).count();
-        if (len > 20 && (double) uppercaseCount / len > 0.8) {
-            score -= 0.3;
+        boolean isCode = sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CODE;
+
+        // Signal 3: Structural validity (extreme uppercase penalty for non-code text)
+        if (!isCode) {
+            long uppercaseCount = text.chars().filter(Character::isUpperCase).count();
+            if (len > 20 && (double) uppercaseCount / len > 0.8) {
+                score -= 0.3;
+            }
+        }
+
+        // Signal 4: Pathological sequence or word repetition
+        if (words.length > 5) {
+            int maxConsecutiveMatches = 0;
+            int currentMatches = 1;
+            for (int i = 1; i < words.length; i++) {
+                if (words[i].equalsIgnoreCase(words[i - 1])) {
+                    currentMatches++;
+                    if (currentMatches > maxConsecutiveMatches) {
+                        maxConsecutiveMatches = currentMatches;
+                    }
+                } else {
+                    currentMatches = 1;
+                }
+            }
+            if (maxConsecutiveMatches >= 6) {
+                score -= 0.4; // Heavy penalty for pathological repeating word loops
+            }
         }
 
         score = Math.max(0.0, Math.min(1.0, score));

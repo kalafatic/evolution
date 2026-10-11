@@ -37,21 +37,27 @@ public class DataCleaner implements DataNormalizer {
 
         String text = rawText;
 
-        // 1. Whitespace normalization
+        // 1. Strip non-printable ASCII control characters and Unicode replacement chars
+        text = text.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFD]", "");
+
+        boolean isCode = sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CODE;
+
+        // 2. Whitespace normalization
         if (normalizeWhitespace) {
             text = text.replace("\r\n", "\n").replace("\r", "\n");
             // Collapse excessive blank lines
             text = text.replaceAll("\n{3,}", "\n\n").trim();
         }
 
-        // 2. HTML stripping if configured
-        if (stripHtml && (text.contains("<html") || text.contains("<div") || text.contains("<p>"))) {
+        // 3. HTML stripping if configured (suppressed for CODE samples to preserve Java generics <T>, XML, JSX)
+        if (stripHtml && !isCode && (text.contains("<html") || text.contains("<div") || text.contains("<p>") || text.contains("<body") || text.contains("<!DOCTYPE"))) {
             text = text.replaceAll("<[^>]*>", " ");
             text = text.replaceAll("\\s+", " ").trim();
         }
 
-        // 3. Length checks
-        if (text.length() < minCharLength || text.length() > maxCharLength) {
+        // 4. Length checks (allow short meaningful code statements like "int x = 1;")
+        int effMinLength = isCode ? Math.min(3, minCharLength) : minCharLength;
+        if (text.length() < effMinLength || text.length() > maxCharLength) {
             return null;
         }
 
