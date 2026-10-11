@@ -40,6 +40,7 @@ public class FunctionalityInventoryManager {
         public String module;
         public String sourcePath;
         public String status = "IMPLEMENTED";
+        public boolean selected = false;
 
         // Evaluations (0-100 scale, -1 indicates UNKNOWN)
         public int importance = -1;
