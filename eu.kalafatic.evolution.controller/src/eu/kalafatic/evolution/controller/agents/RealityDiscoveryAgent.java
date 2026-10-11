@@ -222,7 +222,14 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             String response;
             if ("image".equals(node.getType())) {
                 String imagePath = new File(context.getProjectRoot(), node.getPath()).getAbsolutePath();
-                response = aiService.sendImageRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, imagePath, context);
+                try {
+                    response = aiService.sendImageRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, imagePath, context);
+                } catch (Exception ex) {
+                    if (context != null) {
+                        context.log("[DISCOVERY] Multi-modal image analysis failed for " + node.getPath() + " (" + ex.getMessage() + "). Falling back to text request.");
+                    }
+                    response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+                }
             } else {
                 response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
             }
