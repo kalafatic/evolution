@@ -79,13 +79,15 @@ public class FunctionalityInventoryGroup {
         tableGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
         if (toolkit != null) toolkit.adapt(tableGroup);
 
-        tableViewer = new TableViewer(tableGroup, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+        tableViewer = new TableViewer(tableGroup, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.CHECK);
         Table table = tableViewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         createColumn("#", 40, e -> String.valueOf(entries.indexOf(e) + 1));
+        createColumn("Action", 50, e -> "▶");
+        createColumn("Edit", 40, e -> "✎");
         createColumn("ID", 70, e -> e.id);
         createColumn("Functionality", 200, e -> e.name);
         createColumn("Primary Class", 170, e -> e.primaryClass);
@@ -105,6 +107,31 @@ public class FunctionalityInventoryGroup {
 
         tableViewer.setContentProvider(ArrayContentProvider.getInstance());
 
+        // Checkbox listener
+        table.addListener(SWT.Selection, event -> {
+            if (event.detail == SWT.CHECK && event.item.getData() instanceof FunctionalityEntry fe) {
+                fe.selected = ((org.eclipse.swt.widgets.TableItem) event.item).getChecked();
+                updateButtonEnablement();
+            }
+        });
+
+        // Mouse click listener for Action and Edit columns
+        table.addListener(SWT.MouseDown, event -> {
+            org.eclipse.swt.graphics.Point pt = new org.eclipse.swt.graphics.Point(event.x, event.y);
+            org.eclipse.swt.widgets.TableItem item = table.getItem(pt);
+            if (item != null && item.getData() instanceof FunctionalityEntry entry) {
+                for (int col = 0; col < table.getColumnCount(); col++) {
+                    if (item.getBounds(col).contains(pt)) {
+                        if (col == 1) { // Action Column (▶)
+                            handleSingleAction(entry);
+                        } else if (col == 2) { // Edit Column (✎)
+                            handleEditRow(entry);
+                        }
+                    }
+                }
+            }
+        });
+
         // Selection Listener
         tableViewer.addSelectionChangedListener(event -> updateButtonEnablement());
 
@@ -115,7 +142,7 @@ public class FunctionalityInventoryGroup {
     private void createActionsGroup(FormToolkit toolkit, Composite parent) {
         actionsGroup = new Group(parent, SWT.NONE);
         actionsGroup.setText("Inventory Management & Isolated AI Session Actions");
-        actionsGroup.setLayout(new GridLayout(6, false));
+        actionsGroup.setLayout(new GridLayout(8, false));
         actionsGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         if (toolkit != null) toolkit.adapt(actionsGroup);
 
@@ -128,6 +155,14 @@ public class FunctionalityInventoryGroup {
         btnMoveDown.setText("▼ Move Down");
         btnMoveDown.setEnabled(false);
         btnMoveDown.addListener(SWT.Selection, e -> handleMoveRow(1));
+
+        Button btnSelectAll = new Button(actionsGroup, SWT.PUSH);
+        btnSelectAll.setText("☑ Select All");
+        btnSelectAll.addListener(SWT.Selection, e -> setAllSelected(true));
+
+        Button btnUnselectAll = new Button(actionsGroup, SWT.PUSH);
+        btnUnselectAll.setText("☐ Unselect All");
+        btnUnselectAll.addListener(SWT.Selection, e -> setAllSelected(false));
 
         btnEdit = new Button(actionsGroup, SWT.PUSH);
         btnEdit.setText("Edit Selected Functionality...");
@@ -147,6 +182,34 @@ public class FunctionalityInventoryGroup {
         btnRefactor.setText("Refactor Selected in New AI Session");
         btnRefactor.setEnabled(false);
         btnRefactor.addListener(SWT.Selection, e -> handleAnalyzeInNewSession("REFACTOR"));
+    }
+
+    private void setAllSelected(boolean select) {
+        for (FunctionalityEntry entry : entries) {
+            entry.selected = select;
+        }
+        for (org.eclipse.swt.widgets.TableItem item : tableViewer.getTable().getItems()) {
+            item.setChecked(select);
+        }
+        updateButtonEnablement();
+    }
+
+    private void handleSingleAction(FunctionalityEntry entry) {
+        if (entry != null) {
+            List<FunctionalityEntry> singleList = Collections.singletonList(entry);
+            createAndExecuteSession("ANALYZE", singleList);
+        }
+    }
+
+    private void handleEditRow(FunctionalityEntry entry) {
+        if (entry != null) {
+            File repoRoot = resolveRepoRoot();
+            FunctionalityEditDialog dialog = new FunctionalityEditDialog(tableViewer.getTable().getShell(), entry, repoRoot);
+            if (dialog.open() == org.eclipse.jface.dialogs.Dialog.OK) {
+                tableViewer.refresh(entry);
+                if (editor != null) editor.setDirty(true);
+            }
+        }
     }
 
     private void createColumn(String title, int width, java.util.function.Function<FunctionalityEntry, String> labelFunc) {
@@ -325,6 +388,60 @@ public class FunctionalityInventoryGroup {
             prompt.append("Propose concrete refactoring steps, modularization enhancements, or risk mitigations based on the source code and evaluation scores.");
         } else {
             prompt.append("Provide a comprehensive architectural analysis, dependency review, and correctness assessment for the primary classes above.");
+        }
+
+        Task newTask = OrchestrationFactory.eINSTANCE.createTask();
+        newTask.setId(newSessionId);
+        newTask.setName("[" + mode + "] " + selectedEntries.get(0).name);
+        newTask.setPrompt(prompt.toString());
+        newTask.setDescription("Isolated " + mode + " session for " + selectedEntries.size() + " functionalities");
+        newTask.setStatus(TaskStatus.READY);
+
+        if (orchestrator != null) {
+            orchestrator.getTasks().add(newTask);
+            if (editor != null) editor.setDirty(true);
+            page.runSingleTask(newTask);
+        }
+    }
+
+    private void createAndExecuteSession(String mode, List<FunctionalityEntry> selectedEntries) {
+        if (selectedEntries == null || selectedEntries.isEmpty()) return;
+
+        File repoRoot = resolveRepoRoot();
+        String newSessionId = "func-session-" + System.currentTimeMillis();
+        SessionContainer newSession = SessionManager.getInstance().getOrCreateSession(newSessionId);
+
+        TaskContext taskCtx = new TaskContext(orchestrator, repoRoot);
+        taskCtx.setSessionId(newSessionId);
+        if (newSession instanceof SessionContext) {
+            ((SessionContext) newSession).setTaskContext(taskCtx);
+        }
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("[").append(mode).append(" MODE] Isolated AI Session Context for Selected Capabilities:\n\n");
+
+        for (FunctionalityEntry e : selectedEntries) {
+            prompt.append("=== FUNCTIONALITY: ").append(e.name).append(" (ID: ").append(e.id).append(") ===\n");
+            prompt.append("Primary Java Class: ").append(e.fqcn).append("\n");
+            prompt.append("Module: ").append(e.module).append("\n");
+            prompt.append("Source Path: ").append(e.sourcePath).append("\n");
+            prompt.append("Status: ").append(e.status).append("\n");
+            prompt.append("Rationale: ").append(e.rationale).append("\n");
+            prompt.append("Description: ").append(e.description).append("\n\n");
+
+            File srcFile = new File(repoRoot, e.sourcePath);
+            if (srcFile.exists()) {
+                try {
+                    String srcContent = Files.readString(srcFile.toPath());
+                    if (srcContent.length() > 4000) {
+                        srcContent = srcContent.substring(0, 4000) + "\n... [truncated for context limit]";
+                    }
+                    prompt.append("--- SOURCE CODE SNIPPET (").append(e.primaryClass).append(".java) ---\n");
+                    prompt.append(srcContent).append("\n-----------------------------------------------\n\n");
+                } catch (Exception ex) {
+                    prompt.append("[Source file read exception: ").append(ex.getMessage()).append("]\n\n");
+                }
+            }
         }
 
         Task newTask = OrchestrationFactory.eINSTANCE.createTask();
