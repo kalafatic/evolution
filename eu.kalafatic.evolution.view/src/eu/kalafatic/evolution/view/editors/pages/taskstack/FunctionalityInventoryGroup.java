@@ -88,6 +88,7 @@ public class FunctionalityInventoryGroup {
 
         createColumn("#", 40, e -> String.valueOf(entries.indexOf(e) + 1));
         createColumn("Action", 50, e -> "▶");
+        createModeColumn("Mode", 80);
         createColumn("Edit", 40, e -> "✎");
         createColumn("ID", 70, e -> e.id);
         createColumn("Functionality", 200, e -> e.name);
@@ -125,7 +126,7 @@ public class FunctionalityInventoryGroup {
                     if (item.getBounds(col).contains(pt)) {
                         if (col == 1) { // Action Column (▶)
                             handleSingleAction(entry);
-                        } else if (col == 2) { // Edit Column (✎)
+                        } else if (col == 3) { // Edit Column (✎)
                             handleEditRow(entry);
                         }
                     }
@@ -215,6 +216,58 @@ public class FunctionalityInventoryGroup {
                 if (editor != null) editor.setDirty(true);
             }
         }
+    }
+
+    private void createModeColumn(String title, int width) {
+        TableViewerColumn col = new TableViewerColumn(tableViewer, SWT.NONE);
+        col.getColumn().setText(title);
+        col.getColumn().setWidth(width);
+        col.getColumn().setResizable(true);
+        col.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                if (element instanceof FunctionalityEntry fe) {
+                    return fe.selectedMode != null ? fe.selectedMode : "self-dev";
+                }
+                return "self-dev";
+            }
+        });
+
+        col.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+            private final String[] MODES = new String[] { "intent", "mediated", "self-dev" };
+
+            @Override
+            protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) {
+                return new org.eclipse.jface.viewers.ComboBoxCellEditor(tableViewer.getTable(), MODES, SWT.READ_ONLY);
+            }
+
+            @Override
+            protected boolean canEdit(Object element) {
+                return true;
+            }
+
+            @Override
+            protected Object getValue(Object element) {
+                if (element instanceof FunctionalityEntry fe) {
+                    String mode = fe.selectedMode != null ? fe.selectedMode : "self-dev";
+                    for (int i = 0; i < MODES.length; i++) {
+                        if (MODES[i].equalsIgnoreCase(mode)) return i;
+                    }
+                }
+                return 2; // "self-dev" default
+            }
+
+            @Override
+            protected void setValue(Object element, Object value) {
+                if (element instanceof FunctionalityEntry fe && value instanceof Integer idx) {
+                    if (idx >= 0 && idx < MODES.length) {
+                        fe.selectedMode = MODES[idx];
+                        tableViewer.refresh(fe);
+                        if (editor != null) editor.setDirty(true);
+                    }
+                }
+            }
+        });
     }
 
     private void createColumn(String title, int width, java.util.function.Function<FunctionalityEntry, String> labelFunc) {
@@ -413,7 +466,8 @@ public class FunctionalityInventoryGroup {
         if (selectedEntries == null || selectedEntries.isEmpty()) return;
 
         File repoRoot = resolveRepoRoot();
-        String selectedAiModeStr = (modeCombo != null && !modeCombo.isDisposed()) ? modeCombo.getText() : "SELF_DEV_MODE";
+        FunctionalityEntry first = selectedEntries.get(0);
+        String rowMode = (first != null && first.selectedMode != null) ? first.selectedMode.toLowerCase() : "self-dev";
 
         String newSessionId = "func-session-" + System.currentTimeMillis();
         SessionContainer newSession = SessionManager.getInstance().getOrCreateSession(newSessionId);
@@ -425,9 +479,9 @@ public class FunctionalityInventoryGroup {
         }
 
         StringBuilder prompt = new StringBuilder();
-        prompt.append("[AI COMMANDER INSTRUCTIONS - ").append(selectedAiModeStr).append("]\n");
-        prompt.append("Selected AI Mode: ").append(selectedAiModeStr).append("\n");
-        prompt.append("Action Mode: ").append(mode).append("\n\n");
+        prompt.append("[AI COMMANDER INSTRUCTIONS - ").append(rowMode.toUpperCase()).append("]\n");
+        prompt.append("Row Selected Mode: ").append(rowMode).append("\n");
+        prompt.append("Action: ").append(mode).append("\n\n");
 
         for (FunctionalityEntry e : selectedEntries) {
             prompt.append("=== FUNCTIONALITY: ").append(e.name).append(" (ID: ").append(e.id).append(") ===\n");
@@ -435,6 +489,7 @@ public class FunctionalityInventoryGroup {
             prompt.append("Module: ").append(e.module).append("\n");
             prompt.append("Source Path: ").append(e.sourcePath).append("\n");
             prompt.append("Status: ").append(e.status).append("\n");
+            prompt.append("Row Mode: ").append(e.selectedMode).append("\n");
             prompt.append("Importance: ").append(e.importance).append("\n");
             prompt.append("Usage: ").append(e.usage).append("\n");
             prompt.append("Complexity: ").append(e.complexity).append("\n");
@@ -469,20 +524,26 @@ public class FunctionalityInventoryGroup {
 
         Task newTask = OrchestrationFactory.eINSTANCE.createTask();
         newTask.setId(newSessionId);
-        newTask.setName("[" + selectedAiModeStr + " - " + mode + "] " + selectedEntries.get(0).name);
+        newTask.setName("[" + rowMode.toUpperCase() + " - " + mode + "] " + selectedEntries.get(0).name);
         newTask.setPrompt(prompt.toString());
-        newTask.setDescription("Isolated " + selectedAiModeStr + " session for " + selectedEntries.size() + " functionalities");
-        newTask.setType(selectedAiModeStr);
+        newTask.setDescription("Isolated " + rowMode + " session for " + selectedEntries.size() + " functionalities");
         newTask.setStatus(TaskStatus.READY);
 
-        if ("SELF_DEV_MODE".equals(selectedAiModeStr)) {
+        // Select Darwin Engine execution mode based on the row's mode
+        if ("self-dev".equalsIgnoreCase(rowMode)) {
+            newTask.setType("SELF_DEV_MODE");
             newTask.setSelfIterativeMode(true);
             newTask.setDarwinMode(true);
-        } else if ("DARWIN_MODE".equals(selectedAiModeStr)) {
-            newTask.setDarwinMode(true);
-        } else if ("MEDIATED_MODE".equals(selectedAiModeStr)) {
+        } else if ("mediated".equalsIgnoreCase(rowMode)) {
+            newTask.setType("MEDIATED_MODE");
             newTask.setDarwinMode(true);
             newTask.setIterativeMode(true);
+        } else if ("intent".equalsIgnoreCase(rowMode)) {
+            newTask.setType("INTENT_MODE");
+            newTask.setDarwinMode(true);
+        } else { // fallback local/darwin
+            newTask.setType("DARWIN_MODE");
+            newTask.setDarwinMode(true);
         }
 
         if (orchestrator != null) {

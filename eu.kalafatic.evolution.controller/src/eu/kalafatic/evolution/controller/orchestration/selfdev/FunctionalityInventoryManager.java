@@ -41,6 +41,7 @@ public class FunctionalityInventoryManager {
         public String sourcePath;
         public String status = "IMPLEMENTED";
         public boolean selected = false;
+        public String selectedMode = "self-dev";
 
         // Evaluations (0-100 scale, -1 indicates UNKNOWN)
         public int importance = -1;
