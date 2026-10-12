@@ -15,6 +15,9 @@ public class DreamCheckpoint implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String cycleId;
+    private DreamOrigin origin = DreamOrigin.MANUAL;
+    private String topic;
+    private String topicSelectionRationale;
     private String stage; // SELECT_EXPERIENCES, ANALYZE_RELATIONSHIPS, GENERATE_HYPOTHESES, VERIFY_HYPOTHESES, CONSOLIDATE_RESULTS, COMPLETE
     private long startTime;
     private long lastUpdated;
@@ -47,6 +50,9 @@ public class DreamCheckpoint implements Serializable {
     public JSONObject toJsonObject() {
         JSONObject json = new JSONObject();
         json.put("cycleId", cycleId);
+        json.put("origin", origin != null ? origin.name() : DreamOrigin.MANUAL.name());
+        json.put("topic", topic);
+        json.put("topicSelectionRationale", topicSelectionRationale);
         json.put("stage", stage);
         json.put("startTime", startTime);
         json.put("lastUpdated", lastUpdated);
@@ -70,6 +76,14 @@ public class DreamCheckpoint implements Serializable {
         if (json == null) return null;
         DreamCheckpoint cp = new DreamCheckpoint();
         cp.setCycleId(json.optString("cycleId"));
+        String origStr = json.optString("origin", DreamOrigin.MANUAL.name());
+        try {
+            cp.setOrigin(DreamOrigin.valueOf(origStr));
+        } catch (Exception e) {
+            cp.setOrigin(DreamOrigin.MANUAL);
+        }
+        cp.setTopic(json.optString("topic"));
+        cp.setTopicSelectionRationale(json.optString("topicSelectionRationale"));
         cp.setStage(json.optString("stage", "SELECT_EXPERIENCES"));
         cp.setStartTime(json.optLong("startTime", System.currentTimeMillis()));
         cp.setLastUpdated(json.optLong("lastUpdated", System.currentTimeMillis()));
@@ -103,6 +117,30 @@ public class DreamCheckpoint implements Serializable {
 
     public void setCycleId(String cycleId) {
         this.cycleId = cycleId;
+    }
+
+    public DreamOrigin getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(DreamOrigin origin) {
+        this.origin = origin;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public String getTopicSelectionRationale() {
+        return topicSelectionRationale;
+    }
+
+    public void setTopicSelectionRationale(String topicSelectionRationale) {
+        this.topicSelectionRationale = topicSelectionRationale;
     }
 
     public String getStage() {
