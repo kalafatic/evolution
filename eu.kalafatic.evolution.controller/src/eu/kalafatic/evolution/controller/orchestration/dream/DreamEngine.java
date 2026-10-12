@@ -39,10 +39,17 @@ public class DreamEngine extends ADarwinEngine {
             checkpoint = new DreamCheckpoint(cycleId);
             String userPrompt = taskRequest.getPrompt();
 
-            if (userPrompt != null && !userPrompt.trim().isEmpty() && !userPrompt.equalsIgnoreCase("auto") && !userPrompt.equalsIgnoreCase("dream")) {
+            if (userPrompt != null && !userPrompt.trim().isEmpty() && !userPrompt.equalsIgnoreCase("auto")) {
                 checkpoint.setOrigin(DreamOrigin.MANUAL);
-                checkpoint.setTopic(userPrompt);
-                checkpoint.setTopicSelectionRationale("Explicit manual user request");
+                if (userPrompt.equalsIgnoreCase("dream")) {
+                    FailureMemory fm = memoryService != null ? memoryService.getFailureMemory() : null;
+                    DreamTopicSelector.SelectedTopic sel = topicSelector.selectBestTopic(fm);
+                    checkpoint.setTopic(sel.getTopic());
+                    checkpoint.setTopicSelectionRationale("Explicit manual user request 'dream' [" + sel.getRationale() + "]");
+                } else {
+                    checkpoint.setTopic(userPrompt);
+                    checkpoint.setTopicSelectionRationale("Explicit manual user request");
+                }
             } else {
                 checkpoint.setOrigin(DreamOrigin.AUTOMATIC);
                 FailureMemory fm = memoryService != null ? memoryService.getFailureMemory() : null;
@@ -52,11 +59,14 @@ public class DreamEngine extends ADarwinEngine {
             }
         }
 
-        if (!coordinator.requestDreamStart(cycleId)) {
+        boolean isManual = (checkpoint.getOrigin() == DreamOrigin.MANUAL);
+        if (!coordinator.requestDreamStart(cycleId, isManual)) {
             context.log("[DREAM] Unable to start DREAM cycle: " + coordinator.getBlockedReason());
             OrchestratorResponse response = new OrchestratorResponse();
             response.setResultType(ResultType.CHAT);
-            response.setSummary("DREAM cycle skipped: " + coordinator.getBlockedReason());
+            String summary = "DREAM cycle skipped: " + coordinator.getBlockedReason();
+            response.setSummary(summary);
+            response.setContent(summary);
             return response;
         }
 
@@ -71,8 +81,10 @@ public class DreamEngine extends ADarwinEngine {
 
             OrchestratorResponse response = new OrchestratorResponse();
             response.setResultType(ResultType.CHAT);
-            response.setSummary(success ? "DREAM analysis cycle completed successfully for topic: " + checkpoint.getTopic()
-                                        : "DREAM analysis cycle interrupted/failed.");
+            String summary = success ? "DREAM analysis cycle completed successfully for topic: " + checkpoint.getTopic()
+                                     : "DREAM analysis cycle interrupted/failed.";
+            response.setSummary(summary);
+            response.setContent(summary);
             return response;
 
         } catch (Exception e) {

@@ -120,4 +120,37 @@ public class WakeDreamCoordinatorTest {
         assertNotNull(PlatformType.DREAM_MODE);
         assertEquals("DREAM_MODE", PlatformType.DREAM_MODE.name());
     }
+
+    @Test
+    public void testManualDreamRequestExecution() {
+        // Disabled by default for automatic background dreaming
+        assertFalse(coordinator.isDreamEnabled());
+        assertFalse(coordinator.evaluateDreamEligibility(false));
+
+        // Manual dream request should be eligible and start successfully even if background auto-dreaming is disabled
+        assertTrue(coordinator.evaluateDreamEligibility(true));
+        boolean startedManual = coordinator.requestDreamStart("manual-cycle-1", true);
+        assertTrue(startedManual);
+        assertEquals(WakeDreamState.DREAM_ACTIVE, coordinator.getCurrentState());
+
+        coordinator.notifyDreamComplete("manual-cycle-1", true);
+        assertEquals(WakeDreamState.WAKE_IDLE, coordinator.getCurrentState());
+
+        // Manual dream request during active foreground WAKE activity should also be allowed
+        coordinator.notifyWakeStart("req-foreground");
+        assertEquals(WakeDreamState.WAKE_ACTIVE, coordinator.getCurrentState());
+        assertFalse(coordinator.evaluateDreamEligibility(false));
+        assertTrue(coordinator.evaluateDreamEligibility(true));
+
+        boolean startedForegroundManual = coordinator.requestDreamStart("manual-cycle-2", true);
+        assertTrue(startedForegroundManual);
+        assertEquals(WakeDreamState.DREAM_ACTIVE, coordinator.getCurrentState());
+
+        // Second dream request while one is active should still be rejected
+        assertFalse(coordinator.evaluateDreamEligibility(true));
+        assertFalse(coordinator.requestDreamStart("manual-cycle-3", true));
+
+        coordinator.notifyDreamComplete("manual-cycle-2", true);
+        coordinator.notifyWakeEnd("req-foreground");
+    }
 }
