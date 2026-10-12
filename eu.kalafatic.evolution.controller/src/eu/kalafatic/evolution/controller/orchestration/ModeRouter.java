@@ -75,7 +75,7 @@ public class ModeRouter {
 		String lower = prompt.toLowerCase().trim();
 
 		// 1. Try explicit overrides (Manual Routing)
-		if (lower.contains("mode: dream"))
+		if (lower.contains("mode: dream") || lower.equals("dream"))
 			return createDreamMode();
 		if (lower.contains("mode: chat"))
 			return createSimpleChatMode();
@@ -147,7 +147,7 @@ public class ModeRouter {
 		String lower = prompt.toLowerCase().trim();
 
 		// 1. Check explicit prompt overrides first (e.g. "mode: chat")
-		if (lower.contains("mode: dream"))
+		if (lower.contains("mode: dream") || lower.equals("dream"))
 			return createDreamMode();
 		if (lower.contains("mode: chat"))
 			return createSimpleChatMode();

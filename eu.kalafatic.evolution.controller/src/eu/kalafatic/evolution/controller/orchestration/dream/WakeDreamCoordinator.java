@@ -109,11 +109,15 @@ public class WakeDreamCoordinator {
     }
 
     public synchronized boolean evaluateDreamEligibility() {
-        if (!dreamEnabled) {
+        return evaluateDreamEligibility(false);
+    }
+
+    public synchronized boolean evaluateDreamEligibility(boolean isManual) {
+        if (!dreamEnabled && !isManual) {
             blockedReason = "DREAM disabled by configuration";
             return false;
         }
-        if (activeForegroundRequests > 0 || currentState.get() == WakeDreamState.WAKE_ACTIVE) {
+        if (!isManual && (activeForegroundRequests > 0 || currentState.get() == WakeDreamState.WAKE_ACTIVE)) {
             blockedReason = "Active foreground request running";
             return false;
         }
@@ -132,15 +136,19 @@ public class WakeDreamCoordinator {
     }
 
     public synchronized boolean requestDreamStart(String cycleId) {
-        if (!evaluateDreamEligibility()) {
-            LOGGER.info("[WAKE_DREAM] DREAM start rejected for " + cycleId + ": " + blockedReason);
+        return requestDreamStart(cycleId, false);
+    }
+
+    public synchronized boolean requestDreamStart(String cycleId, boolean isManual) {
+        if (!evaluateDreamEligibility(isManual)) {
+            LOGGER.info("[WAKE_DREAM] DREAM start rejected for " + cycleId + " (manual=" + isManual + "): " + blockedReason);
             return false;
         }
 
         currentState.set(WakeDreamState.DREAM_ACTIVE);
         activeBranches.set(1);
         blockedReason = "DREAM cycle active (" + cycleId + ")";
-        LOGGER.info("[WAKE_DREAM] DREAM_START: " + cycleId);
+        LOGGER.info("[WAKE_DREAM] DREAM_START: " + cycleId + " (manual=" + isManual + ")");
         return true;
     }
 
