@@ -31,6 +31,8 @@ public class ModeRouter {
 		}
 
 		switch (mode.getType()) {
+		case DREAM_MODE:
+			return new DarwinFlow(aiService, manager);
 		case DARWIN_MODE:
 			return new DarwinFlow(aiService, manager);
 		case SELF_DEV_MODE:
@@ -73,6 +75,8 @@ public class ModeRouter {
 		String lower = prompt.toLowerCase().trim();
 
 		// 1. Try explicit overrides (Manual Routing)
+		if (lower.contains("mode: dream"))
+			return createDreamMode();
 		if (lower.contains("mode: chat"))
 			return createSimpleChatMode();
 		if (lower.contains("mode: assisted"))
@@ -90,6 +94,9 @@ public class ModeRouter {
 
 		// 2. Check explicit Orchestrator model overrides (User UI selection)
 		if (orchestrator != null) {
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.DREAM) {
+				return createDreamMode();
+			}
 			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
 				String sessionId = orchestrator.getId();
 				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
@@ -140,6 +147,8 @@ public class ModeRouter {
 		String lower = prompt.toLowerCase().trim();
 
 		// 1. Check explicit prompt overrides first (e.g. "mode: chat")
+		if (lower.contains("mode: dream"))
+			return createDreamMode();
 		if (lower.contains("mode: chat"))
 			return createSimpleChatMode();
 		if (lower.contains("mode: assisted"))
@@ -153,6 +162,9 @@ public class ModeRouter {
 
 		// 2. Check explicit Orchestrator model overrides (User UI selection)
 		if (orchestrator != null) {
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.DREAM) {
+				return createDreamMode();
+			}
 			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
 				// FORCE COGNITIVE SYNC: Ensure explicit UI selection updates the cognitive state
 				String sessionId = orchestrator.getId();
@@ -235,6 +247,10 @@ public class ModeRouter {
 		default:
 			return createSimpleChatMode();
 		}
+	}
+
+	private PlatformMode createDreamMode() {
+		return new PlatformMode(PlatformType.DREAM_MODE, AutonomyLevel.MEDIUM, 3, false);
 	}
 
 	private PlatformMode createSimpleChatMode() {

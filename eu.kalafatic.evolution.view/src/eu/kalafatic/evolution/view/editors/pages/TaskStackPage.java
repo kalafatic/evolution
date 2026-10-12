@@ -8,7 +8,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
 import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -190,7 +189,7 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void addDefaultModeTests() {
-        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE", "HEADLESS_MODE", "PROMPT_HELLO", "PROMPT_CREATE_LOCAL", "PROMPT_CREATE_MEDIATED", "PROMPT_ANALYZE_MEDIATED", "PROMPT_FORGE_LLM", "PROMPT_DOWNLOAD_DATASET"};
+        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "DREAM_MODE", "SELF_DEV_MODE", "HEADLESS_MODE", "PROMPT_HELLO", "PROMPT_CREATE_LOCAL", "PROMPT_CREATE_MEDIATED", "PROMPT_ANALYZE_MEDIATED", "PROMPT_FORGE_LLM", "PROMPT_DOWNLOAD_DATASET"};
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
         String timestamp = sdf.format(new Date());
         for (String mode : modes) {
@@ -217,6 +216,7 @@ public class TaskStackPage extends AEvoPage {
                     case "SIMPLE_CHAT" -> "Explain the purpose of this project.";
                     case "ASSISTED_CODING" -> "Add a new utility method to stringify JSON in eu.kalafatic.utils.";
                     case "DARWIN_MODE" -> "Optimize the EvolutionOrchestrator performance.";
+                    case "DREAM_MODE" -> "Execute background cognitive analysis cycle over system experiences.";
                     case "SELF_DEV_MODE" -> "Improve the TaskStackPage UI with better execution controls.";
                     case "HEADLESS_MODE" -> "Verify headless execution using the Self-Development Supervisor.";
                     case "PROMPT_HELLO" -> "hello";
@@ -245,12 +245,16 @@ public class TaskStackPage extends AEvoPage {
                     testPlan.setDarwinMode(true);
                 } else if (mode.equals("PROMPT_DOWNLOAD_DATASET")) {
                     testPlan.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_ATOMIC, BitState.WORKFLOW_TASK_ORIENTED));
+                } else if (mode.equals("DREAM_MODE")) {
+                    testPlan.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_TASK_ORIENTED));
+                    testPlan.setDarwinMode(true);
                 }
 
                 String[] subtaskNames = switch(mode) {
                     case "SIMPLE_CHAT" -> new String[]{"Intent Analysis (Skip Loop)", "Direct Agent Dispatch", "Response Generation"};
                     case "ASSISTED_CODING" -> new String[]{"Plan Generation", "User Approval Wait", "Atomic Task Execution", "Result Verification"};
                     case "DARWIN_MODE" -> new String[]{"Variant Generation", "Parallel Execution", "Scoring & Selection", "Merge fittest solution"};
+                    case "DREAM_MODE" -> new String[]{"Select Experiences", "Analyze Relationships", "Generate Hypotheses", "Verify Hypotheses", "Consolidate Results"};
                     case "SELF_DEV_MODE" -> new String[]{"Supervisor Session Start", "Iterative Darwin Loop", "Self-Modification Check", "Regression Testing"};
                     case "HEADLESS_MODE" -> new String[]{"Supervisor Initialization", "Headless Maven Build", "External Loop Execution", "Result Aggregation"};
                     case "PROMPT_FORGE_LLM" -> new String[]{"Analyze Training Corpus", "Compose Domain Weights", "Preflight Validation", "Train EVO Architecture", "Export GGUF & Native Artifacts", "Smoke Test Native Engine"};
