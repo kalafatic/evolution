@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer.IntentResult;
+import eu.kalafatic.evolution.controller.orchestration.dream.WakeDreamCoordinator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFactory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
@@ -16,70 +17,77 @@ public class KernelFacade implements IOrchestrator {
 
 	@Override
 	public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-		SessionContainer session = (SessionContainer) context.getMetadata().get("sessionContext");
-		if (session == null) {
-			session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
-		}
+		String requestId = "req-" + System.currentTimeMillis();
+		WakeDreamCoordinator.getInstance().notifyWakeStart(requestId);
 
-		IterationManager kernel = session.getIterationManager();
-
-		if (kernel == null) {
-			kernel = KernelFactory.create(taskRequest.getPrompt(), context, session);
-			session.setIterationManager(kernel);
-
-		} else {
-			String request = taskRequest.getPrompt();
-			IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
-			PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
-
-			if (!kernel.getDarwinEngine().getPlatformType().equals(platformType)) {
-				createEngine(context, session, kernel, platformType);
-			}
-		}
-
-		String promptLower = taskRequest.getPrompt() != null ? taskRequest.getPrompt().toLowerCase() : "";
-		if (promptLower.contains("acquire") && (promptLower.contains("data") || promptLower.contains("dataset"))) {
-			long targetBytes = parseTargetBytesFromPrompt(taskRequest.getPrompt(), context);
-
-			java.util.Map<String, Object> goalParams = new java.util.HashMap<>();
-			goalParams.put("targetUsableBytes", targetBytes);
-			goalParams.put("targetMetric", (double) targetBytes);
-			goalParams.put("currentMetricKey", "quantity");
-
-			context.getMetadata().put("targetUsableBytes", targetBytes);
-
-			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
-				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
-					taskRequest.getPrompt(),
-					"DATASET_ACQUISITION",
-					goalParams
-				);
-
-			if (context != null && context.getExecutionProfile() == null) {
-				context.getOrchestrationState().setExecutionProfile(
-					eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null)
-				);
+		try {
+			SessionContainer session = (SessionContainer) context.getMetadata().get("sessionContext");
+			if (session == null) {
+				session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
 			}
 
-			if (session.getIterationManager() == null) {
+			IterationManager kernel = session.getIterationManager();
+
+			if (kernel == null) {
 				kernel = KernelFactory.create(taskRequest.getPrompt(), context, session);
 				session.setIterationManager(kernel);
+
+			} else {
+				String request = taskRequest.getPrompt();
+				IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
+				PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
+
+				if (!kernel.getDarwinEngine().getPlatformType().equals(platformType)) {
+					createEngine(context, session, kernel, platformType);
+				}
 			}
 
-			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
-				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
+			String promptLower = taskRequest.getPrompt() != null ? taskRequest.getPrompt().toLowerCase() : "";
+			if (promptLower.contains("acquire") && (promptLower.contains("data") || promptLower.contains("dataset"))) {
+				long targetBytes = parseTargetBytesFromPrompt(taskRequest.getPrompt(), context);
 
-			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult result =
-				cognitiveEngine.solve(session, context, goal);
+				java.util.Map<String, Object> goalParams = new java.util.HashMap<>();
+				goalParams.put("targetUsableBytes", targetBytes);
+				goalParams.put("targetMetric", (double) targetBytes);
+				goalParams.put("currentMetricKey", "quantity");
 
-			OrchestratorResponse response = new OrchestratorResponse();
-			response.setSummary(result.getSummary());
-			response.setContent("Cognitive Execution Result: " + result.getSummary());
-			response.setResultType(result.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS ? ResultType.CHAT : ResultType.ERROR);
-			return response;
+				context.getMetadata().put("targetUsableBytes", targetBytes);
+
+				eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
+						taskRequest.getPrompt(),
+						"DATASET_ACQUISITION",
+						goalParams
+					);
+
+				if (context != null && context.getExecutionProfile() == null) {
+					context.getOrchestrationState().setExecutionProfile(
+						eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null)
+					);
+				}
+
+				if (session.getIterationManager() == null) {
+					kernel = KernelFactory.create(taskRequest.getPrompt(), context, session);
+					session.setIterationManager(kernel);
+				}
+
+				eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
+
+				eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult result =
+					cognitiveEngine.solve(session, context, goal);
+
+				OrchestratorResponse response = new OrchestratorResponse();
+				response.setSummary(result.getSummary());
+				response.setContent("Cognitive Execution Result: " + result.getSummary());
+				response.setResultType(result.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS ? ResultType.CHAT : ResultType.ERROR);
+				return response;
+			}
+
+			return kernel.handle(taskRequest);
+		} finally {
+			WakeDreamCoordinator.getInstance().notifyWakeEnd(requestId);
 		}
-
-		return kernel.handle(taskRequest);
 	}
 
 	private long parseTargetBytesFromPrompt(String prompt, TaskContext context) {
@@ -114,35 +122,42 @@ public class KernelFacade implements IOrchestrator {
 
 	@Override
 	public String executeTask(Task task, TaskContext context) throws Exception {
-		// Direct task execution is still routed through IterationManager
-		// to ensure the system is in the correct state (EXECUTING).
-		SessionContainer session = (SessionContainer) context.getMetadata().get("sessionContext");
-		if (session == null) {
-			session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
-		}
-		
-		IterationManager kernel = session.getIterationManager();
+		String requestId = "task-" + System.currentTimeMillis();
+		WakeDreamCoordinator.getInstance().notifyWakeStart(requestId);
 
-		if (kernel == null) {
-			kernel = KernelFactory.create(task.getPrompt(), context, session);
-			session.setIterationManager(kernel);
-
-		} else {
-			String request = task.getPrompt();
-			IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
-			PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
-
-			if (!kernel.getDarwinEngine().getPlatformType().equals(platformType)) {
-				createEngine(context, session, kernel, platformType);
+		try {
+			// Direct task execution is still routed through IterationManager
+			// to ensure the system is in the correct state (EXECUTING).
+			SessionContainer session = (SessionContainer) context.getMetadata().get("sessionContext");
+			if (session == null) {
+				session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
 			}
-		}
 
-		java.util.List<Task> tasks = new java.util.ArrayList<>();
-		tasks.add(task);
-		boolean success = kernel.executeTasksWithRetries(tasks);
-		if (!success)
-			throw new Exception("Task failed: " + task.getName());
-		return task.getResponse();
+			IterationManager kernel = session.getIterationManager();
+
+			if (kernel == null) {
+				kernel = KernelFactory.create(task.getPrompt(), context, session);
+				session.setIterationManager(kernel);
+
+			} else {
+				String request = task.getPrompt();
+				IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
+				PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
+
+				if (!kernel.getDarwinEngine().getPlatformType().equals(platformType)) {
+					createEngine(context, session, kernel, platformType);
+				}
+			}
+
+			java.util.List<Task> tasks = new java.util.ArrayList<>();
+			tasks.add(task);
+			boolean success = kernel.executeTasksWithRetries(tasks);
+			if (!success)
+				throw new Exception("Task failed: " + task.getName());
+			return task.getResponse();
+		} finally {
+			WakeDreamCoordinator.getInstance().notifyWakeEnd(requestId);
+		}
 	}
 		
 	private void createEngine(TaskContext context, SessionContainer session, IterationManager kernel,
