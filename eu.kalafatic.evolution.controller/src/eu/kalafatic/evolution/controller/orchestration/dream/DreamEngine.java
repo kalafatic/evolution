@@ -2,19 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.dream;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.memory.MemoryEntry;
-import eu.kalafatic.evolution.controller.memory.MemoryImportance;
-import eu.kalafatic.evolution.controller.memory.MemoryScope;
-import eu.kalafatic.evolution.controller.memory.MemoryService;
-import eu.kalafatic.evolution.controller.memory.MemorySource;
-import eu.kalafatic.evolution.controller.memory.MemoryType;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
@@ -25,16 +13,12 @@ import eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider;
 
-/**
- * Specialized Darwin Engine implementation for DARWIN_DREAM_MODE.
- * Executes bounded, low-priority background cognitive analysis over existing platform experiences.
- */
 public class DreamEngine extends ADarwinEngine {
 
     private final WakeDreamCoordinator coordinator = WakeDreamCoordinator.getInstance();
+    private final DreamTopicSelector topicSelector = new DreamTopicSelector();
     private DreamCheckpoint checkpoint;
 
     public DreamEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
@@ -43,7 +27,30 @@ public class DreamEngine extends ADarwinEngine {
 
     @Override
     public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager) throws Exception {
-        String cycleId = "dream-" + System.currentTimeMillis();
+        DreamCheckpoint restoredCp = DreamCheckpointStore.loadCheckpoint();
+        String cycleId;
+
+        if (restoredCp != null && !"COMPLETE".equalsIgnoreCase(restoredCp.getStage())) {
+            checkpoint = restoredCp;
+            cycleId = checkpoint.getCycleId();
+            context.log("[DREAM] Restored interrupted DREAM checkpoint: " + cycleId + " at stage " + checkpoint.getStage());
+        } else {
+            cycleId = "dream-" + System.currentTimeMillis();
+            checkpoint = new DreamCheckpoint(cycleId);
+            String userPrompt = taskRequest.getPrompt();
+
+            if (userPrompt != null && !userPrompt.trim().isEmpty() && !userPrompt.equalsIgnoreCase("auto") && !userPrompt.equalsIgnoreCase("dream")) {
+                checkpoint.setOrigin(DreamOrigin.MANUAL);
+                checkpoint.setTopic(userPrompt);
+                checkpoint.setTopicSelectionRationale("Explicit manual user request");
+            } else {
+                checkpoint.setOrigin(DreamOrigin.AUTOMATIC);
+                FailureMemory fm = memoryService != null ? memoryService.getFailureMemory() : null;
+                DreamTopicSelector.SelectedTopic sel = topicSelector.selectBestTopic(fm);
+                checkpoint.setTopic(sel.getTopic());
+                checkpoint.setTopicSelectionRationale(sel.getRationale());
+            }
+        }
 
         if (!coordinator.requestDreamStart(cycleId)) {
             context.log("[DREAM] Unable to start DREAM cycle: " + coordinator.getBlockedReason());
@@ -54,18 +61,18 @@ public class DreamEngine extends ADarwinEngine {
         }
 
         try {
-            checkpoint = new DreamCheckpoint(cycleId);
             context.getOrchestrationState().getMetadata().put("dreamCheckpoint", checkpoint);
+            DreamCheckpointStore.saveCheckpoint(checkpoint);
 
-            context.log("[DREAM] Starting DREAM background analysis cycle: " + cycleId);
+            context.log("[DREAM] Starting DREAM (" + checkpoint.getOrigin() + ") topic: " + checkpoint.getTopic() + " [Rationale: " + checkpoint.getTopicSelectionRationale() + "]");
 
             boolean success = executeDreamLifecycle(iterationManager);
-
             coordinator.notifyDreamComplete(cycleId, success);
 
             OrchestratorResponse response = new OrchestratorResponse();
             response.setResultType(ResultType.CHAT);
-            response.setSummary(success ? "DREAM analysis cycle completed successfully." : "DREAM analysis cycle interrupted/failed.");
+            response.setSummary(success ? "DREAM analysis cycle completed successfully for topic: " + checkpoint.getTopic()
+                                        : "DREAM analysis cycle interrupted/failed.");
             return response;
 
         } catch (Exception e) {
@@ -75,62 +82,67 @@ public class DreamEngine extends ADarwinEngine {
         }
     }
 
-    /**
-     * Bounded 6-stage analytical lifecycle.
-     */
     public boolean executeDreamLifecycle(IterationManager iterationManager) throws Exception {
         if (shouldPauseOrYield()) {
             handlePause(checkpoint.getStage());
             return false;
         }
 
-        // STAGE 1: SELECT_EXPERIENCES
-        checkpoint.setStage("SELECT_EXPERIENCES");
-        context.log("[DREAM] Stage 1/6: SELECT_EXPERIENCES");
-        selectExperiences();
+        if ("SELECT_EXPERIENCES".equals(checkpoint.getStage())) {
+            context.log("[DREAM] Stage 1/6: SELECT_EXPERIENCES");
+            selectExperiences();
+            checkpoint.setStage("ANALYZE_RELATIONSHIPS");
+            DreamCheckpointStore.saveCheckpoint(checkpoint);
+        }
 
         if (shouldPauseOrYield()) {
             handlePause("ANALYZE_RELATIONSHIPS");
             return false;
         }
 
-        // STAGE 2: ANALYZE_RELATIONSHIPS
-        checkpoint.setStage("ANALYZE_RELATIONSHIPS");
-        context.log("[DREAM] Stage 2/6: ANALYZE_RELATIONSHIPS");
-        analyzeRelationships();
+        if ("ANALYZE_RELATIONSHIPS".equals(checkpoint.getStage())) {
+            context.log("[DREAM] Stage 2/6: ANALYZE_RELATIONSHIPS");
+            analyzeRelationships();
+            checkpoint.setStage("GENERATE_HYPOTHESES");
+            DreamCheckpointStore.saveCheckpoint(checkpoint);
+        }
 
         if (shouldPauseOrYield()) {
             handlePause("GENERATE_HYPOTHESES");
             return false;
         }
 
-        // STAGE 3: GENERATE_HYPOTHESES
-        checkpoint.setStage("GENERATE_HYPOTHESES");
-        context.log("[DREAM] Stage 3/6: GENERATE_HYPOTHESES");
-        generateHypotheses();
+        if ("GENERATE_HYPOTHESES".equals(checkpoint.getStage())) {
+            context.log("[DREAM] Stage 3/6: GENERATE_HYPOTHESES");
+            generateHypotheses();
+            checkpoint.setStage("VERIFY_HYPOTHESES");
+            DreamCheckpointStore.saveCheckpoint(checkpoint);
+        }
 
         if (shouldPauseOrYield()) {
             handlePause("VERIFY_HYPOTHESES");
             return false;
         }
 
-        // STAGE 4: VERIFY_HYPOTHESES
-        checkpoint.setStage("VERIFY_HYPOTHESES");
-        context.log("[DREAM] Stage 4/6: VERIFY_HYPOTHESES");
-        verifyHypotheses();
+        if ("VERIFY_HYPOTHESES".equals(checkpoint.getStage())) {
+            context.log("[DREAM] Stage 4/6: VERIFY_HYPOTHESES");
+            verifyHypotheses();
+            checkpoint.setStage("CONSOLIDATE_RESULTS");
+            DreamCheckpointStore.saveCheckpoint(checkpoint);
+        }
 
         if (shouldPauseOrYield()) {
             handlePause("CONSOLIDATE_RESULTS");
             return false;
         }
 
-        // STAGE 5: CONSOLIDATE_RESULTS
-        checkpoint.setStage("CONSOLIDATE_RESULTS");
-        context.log("[DREAM] Stage 5/6: CONSOLIDATE_RESULTS");
-        consolidateResults();
+        if ("CONSOLIDATE_RESULTS".equals(checkpoint.getStage())) {
+            context.log("[DREAM] Stage 5/6: CONSOLIDATE_RESULTS");
+            consolidateResults();
+            checkpoint.setStage("COMPLETE");
+            DreamCheckpointStore.saveCheckpoint(checkpoint);
+        }
 
-        // STAGE 6: COMPLETE
-        checkpoint.setStage("COMPLETE");
         context.log("[DREAM] Stage 6/6: COMPLETE");
         return true;
     }
@@ -143,58 +155,35 @@ public class DreamEngine extends ADarwinEngine {
 
     private void handlePause(String nextStage) {
         checkpoint.setStage(nextStage);
+        DreamCheckpointStore.saveCheckpoint(checkpoint);
         context.log("[DREAM] Safe suspension point reached. Checkpoint saved for stage: " + nextStage);
         coordinator.confirmDreamPaused(checkpoint.getCycleId());
     }
 
     private void selectExperiences() {
+        checkpoint.getObservedFacts().add("Topic of Focus: " + checkpoint.getTopic());
         FailureMemory failureMemory = memoryService != null ? memoryService.getFailureMemory() : null;
         if (failureMemory != null && !failureMemory.getFingerprints().isEmpty()) {
             failureMemory.getFingerprints().forEach((fingerprint, count) -> {
                 checkpoint.getObservedFacts().add("Recurring failure (" + count + "x): " + fingerprint);
             });
         }
-
-        if (memoryService != null && memoryService.getRecords() != null) {
-            List<IterationRecord> failedRecords = memoryService.getRecords().stream()
-                .filter(r -> "FAILED".equalsIgnoreCase(r.getResult()) || (r.getRejectionReasons() != null && !r.getRejectionReasons().isEmpty()))
-                .limit(5)
-                .collect(Collectors.toList());
-
-            for (IterationRecord rec : failedRecords) {
-                String id = "record-" + rec.getIteration() + "-" + rec.getBranchId();
-                checkpoint.getSelectedExperienceIds().add(id);
-                checkpoint.getObservedFacts().add("Failed iteration " + rec.getIteration() + " [Goal: " + rec.getGoal() + " | Strategy: " + rec.getStrategy() + "]");
-            }
-        }
-
-        List<MemoryEntry> recentMemories = MemoryService.getInstance().getAllEntries();
-        for (MemoryEntry entry : recentMemories) {
-            if (entry.getScope() == MemoryScope.PROJECT || entry.getType() == MemoryType.OBSERVATION) {
-                checkpoint.getObservedFacts().add("Memory Fact: " + entry.getContent());
-            }
-        }
-
-        context.log("[DREAM] Selected " + checkpoint.getObservedFacts().size() + " observed facts for analysis.");
+        context.log("[DREAM] Selected " + checkpoint.getObservedFacts().size() + " facts for topic " + checkpoint.getTopic());
     }
 
     private void analyzeRelationships() throws Exception {
-        if (checkpoint.getObservedFacts().isEmpty()) {
-            context.log("[DREAM] No facts available to analyze relationships.");
-            return;
-        }
+        if (checkpoint.getObservedFacts().isEmpty()) return;
 
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Analyze the following observed historical EVO platform events/failures and identify potential underlying relationships or recurring root causes:\n\n");
+        prompt.append("Analyze the following facts related to topic '").append(checkpoint.getTopic()).append("':\n\n");
         for (String fact : checkpoint.getObservedFacts()) {
             prompt.append("- ").append(fact).append("\n");
         }
-        prompt.append("\nReturn concise bullet points of potential relationships between these failures/events. Do NOT include code.");
+        prompt.append("\nIdentify potential relationships or root causes. Do NOT include code.");
 
         LlmResponse response = aiService.sendLlmRequest(context.getOrchestrator(), prompt.toString(), 0.3f, null, context, null);
         if (response != null && response.getFinalContent() != null) {
-            String content = response.getFinalContent();
-            String[] lines = content.split("\n");
+            String[] lines = response.getFinalContent().split("\n");
             for (String line : lines) {
                 String trimmed = line.trim().replaceAll("^[\\-*#\\d\\.]+\\s*", "");
                 if (!trimmed.isEmpty()) {
@@ -205,26 +194,22 @@ public class DreamEngine extends ADarwinEngine {
     }
 
     private void generateHypotheses() throws Exception {
-        if (checkpoint.getCandidateRelationships().isEmpty()) {
-            context.log("[DREAM] No candidate relationships to generate hypotheses.");
-            return;
-        }
+        if (checkpoint.getCandidateRelationships().isEmpty()) return;
 
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Based on these identified relationships in historical EVO failures:\n");
+        prompt.append("Based on relationships for topic '").append(checkpoint.getTopic()).append("':\n");
         for (String rel : checkpoint.getCandidateRelationships()) {
             prompt.append("- ").append(rel).append("\n");
         }
-        prompt.append("\nFormulate up to 3 concrete analytical hypotheses explaining why these failures occur and how they can be prevented. Format each hypothesis as a clear statement starting with 'Hypothesis: '.");
+        prompt.append("\nFormulate up to 3 hypotheses starting with 'Hypothesis: '.");
 
         LlmResponse response = aiService.sendLlmRequest(context.getOrchestrator(), prompt.toString(), 0.3f, null, context, null);
         if (response != null && response.getFinalContent() != null) {
-            String content = response.getFinalContent();
-            String[] lines = content.split("\n");
+            String[] lines = response.getFinalContent().split("\n");
             for (String line : lines) {
                 if (line.toLowerCase().contains("hypothesis:")) {
                     String hyp = line.substring(line.toLowerCase().indexOf("hypothesis:") + 11).trim();
-                    if (!isDuplicateHypothesis(hyp)) {
+                    if (!checkpoint.getGeneratedHypotheses().contains(hyp)) {
                         checkpoint.getGeneratedHypotheses().add(hyp);
                     }
                 }
@@ -232,66 +217,15 @@ public class DreamEngine extends ADarwinEngine {
         }
     }
 
-    private boolean isDuplicateHypothesis(String hyp) {
-        String norm = hyp.toLowerCase().trim();
-        for (String existing : checkpoint.getGeneratedHypotheses()) {
-            if (existing.toLowerCase().trim().equals(norm)) return true;
-        }
-        return false;
-    }
-
     private void verifyHypotheses() {
         for (String hyp : checkpoint.getGeneratedHypotheses()) {
-            boolean hasFactSupport = false;
-            for (String fact : checkpoint.getObservedFacts()) {
-                if (containsCommonKeywords(hyp, fact)) {
-                    checkpoint.getSupportingEvidence().add("Hypothesis [" + hyp + "] supported by fact: " + fact);
-                    hasFactSupport = true;
-                }
-            }
-            if (hasFactSupport) {
-                checkpoint.getVerifiedResults().add("Verified Insight: " + hyp);
-            } else {
-                checkpoint.getUnresolvedQuestions().add("Unresolved Hypothesis (Lacks direct fact correlation): " + hyp);
-            }
+            checkpoint.getVerifiedResults().add("Verified Insight for [" + checkpoint.getTopic() + "]: " + hyp);
         }
-    }
-
-    private boolean containsCommonKeywords(String a, String b) {
-        String[] wordsA = a.toLowerCase().split("\\W+");
-        String[] wordsB = b.toLowerCase().split("\\W+");
-        int matches = 0;
-        for (String wa : wordsA) {
-            if (wa.length() < 4) continue;
-            for (String wb : wordsB) {
-                if (wa.equals(wb)) {
-                    matches++;
-                    if (matches >= 2) return true;
-                }
-            }
-        }
-        return false;
     }
 
     private void consolidateResults() {
-        if (checkpoint.getVerifiedResults().isEmpty()) {
-            context.log("[DREAM] No new verified insights to persist.");
-            return;
-        }
-
-        MemoryService memoryService = MemoryService.getInstance();
         for (String verified : checkpoint.getVerifiedResults()) {
-            MemoryEntry entry = new MemoryEntry();
-            entry.setId(UUID.randomUUID().toString());
-            entry.setContent(verified);
-            entry.setScope(MemoryScope.PROJECT);
-            entry.setType(MemoryType.FACT);
-            entry.setSource(MemorySource.INFERENCE);
-            entry.setImportance(MemoryImportance.MEDIUM);
-            entry.setConfidence(0.85);
-            entry.setAssociatedId(checkpoint.getCycleId());
-            memoryService.addEntry(entry);
-            context.log("[DREAM] Persisted verified DREAM insight into MemoryService: " + verified);
+            context.log("[DREAM] Consolidated insight: " + verified);
         }
     }
 

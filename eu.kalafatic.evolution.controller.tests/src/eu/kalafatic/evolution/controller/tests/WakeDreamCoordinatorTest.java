@@ -10,8 +10,12 @@ import org.junit.Test;
 
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.dream.DreamCheckpoint;
+import eu.kalafatic.evolution.controller.orchestration.dream.DreamCheckpointStore;
+import eu.kalafatic.evolution.controller.orchestration.dream.DreamOrigin;
+import eu.kalafatic.evolution.controller.orchestration.dream.DreamTopicSelector;
 import eu.kalafatic.evolution.controller.orchestration.dream.WakeDreamCoordinator;
 import eu.kalafatic.evolution.controller.orchestration.dream.WakeDreamState;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 
 public class WakeDreamCoordinatorTest {
 
@@ -21,6 +25,7 @@ public class WakeDreamCoordinatorTest {
     public void setUp() {
         coordinator = WakeDreamCoordinator.getInstance();
         coordinator.resetState();
+        DreamCheckpointStore.clearCheckpoint();
     }
 
     @Test
@@ -59,23 +64,55 @@ public class WakeDreamCoordinatorTest {
     }
 
     @Test
-    public void testDreamCheckpointSerialization() {
-        DreamCheckpoint cp = new DreamCheckpoint("cycle-test");
-        cp.setStage("GENERATE_HYPOTHESES");
-        cp.getObservedFacts().add("Fact 1");
-        cp.getGeneratedHypotheses().add("Hypothesis 1");
+    public void testDreamTopicSelectionAndOrigin() {
+        FailureMemory fm = new FailureMemory();
+        fm.addFingerprint("Build error in TychoEvoRcpBuilder");
+        fm.addFingerprint("Build error in TychoEvoRcpBuilder");
 
-        org.json.JSONObject json = cp.toJsonObject();
-        assertNotNull(json);
+        DreamTopicSelector selector = new DreamTopicSelector();
+        DreamTopicSelector.SelectedTopic topic = selector.selectBestTopic(fm);
 
-        DreamCheckpoint restored = DreamCheckpoint.fromJsonObject(json);
+        assertNotNull(topic);
+        assertTrue(topic.getTopic().contains("Build error in TychoEvoRcpBuilder"));
+        assertTrue(topic.getRationale().contains("2 times"));
+
+        DreamCheckpoint cp = new DreamCheckpoint("cycle-manual");
+        cp.setOrigin(DreamOrigin.MANUAL);
+        cp.setTopic("Analyze RCP build failure");
+
+        assertEquals(DreamOrigin.MANUAL, cp.getOrigin());
+        assertEquals("Analyze RCP build failure", cp.getTopic());
+    }
+
+    @Test
+    public void testElasticBranchManagement() {
+        assertEquals(1, coordinator.getMaxAllowedBranches());
+        coordinator.setMaxAllowedBranches(3);
+        assertEquals(3, coordinator.getMaxAllowedBranches());
+
+        coordinator.setDreamEnabled(true);
+        assertTrue(coordinator.canSpawnBranch());
+    }
+
+    @Test
+    public void testDreamCheckpointPersistenceStore() {
+        DreamCheckpoint cp = new DreamCheckpoint("cycle-persistence-test");
+        cp.setOrigin(DreamOrigin.AUTOMATIC);
+        cp.setTopic("Test Topic");
+        cp.setStage("ANALYZE_RELATIONSHIPS");
+        cp.getObservedFacts().add("Fact A");
+
+        DreamCheckpointStore.saveCheckpoint(cp);
+
+        DreamCheckpoint restored = DreamCheckpointStore.loadCheckpoint();
         assertNotNull(restored);
-        assertEquals("cycle-test", restored.getCycleId());
-        assertEquals("GENERATE_HYPOTHESES", restored.getStage());
+        assertEquals("cycle-persistence-test", restored.getCycleId());
+        assertEquals(DreamOrigin.AUTOMATIC, restored.getOrigin());
+        assertEquals("Test Topic", restored.getTopic());
+        assertEquals("ANALYZE_RELATIONSHIPS", restored.getStage());
         assertEquals(1, restored.getObservedFacts().size());
-        assertEquals("Fact 1", restored.getObservedFacts().get(0));
-        assertEquals(1, restored.getGeneratedHypotheses().size());
-        assertEquals("Hypothesis 1", restored.getGeneratedHypotheses().get(0));
+
+        DreamCheckpointStore.clearCheckpoint();
     }
 
     @Test
