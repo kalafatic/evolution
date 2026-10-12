@@ -35,6 +35,8 @@ import org.eclipse.ui.IFileEditorInput;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.view.util.EvoDialogUtils;
+import eu.kalafatic.evolution.view.util.EvoTableViewerHelper;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
@@ -463,40 +465,21 @@ public class DevelopmentPage extends AEvoPage {
 		if (row == null || !(selfDevTable.getInput() instanceof List<?> inputList)) return;
 		@SuppressWarnings("unchecked")
 		List<SelfDevRow> rows = (List<SelfDevRow>) inputList;
-		int idx = rows.indexOf(row);
-		if (idx > 0) {
-			SelfDevRow temp = rows.get(idx);
-			rows.set(idx, rows.get(idx - 1));
-			rows.set(idx - 1, temp);
-			updateRowOrders(rows);
-			selfDevTable.refresh();
-			selfDevTable.setSelection(new org.eclipse.jface.viewers.StructuredSelection(row));
-		}
+		EvoTableViewerHelper.moveRow(selfDevTable, rows, row, -1, this::updateRowOrders);
 	}
 
 	private void moveRowDown(SelfDevRow row) {
 		if (row == null || !(selfDevTable.getInput() instanceof List<?> inputList)) return;
 		@SuppressWarnings("unchecked")
 		List<SelfDevRow> rows = (List<SelfDevRow>) inputList;
-		int idx = rows.indexOf(row);
-		if (idx >= 0 && idx < rows.size() - 1) {
-			SelfDevRow temp = rows.get(idx);
-			rows.set(idx, rows.get(idx + 1));
-			rows.set(idx + 1, temp);
-			updateRowOrders(rows);
-			selfDevTable.refresh();
-			selfDevTable.setSelection(new org.eclipse.jface.viewers.StructuredSelection(row));
-		}
+		EvoTableViewerHelper.moveRow(selfDevTable, rows, row, 1, this::updateRowOrders);
 	}
 
 	private void createSelfDevColumns() {
 		String[] titles = { "#", "Action", "Edit", "Name", "Executed From", "Command", "Path", "URL", "Status" };
 		int[] bounds = { 40, 80, 40, 110, 140, 240, 150, 180, 120 };
 		for (int i = 0; i < titles.length; i++) {
-			TableViewerColumn col = new TableViewerColumn(selfDevTable, SWT.NONE);
-			col.getColumn().setText(titles[i]);
-			col.getColumn().setWidth(bounds[i]);
-			col.getColumn().setResizable(true);
+			TableViewerColumn col = EvoTableViewerHelper.createColumn(selfDevTable, titles[i], bounds[i], true, false);
 			col.setLabelProvider(new SelfDevLabelProvider(i));
 		}
 	}
@@ -840,10 +823,8 @@ public class DevelopmentPage extends AEvoPage {
 				if (!preflightRes.isSuccess()) {
 					System.err.println("[DevelopmentPage] [RUN_DEBUG] Preflight FAILED/BLOCKED:\n"
 							+ preflightRes.generateSummaryReport());
-					Display.getDefault().asyncExec(() -> {
-						org.eclipse.jface.dialogs.MessageDialog.openError(getShell(), "Self-Dev Preflight Failed",
-								"Self-Dev execution cannot proceed safely.\n\n" + preflightRes.generateSummaryReport());
-					});
+					EvoDialogUtils.showErrorDialog(getShell(), "Self-Dev Preflight Failed",
+							"Self-Dev execution cannot proceed safely.\n\n" + preflightRes.generateSummaryReport(), null);
 					return;
 				}
 				System.out

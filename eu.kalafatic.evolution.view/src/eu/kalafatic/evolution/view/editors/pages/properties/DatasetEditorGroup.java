@@ -32,6 +32,7 @@ import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+import eu.kalafatic.evolution.view.util.EvoDialogUtils;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 import java.io.File;
@@ -539,7 +540,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                         setProgressBarVisible(false);
                         if (!reportArea.isDisposed()) {
                             reportArea.setText("Discovery Error: " + ex.getMessage());
-                            MessageDialog.openError(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage());
+                            EvoDialogUtils.showErrorDialog(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage(), ex);
                         }
                     });
                     return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
@@ -862,7 +863,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                         setProgressBarVisible(false);
                         if (!reportArea.isDisposed()) {
                             reportArea.setText("Download Error: " + ex.getMessage());
-                            MessageDialog.openError(group.getShell(), "Dataset Download Error", "Error downloading dataset: " + ex.getMessage());
+                            EvoDialogUtils.showErrorDialog(group.getShell(), "Dataset Download Error", "Error downloading dataset: " + ex.getMessage(), ex);
                         }
                     });
                     return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
@@ -964,7 +965,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                         setProgressBarVisible(false);
                         if (!reportArea.isDisposed()) {
                             reportArea.setText("EXPORT ERROR: " + ex.getMessage());
-                            MessageDialog.openError(group.getShell(), "Error Exporting Dataset", "Error creating .evodata artifact: " + ex.getMessage());
+                            EvoDialogUtils.showErrorDialog(group.getShell(), "Error Exporting Dataset", "Error creating .evodata artifact: " + ex.getMessage(), ex);
                         }
                     });
                     return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
@@ -1195,7 +1196,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                     Display.getDefault().asyncExec(() -> {
                         if (!reportArea.isDisposed()) {
                             reportArea.setText("Preparation Error: " + ex.getMessage());
-                            MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Preparation failed: " + ex.getMessage());
+                            EvoDialogUtils.showErrorDialog(group.getShell(), "Dataset Preparation Error", "Preparation failed: " + ex.getMessage(), ex);
                         }
                     });
                     return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
