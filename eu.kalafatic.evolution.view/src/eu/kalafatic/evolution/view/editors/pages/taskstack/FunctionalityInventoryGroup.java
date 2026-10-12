@@ -38,6 +38,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
+import eu.kalafatic.evolution.view.util.EvoTableViewerHelper;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class FunctionalityInventoryGroup {
@@ -315,15 +316,7 @@ public class FunctionalityInventoryGroup {
         if (sel.size() != 1) return;
 
         FunctionalityEntry selected = (FunctionalityEntry) sel.getFirstElement();
-        int idx = entries.indexOf(selected);
-        int newIdx = idx + delta;
-
-        if (newIdx >= 0 && newIdx < entries.size()) {
-            Collections.swap(entries, idx, newIdx);
-            tableViewer.refresh();
-            tableViewer.setSelection(sel, true);
-            updateButtonEnablement();
-        }
+        EvoTableViewerHelper.moveRow(tableViewer, entries, selected, delta, list -> updateButtonEnablement());
     }
 
     private void handleEditSelectedRow() {

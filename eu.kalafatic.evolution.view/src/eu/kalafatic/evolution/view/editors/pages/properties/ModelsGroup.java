@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.view.util.EvoTableViewerHelper;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
@@ -780,12 +781,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private TableViewerColumn createTableViewerColumn(String title, int bound) {
-        TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.NONE);
-        viewerColumn.getColumn().setText(title);
-        viewerColumn.getColumn().setWidth(bound);
-        viewerColumn.getColumn().setResizable(true);
-        viewerColumn.getColumn().setMoveable(true);
-        return viewerColumn;
+        return EvoTableViewerHelper.createColumn(viewer, title, bound, true, true);
     }
 
     private void handleDownloadModel() {
