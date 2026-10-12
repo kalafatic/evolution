@@ -28,6 +28,9 @@ public class ModeRecognizer {
 	 * Determines the current mode.
 	 */
 	public String determineMode(TaskContext context) {
+		if (isDreamMode(context)) {
+			return "DREAM";
+		}
 		if (isForgeMode(context)) {
 			return "FORGE";
 		}
@@ -44,6 +47,9 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(IntentResult intentResult, TaskContext context) {
+		if (isDreamMode(context)) {
+			return PlatformType.DREAM_MODE;
+		}
 		if (isMutationMode(context)) {
 			return PlatformType.MUTATION;
 		}
@@ -59,8 +65,8 @@ public class ModeRecognizer {
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
-		if (intentResult.getReasoning().toLowerCase().contains("reconstruct intent") ||
-		    intentResult.getReasoning().toLowerCase().contains("analyze architecture")) {
+		if (intentResult != null && (intentResult.getReasoning().toLowerCase().contains("reconstruct intent") ||
+		    intentResult.getReasoning().toLowerCase().contains("analyze architecture"))) {
 			return PlatformType.INTENT_RECONSTRUCTION;
 		}
 		if (intentResult == null || intentResult.isChat()) {
@@ -76,6 +82,9 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(TaskContext context) {
+		if (isDreamMode(context)) {
+			return PlatformType.DREAM_MODE;
+		}
 		if (isMutationMode(context)) {
 			return PlatformType.MUTATION;
 		}
@@ -91,14 +100,15 @@ public class ModeRecognizer {
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
-//			if (isChatMode(context)) {
-//				return PlatformType.SIMPLE_CHAT;
-//			}
 		if (isCoding(context)) {
 			return PlatformType.ASSISTED_CODING;
 		}
 		return PlatformType.SIMPLE_CHAT;
-//		return PlatformType.DARWIN_MODE;
+	}
+
+	public static boolean isDreamMode(TaskContext context) {
+		return (context.getOrchestrator() != null && AiMode.DREAM.equals(context.getOrchestrator().getAiMode()))
+				|| (context.getPlatformMode() != null && PlatformType.DREAM_MODE.equals(context.getPlatformMode().getType()));
 	}
 
 	public static boolean isMutationMode(TaskContext context) {
@@ -131,18 +141,17 @@ public class ModeRecognizer {
 	}
 
 	public static boolean isForcedTechnicalMode(TaskContext context) {
-		return isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context);
+		return isDreamMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {
+		if (isDreamMode(context)) return false;
 		try {
-			// 1. FAST-PATH: Check metadata flag if already analyzed
 			Object isChat = context.getOrchestrationState().getMetadata().get("isChatRequest");
 			if (isChat instanceof Boolean) {
 				return (Boolean) isChat;
 			}
 
-			// 2. FAST-PATH: Internal repair requests treat as CHAT/non-task
 			Object isRepair = context.getOrchestrationState().getMetadata().get("isInternalRepair");
 			if (isRepair instanceof Boolean && (Boolean) isRepair) {
 				return true;
@@ -166,7 +175,6 @@ public class ModeRecognizer {
 			return result.isChat() || result.getConfidence() < 0.6;
 		} catch (Exception e) {
 			context.log("[ModeRecognizer] [CRITICAL] LLM analysis failed for chat mode detection: " + e.getMessage());
-			// SAFE FALLBACK: Default to CHAT mode unless raw input is explicitly a complex technical request
 			String rawInput = context.getOrchestrationState().getRawInput();
 			if (rawInput == null) return true;
 			String lower = rawInput.toLowerCase();
@@ -195,7 +203,6 @@ public class ModeRecognizer {
 	}
 
 	private static boolean isCoding(TaskContext context) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

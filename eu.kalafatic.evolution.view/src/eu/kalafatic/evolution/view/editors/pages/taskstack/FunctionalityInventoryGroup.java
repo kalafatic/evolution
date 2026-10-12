@@ -176,7 +176,7 @@ public class FunctionalityInventoryGroup {
         btnRefresh.addListener(SWT.Selection, e -> handleRefreshInventory());
 
         GUIFactory.INSTANCE.createLabel(actionsGroup, "AI Mode:");
-        modeCombo = GUIFactory.INSTANCE.createCombo(actionsGroup, new String[] { "SELF_DEV_MODE", "MEDIATED_MODE", "INTENT_MODE", "DARWIN_MODE" });
+        modeCombo = GUIFactory.INSTANCE.createCombo(actionsGroup, new String[] { "SELF_DEV_MODE", "MEDIATED_MODE", "INTENT_MODE", "DARWIN_MODE", "DREAM_MODE" });
         modeCombo.select(0);
 
         btnAnalyze = new Button(actionsGroup, SWT.PUSH);
@@ -234,7 +234,7 @@ public class FunctionalityInventoryGroup {
         });
 
         col.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
-            private final String[] MODES = new String[] { "intent", "mediated", "self-dev" };
+            private final String[] MODES = new String[] { "intent", "mediated", "self-dev", "dream" };
 
             @Override
             protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) {
@@ -540,6 +540,9 @@ public class FunctionalityInventoryGroup {
             newTask.setIterativeMode(true);
         } else if ("intent".equalsIgnoreCase(rowMode)) {
             newTask.setType("INTENT_MODE");
+            newTask.setDarwinMode(true);
+        } else if ("dream".equalsIgnoreCase(rowMode)) {
+            newTask.setType("DREAM_MODE");
             newTask.setDarwinMode(true);
         } else { // fallback local/darwin
             newTask.setType("DARWIN_MODE");

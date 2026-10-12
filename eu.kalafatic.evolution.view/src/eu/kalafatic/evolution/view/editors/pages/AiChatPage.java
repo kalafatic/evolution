@@ -345,6 +345,7 @@ public class AiChatPage extends AEvoPage {
 			case HYBRID: targetBg = colorHybrid; break;
 			case REMOTE: targetBg = colorRemote; break;
 			case MEDIATED: targetBg = colorHybrid; break;
+			case DREAM: targetBg = colorHybrid; break;
 		}
 		setBackgroundSafe(modeIndicatorLabel, targetBg);
 	}
@@ -570,6 +571,8 @@ public class AiChatPage extends AEvoPage {
 				}
 			} else if (selectedMode == AiMode.INTENT) {
 				request = loadPromptFile("intent.md");
+			} else if (selectedMode == AiMode.DREAM) {
+				request = "dream";
 			} else {
 				processLogEntry("Evo: Request is empty. Please enter a valid instruction or question.");
 				return;
@@ -1706,6 +1709,8 @@ public class AiChatPage extends AEvoPage {
 		if ("SELF_DEV_MODE".equals(task.getType())) {
 			instructionsGroup.setSelfIterative(true);
 		} else if ("DARWIN_MODE".equals(task.getType())) {
+			instructionsGroup.setDarwin(true);
+		} else if ("DREAM_MODE".equals(task.getType())) {
 			instructionsGroup.setDarwin(true);
 		} else if ("ASSISTED_CODING".equals(task.getType())) {
 			instructionsGroup.setIterative(true);
