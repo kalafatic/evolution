@@ -31,13 +31,13 @@ import eu.kalafatic.evolution.view.dialogs.ForgeSettingsDialog;
 import eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 import eu.kalafatic.evolution.view.editors.pages.properties.ModelDetailsDialog;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class ChatMgmtGroup extends AEvoGroup {
     private Combo sessionCombo;
-    private AiChatPage page;
+    private AiCommanderPage page;
 
     private Combo aiModeCombo;
     private Combo aiRemoteCombo;
@@ -47,7 +47,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private Composite compositeLocal, compositeRemote;
     private Button forgeSettingsBtn;
 
-    public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
+    public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiCommanderPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);

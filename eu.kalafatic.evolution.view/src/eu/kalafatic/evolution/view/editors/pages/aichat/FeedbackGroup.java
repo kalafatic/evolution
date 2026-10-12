@@ -15,14 +15,14 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 
 public class FeedbackGroup extends AEvoGroup {
-    private AiChatPage page;
+    private AiCommanderPage page;
     private Section section;
 
     // Satisfaction controls
@@ -47,7 +47,7 @@ public class FeedbackGroup extends AEvoGroup {
     private boolean isUpdating = false;
 	private Composite feedbackBox;
 
-    public FeedbackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
+    public FeedbackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiCommanderPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);

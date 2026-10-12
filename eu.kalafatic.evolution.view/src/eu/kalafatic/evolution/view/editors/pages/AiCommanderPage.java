@@ -93,7 +93,7 @@ import eu.kalafatic.evolution.view.projection.RuntimeProjection;
 /**
  * @evo:16:A reason=darwin-mode-sync
  */
-public class AiChatPage extends AEvoPage {
+public class AiCommanderPage extends AEvoPage {
 	private boolean isUpdating = false;
 	private boolean isWaitingForModel = false;
 	private String lastAttemptedRequest = "";
@@ -169,7 +169,7 @@ public class AiChatPage extends AEvoPage {
 		});
 	};
 
-	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+	public AiCommanderPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
 		
 		this.outputController = ConversationOutputController.getInstance();
@@ -2075,7 +2075,7 @@ public class AiChatPage extends AEvoPage {
 
 	private String loadPromptFile(String fileName) {
 		try {
-			Bundle bundle = FrameworkUtil.getBundle(AiChatPage.class);
+			Bundle bundle = FrameworkUtil.getBundle(AiCommanderPage.class);
 			if (bundle != null) {
 				URL url = bundle.getEntry("prompts/" + fileName);
 				if (url != null) {

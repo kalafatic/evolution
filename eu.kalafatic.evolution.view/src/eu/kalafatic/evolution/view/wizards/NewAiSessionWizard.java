@@ -8,7 +8,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 
 /**
  * @evo:17:A reason=new-thread-wizard
@@ -38,7 +38,7 @@ public class NewAiSessionWizard extends Wizard implements INewWizard {
             IWorkbenchPage workbenchPage = window.getActivePage();
             if (workbenchPage != null && workbenchPage.getActiveEditor() instanceof MultiPageEditor) {
                 MultiPageEditor editor = (MultiPageEditor) workbenchPage.getActiveEditor();
-                AiChatPage aiChatPage = editor.getAiChatPage();
+                AiCommanderPage aiChatPage = editor.getAiChatPage();
                 if (aiChatPage != null) {
                     aiChatPage.createNewSession(sessionName);
                     return true;

@@ -13,7 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 
@@ -30,7 +30,7 @@ public class MediatedAnalysisHandler extends AbstractHandler {
 		}
 
 		MultiPageEditor editor = (MultiPageEditor) activeEditor;
-		AiChatPage chatPage = editor.getAiChatPage();
+		AiCommanderPage chatPage = editor.getAiChatPage();
 		if (chatPage == null) {
 			return null;
 		}

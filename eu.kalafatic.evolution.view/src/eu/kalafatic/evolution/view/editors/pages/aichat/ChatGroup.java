@@ -44,7 +44,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
@@ -53,7 +53,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
  */
 public class ChatGroup extends AEvoGroup {
     private Browser browser;
-    private AiChatPage page;
+    private AiCommanderPage page;
     private Section chatSection;
     private boolean isLoaded = false;
     private boolean isJsReady = false;
@@ -65,7 +65,7 @@ public class ChatGroup extends AEvoGroup {
         void onEditMessage(int index, String oldText);
     }
 
-    public ChatGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
+    public ChatGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiCommanderPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent, chatFont);

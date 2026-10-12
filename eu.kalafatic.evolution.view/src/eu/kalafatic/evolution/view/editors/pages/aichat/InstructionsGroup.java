@@ -24,7 +24,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
@@ -38,19 +38,19 @@ public class InstructionsGroup extends AEvoGroup {
     private Button sendButton, pauseButton, finishButton, stopButton, attachButton;
     private Composite attachmentArea;
     private List<String> instructionFiles = new ArrayList<>();
-    private AiChatPage page;
+    private AiCommanderPage page;
 
-    public InstructionsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator) {
+    public InstructionsGroup(FormToolkit toolkit, Composite parent, AiCommanderPage page, Orchestrator orchestrator) {
         this(toolkit, parent, page, orchestrator, false);
     }
 
-    public InstructionsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator, boolean nested) {
+    public InstructionsGroup(FormToolkit toolkit, Composite parent, AiCommanderPage page, Orchestrator orchestrator, boolean nested) {
         super(page.getEditor(), orchestrator);
         this.page = page;
         createControl(toolkit, parent, nested);
     }
 
-    public InstructionsGroup(FormToolkit toolkit, Composite promptParent, Composite controlsParent, AiChatPage page, Orchestrator orchestrator) {
+    public InstructionsGroup(FormToolkit toolkit, Composite promptParent, Composite controlsParent, AiCommanderPage page, Orchestrator orchestrator) {
         super(page.getEditor(), orchestrator);
         this.page = page;
         createSplitControl(toolkit, promptParent, controlsParent);

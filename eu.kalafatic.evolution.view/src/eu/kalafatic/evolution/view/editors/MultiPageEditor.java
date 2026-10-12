@@ -56,7 +56,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
-import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiCommanderPage;
 import eu.kalafatic.evolution.view.editors.pages.ArchitecturePage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
@@ -84,7 +84,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
 
 	private TextEditor textEditor;
-	private AiChatPage aiChatPage;
+	private AiCommanderPage aiChatPage;
 	private ArchitecturePage architecturePage;
 	private PropertiesPage propertiesPage;
 	private McpSettingsPage mcpSettingsPage;
@@ -815,7 +815,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	/**
 	 * @evo:17:A reason=programmatic-access
 	 */
-	public AiChatPage getAiChatPage() {
+	public AiCommanderPage getAiChatPage() {
 		return aiChatPage;
 	}
 
