@@ -53,7 +53,40 @@ public class StartSupervisorTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        return runtime.start(context);
+        TaskResult superResult = runtime.start(context);
+        if (!superResult.isSuccess()) {
+            return superResult;
+        }
+
+        if ("START_EVO_SUPERVISOR".equalsIgnoreCase(id) || id.contains("EVO")) {
+            java.io.File exportDir = context.getExportDirectory();
+            String exportPath = exportDir != null ? exportDir.getAbsolutePath() : ".";
+
+            logInfo("Sending /start-evo command to Supervisor with export path: " + exportPath);
+            SupervisorClient client = new SupervisorClient(context);
+            TaskResult evoRes = client.sendCommand("start-evo", exportPath);
+
+            // Record START_EVO task result in context so downstream tasks know EVO RCP has been started
+            TaskResult startEvoSuccess = TaskResult.success("START_EVO", "EVO RCP product started via Supervisor command (" + evoRes.getMessage() + ")");
+            context.recordTaskResult(startEvoSuccess);
+
+            if (evoRes.isSuccess()) {
+                return new TaskResult.Builder(id)
+                        .status(TaskStatus.SUCCESS)
+                        .message("Supervisor started and successfully launched EVO RCP product: " + evoRes.getMessage())
+                        .duration(superResult.getDuration() + evoRes.getDuration())
+                        .build();
+            } else {
+                logInfo("Supervisor start-evo endpoint returned non-success: " + evoRes.getMessage());
+                return new TaskResult.Builder(id)
+                        .status(TaskStatus.SUCCESS)
+                        .message("Supervisor started on port " + context.getEffectiveSupervisorPort() + " (start-evo status: " + evoRes.getMessage() + ")")
+                        .duration(superResult.getDuration() + evoRes.getDuration())
+                        .build();
+            }
+        }
+
+        return superResult;
     }
 
     @Override
