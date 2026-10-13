@@ -304,12 +304,149 @@ public class IntentReconstructionEngine extends ADarwinEngine {
                 || name.equals("node_modules") || name.equals("bin");
     }
 
+    private void syncDesignModelWithReality() {
+        Object rmObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
+        if (!(rmObj instanceof eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel)) {
+            return;
+        }
+
+        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel rm =
+                (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) rmObj;
+
+        // Subsystems
+        if (rm.getSubsystems() != null) {
+            for (eu.kalafatic.evolution.controller.mediation.model.Subsystem sub : rm.getSubsystems()) {
+                String subId = "subsystem:" + sub.getName();
+                if (designModel.getComponents().stream().noneMatch(c -> subId.equalsIgnoreCase(c.getId()))) {
+                    ComponentRecord rec = new ComponentRecord();
+                    rec.setId(subId);
+                    rec.setName(sub.getName());
+                    rec.setType("SUBSYSTEM");
+                    rec.setDescription(sub.getPurpose() != null ? sub.getPurpose() : sub.getDescription());
+                    designModel.getComponents().add(rec);
+                }
+            }
+        }
+
+        // Use Cases
+        if (rm.getUseCases() != null) {
+            for (eu.kalafatic.evolution.controller.mediation.model.ArchitecturalUseCase uc : rm.getUseCases()) {
+                String ucId = "usecase:" + uc.getId();
+                if (designModel.getComponents().stream().noneMatch(c -> ucId.equalsIgnoreCase(c.getId()))) {
+                    ComponentRecord rec = new ComponentRecord();
+                    rec.setId(ucId);
+                    rec.setName(uc.getName());
+                    rec.setType("USE_CASE");
+                    rec.setDescription(uc.getDescription());
+                    rec.getUseCases().add(uc.getName());
+                    designModel.getComponents().add(rec);
+                }
+            }
+        }
+
+        // Authority / Entry Points
+        if (rm.getArchitecturalAuthorityFiles() != null) {
+            for (String file : rm.getArchitecturalAuthorityFiles()) {
+                String fId = "authority:" + file;
+                if (designModel.getComponents().stream().noneMatch(c -> fId.equalsIgnoreCase(c.getId()))) {
+                    ComponentRecord rec = new ComponentRecord();
+                    rec.setId(fId);
+                    rec.setName(new File(file).getName());
+                    rec.setType("ENTRY_POINT");
+                    rec.setPath(file);
+                    rec.setDescription("Architectural authority / entry point file");
+                    designModel.getComponents().add(rec);
+                }
+            }
+        }
+    }
+
     private String buildTargetSummary() {
+        syncDesignModelWithReality();
+
         File root = context.getProjectRoot();
+        Object rmObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
+        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel rm =
+                (rmObj instanceof eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel)
+                        ? (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) rmObj
+                        : null;
+
         long useCaseCount = designModel.getComponents().stream().filter(c -> "USE_CASE".equals(c.getType())).count();
         long subsystemCount = designModel.getComponents().stream().filter(c -> "SUBSYSTEM".equals(c.getType()) || "DOMAIN".equals(c.getType())).count();
+        long entryPointCount = designModel.getComponents().stream().filter(c -> "ENTRY_POINT".equals(c.getType())).count();
         long docCount = designModel.getComponents().stream().filter(c -> "DOCUMENTATION".equals(c.getType())).count();
         long dataCount = designModel.getComponents().stream().filter(c -> "DATASET".equals(c.getType()) || "DATA".equals(c.getType())).count();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Reconstructed Target Purpose & Knowledge:\n");
+        sb.append("Target Path: ").append(root != null ? root.getAbsolutePath() : "Unknown").append("\n");
+
+        if (rm != null && rm.getDomain() != null && !rm.getDomain().isEmpty()) {
+            sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
+        }
+
+        if (rm != null && rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
+            sb.append("Project Purpose: ").append(rm.getPurpose()).append("\n");
+        }
+
+        if (subsystemCount > 0 || useCaseCount > 0 || entryPointCount > 0) {
+            sb.append("Target Nature: Structured Codebase (Subsystems: ").append(subsystemCount)
+              .append(", Entry Points: ").append(entryPointCount)
+              .append(", Use Cases: ").append(useCaseCount).append(")\n");
+        } else if (docCount > 0 || dataCount > 0) {
+            sb.append("Target Nature: Knowledge/Document Repository (Docs: ").append(docCount)
+              .append(", Datasets: ").append(dataCount).append(")\n");
+        } else {
+            sb.append("Target Nature: Heterogeneous Artifact Repository (Analyzed Components: ")
+              .append(designModel.getComponents().size()).append(")\n");
+        }
+
+        if (rm != null) {
+            if (rm.getSubsystems() != null && !rm.getSubsystems().isEmpty()) {
+                sb.append("\nDiscovered Subsystems:\n");
+                for (eu.kalafatic.evolution.controller.mediation.model.Subsystem sub : rm.getSubsystems()) {
+                    sb.append(" - ").append(sub.getName()).append(" (Confidence: ").append(String.format(Locale.US, "%.2f", sub.getConfidence())).append(")\n");
+                    if (sub.getPurpose() != null && !sub.getPurpose().isEmpty()) {
+                        sb.append("   Purpose: ").append(sub.getPurpose()).append("\n");
+                    }
+                    if (sub.getCriticalFiles() != null && !sub.getCriticalFiles().isEmpty()) {
+                        sb.append("   Critical Files: ").append(String.join(", ", sub.getCriticalFiles())).append("\n");
+                    }
+                }
+            }
+
+            if (rm.getUseCases() != null && !rm.getUseCases().isEmpty()) {
+                sb.append("\nMain Use Cases:\n");
+                for (eu.kalafatic.evolution.controller.mediation.model.ArchitecturalUseCase uc : rm.getUseCases()) {
+                    sb.append(" - ").append(uc.getName()).append(": ").append(uc.getDescription()).append("\n");
+                }
+            }
+
+            if (rm.getArchitecturalAuthorityFiles() != null && !rm.getArchitecturalAuthorityFiles().isEmpty()) {
+                sb.append("\nEntry Points & Authority Files:\n");
+                for (String auth : rm.getArchitecturalAuthorityFiles().stream().limit(10).collect(Collectors.toList())) {
+                    sb.append(" - ").append(auth).append("\n");
+                }
+            }
+
+            if (rm.getExecutionFlows() != null && !rm.getExecutionFlows().isEmpty()) {
+                sb.append("\nImportant Workflows:\n");
+                for (String flow : rm.getExecutionFlows().stream().limit(10).collect(Collectors.toList())) {
+                    sb.append(" - ").append(flow).append("\n");
+                }
+            }
+
+            if (rm.getContentLandscapeSummary() != null && !rm.getContentLandscapeSummary().isEmpty()) {
+                sb.append("\nArchitecture Overview:\n").append(rm.getContentLandscapeSummary()).append("\n");
+            }
+
+            if (rm.getKnowledgeGaps() != null && !rm.getKnowledgeGaps().isEmpty()) {
+                sb.append("\nRemaining Unknowns & Knowledge Gaps:\n");
+                for (eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap gap : rm.getKnowledgeGaps().stream().limit(10).collect(Collectors.toList())) {
+                    sb.append(" - [").append(gap.getType()).append("] ").append(gap.getDescription()).append("\n");
+                }
+            }
+        }
 
         List<String> topComponents = designModel.getComponents().stream()
                 .filter(c -> c.getName() != null && !c.getName().isEmpty())
@@ -323,29 +460,19 @@ public class IntentReconstructionEngine extends ADarwinEngine {
                 .limit(10)
                 .collect(Collectors.toList());
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Reconstructed Target Purpose & Knowledge:\n");
-        sb.append("Target Path: ").append(root != null ? root.getAbsolutePath() : "Unknown").append("\n");
-
-        if (useCaseCount > 0 || subsystemCount > 0) {
-            sb.append("Target Nature: Structured Codebase (Subsystems: ").append(subsystemCount).append(", Use Cases/Endpoints: ").append(useCaseCount).append(")\n");
-        } else if (docCount > 0 || dataCount > 0) {
-            sb.append("Target Nature: Knowledge/Document Repository (Docs: ").append(docCount).append(", Datasets: ").append(dataCount).append(")\n");
-        } else {
-            sb.append("Target Nature: Heterogeneous Artifact Repository (Analyzed Components: ").append(designModel.getComponents().size()).append(")\n");
-        }
-
-        if (!topComponents.isEmpty()) {
-            sb.append("Discovered Core Artifacts:\n");
-            for (String comp : topComponents) {
-                sb.append(" - ").append(comp).append("\n");
+        if (rm == null || rm.getUseCases().isEmpty()) {
+            if (!topComponents.isEmpty()) {
+                sb.append("\nDiscovered Core Artifacts:\n");
+                for (String comp : topComponents) {
+                    sb.append(" - ").append(comp).append("\n");
+                }
             }
-        }
 
-        if (!discoveredUseCases.isEmpty()) {
-            sb.append("Discovered Capability Actions:\n");
-            for (String uc : discoveredUseCases) {
-                sb.append(" - ").append(uc).append("\n");
+            if (!discoveredUseCases.isEmpty()) {
+                sb.append("\nDiscovered Capability Actions:\n");
+                for (String uc : discoveredUseCases) {
+                    sb.append(" - ").append(uc).append("\n");
+                }
             }
         }
 
