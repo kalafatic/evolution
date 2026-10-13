@@ -501,6 +501,7 @@ public class ForgeSettingsDialog extends Dialog {
             public void widgetSelected(SelectionEvent e) {
                 FileDialog dlg = new FileDialog(getShell(), SWT.OPEN | SWT.MULTI);
                 dlg.setText("Select Training Data Files");
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                 if (dlg.open() != null) {
                     String filterPath = dlg.getFilterPath();
                     String[] fileNames = dlg.getFileNames();
@@ -519,6 +520,7 @@ public class ForgeSettingsDialog extends Dialog {
             public void widgetSelected(SelectionEvent e) {
                 DirectoryDialog dlg = new DirectoryDialog(getShell());
                 dlg.setText("Select Training Data Directory");
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                 String selectedDir = dlg.open();
                 if (selectedDir != null && !selectedDir.trim().isEmpty()) {
                     DatasetItem ds = new DatasetItem(true, selectedDir, "FOLDER");
@@ -534,6 +536,7 @@ public class ForgeSettingsDialog extends Dialog {
                 FileDialog dlg = new FileDialog(getShell(), SWT.OPEN);
                 dlg.setText("Select Forging Target Path (.evo model, workspace, or dataset file)");
                 dlg.setFilterExtensions(new String[] { "*.evo;*.txt;*.pdf;*.html;*.json;*.md;*.csv", "*.*" });
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                 String selectedFile = dlg.open();
                 if (selectedFile != null && !selectedFile.trim().isEmpty()) {
                     boolean found = false;

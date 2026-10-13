@@ -223,6 +223,7 @@ public class MediatedEditor extends MultiPageEditorPart {
         org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(getSite().getShell(), SWT.SAVE);
         dialog.setFilterExtensions(new String[]{"*.zip"});
         dialog.setFileName(zipFile.getName());
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, zipFile != null ? zipFile.getParent() : null);
         String path = dialog.open();
         if (path != null) {
             File newZip = new File(path);

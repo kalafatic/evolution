@@ -350,6 +350,7 @@ public class ChatGroup extends AEvoGroup {
             org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(page.getShell(), SWT.SAVE);
             dialog.setFilterExtensions(new String[]{"*.zip"});
             dialog.setFileName("changes_" + System.currentTimeMillis() + ".zip");
+            eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, projectRoot != null ? projectRoot.getAbsolutePath() : null);
             String zipPath = dialog.open();
             if (zipPath != null) {
                 new Thread(() -> {

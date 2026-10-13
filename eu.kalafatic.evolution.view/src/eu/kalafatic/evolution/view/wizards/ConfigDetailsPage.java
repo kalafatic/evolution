@@ -66,8 +66,7 @@ public class ConfigDetailsPage extends AWizardPage {
                 org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getShell());
                 dialog.setText("Select Default Target Codebase");
                 dialog.setMessage("Choose the folder containing the EVO repository.");
-                String current = defaultTargetCombo.getText();
-                if (current != null && !current.isEmpty()) dialog.setFilterPath(current);
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, defaultTargetCombo.getText());
                 String selected = dialog.open();
                 if (selected != null) {
                     defaultTargetCombo.setText(selected);

@@ -380,6 +380,26 @@ public class FileUtils {
 	 * @param args the args
 	 * @return the string
 	 */
+	public static String getDefaultWorkspacePath() {
+		return new File(System.getProperty("user.home"), "workspace").getAbsolutePath();
+	}
+
+	public static void configureDialogFilterPath(FileDialog dialog, String currentPath) {
+		if (currentPath != null && !currentPath.trim().isEmpty() && new File(currentPath).exists()) {
+			dialog.setFilterPath(currentPath);
+		} else {
+			dialog.setFilterPath(getDefaultWorkspacePath());
+		}
+	}
+
+	public static void configureDialogFilterPath(DirectoryDialog dialog, String currentPath) {
+		if (currentPath != null && !currentPath.trim().isEmpty() && new File(currentPath).exists()) {
+			dialog.setFilterPath(currentPath);
+		} else {
+			dialog.setFilterPath(getDefaultWorkspacePath());
+		}
+	}
+
 	public String openFile(boolean isFile, Object... args) {
 		Shell shell = new Shell(Display.getDefault());
 		String filterPath = (args.length > 0) ? (String) args[0] : null;
@@ -387,11 +407,11 @@ public class FileUtils {
 
 		if (isFile) {
 			FileDialog dialog = new FileDialog(shell);
-			dialog.setFilterPath(filterPath);
+			configureDialogFilterPath(dialog, filterPath);
 			result = dialog.open();
 		} else {
 			DirectoryDialog dialog = new DirectoryDialog(shell);
-			dialog.setFilterPath(filterPath);
+			configureDialogFilterPath(dialog, filterPath);
 			result = dialog.open();
 		}
 		if (result == null) {

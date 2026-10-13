@@ -47,28 +47,28 @@ public enum ECorePreferences implements IPreference {
 
 	// LOCATIONS
 	/** The WORKSPAC e_ loc. */
-	WORKSPACE_LOC("Workspace location", "C:\\GE\\workspace", "C:\\GE\\workspace"),
+	WORKSPACE_LOC("Workspace location", getDefaultPath("workspace"), getDefaultPath("workspace")),
 
 	/** The MODEL s_ loc. */
-	MODELS_LOC("Models location", "C:\\GE\\workspace\\models", "C:\\GE\\workspace\\models"),
+	MODELS_LOC("Models location", getDefaultPath("workspace/models"), getDefaultPath("workspace/models")),
 
 	/** The LOG s_ loc. */
-	LOGS_LOC("Logs location", "C:\\GE\\workspace\\logs", "C:\\GE\\workspace\\logs"),
+	LOGS_LOC("Logs location", getDefaultPath("workspace/logs"), getDefaultPath("workspace/logs")),
 
 	/** The TORRENT s_ loc. */
-	TORRENTS_LOC("Torrents location", "C:\\GE\\workspace\\torrents", "C:\\GE\\workspace\\torrents"),
+	TORRENTS_LOC("Torrents location", getDefaultPath("workspace/torrents"), getDefaultPath("workspace/torrents")),
 
 	/** The DOWNLOAD s_ loc. */
-	DOWNLOADS_LOC("Downloads location", "C:\\GE\\workspace\\downloads", "C:\\GE\\workspace\\downloads"),
+	DOWNLOADS_LOC("Downloads location", getDefaultPath("workspace/downloads"), getDefaultPath("workspace/downloads")),
 
 	/** The SIT e_ loc. */
-	SITE_LOC("Site location", "C:\\GE\\site", "C:\\GE\\site"),
+	SITE_LOC("Site location", getDefaultPath("workspace/site"), getDefaultPath("workspace/site")),
 
 	/** The N l_ loc. */
-	NL_LOC("Site location", "C:\\GE\\nl", "C:\\GE\\nl"),
+	NL_LOC("Site location", getDefaultPath("workspace/nl"), getDefaultPath("workspace/nl")),
 
 	/** The CER t_ loc. */
-	CERT_LOC("App certificates location", "C:\\GE\\certificates", "C:\\GE\\certificates"),
+	CERT_LOC("App certificates location", getDefaultPath("workspace/certificates"), getDefaultPath("workspace/certificates")),
 
 	/** The JD k_ cer t_ loc. */
 	JDK_CERT_LOC("JDK cacerts certificates location", "", ""),
@@ -80,13 +80,13 @@ public enum ECorePreferences implements IPreference {
 	CERT_ENABLED("Certificates loaded (lazy)", false, false),
 
 	/** The JAVADO c_ loc. */
-	JAVADOC_LOC("Javadoc location", "C:\\GE\\javadoc", "C:\\GE\\javadoc"),
+	JAVADOC_LOC("Javadoc location", getDefaultPath("workspace/javadoc"), getDefaultPath("workspace/javadoc")),
 
 	/** The UPDATE s_ loc. */
-	UPDATES_LOC("Updates location", "C:\\GE\\updates", "C:\\GE\\updates"),
+	UPDATES_LOC("Updates location", getDefaultPath("workspace/updates"), getDefaultPath("workspace/updates")),
 
 	/** The MAINTAI n_ loc. */
-	MAINTAIN_LOC("Maintain location", "C:\\GE\\maintain", "C:\\GE\\maintain"),
+	MAINTAIN_LOC("Maintain location", getDefaultPath("workspace/maintain"), getDefaultPath("workspace/maintain")),
 
 	// SYSTEM
 	/** The CP u_ name. */
@@ -231,7 +231,7 @@ public enum ECorePreferences implements IPreference {
 	RC_ENABLED("Enable RC", true, true),
 
 	/** The PROGRA m_ loc. */
-	PROGRAM_LOC("Program location", "C:\\GE\\Gemini\\Gemini.exe", "C:\\GE\\Gemini\\Gemini.exe"),
+	PROGRAM_LOC("Program location", getDefaultPath("workspace/program"), getDefaultPath("workspace/program")),
 
 	/** The D b_ torrennt s_ query. */
 	DB_TORRENNTS_QUERY("DB torrents query", "7-select name from torrents", "7-select name from torrents"),
@@ -269,6 +269,10 @@ public enum ECorePreferences implements IPreference {
 			locales.add(new Object[] { langs[5], FCoreImageConstants.ES_IMG });
 		}
 		return locales;
+	}
+
+	private static String getDefaultPath(String relativePath) {
+		return new java.io.File(System.getProperty("user.home"), relativePath).getAbsolutePath();
 	}
 
 	public static int getLocaleIndex(String lang) {

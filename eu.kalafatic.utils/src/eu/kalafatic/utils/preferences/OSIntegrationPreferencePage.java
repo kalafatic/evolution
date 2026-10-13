@@ -73,7 +73,7 @@ public class OSIntegrationPreferencePage extends APreferencePage {
 	private FileDialog fileDialog;
 
 	/** The DEFAUL t_ directory. */
-	private final String DEFAULT_DIRECTORY = "C:\\Program Files\\";
+	private final String DEFAULT_DIRECTORY = System.getProperty("user.home");
 
 	/** The program path. */
 	private String programPath;

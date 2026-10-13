@@ -211,6 +211,7 @@ public class OllamaProvider implements ILlmProvider {
                         fileDialog.setText("Save Ollama Error Log");
                         fileDialog.setFilterExtensions(new String[] { "*.txt", "*.*" });
                         fileDialog.setFileName("ollama-error-log-" + model + ".txt");
+                        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(fileDialog, null);
                         String selectedPath = fileDialog.open();
                         if (selectedPath != null) {
                             try {

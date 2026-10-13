@@ -281,9 +281,7 @@ public class DynamicMapDialog extends TitleAreaDialog {
 
 				if (field.has(DynamicField.DIRECTORY)) {
 					DirectoryDialog dialog = new DirectoryDialog(getShell());
-					if (filterPath != null && !filterPath.isEmpty()) {
-						dialog.setFilterPath(filterPath);
-					}
+					eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, filterPath);
 					String path = dialog.open();
 					if (path != null) {
 						if (input instanceof Text) {
@@ -297,9 +295,7 @@ public class DynamicMapDialog extends TitleAreaDialog {
 					if (fileName != null && !fileName.isEmpty()) {
 						dialog.setFileName(fileName);
 					}
-					if (filterPath != null && !filterPath.isEmpty()) {
-						dialog.setFilterPath(filterPath);
-					}
+					eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, filterPath);
 					String path = dialog.open();
 					if (path != null) {
 						if (input instanceof Text) {
