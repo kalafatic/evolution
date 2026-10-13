@@ -115,26 +115,42 @@ public class Log {
     }
 
     public static void log(String msg) {
-        // Log to stdout for basic visibility (only if not redirected to avoid duplicates)
+        log(null, Level.INFO, msg, null);
+    }
+
+    public static void log(String sessionId, String msg) {
+        log(sessionId, Level.INFO, msg, null);
+    }
+
+    public static void log(String sessionId, Level level, String msg, Throwable t) {
+        if (sessionId != null && !sessionId.isEmpty()) {
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+                eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+            if (session != null && session.getSessionLogger() != null) {
+                session.getSessionLogger().log(level, "Log", msg, t);
+                return;
+            }
+        }
+
+        // Fallback to global logger
         if (!redirected) {
             System.out.println(msg);
         }
 
-        // Log to file
         if (fileLogger != null) {
-            fileLogger.info(msg);
+            if (t != null) {
+                fileLogger.log(level, msg, t);
+            } else {
+                fileLogger.log(level, msg);
+            }
         }
 
-        // Log to Eclipse Console
         logToConsole(msg);
     }
 
     public static void log(Object module, Exception e) {
         String msg = "ERROR [" + module + "]: " + e.getMessage();
-        log(msg);
-        if (fileLogger != null) {
-            fileLogger.log(Level.SEVERE, msg, e);
-        }
+        log(null, Level.SEVERE, msg, e);
     }
 
     public static void redirectSystemStreams() {
