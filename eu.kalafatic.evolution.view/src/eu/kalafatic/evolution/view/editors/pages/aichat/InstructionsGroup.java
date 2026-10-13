@@ -20,6 +20,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.controller.orchestration.dream.WakeDreamCoordinator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
@@ -32,7 +33,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
  */
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
-    private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
+    private Button iterativeCheck, selfIterativeCheck, dreamCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
     private org.eclipse.swt.widgets.Combo maxIterationsCombo;
     private Scale expansionScale;
     private Button sendButton, pauseButton, finishButton, stopButton, attachButton;
@@ -222,7 +223,7 @@ public class InstructionsGroup extends AEvoGroup {
         
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = GUIFactory.INSTANCE.createComposite(parent, 10);
+        Composite settingsComp = GUIFactory.INSTANCE.createComposite(parent, 11);
         
         // 4. Expansion Depth Slider        
         GUIFactory.INSTANCE.createLabel(settingsComp, "Expansion Depth (Atomic - Multiple):", SWT.NONE, 200);
@@ -294,6 +295,21 @@ public class InstructionsGroup extends AEvoGroup {
                     settings.put("iterativeMode", true);
                     settings.put("darwinMode", true);
                 }
+                page.updateConfiguration(settings);
+                page.saveLastUsedSettings();
+            }
+        });
+
+        dreamCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Dream");
+        dreamCheck.setSelection(WakeDreamCoordinator.getInstance().isDreamEnabled());
+        dreamCheck.setToolTipText("Enable auto background dreaming mode (app can dream when no workload is processed).");
+        dreamCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                boolean sel = dreamCheck.getSelection();
+                WakeDreamCoordinator.getInstance().setDreamEnabled(sel);
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("dreamEnabled", sel);
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
@@ -426,6 +442,7 @@ public class InstructionsGroup extends AEvoGroup {
 
                 setSelectionSafe(iterativeCheck, (Boolean) config.getOrDefault("iterativeMode", session != null ? session.isIterativeMode() : (pi != null ? pi.isIterativeMode() : true)));
                 setSelectionSafe(selfIterativeCheck, (Boolean) config.getOrDefault("selfIterativeMode", session != null ? session.isSelfIterativeMode() : (pi != null ? pi.isSelfIterativeMode() : false)));
+                setSelectionSafe(dreamCheck, (Boolean) config.getOrDefault("dreamEnabled", WakeDreamCoordinator.getInstance().isDreamEnabled()));
                 setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", session != null ? session.isDarwinMode() : (pageOrch != null ? pageOrch.isDarwinMode() : true)));
                 setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", session != null ? session.isGitAutomation() : (pi != null ? pi.isGitAutomation() : false)));
                 setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", session != null ? session.isStepMode() : (pi != null ? pi.isStepMode() : false)));
@@ -499,6 +516,13 @@ public class InstructionsGroup extends AEvoGroup {
         if (selfIterative) {
             iterativeCheck.setSelection(true);
             darwinCheck.setSelection(true);
+        }
+    }
+    public boolean isDream() { return dreamCheck != null ? dreamCheck.getSelection() : false; }
+    public void setDream(boolean dream) {
+        if (dreamCheck != null && !dreamCheck.isDisposed()) {
+            dreamCheck.setSelection(dream);
+            WakeDreamCoordinator.getInstance().setDreamEnabled(dream);
         }
     }
     public boolean isDarwin() { return darwinCheck.getSelection(); }
