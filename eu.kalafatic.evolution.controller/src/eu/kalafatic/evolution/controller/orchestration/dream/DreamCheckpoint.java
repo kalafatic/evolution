@@ -18,6 +18,7 @@ public class DreamCheckpoint implements Serializable {
     private DreamOrigin origin = DreamOrigin.MANUAL;
     private String topic;
     private String topicSelectionRationale;
+    private String selectedExperienceCandidateId;
     private String stage; // SELECT_EXPERIENCES, ANALYZE_RELATIONSHIPS, GENERATE_HYPOTHESES, VERIFY_HYPOTHESES, CONSOLIDATE_RESULTS, COMPLETE
     private long startTime;
     private long lastUpdated;
@@ -53,6 +54,7 @@ public class DreamCheckpoint implements Serializable {
         json.put("origin", origin != null ? origin.name() : DreamOrigin.MANUAL.name());
         json.put("topic", topic);
         json.put("topicSelectionRationale", topicSelectionRationale);
+        json.put("selectedExperienceCandidateId", selectedExperienceCandidateId);
         json.put("stage", stage);
         json.put("startTime", startTime);
         json.put("lastUpdated", lastUpdated);
@@ -84,6 +86,7 @@ public class DreamCheckpoint implements Serializable {
         }
         cp.setTopic(json.optString("topic"));
         cp.setTopicSelectionRationale(json.optString("topicSelectionRationale"));
+        cp.setSelectedExperienceCandidateId(json.optString("selectedExperienceCandidateId"));
         cp.setStage(json.optString("stage", "SELECT_EXPERIENCES"));
         cp.setStartTime(json.optLong("startTime", System.currentTimeMillis()));
         cp.setLastUpdated(json.optLong("lastUpdated", System.currentTimeMillis()));
@@ -141,6 +144,14 @@ public class DreamCheckpoint implements Serializable {
 
     public void setTopicSelectionRationale(String topicSelectionRationale) {
         this.topicSelectionRationale = topicSelectionRationale;
+    }
+
+    public String getSelectedExperienceCandidateId() {
+        return selectedExperienceCandidateId;
+    }
+
+    public void setSelectedExperienceCandidateId(String selectedExperienceCandidateId) {
+        this.selectedExperienceCandidateId = selectedExperienceCandidateId;
     }
 
     public String getStage() {
