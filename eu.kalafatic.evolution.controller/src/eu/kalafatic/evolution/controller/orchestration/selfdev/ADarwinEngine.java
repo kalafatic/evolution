@@ -302,11 +302,19 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 			// 1. DISCOVERY phase
 			if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
-				if (iterationManager.getGitManager().isGitRepository()) {
+				if (iterationManager.getGitManager().isGitRepository()
+						|| platformType == PlatformType.INTENT_RECONSTRUCTION
+						|| (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.INTENT_RECONSTRUCTION)
+						|| profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
 					iterationManager.transition(SystemState.ANALYZING, context);
 					context.log("[DARWIN] Discovery: Inspecting repository structure.");
-					String projectStructure = iterationManager.getStructureAgent().process(
-							"Provide a concise summary of the project structure and technology stack.", context, null);
+					String projectStructure = null;
+					if (iterationManager.getGitManager().isGitRepository()) {
+						projectStructure = iterationManager.getStructureAgent().process(
+								"Provide a concise summary of the project structure and technology stack.", context, null);
+					} else {
+						projectStructure = "Target Root: " + context.getProjectRoot().getAbsolutePath();
+					}
 					state.getMetadata().put("projectStructure", projectStructure);
 
 					WorkspaceArtifact archArtifact = new WorkspaceArtifact("arch-summary-" + System.currentTimeMillis(),
