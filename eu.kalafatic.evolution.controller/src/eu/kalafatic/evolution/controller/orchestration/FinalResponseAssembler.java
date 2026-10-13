@@ -375,6 +375,9 @@ public class FinalResponseAssembler {
         if (cleaned.startsWith("# Intent Discovery") || cleaned.contains("You are an experienced software architect")) {
             return "Discover target project purpose, architecture, and primary use cases.";
         }
+        if (cleaned.startsWith("# EVO Mediated Mode") || cleaned.contains("You are the Evolution Knowledge Architect")) {
+            return "Perform mediated architecture analysis and produce knowledge export package.";
+        }
 
         return cleaned;
     }
