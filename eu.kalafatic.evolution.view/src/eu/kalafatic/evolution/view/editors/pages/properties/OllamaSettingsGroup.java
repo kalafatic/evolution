@@ -70,7 +70,7 @@ public class OllamaSettingsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell(), SWT.OPEN);
-                dialog.setFilterPath(ollamaPathText.getText());
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, ollamaPathText.getText());
                 String p = dialog.open();
                 if (p != null) {
                     ollamaPathText.setText(p);

@@ -446,7 +446,7 @@ public class ArchitecturePage extends AEvoPage {
         org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getShell());
         dialog.setText("Select Architecture Target");
         dialog.setMessage("Choose a folder to analyze repository architecture.");
-        if (currentTargetPath != null) dialog.setFilterPath(currentTargetPath);
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, currentTargetPath);
         String selected = dialog.open();
         if (selected != null) {
             setTargetPath(selected);
@@ -1123,6 +1123,7 @@ public class ArchitecturePage extends AEvoPage {
         FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
         dialog.setFilterExtensions(new String[] { "*.html" });
         dialog.setFileName("architecture.html");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, currentTargetPath);
         String path = dialog.open();
         if (path != null) {
             try {
@@ -1139,6 +1140,7 @@ public class ArchitecturePage extends AEvoPage {
         FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
         dialog.setFilterExtensions(new String[] { "*.json" });
         dialog.setFileName("design_model.json");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, currentTargetPath);
         String path = dialog.open();
         if (path != null) {
             try {

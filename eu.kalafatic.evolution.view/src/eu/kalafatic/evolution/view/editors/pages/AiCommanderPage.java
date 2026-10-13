@@ -1083,6 +1083,7 @@ public class AiCommanderPage extends AEvoPage {
 		org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(getShell(), SWT.SAVE);
 		dialog.setFilterExtensions(new String[] { "*.txt", "*.*" });
 		dialog.setFileName(currentSession + ".txt");
+		eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
 		String path = dialog.open();
 		if (path != null) {
 			try (FileWriter writer = new FileWriter(path)) { writer.write(chatGroup.getText()); }

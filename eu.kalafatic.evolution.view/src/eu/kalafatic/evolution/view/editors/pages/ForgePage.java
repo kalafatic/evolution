@@ -91,6 +91,7 @@ public class ForgePage extends AEvoPage {
                 Display.getDefault().syncExec(() -> {
                     org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(browser.getShell());
                     dialog.setText("Select Data Source Directory");
+                    eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
                     result[0] = dialog.open();
                 });
                 return result[0];
@@ -105,6 +106,7 @@ public class ForgePage extends AEvoPage {
                 Display.getDefault().syncExec(() -> {
                     org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(browser.getShell(), org.eclipse.swt.SWT.OPEN);
                     dialog.setText("Select Data Source File");
+                    eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
                     result[0] = dialog.open();
                 });
                 return result[0];

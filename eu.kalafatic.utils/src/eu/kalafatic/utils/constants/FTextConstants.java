@@ -26,7 +26,7 @@ public final class FTextConstants {
 	public static final String DOMAIN_FILTER = "eu.kalafatic";
 
 	/** The Constant DEF_WORKSPACE. */
-	public static final String DEF_WORKSPACE = "C:\\GE";
+	public static final String DEF_WORKSPACE = new java.io.File(System.getProperty("user.home"), "workspace").getAbsolutePath();
 
 	/** The Constant DIR. */
 	public static final String DIR = "Names and directories";

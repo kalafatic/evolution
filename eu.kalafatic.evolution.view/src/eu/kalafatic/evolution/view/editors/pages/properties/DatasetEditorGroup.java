@@ -163,7 +163,7 @@ public class DatasetEditorGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell());
                 dialog.setText("Select Destination Dataset Output Directory");
-                dialog.setFilterPath(outputDirText.getText());
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, outputDirText.getText());
                 String selected = dialog.open();
                 if (selected != null && !selected.trim().isEmpty()) {
                     outputDirText.setText(selected.trim());

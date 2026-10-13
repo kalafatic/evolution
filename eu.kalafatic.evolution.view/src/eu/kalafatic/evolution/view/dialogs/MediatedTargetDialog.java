@@ -123,6 +123,7 @@ public class MediatedTargetDialog extends DynamicMapDialog {
                     org.eclipse.swt.widgets.FileDialog dlg = new org.eclipse.swt.widgets.FileDialog(getShell(), SWT.OPEN);
                     dlg.setFilterExtensions(new String[] { "*.evo;*.txt;*.pdf;*.html;*.json;*.md;*.csv", "*.*" });
                     dlg.setFilterNames(new String[] { "EVO Model & Data Files (*.evo, *.txt, *.pdf, etc.)", "All Files (*.*)" });
+                    eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                     String sel = dlg.open();
                     if (sel != null && !sel.isEmpty()) {
                         for (Control child : comp.getChildren()) {

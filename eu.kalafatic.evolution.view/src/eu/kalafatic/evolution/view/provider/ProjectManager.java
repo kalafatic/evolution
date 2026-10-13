@@ -306,16 +306,14 @@ public class ProjectManager {
 		} catch (Throwable t) {
 		}
 
-		// 5. Ultimate fallback to user.dir
+		// 5. Ultimate fallback to default workspace under user home
 		try {
-			File userDir = new File(System.getProperty("user.dir"));
-			if (userDir.exists()) {
-				return userDir.getAbsolutePath();
-			}
+			File defaultWorkspace = new File(System.getProperty("user.home"), "workspace");
+			return defaultWorkspace.getAbsolutePath();
 		} catch (Throwable t) {
 		}
 
-		return null;
+		return new File(System.getProperty("user.home"), "workspace").getAbsolutePath();
 	}
 
 	/**

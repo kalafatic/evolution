@@ -401,7 +401,8 @@ public class InstructionsGroup extends AEvoGroup {
                 org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(parent.getShell(), SWT.OPEN | SWT.MULTI);
                 dialog.setFilterExtensions(new String[] { "*.md" });
                 dialog.setFilterNames(new String[] { "Markdown Files (*.md)" });
-                dialog.setFilterPath(page.getProjectRoot().getAbsolutePath());
+                String current = (page != null && page.getProjectRoot() != null) ? page.getProjectRoot().getAbsolutePath() : null;
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, current);
                 if (dialog.open() != null) {
                     for (String fileName : dialog.getFileNames()) {
                         String fullPath = dialog.getFilterPath() + File.separator + fileName;

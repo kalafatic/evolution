@@ -747,6 +747,7 @@ public class ModelsGroup extends AEvoGroup {
         org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.SAVE);
         dialog.setFilterExtensions(new String[] { "*.zip" });
         dialog.setFileName(item.getName().replace("/", "_").replace(":", "_") + ".zip");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
         String destinationPath = dialog.open();
 
         if (destinationPath != null) {

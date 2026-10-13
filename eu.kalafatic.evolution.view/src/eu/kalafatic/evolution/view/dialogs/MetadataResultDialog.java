@@ -135,6 +135,7 @@ public class MetadataResultDialog extends TitleAreaDialog {
         FileDialog fd = new FileDialog(getShell(), SWT.SAVE);
         fd.setFileName("metadata_results.zip");
         fd.setFilterExtensions(new String[] {"*.zip"});
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(fd, null);
         String path = fd.open();
         if (path == null) return;
 
