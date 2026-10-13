@@ -106,6 +106,29 @@ public class ModeRouterTest {
     }
 
     @Test
+    public void testMediatedModeNonNegotiableOverIntentPrompt() {
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
+
+        // Prompt containing intent reconstruction keywords should NOT override explicit MEDIATED mode
+        PlatformMode mode = router.route("# Intent Discovery\n\nReconstruct intent of the project", orchestrator);
+        assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, mode.getType());
+
+        PlatformMode modeFast = router.routeFast("# Intent Discovery\n\nReconstruct intent", orchestrator);
+        assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, modeFast.getType());
+    }
+
+    @Test
+    public void testIntentModeNonNegotiableOverMediatedPrompt() {
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.INTENT);
+
+        PlatformMode mode = router.route("analyze target project structure", orchestrator);
+        assertEquals(PlatformType.INTENT_RECONSTRUCTION, mode.getType());
+
+        PlatformMode modeFast = router.routeFast("analyze target project structure", orchestrator);
+        assertEquals(PlatformType.INTENT_RECONSTRUCTION, modeFast.getType());
+    }
+
+    @Test
     public void testRouteFastCoding() {
         PlatformMode mode = router.routeFast("Create a java class", orchestrator);
         assertNotNull(mode);

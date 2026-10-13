@@ -47,6 +47,7 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(IntentResult intentResult, TaskContext context) {
+		// Explicit UI/context modes are NON-NEGOTIABLE and MUST take precedence over LLM/prompt analysis
 		if (isDreamMode(context)) {
 			return PlatformType.DREAM_MODE;
 		}
@@ -59,11 +60,11 @@ public class ModeRecognizer {
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
-		if (isIntentMode(context)) {
-			return PlatformType.INTENT_RECONSTRUCTION;
-		}
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
+		}
+		if (isIntentMode(context)) {
+			return PlatformType.INTENT_RECONSTRUCTION;
 		}
 		if (intentResult != null && (intentResult.getReasoning().toLowerCase().contains("reconstruct intent") ||
 		    intentResult.getReasoning().toLowerCase().contains("analyze architecture"))) {
@@ -82,6 +83,7 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(TaskContext context) {
+		// Explicit UI/context modes are NON-NEGOTIABLE and MUST take precedence
 		if (isDreamMode(context)) {
 			return PlatformType.DREAM_MODE;
 		}
@@ -94,11 +96,11 @@ public class ModeRecognizer {
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
-		if (isIntentMode(context)) {
-			return PlatformType.INTENT_RECONSTRUCTION;
-		}
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
+		}
+		if (isIntentMode(context)) {
+			return PlatformType.INTENT_RECONSTRUCTION;
 		}
 		if (isCoding(context)) {
 			return PlatformType.ASSISTED_CODING;
