@@ -174,4 +174,38 @@ public class SelfDevTaskArchitectureTest {
         assertTrue("Prepared reactor directory must be under workspace run directory",
                 sourceDir.getAbsolutePath().contains("self-dev"));
     }
+
+    @Test
+    public void testStartEvoSupervisorDependencySatisfiesCreateProject() {
+        SelfDevContext context = orchestrator.getContext();
+        // Record successful START_EVO_SUPERVISOR task result in context
+        TaskResult superEvoSuccess = TaskResult.success("START_EVO_SUPERVISOR", "Supervisor started EVO RCP");
+        context.recordTaskResult(superEvoSuccess);
+
+        // Record a mock successful CREATE_EVO_PROJECT dependency execution override
+        SelfDevTask fakeCreateProject = new AbstractSelfDevTask("CREATE_EVO_PROJECT", "Create Evo Project") {
+            @Override
+            protected TaskResult run(SelfDevContext ctx) throws Exception {
+                return TaskResult.success(id, "Project created successfully");
+            }
+        };
+        fakeCreateProject.addDependency("START_EVO");
+
+        try {
+            Field regField = SelfDevOrchestrator.class.getDeclaredField("taskRegistry");
+            regField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Map<String, SelfDevTask> reg = (Map<String, SelfDevTask>) regField.get(orchestrator);
+            reg.put("CREATE_EVO_PROJECT", fakeCreateProject);
+
+            TaskResult res = orchestrator.executeTaskWithDependencies("CREATE_EVO_PROJECT");
+            assertNotNull(res);
+            assertTrue("CREATE_EVO_PROJECT must succeed when START_EVO_SUPERVISOR was already executed successfully", res.isSuccess());
+            assertNotNull("START_EVO task result must be marked satisfied in context", context.getTaskResult("START_EVO"));
+            assertTrue(context.getTaskResult("START_EVO").isSuccess());
+
+        } catch (Exception e) {
+            fail("Exception executing CREATE_EVO_PROJECT with START_EVO_SUPERVISOR satisfied: " + e.getMessage());
+        }
+    }
 }

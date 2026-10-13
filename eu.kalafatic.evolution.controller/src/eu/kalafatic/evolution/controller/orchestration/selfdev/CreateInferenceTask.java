@@ -32,63 +32,67 @@ public class CreateInferenceTask extends AbstractSelfDevTask {
         long startTime = System.currentTimeMillis();
         Exception lastException = null;
 
+        String[] endpointPaths = new String[] { "/task", "/create-inference-task" };
+
         for (int port : portsToTry) {
-            String spec = "http://127.0.0.1:" + port + "/task";
-            logInfo("Submitting inference task to target endpoint: " + spec);
+            for (String path : endpointPaths) {
+                String spec = "http://127.0.0.1:" + port + path;
+                logInfo("Submitting inference task to target endpoint: " + spec);
 
-            for (int attempt = 1; attempt <= 3; attempt++) {
-                logInfo("Attempt " + attempt + "/3 on port " + port);
-                try {
-                    URL url = new URL(spec);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setConnectTimeout(10000);
-                    conn.setReadTimeout(120000);
-                    conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("Content-Length", String.valueOf(bodyBytes.length));
-                    conn.setFixedLengthStreamingMode(bodyBytes.length);
-                    conn.setDoOutput(true);
+                for (int attempt = 1; attempt <= 3; attempt++) {
+                    logInfo("Attempt " + attempt + "/3 on port " + port + path);
+                    try {
+                        URL url = new URL(spec);
+                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                        conn.setRequestMethod("POST");
+                        conn.setConnectTimeout(10000);
+                        conn.setReadTimeout(120000);
+                        conn.setRequestProperty("Content-Type", "application/json");
+                        conn.setRequestProperty("Content-Length", String.valueOf(bodyBytes.length));
+                        conn.setFixedLengthStreamingMode(bodyBytes.length);
+                        conn.setDoOutput(true);
 
-                    try (OutputStream os = conn.getOutputStream()) {
-                        os.write(bodyBytes);
-                        os.flush();
-                    }
-
-                    int code = conn.getResponseCode();
-                    StringBuilder responseBuffer = new StringBuilder();
-                    try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                            code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            responseBuffer.append(line).append("\n");
+                        try (OutputStream os = conn.getOutputStream()) {
+                            os.write(bodyBytes);
+                            os.flush();
                         }
+
+                        int code = conn.getResponseCode();
+                        StringBuilder responseBuffer = new StringBuilder();
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                                code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream(), StandardCharsets.UTF_8))) {
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                responseBuffer.append(line).append("\n");
+                            }
+                        }
+
+                        String respStr = responseBuffer.toString().trim();
+                        logInfo("HTTP Response Code: " + code + ", Body: " + respStr);
+                        long duration = System.currentTimeMillis() - startTime;
+
+                        if (code == 200) {
+                            return new TaskResult.Builder(id)
+                                    .status(TaskStatus.SUCCESS)
+                                    .message("Simple 'hi' inference local task submitted successfully to EVO project session on port " + port)
+                                    .duration(duration)
+                                    .diagnostic("port", String.valueOf(port))
+                                    .diagnostic("response", respStr)
+                                    .build();
+                        } else {
+                            lastException = new RuntimeException("HTTP " + code + ": " + respStr);
+                        }
+                    } catch (Exception e) {
+                        lastException = e;
+                        logError("Attempt " + attempt + " failed on port " + port + path + ": " + e.getMessage(), e);
                     }
 
-                    String respStr = responseBuffer.toString().trim();
-                    logInfo("HTTP Response Code: " + code + ", Body: " + respStr);
-                    long duration = System.currentTimeMillis() - startTime;
-
-                    if (code == 200) {
-                        return new TaskResult.Builder(id)
-                                .status(TaskStatus.SUCCESS)
-                                .message("Simple 'hi' inference local task submitted successfully to EVO project session on port " + port)
-                                .duration(duration)
-                                .diagnostic("port", String.valueOf(port))
-                                .diagnostic("response", respStr)
-                                .build();
-                    } else {
-                        lastException = new RuntimeException("HTTP " + code + ": " + respStr);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
-                } catch (Exception e) {
-                    lastException = e;
-                    logError("Attempt " + attempt + " failed on port " + port + ": " + e.getMessage(), e);
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                    break;
                 }
             }
         }
