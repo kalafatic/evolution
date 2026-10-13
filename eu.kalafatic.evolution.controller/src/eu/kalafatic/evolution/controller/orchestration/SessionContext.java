@@ -43,6 +43,7 @@ public class SessionContext implements SessionContainer {
     private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine;
     private final eu.kalafatic.evolution.controller.workflow.EvolutionaryObservabilityManager observabilityManager;
     private final eu.kalafatic.evolution.controller.workflow.RuntimeContextCollector contextCollector;
+    private final eu.kalafatic.evolution.controller.log.SessionLogger sessionLogger;
 
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
     private IterationMemoryService memoryService;
@@ -59,6 +60,8 @@ public class SessionContext implements SessionContainer {
 
         this.eventBus = new RuntimeEventBus(sessionId);
         this.signalBus = new SignalBus(this.eventBus);
+        this.sessionLogger = new eu.kalafatic.evolution.controller.log.SessionLogger(sessionId);
+        this.sessionLogger.setEventBus(this.eventBus);
         this.workflowRegistry = new WorkflowStepRegistry();
         this.workflowGraphManager = new WorkflowGraphManager(this.eventBus);
         this.evolutionRegistry = new EvolutionRegistry();
@@ -216,6 +219,11 @@ public class SessionContext implements SessionContainer {
         return contextCollector;
     }
 
+    @Override
+    public eu.kalafatic.evolution.controller.log.SessionLogger getSessionLogger() {
+        return sessionLogger;
+    }
+
     public synchronized IterationMemoryService getMemoryService(File projectRoot) {
         if (memoryService == null) {
             memoryService = new IterationMemoryService(projectRoot);
@@ -236,5 +244,8 @@ public class SessionContext implements SessionContainer {
         executorService.shutdownNow();
         eventBus.shutdown();
         capabilityRegistry.shutdown();
+        if (sessionLogger != null) {
+            sessionLogger.close();
+        }
     }
 }

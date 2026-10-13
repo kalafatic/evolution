@@ -43,11 +43,36 @@ public class LoggingService {
         String prefix = String.format("[%s][Iter:%d][%s] ",
             context.getCurrentTaskId(), context.getCurrentIteration(), context.getCurrentPhase());
 
-        Log.log(prefix + message);
+        String sessionId = context.getSessionId();
+        java.util.logging.Level julLevel = mapLogLevel(level);
+
+        if (sessionId != null && !sessionId.isEmpty()) {
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+                eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+            if (session != null && session.getSessionLogger() != null) {
+                session.getSessionLogger().log(julLevel, context.getCurrentTaskId() != null ? context.getCurrentTaskId() : "Task", prefix + message, data instanceof Throwable ? (Throwable) data : null);
+            } else {
+                Log.log(sessionId, julLevel, prefix + message, data instanceof Throwable ? (Throwable) data : null);
+            }
+        } else {
+            Log.log(null, julLevel, prefix + message, data instanceof Throwable ? (Throwable) data : null);
+        }
 
         // Always log structured JSON at DEBUG level or higher (meaning more verbose)
         if (threshold.getValue() <= LogLevel.DEBUG_VALUE) {
-            Log.log("STRUCTURED: " + structured.toString());
+            Log.log(sessionId, "STRUCTURED: " + structured.toString());
+        }
+    }
+
+    private java.util.logging.Level mapLogLevel(LogLevel level) {
+        if (level == null) return java.util.logging.Level.INFO;
+        switch (level) {
+            case TRACE: return java.util.logging.Level.FINEST;
+            case DEBUG: return java.util.logging.Level.FINE;
+            case INFO: return java.util.logging.Level.INFO;
+            case WARN: return java.util.logging.Level.WARNING;
+            case ERROR: return java.util.logging.Level.SEVERE;
+            default: return java.util.logging.Level.INFO;
         }
     }
 

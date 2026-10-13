@@ -39,6 +39,7 @@ public interface SessionContainer {
     eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine getPressureEngine();
     eu.kalafatic.evolution.controller.workflow.EvolutionaryObservabilityManager getObservabilityManager();
     eu.kalafatic.evolution.controller.workflow.RuntimeContextCollector getContextCollector();
+    eu.kalafatic.evolution.controller.log.SessionLogger getSessionLogger();
 
     void shutdown();
 }
