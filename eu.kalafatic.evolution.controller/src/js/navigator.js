@@ -766,6 +766,7 @@
 
     window.focusNode = function(id) {
         focusedNodeId = id;
+        window.focusedNodeId = id;
         const node = allNodes.find(n => n.id === id);
         if (node) {
             // Auto expand parents so the focused node is visible
@@ -790,14 +791,159 @@
 
             const clearBtn = document.getElementById("clear-focus-btn");
             if (clearBtn) clearBtn.style.display = "inline-flex";
+
+            if (window.updateBreadcrumbs) window.updateBreadcrumbs();
+            if (window.pushNavState) {
+                window.pushNavState({
+                    targetPath: window.TARGET_PATH,
+                    viewMode: window.CURRENT_VIEW_MODE,
+                    snapshot: window.CURRENT_SNAPSHOT || "",
+                    focusedNodeId: focusedNodeId
+                });
+            }
         }
     };
 
     window.clearFocus = function() {
         focusedNodeId = null;
+        window.focusedNodeId = null;
         const clearBtn = document.getElementById("clear-focus-btn");
         if (clearBtn) clearBtn.style.display = "none";
         recomputeGraphAndRender();
+        if (window.updateBreadcrumbs) window.updateBreadcrumbs();
+        if (window.pushNavState) {
+            window.pushNavState({
+                targetPath: window.TARGET_PATH,
+                viewMode: window.CURRENT_VIEW_MODE,
+                snapshot: window.CURRENT_SNAPSHOT || "",
+                focusedNodeId: null
+            });
+        }
+    };
+
+    // Navigation History Stack & Breadcrumbs UI
+    window.navHistory = [];
+    window.navHistoryIndex = -1;
+    let isNavigatingHistory = false;
+
+    window.pushNavState = function(state) {
+        if (isNavigatingHistory) return;
+
+        if (window.navHistoryIndex >= 0 && window.navHistoryIndex < window.navHistory.length) {
+            const cur = window.navHistory[window.navHistoryIndex];
+            if (cur.targetPath === state.targetPath &&
+                cur.viewMode === state.viewMode &&
+                cur.snapshot === state.snapshot &&
+                cur.focusedNodeId === state.focusedNodeId) {
+                return;
+            }
+        }
+
+        if (window.navHistoryIndex < window.navHistory.length - 1) {
+            window.navHistory = window.navHistory.slice(0, window.navHistoryIndex + 1);
+        }
+
+        window.navHistory.push(state);
+        window.navHistoryIndex = window.navHistory.length - 1;
+        window.updateNavButtons();
+    };
+
+    window.updateNavButtons = function() {
+        const backBtn = document.getElementById("nav-back-btn");
+        const fwdBtn = document.getElementById("nav-forward-btn");
+
+        if (backBtn) backBtn.disabled = (window.navHistoryIndex <= 0);
+        if (fwdBtn) fwdBtn.disabled = (window.navHistoryIndex >= window.navHistory.length - 1);
+    };
+
+    window.navigateHistory = function(delta) {
+        const newIndex = window.navHistoryIndex + delta;
+        if (newIndex < 0 || newIndex >= window.navHistory.length) return;
+
+        isNavigatingHistory = true;
+        window.navHistoryIndex = newIndex;
+        const state = window.navHistory[newIndex];
+
+        if (state.targetPath && state.targetPath !== window.TARGET_PATH) {
+            window.javaAction(state.targetPath, 'SET_TARGET');
+        }
+        if (state.viewMode && state.viewMode !== window.CURRENT_VIEW_MODE) {
+            window.javaAction(state.viewMode, 'SET_VIEW_MODE');
+        }
+        if (state.snapshot !== undefined && state.snapshot !== window.CURRENT_SNAPSHOT) {
+            window.javaAction(state.snapshot, 'SELECT_SNAPSHOT');
+        }
+        if (state.focusedNodeId !== undefined) {
+            if (state.focusedNodeId) {
+                window.focusNode(state.focusedNodeId);
+            } else {
+                window.clearFocus();
+            }
+        }
+
+        window.updateNavButtons();
+        window.updateBreadcrumbs();
+        isNavigatingHistory = false;
+    };
+
+    window.updateBreadcrumbs = function() {
+        const container = document.getElementById("breadcrumbs");
+        if (!container) return;
+
+        const items = [];
+
+        // 1. Root: Target Repository
+        let repoName = "Repository";
+        if (window.TARGET_PATH) {
+            const parts = window.TARGET_PATH.replace(/\\/g, '/').split('/');
+            repoName = parts[parts.length - 1] || parts[parts.length - 2] || "Repository";
+        }
+        if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
+            repoName = window.INITIAL_MODEL.name.replace(" Architecture", "").replace(/ - .*/, "");
+        }
+        items.push({ label: "📁 " + repoName, action: "RESET" });
+
+        // 2. View Mode or Milestone Snapshot
+        if (window.CURRENT_SNAPSHOT && window.CURRENT_SNAPSHOT !== "") {
+            items.push({ label: "🏁 genome_" + window.CURRENT_SNAPSHOT, action: "SNAPSHOT" });
+        } else {
+            const modeNames = {
+                'COMPONENTS': '📊 Components',
+                'SUBSYSTEMS': '🧱 Subsystems',
+                'USE_CASES': '🎯 Use Cases',
+                'KNOWLEDGE_GRAPH': '🌳 Knowledge Graph',
+                'GENOME': '🧬 Genome View'
+            };
+            const modeLabel = modeNames[window.CURRENT_VIEW_MODE] || window.CURRENT_VIEW_MODE || "Components";
+            items.push({ label: modeLabel, action: "MODE" });
+        }
+
+        // 3. Focused Component
+        if (focusedNodeId) {
+            const node = allNodes ? allNodes.find(n => n.id === focusedNodeId) : null;
+            const nodeLabel = node ? (getRoleIcon(node.type) + " " + node.name) : focusedNodeId;
+            items.push({ label: nodeLabel, action: "NODE", id: focusedNodeId });
+        }
+
+        container.innerHTML = items.map((item, idx) => {
+            const isLast = idx === items.length - 1;
+            const activeClass = isLast ? ' active' : '';
+            const itemHtml = `<span class="breadcrumb-item${activeClass}" onclick="onBreadcrumbClick('${item.action}', '${item.id || ''}')">${item.label}</span>`;
+            if (idx < items.length - 1) {
+                return itemHtml + `<span class="breadcrumb-separator">/</span>`;
+            }
+            return itemHtml;
+        }).join('');
+    };
+
+    window.onBreadcrumbClick = function(action, id) {
+        if (action === "RESET") {
+            window.clearFocus();
+        } else if (action === "MODE" || action === "SNAPSHOT") {
+            window.clearFocus();
+        } else if (action === "NODE" && id) {
+            window.focusNode(id);
+        }
     };
 
     window.onGraphSearch = function(query) {
