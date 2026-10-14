@@ -97,16 +97,29 @@ public class TargetScanner {
 
     private String getExtension(String fileName) {
         int lastDot = fileName.lastIndexOf('.');
-        if (lastDot <= 0) return "unknown";
+        if (lastDot <= 0) return "carrier";
         String ext = fileName.substring(lastDot + 1).toLowerCase();
 
-        // Categorize file types into carrier classes
+        // 1. Dynamic dataset adapter check via SourceAdapterRegistry
+        try {
+            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
+                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, fileName, "FILE");
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = registry.findAdapter(item);
+            if (adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.TextAdapter)
+                    && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter)) {
+                return "data";
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Categorize common carrier types
         return switch (ext) {
-            case "java", "c", "cpp", "py", "js", "ts", "html", "css", "sql", "sh", "bat" -> "source_code";
-            case "md", "txt", "pdf", "docx", "pptx", "xlsx", "csv" -> "document";
-            case "json", "xml", "yaml", "yml", "parquet", "jsonl", "evodata", "tsv", "arrow" -> "data";
-            case "png", "jpg", "jpeg", "webp", "gif", "svg" -> "image";
-            case "zip", "tar", "gz", "rar", "7z" -> "archive";
+            case "java", "c", "cpp", "h", "hpp", "py", "js", "ts", "html", "css", "sql", "sh", "bat", "rb", "go", "rs", "kt", "scala" -> "source_code";
+            case "md", "txt", "pdf", "docx", "pptx", "xlsx", "csv", "rst", "adoc" -> "document";
+            case "json", "xml", "yaml", "yml", "toml", "ini", "properties" -> "data";
+            case "png", "jpg", "jpeg", "webp", "gif", "svg", "bmp", "ico" -> "image";
+            case "zip", "tar", "gz", "rar", "7z", "bz2", "xz" -> "archive";
             default -> ext;
         };
     }

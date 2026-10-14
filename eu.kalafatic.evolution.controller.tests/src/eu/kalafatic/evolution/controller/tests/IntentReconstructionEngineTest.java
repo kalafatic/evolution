@@ -146,4 +146,51 @@ public class IntentReconstructionEngineTest {
         assertNotNull("intentTargetSummary should be populated", targetSummary);
         assertTrue(targetSummary.contains("Target Nature: Knowledge/Document Repository") || targetSummary.contains("Heterogeneous Artifact Repository") || targetSummary.contains("DATASET"));
     }
+
+    @Test
+    public void testIntentReconstructionEngineWithCustomArbitraryFileExtensions() throws Exception {
+        // Create root directory containing arbitrary custom file extensions (no hardcoded extension)
+        File customDir = File.createTempFile("evo-test-custom-ext", "");
+        customDir.delete();
+        customDir.mkdirs();
+
+        File customFile1 = new File(customDir, "0000.stories");
+        try (FileWriter fw = new FileWriter(customFile1)) {
+            fw.write("Once upon a time in a tiny story dataset...");
+        }
+
+        File customFile2 = new File(customDir, "data.unknownext");
+        try (FileWriter fw = new FileWriter(customFile2)) {
+            fw.write("Arbitrary dataset content line 1\nArbitrary dataset content line 2");
+        }
+
+        TaskContext context = new TaskContext(orchestrator, customDir);
+        context.setSessionId("test-session-custom-ext");
+        context.getOrchestrationState().setRawInput("# Intent Discovery\n\nDiscover target project purpose");
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-custom-ext");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.INTENT_RECONSTRUCTION);
+
+        PlatformMode platformMode = new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, null, 1, false);
+        context.setPlatformMode(platformMode);
+
+        IterationMemoryService memoryService = new IterationMemoryService(customDir);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(customDir, context);
+
+        IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
+        IterationManager manager = KernelFactory.create(context.getOrchestrationState().getRawInput(), context, session, null);
+
+        EvaluationResult evalResult = engine.runDarwinIteration(context, manager);
+
+        assertNotNull(evalResult);
+        assertTrue(evalResult.isSuccess());
+
+        eu.kalafatic.evolution.controller.orchestration.design.DesignModel designModel =
+                (eu.kalafatic.evolution.controller.orchestration.design.DesignModel) context.getOrchestrationState().getMetadata().get("reconstructedDesignModel");
+        assertNotNull("reconstructedDesignModel should be populated", designModel);
+
+        boolean foundCustomFile = designModel.getComponents().stream()
+                .anyMatch(c -> c.getName() != null && (c.getName().equals("0000.stories") || c.getName().equals("data.unknownext")));
+        assertTrue("Arbitrary custom extension files must be discovered and inspected", foundCustomFile);
+    }
 }

@@ -190,12 +190,9 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             context.log("[DISCOVERY] Analyzing meaning of: " + node.getPath());
 
             if (node.getSummary() == null || node.getSummary().isEmpty()) {
-                String lowerPath = node.getPath().toLowerCase();
-                if (lowerPath.endsWith(".parquet") || lowerPath.endsWith(".jsonl") || lowerPath.endsWith(".evodata") || lowerPath.endsWith(".csv") || "parquet".equals(node.getType()) || "data".equals(node.getType())) {
-                    String sampleSummary = extractDatasetSampleSummary(new File(context.getProjectRoot(), node.getPath()), context);
-                    if (sampleSummary != null && !sampleSummary.isEmpty()) {
-                        node.setSummary(sampleSummary);
-                    }
+                String sampleSummary = extractDatasetSampleSummary(new File(context.getProjectRoot(), node.getPath()), context);
+                if (sampleSummary != null && !sampleSummary.isEmpty()) {
+                    node.setSummary(sampleSummary);
                 }
             }
 
@@ -642,35 +639,37 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     private String extractDatasetSampleSummary(File file, TaskContext context) {
         if (file == null || !file.exists() || !file.isFile()) return null;
         try {
-            String lowerName = file.getName().toLowerCase();
-            if (lowerName.endsWith(".parquet")) {
-                eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter adapter =
-                        new eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter();
-                eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
-                        new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "PARQUET");
+            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
+                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "FILE");
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = registry.findAdapter(item);
+
+            if (adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter)) {
                 eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext prepCtx =
                         new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
                 List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> samples = adapter.convert(item, prepCtx);
-                if (!samples.isEmpty()) {
+                if (samples != null && !samples.isEmpty()) {
                     StringBuilder sb = new StringBuilder();
-                    sb.append("Parquet dataset file containing ").append(samples.size()).append("+ extracted samples. Sample records:\n");
+                    sb.append("Dataset file containing ").append(samples.size()).append("+ extracted samples. Sample records:\n");
                     for (int i = 0; i < Math.min(3, samples.size()); i++) {
                         sb.append(" Sample ").append(i + 1).append(": ").append(limitString(samples.get(i).toFullText(), 200)).append("\n");
                     }
                     return sb.toString();
                 }
-            } else if (lowerName.endsWith(".jsonl") || lowerName.endsWith(".csv") || lowerName.endsWith(".txt")) {
-                List<String> lines = java.nio.file.Files.readAllLines(file.toPath());
-                if (!lines.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Dataset file containing ").append(lines.size()).append(" records/lines. Sample:\n");
-                    for (int i = 0; i < Math.min(3, lines.size()); i++) {
-                        if (!lines.get(i).trim().isEmpty()) {
-                            sb.append(" - ").append(limitString(lines.get(i).trim(), 150)).append("\n");
-                        }
+            }
+
+            // Fallback for general text or readable files
+            List<String> lines = java.nio.file.Files.readAllLines(file.toPath());
+            if (lines != null && !lines.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("File containing ").append(lines.size()).append(" records/lines. Sample:\n");
+                for (int i = 0; i < Math.min(3, lines.size()); i++) {
+                    if (!lines.get(i).trim().isEmpty()) {
+                        sb.append(" - ").append(limitString(lines.get(i).trim(), 150)).append("\n");
                     }
-                    return sb.toString();
                 }
+                return sb.toString();
             }
         } catch (Exception ex) {
             if (context != null) {
