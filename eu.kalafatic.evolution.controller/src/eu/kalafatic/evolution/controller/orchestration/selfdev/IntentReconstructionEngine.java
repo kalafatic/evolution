@@ -45,6 +45,14 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     public EvaluationResult runDarwinIteration(TaskContext context, IterationManager manager) throws Exception {
         context.log("[INTENT_RECONSTRUCTION] Starting Curiosity-Driven Surgeon iteration...");
 
+        if (context.getProjectRoot() == null || !context.getProjectRoot().exists()) {
+            context.log("[INTENT_RECONSTRUCTION] [ERROR] Target path is invalid or unresolvable: " + context.getProjectRoot());
+            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(false);
+            res.setDecision(SelfDevDecision.STOP);
+            return res;
+        }
+
         if (explorationQueue.isEmpty() && exploredPaths.isEmpty()) {
             initialSeed();
         }
@@ -226,8 +234,13 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     }
 
     private void updateDesignModel(File file, EvoMetadata meta) {
+        String compId = (meta != null && meta.getPath() != null) ? meta.getPath() : file.getPath();
+        if (designModel.getComponents().stream().anyMatch(c -> compId.equalsIgnoreCase(c.getId()))) {
+            return; // Prevent duplicate component entries across iterations
+        }
+
         ComponentRecord record = new ComponentRecord();
-        record.setId(meta.getPath());
+        record.setId(compId);
         record.setName(file.getName());
 
         String name = file.getName();
@@ -414,21 +427,19 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         sb.append("Reconstructed Target Purpose & Knowledge:\n");
         sb.append("Target Path: ").append(root != null ? root.getAbsolutePath() : "Unknown").append("\n");
 
-        if (rm != null && rm.getDomain() != null && !rm.getDomain().isEmpty()) {
-            sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
-        }
+        if (rm != null) {
+            sb.append("Target Category: ").append(rm.getTargetCategory()).append("\n");
+            if (rm.getTargetNature() != null && !rm.getTargetNature().isEmpty()) {
+                sb.append("Target Nature: ").append(rm.getTargetNature()).append("\n");
+            }
+            sb.append("Classification Confidence: ").append(String.format(Locale.US, "%.2f", rm.getClassificationConfidence())).append("\n");
 
-        if (rm != null && rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
-            sb.append("Project Purpose: ").append(rm.getPurpose()).append("\n");
-        }
-
-        if (subsystemCount > 0 || useCaseCount > 0 || entryPointCount > 0) {
-            sb.append("Target Nature: Structured Codebase (Subsystems: ").append(subsystemCount)
-              .append(", Entry Points: ").append(entryPointCount)
-              .append(", Use Cases: ").append(useCaseCount).append(")\n");
-        } else if (docCount > 0 || dataCount > 0) {
-            sb.append("Target Nature: Knowledge/Document Repository (Docs: ").append(docCount)
-              .append(", Datasets: ").append(dataCount).append(")\n");
+            if (rm.getDomain() != null && !rm.getDomain().isEmpty()) {
+                sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
+            }
+            if (rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
+                sb.append("Apparent Purpose: ").append(rm.getPurpose()).append("\n");
+            }
         } else {
             sb.append("Target Nature: Heterogeneous Artifact Repository (Analyzed Components: ")
               .append(designModel.getComponents().size()).append(")\n");

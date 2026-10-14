@@ -57,8 +57,14 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         // 1. Structural Scan to Snapshot
         eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
         File root = new File(targetPath);
-        TargetSnapshot.TargetType type = targetPath.contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
+        eu.kalafatic.evolution.controller.mediation.scanner.TargetClassificationDetector.ClassificationResult classResult =
+                eu.kalafatic.evolution.controller.mediation.scanner.TargetClassificationDetector.detect(root);
+        TargetSnapshot.TargetType type = classResult.getCategory();
         TargetSnapshot snapshot = scanner.scanToSnapshot(root, type);
+
+        model.setTargetCategory(type);
+        model.setClassificationConfidence(classResult.getConfidence());
+        model.setTargetNature(classResult.getSummary());
 
         // Null-safety fallback for ExecutionProfile
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
@@ -340,12 +346,22 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     private void discoverSubsystems(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
-        context.log("[DISCOVERY] Pass 4: Subsystem Discovery.");
+        context.log("[DISCOVERY] Pass 4: Subsystem / Component Cluster Discovery.");
 
         StringBuilder sb = new StringBuilder();
+        sb.append("TARGET CATEGORY: ").append(model.getTargetCategory()).append("\n");
         sb.append("EXISTING ARCHITECTURAL FACTS:\n");
         model.getArchitecturalFacts().stream().limit(20).forEach(f -> sb.append("- ").append(f.toString()).append("\n"));
-        sb.append("\nIdentify strongly interacting clusters and define Subsystems.");
+
+        if (model.getTargetCategory() == TargetSnapshot.TargetType.DATASET) {
+            sb.append("\nIdentify major Data Categories, Splits, or Feature Clusters for this dataset.");
+        } else if (model.getTargetCategory() == TargetSnapshot.TargetType.KNOWLEDGE_BASE) {
+            sb.append("\nIdentify major Topic Areas, Document Sections, or Knowledge Hubs.");
+        } else if (model.getTargetCategory() == TargetSnapshot.TargetType.AI_MODEL) {
+            sb.append("\nIdentify Model Sub-Components, Layers, or Configuration Groups.");
+        } else {
+            sb.append("\nIdentify strongly interacting software clusters and define Subsystems.");
+        }
 
         String prompt = sb.toString() + "\n\n" +
                 "Output a JSON object:\n" +
@@ -527,15 +543,23 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     private void discoverUseCases(TargetRealityModel model, TaskContext context) throws Exception {
-        context.log("[DISCOVERY] Pass 8: Use Case Discovery.");
+        context.log("[DISCOVERY] Pass 8: Capability & Use Case Discovery.");
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SUBSYSTEMS:\n");
+        sb.append("TARGET CATEGORY: ").append(model.getTargetCategory()).append("\n");
+        sb.append("SUBSYSTEMS / CLUSTERS:\n");
         model.getSubsystems().forEach(s -> sb.append("- ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n"));
         sb.append("\nARCHITECTURAL FACTS:\n");
         model.getArchitecturalFacts().stream().limit(15).forEach(f -> sb.append("- ").append(f.toString()).append("\n"));
-        sb.append("\nIdentify major repository-wide Use Cases derived from these architectural structures.\n");
-        sb.append("Every use case MUST have supporting components, supporting files (evidence), and a confidence score.");
+
+        if (model.getTargetCategory() == TargetSnapshot.TargetType.DATASET) {
+            sb.append("\nIdentify primary Data Workflows, Model Training/Evaluation Uses, or Feature Transformations derived from this dataset.\n");
+        } else if (model.getTargetCategory() == TargetSnapshot.TargetType.KNOWLEDGE_BASE) {
+            sb.append("\nIdentify primary Information Needs, Query Intents, or Knowledge Workflows.\n");
+        } else {
+            sb.append("\nIdentify major repository-wide Use Cases derived from these architectural structures.\n");
+        }
+        sb.append("Every use case / capability MUST have supporting components, supporting files (evidence), and a confidence score.");
 
         String prompt = sb.toString() + "\n\n" +
                 "Output a JSON object:\n" +
