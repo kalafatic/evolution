@@ -37,10 +37,6 @@ public class DesignRenderer {
         }
 
         String templatePath = "/template.html";
-        if ("GENOME".equals(viewMode)) {
-            templatePath = "/genome.html";
-        }
-
         String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource(templatePath);
         if (template == null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: " + templatePath + " not found in bundle resources!");
@@ -53,9 +49,15 @@ public class DesignRenderer {
             navigatorJs = "log('ERROR: /js/navigator.js not found in bundle resources!');";
         }
 
+        String genomeJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/genome.js");
+        if (genomeJs == null) genomeJs = "";
+
         String sharedCss = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getEvoStyleCss();
 
         String architectureCss = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getArchitectureCss();
+
+        String genomeCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/genome.css");
+        if (genomeCss == null) genomeCss = "";
 
         String creaticCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/creatic.css");
         if (creaticCss == null) creaticCss = "";
@@ -85,6 +87,7 @@ public class DesignRenderer {
             .replace("{{BASE_URL}}", baseUrl)
             .replace("{{SHARED_CSS}}", sharedCss)
             .replace("{{ARCHITECTURE_CSS}}", architectureCss)
+            .replace("{{GENOME_CSS}}", genomeCss)
             .replace("{{CREATIC_CSS}}", creaticCss)
             .replace("{{CREATIC_JS}}", creaticJs)
             .replace("{{AUTH_JS}}", authJs)
@@ -96,6 +99,7 @@ public class DesignRenderer {
             .replace("{{SNAPSHOTS_JSON}}", snapArray.toString())
             .replace("{{CURRENT_SNAPSHOT_JSON}}", currentSnapshotJson)
             .replace("{{NAVIGATOR_JS}}", navigatorJs)
+            .replace("{{GENOME_JS}}", genomeJs)
             .replace("{{GENOME_JSON}}", genomeJson != null ? genomeJson : "{}");
     }
 

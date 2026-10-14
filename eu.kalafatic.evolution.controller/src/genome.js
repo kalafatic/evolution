@@ -110,6 +110,9 @@
     }
 
     window.updateGenome = function(data) {
+        window.CURRENT_GENOME_DATA = data;
+        if (window.updateViewContainer) window.updateViewContainer();
+
         if (!data || (!data.identity && !data.name)) {
             const emptyState = document.getElementById("empty-state");
             if (emptyState) emptyState.classList.add("active");

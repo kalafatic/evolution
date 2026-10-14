@@ -435,8 +435,9 @@ public class ArchitecturePage extends AEvoPage {
             if (snapshot != null) {
                 showingSnapshot = true;
                 currentSnapshotTimestamp = timestamp;
-                loadMilestoneDashboard(snapshot);
-                return;
+            } else {
+                showingSnapshot = false;
+                currentSnapshotTimestamp = null;
             }
         }
         scheduleRefresh();
@@ -870,7 +871,7 @@ public class ArchitecturePage extends AEvoPage {
 
                         currentSnapshotTimestamp = timestamp;
                         showingSnapshot = true;
-                        loadMilestoneDashboard(snapshot);
+                        scheduleRefresh();
                     });
 
                     return org.eclipse.core.runtime.Status.OK_STATUS;
@@ -883,23 +884,7 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void loadMilestoneDashboard(GenomeSnapshot snapshot) {
-        if (currentTargetPath == null || browser == null || browser.isDisposed()) return;
-
-        java.io.File dashboardFile = resolveDashboardFile(snapshot);
-        if (dashboardFile != null && dashboardFile.exists()) {
-            try {
-                String html = java.nio.file.Files.readString(dashboardFile.toPath());
-                browser.setText(html);
-                lastJson = ""; // Invalidate lastJson to force reload when switching back to Current
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            MessageBox box = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-            box.setText("Dashboard Missing");
-            box.setMessage("Milestone dashboard HTML not found: " + (snapshot != null ? snapshot.getDashboardArtifact() : "null"));
-            box.open();
-        }
+        scheduleRefresh();
     }
 
     private void hookContextMenu() {
@@ -1153,28 +1138,20 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void refreshBrowser() {
-        if (browser == null || browser.isDisposed() || !isLoaded || showingSnapshot) return;
+        if (browser == null || browser.isDisposed() || !isLoaded) return;
 
         Display.getDefault().asyncExec(() -> {
-            if (browser == null || browser.isDisposed() || showingSnapshot) return;
+            if (browser == null || browser.isDisposed()) return;
+
+            String genomeJson = loadGenomeJson();
 
             if (currentMode == ViewMode.GENOME) {
-                String genomeJson = loadGenomeJson();
                 if (!isJsReady) return;
-                if (genomeJson.equals(lastJson) && currentTargetPath.equals(lastTargetPath)) {
-                    return;
-                }
                 lastJson = genomeJson;
                 lastTargetPath = currentTargetPath;
 
                 browser.execute("if(window.updateGenome) { window.updateGenome(" + genomeJson + "); }");
-
-                // Update sidebar state
-                JSONObject sidebarData = new JSONObject();
-                sidebarData.put("mode", currentMode.name());
-                sidebarData.put("target", currentTargetPath);
-                sidebarData.put("defaultTarget", defaultTargetPath);
-                sidebarData.put("history", new JSONArray(targetHistory));
+                JSONObject sidebarData = createSidebarData();
                 browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
                 return;
             }
@@ -1183,13 +1160,9 @@ public class ArchitecturePage extends AEvoPage {
             String json = renderer.serializeModel(model);
 
             if (!isJsReady) {
-                 // Initial values are already in INITIAL_MODEL via initBrowser's renderer.render()
                  return;
             }
 
-            if (json.equals(lastJson) && currentTargetPath.equals(lastTargetPath)) {
-                return;
-            }
             lastJson = json;
             lastTargetPath = currentTargetPath;
 
@@ -1200,23 +1173,29 @@ public class ArchitecturePage extends AEvoPage {
             }
 
             browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
+            browser.execute("if(window.updateGenome) { window.updateGenome(" + genomeJson + "); }");
 
-            // Also update sidebar state
-            JSONObject sidebarData = new JSONObject();
-            sidebarData.put("mode", currentMode.name());
-            sidebarData.put("target", currentTargetPath);
-            sidebarData.put("defaultTarget", defaultTargetPath);
-            sidebarData.put("history", new JSONArray(targetHistory));
+            JSONObject sidebarData = createSidebarData();
+            browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
+        });
+    }
 
-            JSONArray snapArray = new JSONArray();
+    private JSONObject createSidebarData() {
+        JSONObject sidebarData = new JSONObject();
+        sidebarData.put("mode", currentMode.name());
+        sidebarData.put("target", currentTargetPath != null ? currentTargetPath : "");
+        sidebarData.put("defaultTarget", defaultTargetPath != null ? defaultTargetPath : "");
+        sidebarData.put("history", new JSONArray(targetHistory));
+
+        JSONArray snapArray = new JSONArray();
+        if (orchestrator != null) {
             for (GenomeSnapshot s : orchestrator.getGenomeSnapshots()) {
                 snapArray.put(new JSONObject().put("timestamp", s.getTimestamp()).put("dashboard", s.getDashboardArtifact()));
             }
-            sidebarData.put("snapshots", snapArray);
-            sidebarData.put("currentSnapshot", currentSnapshotTimestamp != null ? currentSnapshotTimestamp : "");
-
-            browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
-        });
+        }
+        sidebarData.put("snapshots", snapArray);
+        sidebarData.put("currentSnapshot", currentSnapshotTimestamp != null ? currentSnapshotTimestamp : "");
+        return sidebarData;
     }
 
     private void initBrowser() {
@@ -1224,26 +1203,9 @@ public class ArchitecturePage extends AEvoPage {
         try {
             lastJson = "";
             lastTargetPath = "";
-            if (currentMode == ViewMode.GENOME) {
-                String genomeJson = loadGenomeJson();
-
-                String baseUrl = "";
-                org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
-                if (bundle != null) {
-                    URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
-                    baseUrl = bundleRoot.toString();
-                }
-
-                String html = eu.kalafatic.evolution.selfdev.genome.util.DashboardTemplate.getHtml(
-                    orchestrator != null && orchestrator.getName() != null ? orchestrator.getName() : "Evolution",
-                    "live",
-                    "", "", "", genomeJson, baseUrl
-                );
-                browser.setText(html);
-                return;
-            }
 
             DesignModel model = extractModel();
+            String genomeJson = loadGenomeJson();
 
             String baseUrl = "";
             org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
@@ -1252,7 +1214,7 @@ public class ArchitecturePage extends AEvoPage {
                 baseUrl = bundleRoot.toString();
             }
 
-            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, "{}");
+            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, genomeJson);
             browser.setText(html);
         } catch (Exception e) {
             e.printStackTrace();
@@ -1277,7 +1239,18 @@ public class ArchitecturePage extends AEvoPage {
 
     private String loadGenomeJson() {
         if (currentTargetPath == null) return "{}";
-        java.io.File genomeFile = new java.io.File(currentTargetPath, "genome/current/genome.json");
+        java.io.File genomeFile = null;
+        if (currentSnapshotTimestamp != null && !currentSnapshotTimestamp.isEmpty()) {
+            GenomeSnapshot snapshot = orchestrator.getGenomeSnapshots().stream()
+                    .filter(s -> currentSnapshotTimestamp.equals(s.getTimestamp()))
+                    .findFirst().orElse(null);
+            if (snapshot != null && snapshot.getGenomeArtifact() != null && !snapshot.getGenomeArtifact().isEmpty()) {
+                genomeFile = new java.io.File(currentTargetPath, snapshot.getGenomeArtifact());
+            }
+        }
+        if (genomeFile == null || !genomeFile.exists()) {
+            genomeFile = new java.io.File(currentTargetPath, "genome/current/genome.json");
+        }
         if (!genomeFile.exists()) {
             return "{}";
         }
