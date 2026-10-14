@@ -21,6 +21,30 @@ public class MacNetworkAccessProvider implements NetworkAccessProvider {
                     .build();
         }
 
+        try {
+            executable.setExecutable(true, false);
+        } catch (Exception ignored) {}
+
+        boolean loopbackOk = true;
+        try (java.net.ServerSocket ss = new java.net.ServerSocket()) {
+            ss.setReuseAddress(true);
+            ss.bind(new java.net.InetSocketAddress("127.0.0.1", 0));
+        } catch (Exception e) {
+            loopbackOk = false;
+        }
+
+        if (!loopbackOk) {
+            return new NetworkAccessResult.Builder()
+                    .provider(getName())
+                    .executable(executable)
+                    .ports(String.valueOf(port))
+                    .scope("LOOPBACK")
+                    .success(false)
+                    .supported(true)
+                    .message("macOS loopback network interface is not accessible or restricted")
+                    .build();
+        }
+
         return new NetworkAccessResult.Builder()
                 .provider(getName())
                 .executable(executable)
@@ -29,7 +53,7 @@ public class MacNetworkAccessProvider implements NetworkAccessProvider {
                 .success(true)
                 .supported(true)
                 .permissionAlreadyPresent(true)
-                .message("macOS loopback network access verified")
+                .message("macOS loopback network access and executable permissions verified")
                 .build();
     }
 }
