@@ -85,7 +85,10 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     private void initialSeed() {
         context.log("[INTENT_RECONSTRUCTION] Step 0: Initial Seeding...");
         File root = context.getProjectRoot();
-        scoreDirectory(root, 0);
+        if (root != null && root.exists()) {
+            explorationQueue.add(new ExplorationNode(root, 100.0, 0));
+            scoreDirectory(root, 0);
+        }
     }
 
     private void scoreDirectory(File dir, int depth) {
@@ -172,8 +175,10 @@ public class IntentReconstructionEngine extends ADarwinEngine {
 
     private double scoreFileName(File file) {
         String name = file.getName();
+        String lowerName = name.toLowerCase();
         if (name.contains("Application") || name.contains("Main") || name.equals("main.js") || name.equals("index.js")) return 10;
         if (name.equalsIgnoreCase("README.md") || name.contains("ARCHITECTURE") || name.equals("package.json") || name.equals("pom.xml")) return 10;
+        if (lowerName.endsWith(".parquet") || lowerName.endsWith(".jsonl") || lowerName.endsWith(".evodata") || lowerName.endsWith(".csv") || lowerName.endsWith(".arrow")) return 9;
         if (name.contains("Controller") || name.contains("Resource") || name.contains("Router")) return 9;
         if (name.contains("Service") || name.contains("Manager") || name.contains("Handler")) return 8;
         if (name.contains("Repository") || name.contains("Dao") || name.contains("Model")) return 7;
@@ -220,7 +225,7 @@ public class IntentReconstructionEngine extends ADarwinEngine {
             record.setType("USE_CASE");
         } else if (lowerName.endsWith(".md") || lowerName.endsWith(".txt") || "documentation".equalsIgnoreCase(meta.getRole())) {
             record.setType("DOCUMENTATION");
-        } else if (lowerName.endsWith(".json") || lowerName.endsWith(".csv") || lowerName.endsWith(".evodata") || "data".equalsIgnoreCase(meta.getRole())) {
+        } else if (lowerName.endsWith(".json") || lowerName.endsWith(".csv") || lowerName.endsWith(".evodata") || lowerName.endsWith(".parquet") || lowerName.endsWith(".jsonl") || "data".equalsIgnoreCase(meta.getRole())) {
             record.setType("DATASET");
         } else if (file.isDirectory() || "subsystem".equalsIgnoreCase(meta.getRole())) {
             record.setType("SUBSYSTEM");
