@@ -327,9 +327,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 					// Formal Reality Discovery
 					context.log("[DARWIN] Discovery: Building semantic repository snapshot.");
 					TargetScanner scanner = new TargetScanner();
-					TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution")
-							? TargetSnapshot.TargetType.SELF
-							: TargetSnapshot.TargetType.PROJECT;
+					TargetSnapshot.TargetType type = eu.kalafatic.evolution.controller.mediation.scanner.TargetClassificationDetector.detect(context.getProjectRoot()).getCategory();
 					TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
 
 					// TWO-STAGE SELECTION: Heuristic pick 32 candidates for deep analysis

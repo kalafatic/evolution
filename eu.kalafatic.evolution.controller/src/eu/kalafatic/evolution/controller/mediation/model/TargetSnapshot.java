@@ -9,7 +9,17 @@ import java.util.Map;
  * A versioned, immutable semantic snapshot of a target.
  */
 public class TargetSnapshot {
-    public enum TargetType { PROJECT, SELF }
+    public enum TargetType {
+        PROJECT,
+        DATASET,
+        KNOWLEDGE_BASE,
+        AI_MODEL,
+        ARCHIVE,
+        CONFIGURATION,
+        HETEROGENEOUS,
+        UNKNOWN,
+        SELF
+    }
 
     private String snapshotId;
     private String version;

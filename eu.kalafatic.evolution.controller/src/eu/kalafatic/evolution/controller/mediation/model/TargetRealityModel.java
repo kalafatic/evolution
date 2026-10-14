@@ -13,6 +13,9 @@ public class TargetRealityModel {
     private String domain;
     private String purpose;
     private String contentLandscapeSummary;
+    private TargetSnapshot.TargetType targetCategory = TargetSnapshot.TargetType.UNKNOWN;
+    private double classificationConfidence = 0.5;
+    private String targetNature;
     private List<Hotspot> hotspots = new ArrayList<>();
     private List<Subsystem> subsystems = new ArrayList<>();
     private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
@@ -57,6 +60,15 @@ public class TargetRealityModel {
 
     public String getPurpose() { return purpose; }
     public void setPurpose(String purpose) { this.purpose = purpose; }
+
+    public TargetSnapshot.TargetType getTargetCategory() { return targetCategory; }
+    public void setTargetCategory(TargetSnapshot.TargetType targetCategory) { this.targetCategory = targetCategory; }
+
+    public double getClassificationConfidence() { return classificationConfidence; }
+    public void setClassificationConfidence(double classificationConfidence) { this.classificationConfidence = classificationConfidence; }
+
+    public String getTargetNature() { return targetNature; }
+    public void setTargetNature(String targetNature) { this.targetNature = targetNature; }
 
     public String getContentLandscapeSummary() { return contentLandscapeSummary; }
     public void setContentLandscapeSummary(String contentLandscapeSummary) { this.contentLandscapeSummary = contentLandscapeSummary; }

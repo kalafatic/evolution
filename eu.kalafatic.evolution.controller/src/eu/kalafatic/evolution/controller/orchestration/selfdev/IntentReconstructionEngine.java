@@ -45,6 +45,14 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     public EvaluationResult runDarwinIteration(TaskContext context, IterationManager manager) throws Exception {
         context.log("[INTENT_RECONSTRUCTION] Starting Curiosity-Driven Surgeon iteration...");
 
+        if (context.getProjectRoot() == null || !context.getProjectRoot().exists()) {
+            context.log("[INTENT_RECONSTRUCTION] [ERROR] Target path is invalid or unresolvable: " + context.getProjectRoot());
+            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(false);
+            res.setDecision(SelfDevDecision.STOP);
+            return res;
+        }
+
         if (explorationQueue.isEmpty() && exploredPaths.isEmpty()) {
             initialSeed();
         }
@@ -176,14 +184,31 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     private double scoreFileName(File file) {
         String name = file.getName();
         String lowerName = name.toLowerCase();
-        if (name.contains("Application") || name.contains("Main") || name.equals("main.js") || name.equals("index.js")) return 10;
-        if (name.equalsIgnoreCase("README.md") || name.contains("ARCHITECTURE") || name.equals("package.json") || name.equals("pom.xml")) return 10;
-        if (lowerName.endsWith(".parquet") || lowerName.endsWith(".jsonl") || lowerName.endsWith(".evodata") || lowerName.endsWith(".csv") || lowerName.endsWith(".arrow")) return 9;
+
+        // 1. High-value entry points and manifest indicators
+        if (name.contains("Application") || name.contains("Main") || lowerName.contains("main") || lowerName.contains("index")) return 10;
+        if (lowerName.contains("readme") || lowerName.contains("architecture") || lowerName.contains("package") || lowerName.contains("pom")) return 10;
+
+        // 2. Dynamic dataset source detection via SourceAdapterRegistry
+        try {
+            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
+                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "FILE");
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = registry.findAdapter(item);
+            if (adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.TextAdapter)
+                    && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter)) {
+                return 9;
+            }
+        } catch (Throwable ignored) {}
+
+        // 3. Structural component indicators
         if (name.contains("Controller") || name.contains("Resource") || name.contains("Router")) return 9;
         if (name.contains("Service") || name.contains("Manager") || name.contains("Handler")) return 8;
         if (name.contains("Repository") || name.contains("Dao") || name.contains("Model")) return 7;
-        if (name.contains("Config") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".yml")) return 6;
-        if (name.endsWith(".md") || name.endsWith(".txt")) return 5;
+
+        // 4. Config, docs, and general files
+        if (name.contains("Config") || file.length() > 0) return 6;
         if (name.contains("Util")) return 1;
         return 5;
     }
@@ -209,24 +234,40 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     }
 
     private void updateDesignModel(File file, EvoMetadata meta) {
+        String compId = (meta != null && meta.getPath() != null) ? meta.getPath() : file.getPath();
+        if (designModel.getComponents().stream().anyMatch(c -> compId.equalsIgnoreCase(c.getId()))) {
+            return; // Prevent duplicate component entries across iterations
+        }
+
         ComponentRecord record = new ComponentRecord();
-        record.setId(meta.getPath());
+        record.setId(compId);
         record.setName(file.getName());
 
         String name = file.getName();
         String lowerName = name.toLowerCase();
 
-        // Categorize component type based on structure or document nature
+        eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = null;
+        try {
+            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
+                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "FILE");
+            adapter = registry.findAdapter(item);
+        } catch (Throwable ignored) {}
+
+        // Categorize component type based on structure, dynamic adapter capability, or role
         if (name.endsWith("Controller.java") || name.endsWith("Resource.java") ||
             name.endsWith("Service.java") || name.endsWith("UseCase.java") ||
             name.endsWith("Handler.java") || name.endsWith("Facade.java") ||
-            name.endsWith("Application.java") || lowerName.endsWith("router.js") ||
-            lowerName.endsWith("controller.js") || lowerName.endsWith("app.js")) {
+            name.endsWith("Application.java") || lowerName.contains("router") ||
+            lowerName.contains("controller") || lowerName.contains("app.")) {
             record.setType("USE_CASE");
-        } else if (lowerName.endsWith(".md") || lowerName.endsWith(".txt") || "documentation".equalsIgnoreCase(meta.getRole())) {
-            record.setType("DOCUMENTATION");
-        } else if (lowerName.endsWith(".json") || lowerName.endsWith(".csv") || lowerName.endsWith(".evodata") || lowerName.endsWith(".parquet") || lowerName.endsWith(".jsonl") || "data".equalsIgnoreCase(meta.getRole())) {
+        } else if ((adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.TextAdapter)
+                && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter))
+                || "data".equalsIgnoreCase(meta.getRole())) {
             record.setType("DATASET");
+        } else if ("documentation".equalsIgnoreCase(meta.getRole())) {
+            record.setType("DOCUMENTATION");
         } else if (file.isDirectory() || "subsystem".equalsIgnoreCase(meta.getRole())) {
             record.setType("SUBSYSTEM");
         } else {
@@ -386,21 +427,19 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         sb.append("Reconstructed Target Purpose & Knowledge:\n");
         sb.append("Target Path: ").append(root != null ? root.getAbsolutePath() : "Unknown").append("\n");
 
-        if (rm != null && rm.getDomain() != null && !rm.getDomain().isEmpty()) {
-            sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
-        }
+        if (rm != null) {
+            sb.append("Target Category: ").append(rm.getTargetCategory()).append("\n");
+            if (rm.getTargetNature() != null && !rm.getTargetNature().isEmpty()) {
+                sb.append("Target Nature: ").append(rm.getTargetNature()).append("\n");
+            }
+            sb.append("Classification Confidence: ").append(String.format(Locale.US, "%.2f", rm.getClassificationConfidence())).append("\n");
 
-        if (rm != null && rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
-            sb.append("Project Purpose: ").append(rm.getPurpose()).append("\n");
-        }
-
-        if (subsystemCount > 0 || useCaseCount > 0 || entryPointCount > 0) {
-            sb.append("Target Nature: Structured Codebase (Subsystems: ").append(subsystemCount)
-              .append(", Entry Points: ").append(entryPointCount)
-              .append(", Use Cases: ").append(useCaseCount).append(")\n");
-        } else if (docCount > 0 || dataCount > 0) {
-            sb.append("Target Nature: Knowledge/Document Repository (Docs: ").append(docCount)
-              .append(", Datasets: ").append(dataCount).append(")\n");
+            if (rm.getDomain() != null && !rm.getDomain().isEmpty()) {
+                sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
+            }
+            if (rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
+                sb.append("Apparent Purpose: ").append(rm.getPurpose()).append("\n");
+            }
         } else {
             sb.append("Target Nature: Heterogeneous Artifact Repository (Analyzed Components: ")
               .append(designModel.getComponents().size()).append(")\n");
