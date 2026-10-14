@@ -116,17 +116,14 @@ public class ForgeTrainingEstimationAgent {
 
     public double getBaselineTokensPerSecond(String modelSize) {
         double params = getModelParameterCount(modelSize);
-        if (isGpuAvailable()) {
-            double gpuFlops = 15_000_000_000_000.0; // ~15 TFLOPs effective for GPU accelerated training
-            double flopsPerToken = 6.0 * params;
-            return Math.max(500.0, Math.min(200_000.0, gpuFlops / flopsPerToken));
-        } else {
-            int cores = getCpuCores();
-            double flopsPerCore = 4_000_000_000.0; // ~4 GFLOPs/sec effective per core with SIMD
-            double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.15);
-            double flopsPerToken = 6.0 * params;
-            return Math.max(250.0, Math.min(50_000.0, totalFlops / flopsPerToken));
-        }
+        int cores = getCpuCores();
+        // JVM native pure-Java matrix backpropagation throughput FLOPs estimate.
+        // Effective ~0.5 GFLOPs/sec per core on JVM float array operations.
+        double flopsPerCore = 500_000_000.0;
+        double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.2);
+        double flopsPerToken = 6.0 * params;
+        double estimatedTokPerSec = totalFlops / flopsPerToken;
+        return Math.max(5.0, Math.min(25_000.0, estimatedTokPerSec));
     }
 
     public double calculateRemainingSecondsFromMeasuredThroughput(long remainingTokens, double measuredTokensPerSecond) {

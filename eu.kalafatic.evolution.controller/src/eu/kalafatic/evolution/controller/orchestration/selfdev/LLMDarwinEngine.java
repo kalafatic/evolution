@@ -86,9 +86,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 	}
 
 	// Configurable bounds on corpus files and sizes to prevent OutOfMemory
-	private static final int MAX_CORPUS_CHARS = 100_000;
+	private static final int MAX_CORPUS_CHARS = 10_000_000;
 	private static final int MAX_CORPUS_FILES = 100;
-	private static final int MAX_TOKENS_LIMIT = 20_000;
+	private static final int MAX_TOKENS_LIMIT = 100_000;
 	private static final int MAX_TRAINING_SAMPLES = 5_000;
 
 	// Supported head counts divisor checking
@@ -1359,7 +1359,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					}
 				});
 				if (!trainSamples.isEmpty()) {
-					trainer.train(trainSamples, config.epochs);
+					// Cap candidate architecture screening evaluation to 2 fast epochs
+					int screeningEpochs = Math.min(2, Math.max(1, config.epochs));
+					trainer.train(trainSamples, screeningEpochs);
 				}
 			} finally {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
