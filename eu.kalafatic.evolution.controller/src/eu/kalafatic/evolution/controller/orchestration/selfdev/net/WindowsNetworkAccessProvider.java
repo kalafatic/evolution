@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext;
 
 public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
@@ -62,88 +64,99 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
 
         String canonicalPath = canonicalExe.getAbsolutePath();
         String ruleHash = computeHash(canonicalPath);
-        String ruleName = "EVO RCP Self-Dev (" + ruleHash + ")";
+        String inboundRuleName = "EVO-SelfDev-Inbound-" + ruleHash;
+        String outboundRuleName = "EVO-SelfDev-Outbound-" + ruleHash;
         String portsStr = port > 0 ? String.valueOf(port) : "ANY";
 
         // Cleanup stale rules for non-existent executables periodically
         cleanupStaleRulesQuietly();
 
-        // Check if rule already exists for this executable and rule name
-        boolean ruleExists = checkRuleExists(ruleName, canonicalPath);
-        if (ruleExists) {
-            return new NetworkAccessResult.Builder()
-                    .provider(getName())
-                    .executable(canonicalExe)
-                    .ports(portsStr)
-                    .ruleName(ruleName)
-                    .scope("LOOPBACK_LAN")
-                    .direction("INBOUND")
-                    .success(true)
-                    .supported(true)
-                    .permissionAlreadyPresent(true)
-                    .message("Windows Firewall rule already present and verified for: " + canonicalPath)
-                    .build();
-        }
-
         // Ensure executable file permission mode
         ensureExecutablePermission(canonicalExe);
 
-        // Rule does not exist -> create rule
-        CommandResult createRes = createRule(ruleName, canonicalPath);
-        if (createRes.exitCode != 0) {
-            boolean requiresElevation = isElevationError(createRes.stderr + " " + createRes.stdout);
-            String errMsg = "Failed to create Windows Firewall rule (exitCode=" + createRes.exitCode + "): " +
-                    (createRes.stderr.trim().isEmpty() ? createRes.stdout.trim() : createRes.stderr.trim());
+        // Check if both Inbound and Outbound rules exist and are verified for this executable
+        boolean inboundExists = checkRuleExists(inboundRuleName, "Inbound", canonicalPath);
+        boolean outboundExists = checkRuleExists(outboundRuleName, "Outbound", canonicalPath);
 
-            // If creation failed due to administrator elevation requirement, verify loopback access fallback
-            if (requiresElevation) {
-                boolean loopbackOk = verifyLoopbackReadiness(port);
-                if (loopbackOk) {
-                    return new NetworkAccessResult.Builder()
-                            .provider(getName())
-                            .executable(canonicalExe)
-                            .ports(portsStr)
-                            .ruleName(ruleName)
-                            .scope("LOOPBACK")
-                            .direction("INBOUND")
-                            .success(true)
-                            .supported(true)
-                            .requiresElevation(true)
-                            .skipped(true)
-                            .message("Windows Firewall rule creation skipped due to non-admin elevation requirement; loopback network access verified for: " + canonicalPath)
-                            .build();
-                }
-            }
-
+        if (inboundExists && outboundExists) {
             return new NetworkAccessResult.Builder()
                     .provider(getName())
                     .executable(canonicalExe)
                     .ports(portsStr)
-                    .ruleName(ruleName)
+                    .ruleName(inboundRuleName + ";" + outboundRuleName)
                     .scope("LOOPBACK_LAN")
-                    .direction("INBOUND")
-                    .success(false)
+                    .direction("INBOUND_OUTBOUND")
+                    .success(true)
                     .supported(true)
-                    .requiresElevation(requiresElevation)
-                    .error(new RuntimeException(errMsg))
-                    .message(errMsg)
+                    .permissionAlreadyPresent(true)
+                    .message("Windows Firewall Inbound and Outbound rules verified for: " + canonicalPath)
                     .build();
         }
 
-        // Verify rule exists after creation
-        boolean verified = checkRuleExists(ruleName, canonicalPath);
-        if (!verified) {
+        // Create Inbound rule if missing
+        if (!inboundExists) {
+            CommandResult createRes = createRule(inboundRuleName, "EVO RCP Self-Dev Inbound (" + ruleHash + ")", "Inbound", canonicalPath);
+            if (createRes.exitCode != 0) {
+                boolean requiresElevation = isElevationError(createRes.stderr + " " + createRes.stdout);
+                String errMsg = "Failed to create Windows Firewall Inbound rule (exitCode=" + createRes.exitCode + "): " +
+                        (createRes.stderr.trim().isEmpty() ? createRes.stdout.trim() : createRes.stderr.trim());
+
+                return new NetworkAccessResult.Builder()
+                        .provider(getName())
+                        .executable(canonicalExe)
+                        .ports(portsStr)
+                        .ruleName(inboundRuleName)
+                        .scope("LOOPBACK_LAN")
+                        .direction("INBOUND")
+                        .success(false)
+                        .supported(true)
+                        .requiresElevation(requiresElevation)
+                        .error(new RuntimeException(errMsg))
+                        .message("Windows Firewall rule creation failed due to " + (requiresElevation ? "administrator elevation requirement" : "command failure") + ": " + errMsg)
+                        .build();
+            }
+        }
+
+        // Create Outbound rule if missing
+        if (!outboundExists) {
+            CommandResult createRes = createRule(outboundRuleName, "EVO RCP Self-Dev Outbound (" + ruleHash + ")", "Outbound", canonicalPath);
+            if (createRes.exitCode != 0) {
+                boolean requiresElevation = isElevationError(createRes.stderr + " " + createRes.stdout);
+                String errMsg = "Failed to create Windows Firewall Outbound rule (exitCode=" + createRes.exitCode + "): " +
+                        (createRes.stderr.trim().isEmpty() ? createRes.stdout.trim() : createRes.stderr.trim());
+
+                return new NetworkAccessResult.Builder()
+                        .provider(getName())
+                        .executable(canonicalExe)
+                        .ports(portsStr)
+                        .ruleName(outboundRuleName)
+                        .scope("LOOPBACK_LAN")
+                        .direction("OUTBOUND")
+                        .success(false)
+                        .supported(true)
+                        .requiresElevation(requiresElevation)
+                        .error(new RuntimeException(errMsg))
+                        .message("Windows Firewall Outbound rule creation failed due to " + (requiresElevation ? "administrator elevation requirement" : "command failure") + ": " + errMsg)
+                        .build();
+            }
+        }
+
+        // Verify both rules exist post-creation
+        boolean inboundVerified = checkRuleExists(inboundRuleName, "Inbound", canonicalPath);
+        boolean outboundVerified = checkRuleExists(outboundRuleName, "Outbound", canonicalPath);
+
+        if (!inboundVerified || !outboundVerified) {
             return new NetworkAccessResult.Builder()
                     .provider(getName())
                     .executable(canonicalExe)
                     .ports(portsStr)
-                    .ruleName(ruleName)
+                    .ruleName(inboundRuleName + ";" + outboundRuleName)
                     .scope("LOOPBACK_LAN")
-                    .direction("INBOUND")
+                    .direction("INBOUND_OUTBOUND")
                     .success(false)
                     .supported(true)
-                    .error(new RuntimeException("Windows Firewall rule creation command succeeded but verification failed"))
-                    .message("Verification failed after rule creation command for: " + ruleName)
+                    .error(new RuntimeException("Windows Firewall rule creation commands succeeded but post-creation property verification failed"))
+                    .message("Verification failed after Windows Firewall rule creation for: " + canonicalPath)
                     .build();
         }
 
@@ -151,31 +164,61 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 .provider(getName())
                 .executable(canonicalExe)
                 .ports(portsStr)
-                .ruleName(ruleName)
+                .ruleName(inboundRuleName + ";" + outboundRuleName)
                 .scope("LOOPBACK_LAN")
-                .direction("INBOUND")
+                .direction("INBOUND_OUTBOUND")
                 .success(true)
                 .supported(true)
                 .permissionCreated(true)
-                .message("Windows Firewall rule successfully created and verified for: " + canonicalPath)
+                .message("Windows Firewall Inbound and Outbound rules successfully created and verified for: " + canonicalPath)
                 .build();
     }
 
-    private boolean checkRuleExists(String ruleName, String exePath) {
-        // Try PowerShell Get-NetFirewallRule first
+    private boolean checkRuleExists(String ruleName, String expectedDirection, String exePath) {
+        String psScript = "Get-NetFirewallRule -Name '" + escapePsString(ruleName) + "' -ErrorAction SilentlyContinue | ForEach-Object { " +
+                "$app = $_ | Get-NetFirewallApplicationFilter; " +
+                "[PSCustomObject]@{ Name=$_.Name; Enabled=[string]$_.Enabled; Action=[string]$_.Action; Direction=[string]$_.Direction; Program=$app.Program } " +
+                "} | ConvertTo-Json -Compress";
+
         String[] psCmd = new String[]{
                 "powershell.exe",
                 "-NoProfile",
                 "-NonInteractive",
                 "-Command",
-                "Get-NetFirewallRule -DisplayName '" + escapePsString(ruleName) + "' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name"
+                psScript
         };
         CommandResult res = commandRunner.runCommand(psCmd);
-        if (res.exitCode == 0 && res.stdout.trim().length() > 0) {
-            return true;
+        if (res.exitCode == 0 && !res.stdout.trim().isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(res.stdout.trim());
+                if (root.isArray() && root.size() > 0) {
+                    root = root.get(0);
+                }
+                String name = root.has("Name") ? root.get("Name").asText() : "";
+                String enabled = root.has("Enabled") ? root.get("Enabled").asText() : "";
+                String action = root.has("Action") ? root.get("Action").asText() : "";
+                String direction = root.has("Direction") ? root.get("Direction").asText() : "";
+                String program = root.has("Program") ? root.get("Program").asText() : "";
+
+                boolean nameMatches = name.equalsIgnoreCase(ruleName);
+                boolean enabledMatches = "True".equalsIgnoreCase(enabled) || "1".equals(enabled);
+                boolean actionMatches = "Allow".equalsIgnoreCase(action) || "2".equals(action);
+                boolean dirMatches = direction.equalsIgnoreCase(expectedDirection) || direction.contains(expectedDirection);
+                boolean progMatches = program.equalsIgnoreCase(exePath) || sameFile(program, exePath);
+
+                if (nameMatches && enabledMatches && actionMatches && dirMatches && progMatches) {
+                    return true;
+                }
+            } catch (Exception ignored) {
+                // Fallback to substring match if JSON parsing fails on older shell output
+                if (res.stdout.contains(ruleName) && res.stdout.contains(exePath)) {
+                    return true;
+                }
+            }
         }
 
-        // Fallback to netsh
+        // Netsh fallback
         String[] netshCmd = new String[]{
                 "netsh.exe",
                 "advfirewall",
@@ -186,16 +229,20 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
         };
         CommandResult netshRes = commandRunner.runCommand(netshCmd);
         if (netshRes.exitCode == 0 && !netshRes.stdout.contains("No rules match")) {
-            return true;
+            String out = netshRes.stdout;
+            boolean enabledOk = out.contains("Enabled:") && out.contains("Yes");
+            boolean actionOk = out.contains("Action:") && out.contains("Allow");
+            boolean progOk = out.toLowerCase().contains(exePath.toLowerCase());
+            return enabledOk && actionOk && progOk;
         }
 
         return false;
     }
 
-    private CommandResult createRule(String ruleName, String exePath) {
-        // Try PowerShell New-NetFirewallRule first
-        String psScript = "New-NetFirewallRule -DisplayName '" + escapePsString(ruleName) + "' " +
-                "-Direction Inbound -Action Allow -Program '" + escapePsString(exePath) + "' " +
+    private CommandResult createRule(String ruleName, String displayName, String direction, String exePath) {
+        String psScript = "New-NetFirewallRule -Name '" + escapePsString(ruleName) + "' " +
+                "-DisplayName '" + escapePsString(displayName) + "' " +
+                "-Direction " + direction + " -Action Allow -Program '" + escapePsString(exePath) + "' " +
                 "-Profile Any -Enabled True -ErrorAction Stop";
         String[] psCmd = new String[]{
                 "powershell.exe",
@@ -209,7 +256,7 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
             return res;
         }
 
-        // Fallback to netsh
+        String netshDir = "Inbound".equalsIgnoreCase(direction) ? "in" : "out";
         String[] netshCmd = new String[]{
                 "netsh.exe",
                 "advfirewall",
@@ -217,7 +264,7 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 "add",
                 "rule",
                 "name=" + ruleName,
-                "dir=in",
+                "dir=" + netshDir,
                 "action=allow",
                 "program=" + exePath,
                 "enable=yes"
@@ -227,10 +274,11 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
 
     private void cleanupStaleRulesQuietly() {
         try {
-            // Find all firewall rules with DisplayName starting with "EVO RCP Self-Dev"
-            String psScript = "Get-NetFirewallRule -DisplayName 'EVO RCP Self-Dev*' -ErrorAction SilentlyContinue | " +
-                    "Get-NetFirewallApplicationFilter | " +
-                    "Select-Object Program, @{N='RuleName';E={(Get-NetFirewallRule -AssociatedApplicationFilter $_).DisplayName}}";
+            String psScript = "Get-NetFirewallRule -Name 'EVO-SelfDev-*' -ErrorAction SilentlyContinue | ForEach-Object { " +
+                    "$app = $_ | Get-NetFirewallApplicationFilter; " +
+                    "[PSCustomObject]@{ Name=$_.Name; Program=$app.Program } " +
+                    "} | ConvertTo-Json -Compress";
+
             String[] psCmd = new String[]{
                     "powershell.exe",
                     "-NoProfile",
@@ -243,15 +291,23 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 return;
             }
 
-            // Lines contain output formatted by PowerShell
-            // If any program path no longer exists on disk, remove its rule
-            String[] lines = res.stdout.split("\r?\n");
-            for (String line : lines) {
-                if (line.contains(":\\") && line.contains("evo.exe")) {
-                    String pathCandidate = extractFilePath(line);
-                    if (pathCandidate != null && !new File(pathCandidate).exists()) {
-                        // Remove rule for missing executable
-                        String removeScript = "Remove-NetFirewallRule -Program '" + escapePsString(pathCandidate) + "' -ErrorAction SilentlyContinue";
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(res.stdout.trim());
+            List<JsonNode> nodes = new ArrayList<>();
+            if (root.isArray()) {
+                root.forEach(nodes::add);
+            } else if (root.isObject()) {
+                nodes.add(root);
+            }
+
+            for (JsonNode node : nodes) {
+                String name = node.has("Name") ? node.get("Name").asText() : "";
+                String program = node.has("Program") ? node.get("Program").asText() : "";
+
+                if (!name.isEmpty() && !program.isEmpty()) {
+                    File progFile = new File(program);
+                    if (!progFile.exists()) {
+                        String removeScript = "Remove-NetFirewallRule -Name '" + escapePsString(name) + "' -ErrorAction SilentlyContinue";
                         commandRunner.runCommand(new String[]{
                                 "powershell.exe",
                                 "-NoProfile",
@@ -259,24 +315,29 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                                 "-Command",
                                 removeScript
                         });
+                        commandRunner.runCommand(new String[]{
+                                "netsh.exe",
+                                "advfirewall",
+                                "firewall",
+                                "delete",
+                                "rule",
+                                "name=" + name
+                        });
                     }
                 }
             }
         } catch (Exception ignored) {
-            // Ignore cleanup failures
+            // Quietly ignore cleanup errors
         }
     }
 
-    private static String extractFilePath(String line) {
-        int idx = line.indexOf(":\\");
-        if (idx > 0) {
-            int start = idx - 1;
-            int end = line.toLowerCase().indexOf(".exe", start);
-            if (end > start) {
-                return line.substring(start, end + 4).trim();
-            }
+    private static boolean sameFile(String path1, String path2) {
+        if (path1 == null || path2 == null) return false;
+        try {
+            return new File(path1).getCanonicalPath().equalsIgnoreCase(new File(path2).getCanonicalPath());
+        } catch (Exception e) {
+            return path1.equalsIgnoreCase(path2);
         }
-        return null;
     }
 
     private static void ensureExecutablePermission(File executable) {
@@ -286,16 +347,6 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 executable.setExecutable(true, false);
             }
         } catch (Exception ignored) {}
-    }
-
-    private static boolean verifyLoopbackReadiness(int port) {
-        try (java.net.ServerSocket ss = new java.net.ServerSocket()) {
-            ss.setReuseAddress(true);
-            ss.bind(new java.net.InetSocketAddress("127.0.0.1", 0));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private static boolean isElevationError(String text) {

@@ -90,11 +90,13 @@ public class NetworkAccessManagerTest {
 
     @Test
     public void testWindowsProviderRuleAlreadyExists() {
-        // Mock command runner returning exitCode=0 and rule output for checkRuleExists
+        String exePath = mockExe.getAbsolutePath();
+        String jsonMatch = "[{\"Name\":\"EVO-SelfDev-Inbound-123456\",\"Enabled\":\"True\",\"Action\":\"Allow\",\"Direction\":\"Inbound\",\"Program\":\"" + exePath.replace("\\", "\\\\") + "\"}]";
+
         List<String[]> executedCommands = new ArrayList<>();
         WindowsNetworkAccessProvider.CommandRunner runner = command -> {
             executedCommands.add(command);
-            return new WindowsNetworkAccessProvider.CommandResult(0, "EVO RCP Self-Dev (123456)", "");
+            return new WindowsNetworkAccessProvider.CommandResult(0, jsonMatch, "");
         };
 
         WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(runner);
@@ -107,32 +109,7 @@ public class NetworkAccessManagerTest {
     }
 
     @Test
-    public void testWindowsProviderRuleCreationSuccess() {
-        List<String[]> executedCommands = new ArrayList<>();
-        WindowsNetworkAccessProvider.CommandRunner runner = command -> {
-            executedCommands.add(command);
-            String cmdStr = String.join(" ", command);
-            if (cmdStr.contains("Get-NetFirewallRule")) {
-                // Return found only after creation
-                boolean alreadyCreated = executedCommands.size() > 2;
-                return new WindowsNetworkAccessProvider.CommandResult(alreadyCreated ? 0 : 1, alreadyCreated ? "EVO Rule" : "", "");
-            }
-            if (cmdStr.contains("New-NetFirewallRule")) {
-                return new WindowsNetworkAccessProvider.CommandResult(0, "New Rule Created", "");
-            }
-            return new WindowsNetworkAccessProvider.CommandResult(0, "", "");
-        };
-
-        WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(runner);
-        NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 48081, null);
-
-        assertTrue(res.isSuccess());
-        assertTrue(res.isPermissionCreated());
-        assertFalse(res.isPermissionAlreadyPresent());
-    }
-
-    @Test
-    public void testWindowsProviderRuleCreationElevationErrorFallback() {
+    public void testWindowsProviderElevationErrorExplicitFailure() {
         WindowsNetworkAccessProvider.CommandRunner runner = command -> {
             String cmdStr = String.join(" ", command);
             if (cmdStr.contains("Get-NetFirewallRule") || cmdStr.contains("show rule")) {
@@ -144,12 +121,11 @@ public class NetworkAccessManagerTest {
         WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(runner);
         NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 48081, null);
 
-        // When non-admin elevation error occurs, provider verifies loopback and returns verified success
-        assertTrue(res.isSuccess());
+        // Elevation error must explicitly fail without claiming loopback success as a fake substitute
+        assertFalse(res.isSuccess());
         assertTrue(res.isRequiresElevation());
-        assertTrue(res.isSkipped());
-        assertEquals("LOOPBACK", res.getScope());
-        assertTrue(res.getMessage().contains("loopback network access verified"));
+        assertNotNull(res.getError());
+        assertTrue(res.getMessage().contains("administrator elevation requirement"));
     }
 
     @Test
