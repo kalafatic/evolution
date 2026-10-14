@@ -95,4 +95,55 @@ public class IntentReconstructionEngineTest {
         assertTrue(targetSummary.contains("Client -> Router -> Handler"));
         assertTrue(targetSummary.contains("Unclear persistence mechanism"));
     }
+
+    @Test
+    public void testIntentReconstructionEngineWithRootDatasetFiles() throws Exception {
+        // Create root directory containing dataset files (no subdirectories)
+        File datasetDir = File.createTempFile("evo-test-dataset", "");
+        datasetDir.delete();
+        datasetDir.mkdirs();
+
+        File parquet1 = new File(datasetDir, "0000.parquet");
+        try (FileWriter fw = new FileWriter(parquet1)) {
+            fw.write("PAR1_MOCK_DATASET_CONTENT");
+        }
+
+        File parquet2 = new File(datasetDir, "0001.parquet");
+        try (FileWriter fw = new FileWriter(parquet2)) {
+            fw.write("PAR1_MOCK_DATASET_CONTENT_2");
+        }
+
+        TaskContext context = new TaskContext(orchestrator, datasetDir);
+        context.setSessionId("test-session-dataset-engine");
+        context.getOrchestrationState().setRawInput("# Intent Discovery\n\nDiscover target project purpose");
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-dataset-engine");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.INTENT_RECONSTRUCTION);
+
+        PlatformMode platformMode = new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, null, 1, false);
+        context.setPlatformMode(platformMode);
+
+        IterationMemoryService memoryService = new IterationMemoryService(datasetDir);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(datasetDir, context);
+
+        IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
+        IterationManager manager = KernelFactory.create(context.getOrchestrationState().getRawInput(), context, session, null);
+
+        EvaluationResult evalResult = engine.runDarwinIteration(context, manager);
+
+        assertNotNull(evalResult);
+        assertTrue(evalResult.isSuccess());
+
+        eu.kalafatic.evolution.controller.orchestration.design.DesignModel designModel =
+                (eu.kalafatic.evolution.controller.orchestration.design.DesignModel) context.getOrchestrationState().getMetadata().get("reconstructedDesignModel");
+        assertNotNull("reconstructedDesignModel should be populated", designModel);
+
+        boolean foundParquetComponent = designModel.getComponents().stream()
+                .anyMatch(c -> c.getName() != null && c.getName().endsWith(".parquet") && "DATASET".equalsIgnoreCase(c.getType()));
+        assertTrue("Parquet root files should be discovered and categorized as DATASET components", foundParquetComponent);
+
+        String targetSummary = (String) context.getOrchestrationState().getMetadata().get("intentTargetSummary");
+        assertNotNull("intentTargetSummary should be populated", targetSummary);
+        assertTrue(targetSummary.contains("Target Nature: Knowledge/Document Repository") || targetSummary.contains("Heterogeneous Artifact Repository") || targetSummary.contains("DATASET"));
+    }
 }

@@ -189,6 +189,16 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
 
             context.log("[DISCOVERY] Analyzing meaning of: " + node.getPath());
 
+            if (node.getSummary() == null || node.getSummary().isEmpty()) {
+                String lowerPath = node.getPath().toLowerCase();
+                if (lowerPath.endsWith(".parquet") || lowerPath.endsWith(".jsonl") || lowerPath.endsWith(".evodata") || lowerPath.endsWith(".csv") || "parquet".equals(node.getType()) || "data".equals(node.getType())) {
+                    String sampleSummary = extractDatasetSampleSummary(new File(context.getProjectRoot(), node.getPath()), context);
+                    if (sampleSummary != null && !sampleSummary.isEmpty()) {
+                        node.setSummary(sampleSummary);
+                    }
+                }
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append("ARTIFACT: ").append(node.getPath()).append("\n");
             sb.append("TYPE: ").append(node.getType()).append("\n");
@@ -604,21 +614,77 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     private void detectPartialAnalysis(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) {
         if (snapshot == null) return;
         int totalNodes = snapshot.getNodes().size();
-        int metadataNodes = model.getMetadataEntries();
-        double coverage = totalNodes > 0 ? (double) metadataNodes / totalNodes : 0;
+        if (totalNodes == 0) return;
 
-        if (coverage < 0.2) {
-            String warning = "Analysis covered only " + metadataNodes + " of " + totalNodes + " source files. Architecture model incomplete.";
+        int metadataNodes = model.getMetadataEntries();
+        long analyzedNodesCount = snapshot.getNodes().values().stream()
+                .filter(node -> (node.getSummary() != null && !node.getSummary().isEmpty())
+                        || model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath())))
+                .count();
+
+        int effectiveCovered = (int) Math.max(metadataNodes, analyzedNodesCount);
+        double coverage = (double) effectiveCovered / totalNodes;
+
+        if (coverage < 0.2 && totalNodes > 1) {
+            String warning = "Analysis covered only " + effectiveCovered + " of " + totalNodes + " source files. Architecture model incomplete.";
             model.setAnalysisWarning(warning);
             context.log("[DISCOVERY] WARNING: " + warning);
             // Reduce confidence of all use cases
             model.getUseCases().forEach(uc -> uc.setConfidence(uc.getConfidence() * 0.5));
             model.setRealityCompleteness(model.getRealityCompleteness() * 0.5);
-        } else if (coverage < 0.5) {
+        } else if (coverage < 0.5 && totalNodes > 1) {
             String warning = "Analysis covered " + String.format("%.1f", coverage * 100) + "% of source files. Results may be partial.";
             model.setAnalysisWarning(warning);
             context.log("[DISCOVERY] WARNING: " + warning);
         }
+    }
+
+    private String extractDatasetSampleSummary(File file, TaskContext context) {
+        if (file == null || !file.exists() || !file.isFile()) return null;
+        try {
+            String lowerName = file.getName().toLowerCase();
+            if (lowerName.endsWith(".parquet")) {
+                eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter adapter =
+                        new eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter();
+                eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                        new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "PARQUET");
+                eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext prepCtx =
+                        new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
+                List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> samples = adapter.convert(item, prepCtx);
+                if (!samples.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Parquet dataset file containing ").append(samples.size()).append("+ extracted samples. Sample records:\n");
+                    for (int i = 0; i < Math.min(3, samples.size()); i++) {
+                        sb.append(" Sample ").append(i + 1).append(": ").append(limitString(samples.get(i).toFullText(), 200)).append("\n");
+                    }
+                    return sb.toString();
+                }
+            } else if (lowerName.endsWith(".jsonl") || lowerName.endsWith(".csv") || lowerName.endsWith(".txt")) {
+                List<String> lines = java.nio.file.Files.readAllLines(file.toPath());
+                if (!lines.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Dataset file containing ").append(lines.size()).append(" records/lines. Sample:\n");
+                    for (int i = 0; i < Math.min(3, lines.size()); i++) {
+                        if (!lines.get(i).trim().isEmpty()) {
+                            sb.append(" - ").append(limitString(lines.get(i).trim(), 150)).append("\n");
+                        }
+                    }
+                    return sb.toString();
+                }
+            }
+        } catch (Exception ex) {
+            if (context != null) {
+                context.log("[DISCOVERY] Dataset sample extraction note for " + file.getName() + ": " + ex.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private String limitString(String str, int max) {
+        if (str == null) return "";
+        String trimmed = str.trim().replaceAll("\\s+", " ");
+        if (trimmed.length() <= max) return trimmed;
+        return trimmed.substring(0, max) + "...";
     }
 
     private void identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {

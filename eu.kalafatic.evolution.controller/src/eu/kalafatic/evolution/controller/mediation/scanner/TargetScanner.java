@@ -104,7 +104,7 @@ public class TargetScanner {
         return switch (ext) {
             case "java", "c", "cpp", "py", "js", "ts", "html", "css", "sql", "sh", "bat" -> "source_code";
             case "md", "txt", "pdf", "docx", "pptx", "xlsx", "csv" -> "document";
-            case "json", "xml", "yaml", "yml" -> "data";
+            case "json", "xml", "yaml", "yml", "parquet", "jsonl", "evodata", "tsv", "arrow" -> "data";
             case "png", "jpg", "jpeg", "webp", "gif", "svg" -> "image";
             case "zip", "tar", "gz", "rar", "7z" -> "archive";
             default -> ext;
