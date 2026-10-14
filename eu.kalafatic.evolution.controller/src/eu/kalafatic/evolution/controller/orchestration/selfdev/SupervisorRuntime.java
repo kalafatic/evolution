@@ -45,6 +45,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
             return TaskResult.failure("start_supervisor", "Supervisor JAR artifact pre-condition check failed: file missing or empty at " + (jarFile != null ? jarFile.getAbsolutePath() : "null"), null);
         }
 
+        // Prepare OS network / firewall readiness before process launch
+        eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessResult netResult =
+                eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessManager.getInstance()
+                        .prepareNetworkAccess(jarFile, supervisorPort, context);
+        if (!netResult.isSuccess()) {
+            log("[START_EVO_SUPERVISOR][WARNING] Network access preparation returned non-success: " + netResult.getMessage());
+        }
+
         // Process 1: Simple Java App Headless Supervisor
         List<String> cmd = new ArrayList<>();
         cmd.add("java");

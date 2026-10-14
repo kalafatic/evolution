@@ -132,7 +132,7 @@ public class NetworkAccessManagerTest {
     }
 
     @Test
-    public void testWindowsProviderRuleCreationElevationError() {
+    public void testWindowsProviderRuleCreationElevationErrorFallback() {
         WindowsNetworkAccessProvider.CommandRunner runner = command -> {
             String cmdStr = String.join(" ", command);
             if (cmdStr.contains("Get-NetFirewallRule") || cmdStr.contains("show rule")) {
@@ -144,9 +144,12 @@ public class NetworkAccessManagerTest {
         WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(runner);
         NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 48081, null);
 
-        assertFalse(res.isSuccess());
+        // When non-admin elevation error occurs, provider verifies loopback and returns verified success
+        assertTrue(res.isSuccess());
         assertTrue(res.isRequiresElevation());
-        assertNotNull(res.getError());
+        assertTrue(res.isSkipped());
+        assertEquals("LOOPBACK", res.getScope());
+        assertTrue(res.getMessage().contains("loopback network access verified"));
     }
 
     @Test

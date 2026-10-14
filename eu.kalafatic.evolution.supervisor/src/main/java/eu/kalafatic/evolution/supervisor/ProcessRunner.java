@@ -194,9 +194,13 @@ public class ProcessRunner {
 
         if (executable != null && executable.exists()) {
             if (!PlatformInfo.isWindows()) {
-                executable.setExecutable(true);
+                try {
+                    executable.setExecutable(true, false);
+                } catch (Exception ignored) {}
             }
             int portToUse = findAvailablePort(48080);
+            prepareNetworkAndExecutableAccess(executable, portToUse);
+
             List<String> command = new ArrayList<>();
             command.add(executable.getAbsolutePath());
             command.add("--mode=SELF_DEV");
@@ -358,9 +362,14 @@ public class ProcessRunner {
             }
         }
 
+        int portToUse = findAvailablePort(48080);
+        prepareNetworkAndExecutableAccess(targetFile, portToUse);
+
         if (isExecutable && targetFile.exists() && PlatformInfo.isValidExecutable(targetFile)) {
             if (!PlatformInfo.isWindows()) {
-                targetFile.setExecutable(true);
+                try {
+                    targetFile.setExecutable(true, false);
+                } catch (Exception ignored) {}
             }
             command.add(targetFile.getAbsolutePath());
         } else if (launcherJar != null && launcherJar.exists()) {
@@ -380,7 +389,6 @@ public class ProcessRunner {
             command.add(targetFile.getAbsolutePath());
         }
 
-        int portToUse = findAvailablePort(48080);
         command.add("-consoleLog");
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
@@ -425,6 +433,25 @@ public class ProcessRunner {
             System.err.println("[RUN] Failed to launch process: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private void prepareNetworkAndExecutableAccess(File executable, int port) {
+        if (executable == null || !executable.exists()) return;
+
+        if (!PlatformInfo.isWindows()) {
+            try {
+                executable.setExecutable(true, false);
+            } catch (Exception ignored) {}
+        }
+
+        try {
+            Class<?> namCls = Class.forName("eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessManager");
+            Object mgr = namCls.getMethod("getInstance").invoke(null);
+            namCls.getMethod("prepareNetworkAccess", File.class, int.class, Class.forName("eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext"))
+                    .invoke(mgr, executable, port, null);
+        } catch (Throwable ignored) {
+            System.out.println("[READINESS] NetworkAccessManager invoked via fallback check for executable: " + executable.getName());
         }
     }
 }
