@@ -27,6 +27,7 @@ import eu.kalafatic.evolution.controller.orchestration.DatasetCandidateManager;
 import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager;
 import eu.kalafatic.evolution.forge.data.api.discovery.DatasetCandidate;
 import eu.kalafatic.evolution.forge.data.api.discovery.DatasetSearchRequest;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
 import eu.kalafatic.evolution.forge.data.impl.discovery.HuggingFaceDatasetProvider;
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -60,6 +61,9 @@ public class DatasetEditorGroup extends AEvoGroup {
     private ProgressBar progressBar;
     private Label progressStatusLabel;
     private Text reportArea;
+
+    private Table sourcesTable;
+    private List<DatasetItem> sourceItemList = new ArrayList<>();
 
     private Table candidatesTable;
     private List<DatasetCandidate> candidateList = new ArrayList<>();
@@ -246,6 +250,108 @@ public class DatasetEditorGroup extends AEvoGroup {
                 handleAddTaskToStack();
             }
         });
+
+        // SECTION: Dataset Sources List (Files, Folders, Repositories)
+        Composite sourcesGroup = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Dataset Sources List (Files, Folders, Repositories)", 2, true, true);
+        GridData gdSourcesGroup = new GridData(GridData.FILL_HORIZONTAL);
+        sourcesGroup.setLayoutData(gdSourcesGroup);
+
+        sourcesTable = new Table(sourcesGroup, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
+        sourcesTable.setHeaderVisible(true);
+        sourcesTable.setLinesVisible(true);
+        GridData gdSourcesTable = new GridData(SWT.FILL, SWT.FILL, true, true);
+        gdSourcesTable.heightHint = 130;
+        sourcesTable.setLayoutData(gdSourcesTable);
+
+        TableColumn colSrcUse = new TableColumn(sourcesTable, SWT.LEFT);
+        colSrcUse.setText("Use");
+        colSrcUse.setWidth(45);
+
+        TableColumn colSrcPath = new TableColumn(sourcesTable, SWT.LEFT);
+        colSrcPath.setText("Path / Target Source");
+        colSrcPath.setWidth(320);
+
+        TableColumn colSrcType = new TableColumn(sourcesTable, SWT.LEFT);
+        colSrcType.setText("Type");
+        colSrcType.setWidth(100);
+
+        sourcesTable.addListener(SWT.Selection, event -> {
+            if (event.detail == SWT.CHECK && event.item instanceof TableItem) {
+                TableItem item = (TableItem) event.item;
+                Object data = item.getData();
+                if (data instanceof DatasetItem) {
+                    ((DatasetItem) data).setChecked(item.getChecked());
+                }
+            }
+        });
+
+        Composite sourcesBtnComp = toolkit.createComposite(sourcesGroup);
+        sourcesBtnComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        sourcesBtnComp.setLayout(new GridLayout(1, true));
+
+        Button addFileSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Add File...");
+        Button addFolderSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Add Folder...");
+        Button addRepoSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Add Target / Repo");
+        Button removeSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Remove");
+        Button moveUpSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Move Up");
+        Button moveDownSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Move Down");
+        Button selectAllSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Select All");
+
+        addFileSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAddFileSource();
+            }
+        });
+
+        addFolderSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAddFolderSource();
+            }
+        });
+
+        addRepoSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAddRepoSource();
+            }
+        });
+
+        removeSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleRemoveSource();
+            }
+        });
+
+        moveUpSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleMoveUpSource();
+            }
+        });
+
+        moveDownSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleMoveDownSource();
+            }
+        });
+
+        selectAllSrcBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleSelectAllSources();
+            }
+        });
+
+        // Initialize default repo in sources list
+        String defaultRepo = repoText.getText().trim();
+        if (!defaultRepo.isEmpty()) {
+            sourceItemList.add(new DatasetItem(true, defaultRepo, "REPOSITORY"));
+        }
+        refreshSourcesTable();
 
         // SECTION: Discovered Remote Dataset Candidates SWT Table
         Composite candGroup = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Discovered Remote Dataset Candidates (EMF Persisted)", 2, true, true);
@@ -563,6 +669,20 @@ public class DatasetEditorGroup extends AEvoGroup {
                 maxSizeMbText.setText(String.format(Locale.US, "%.2f", mb));
             }
             sourceTypeCombo.select(0); // Hugging Face Hub
+
+            boolean found = false;
+            for (DatasetItem item : sourceItemList) {
+                if (item.getPath().equalsIgnoreCase(cand.getRepository())) {
+                    item.setChecked(true);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                sourceItemList.add(new DatasetItem(true, cand.getRepository(), "REPOSITORY"));
+            }
+            refreshSourcesTable();
+
             reportArea.setText("ACTIVE DATASET SOURCE UPDATED:\n" +
                     "- Selected Repository: " + cand.getRepository() + "\n" +
                     "- Technical Compatibility Score: " + cand.getCompatibilityScore() + "%\n" +
@@ -878,29 +998,37 @@ public class DatasetEditorGroup extends AEvoGroup {
         updateProgress(10);
         updateStatusText("Status: Preparing .evodata export...");
         String repoOrPath = repoText.getText().trim();
-        if (repoOrPath.isEmpty()) {
-            MessageDialog.openWarning(group.getShell(), "No Dataset Specified", "Please specify a repository ID or target directory/file path to export.");
+
+        List<DatasetItem> apiItems = new ArrayList<>();
+        for (DatasetItem item : sourceItemList) {
+            if (item.isChecked() && item.getPath() != null && !item.getPath().trim().isEmpty()) {
+                apiItems.add(item);
+            }
+        }
+        if (apiItems.isEmpty() && !repoOrPath.isEmpty()) {
+            String itemType = "REPOSITORY";
+            File pathFile = new File(repoOrPath);
+            if (pathFile.exists()) {
+                itemType = pathFile.isDirectory() ? "FOLDER" : "FILE";
+            }
+            apiItems.add(new DatasetItem(true, pathFile.exists() ? pathFile.getAbsolutePath() : repoOrPath, itemType));
+        }
+
+        if (apiItems.isEmpty()) {
+            MessageDialog.openWarning(group.getShell(), "No Dataset Specified", "Please specify a repository ID or add dataset sources to export.");
             return;
         }
 
+        String targetRepoOrPath = !repoOrPath.isEmpty() ? repoOrPath : apiItems.get(0).getPath();
         String customOutputDir = outputDirText.getText().trim();
-        File targetDatasetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(customOutputDir, repoOrPath);
+        File targetDatasetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(customOutputDir, targetRepoOrPath);
         if (!targetDatasetDir.exists()) {
             targetDatasetDir.mkdirs();
         }
 
-        String itemType = "REPOSITORY";
-        File pathFile = new File(repoOrPath);
-        if (pathFile.exists()) {
-            itemType = pathFile.isDirectory() ? "FOLDER" : "FILE";
-        }
-
-        List<eu.kalafatic.evolution.forge.data.api.source.DatasetItem> apiItems = new ArrayList<>();
-        apiItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, pathFile.exists() ? pathFile.getAbsolutePath() : repoOrPath, itemType));
-
         String orchId = getOrchestratorId();
-        OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Exporting .evodata artifact for " + repoOrPath + "...");
-        reportArea.setText("Starting Native .evodata Export for " + repoOrPath + "...\nTarget Output Directory: " + targetDatasetDir.getAbsolutePath() + "\n");
+        OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Exporting .evodata artifact for " + apiItems.size() + " sources...");
+        reportArea.setText("Starting Native .evodata Export for " + apiItems.size() + " sources...\nTarget Output Directory: " + targetDatasetDir.getAbsolutePath() + "\n");
 
         final File outputDir = targetDatasetDir;
         Job job = new Job("Export .evodata Artifact: " + repoOrPath) {
@@ -1132,6 +1260,18 @@ public class DatasetEditorGroup extends AEvoGroup {
                     req.put("outputDir", resolvedOutputDir);
                     req.put("minQuality", 0.5);
 
+                    org.json.JSONArray itemsArray = new org.json.JSONArray();
+                    for (DatasetItem item : sourceItemList) {
+                        if (item.isChecked() && item.getPath() != null && !item.getPath().trim().isEmpty()) {
+                            itemsArray.put(item.toJsonObject());
+                        }
+                    }
+                    if (itemsArray.length() == 0 && !repo.isEmpty()) {
+                        DatasetItem defaultItem = new DatasetItem(true, repo, "REPOSITORY");
+                        itemsArray.put(defaultItem.toJsonObject());
+                    }
+                    req.put("items", itemsArray);
+
                     OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.5, "Building EVO dataset artifact (.evodata)...");
 
                     String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
@@ -1331,6 +1471,118 @@ public class DatasetEditorGroup extends AEvoGroup {
         }
     }
 
+    private void handleAddFileSource() {
+        org.eclipse.swt.widgets.FileDialog dlg = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.OPEN | SWT.MULTI);
+        dlg.setText("Select Training Data Files");
+        dlg.setFilterExtensions(new String[] { "*.txt;*.jsonl;*.parquet;*.csv;*.tsv;*.pdf;*.md;*.evodata", "*.*" });
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
+        if (dlg.open() != null) {
+            String filterPath = dlg.getFilterPath();
+            String[] fileNames = dlg.getFileNames();
+            for (String fileName : fileNames) {
+                java.nio.file.Path fullPath = java.nio.file.Paths.get(filterPath, fileName);
+                DatasetItem ds = new DatasetItem(true, fullPath.toString(), "FILE");
+                sourceItemList.add(ds);
+            }
+            refreshSourcesTable();
+        }
+    }
+
+    private void handleAddFolderSource() {
+        org.eclipse.swt.widgets.DirectoryDialog dlg = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell());
+        dlg.setText("Select Training Data Directory");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
+        String selectedDir = dlg.open();
+        if (selectedDir != null && !selectedDir.trim().isEmpty()) {
+            DatasetItem ds = new DatasetItem(true, selectedDir, "FOLDER");
+            sourceItemList.add(ds);
+            refreshSourcesTable();
+        }
+    }
+
+    private void handleAddRepoSource() {
+        String repo = repoText != null ? repoText.getText().trim() : "";
+        if (repo.isEmpty()) repo = "wikitext";
+        boolean exists = false;
+        for (DatasetItem item : sourceItemList) {
+            if (item.getPath().equalsIgnoreCase(repo)) {
+                item.setChecked(true);
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            String type = (sourceTypeCombo != null && sourceTypeCombo.getSelectionIndex() == 2) ? "EVO_MODEL" : "REPOSITORY";
+            sourceItemList.add(new DatasetItem(true, repo, type));
+        }
+        refreshSourcesTable();
+    }
+
+    private void handleRemoveSource() {
+        int[] indices = sourcesTable.getSelectionIndices();
+        if (indices != null && indices.length > 0) {
+            java.util.Arrays.sort(indices);
+            for (int i = indices.length - 1; i >= 0; i--) {
+                if (indices[i] >= 0 && indices[i] < sourceItemList.size()) {
+                    sourceItemList.remove(indices[i]);
+                }
+            }
+            refreshSourcesTable();
+        }
+    }
+
+    private void handleMoveUpSource() {
+        int idx = sourcesTable.getSelectionIndex();
+        if (idx > 0 && idx < sourceItemList.size()) {
+            DatasetItem item = sourceItemList.remove(idx);
+            sourceItemList.add(idx - 1, item);
+            refreshSourcesTable();
+            sourcesTable.setSelection(idx - 1);
+        }
+    }
+
+    private void handleMoveDownSource() {
+        int idx = sourcesTable.getSelectionIndex();
+        if (idx >= 0 && idx < sourceItemList.size() - 1) {
+            DatasetItem item = sourceItemList.remove(idx);
+            sourceItemList.add(idx + 1, item);
+            refreshSourcesTable();
+            sourcesTable.setSelection(idx + 1);
+        }
+    }
+
+    private void handleSelectAllSources() {
+        boolean anyUnchecked = false;
+        for (DatasetItem item : sourceItemList) {
+            if (!item.isChecked()) {
+                anyUnchecked = true;
+                break;
+            }
+        }
+        for (DatasetItem item : sourceItemList) {
+            item.setChecked(anyUnchecked);
+        }
+        refreshSourcesTable();
+    }
+
+    private void refreshSourcesTable() {
+        if (sourcesTable == null || sourcesTable.isDisposed()) return;
+        sourcesTable.removeAll();
+        for (DatasetItem item : sourceItemList) {
+            TableItem tableItem = new TableItem(sourcesTable, SWT.NONE);
+            tableItem.setChecked(item.isChecked());
+            tableItem.setText(0, "");
+            tableItem.setText(1, item.getPath());
+            tableItem.setText(2, item.getType());
+            tableItem.setData(item);
+        }
+        for (TableColumn col : sourcesTable.getColumns()) {
+            col.pack();
+            if (col.getWidth() < 50) {
+                col.setWidth(60);
+            }
+        }
+    }
 
     @Override
     protected void refreshUI() {}
