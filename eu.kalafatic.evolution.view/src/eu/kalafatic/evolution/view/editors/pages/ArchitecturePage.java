@@ -69,6 +69,7 @@ public class ArchitecturePage extends AEvoPage {
     private List<String> targetHistory = new ArrayList<>();
     private MilestoneGenerator milestoneGenerator = new MilestoneGenerator();
 	private Composite content;
+    private boolean bridgesInstalled = false;
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -111,10 +112,7 @@ public class ArchitecturePage extends AEvoPage {
 
 	private void initTargetPath() {
         // First check if Evolution repository path can be resolved dynamically
-        String evoRepoPath = ProjectModelManager.getCodebasePath();
-        if (evoRepoPath == null || evoRepoPath.isEmpty()) {
-            evoRepoPath = findEvoRepository();
-        }
+        String evoRepoPath = findEvoRepository();
 
         if (evoRepoPath != null && !evoRepoPath.isEmpty() && new java.io.File(evoRepoPath).exists()) {
             defaultTargetPath = evoRepoPath;
@@ -127,22 +125,6 @@ public class ArchitecturePage extends AEvoPage {
             defaultTargetPath = orchestrator.getDefaultTarget();
             currentTargetPath = defaultTargetPath;
             eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Default target from model: " + currentTargetPath);
-        }
-
-        // Use discovery to populate target history and fallback paths
-        SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
-        if (discovery.getPrimaryRepository() != null) {
-            String primary = discovery.getPrimaryRepository().getAbsolutePath();
-            if (currentTargetPath == null) {
-                currentTargetPath = primary;
-                defaultTargetPath = primary;
-            }
-            if (!targetHistory.contains(primary)) targetHistory.add(primary);
-        }
-
-        for (java.io.File repo : discovery.getGitRepositories()) {
-            String path = repo.getAbsolutePath();
-            if (!targetHistory.contains(path)) targetHistory.add(path);
         }
 
         if (currentTargetPath == null && editor != null) {
@@ -168,6 +150,33 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         synchronizeSnapshotsWithDisk();
+
+        // Offload background workspace repository discovery so UI thread doesn't block on startup
+        Job discoveryJob = new Job("Discovering Workspace Repositories") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
+                    if (discovery != null) {
+                        Display.getDefault().asyncExec(() -> {
+                            if (discovery.getPrimaryRepository() != null) {
+                                String primary = discovery.getPrimaryRepository().getAbsolutePath();
+                                if (!targetHistory.contains(primary)) targetHistory.add(primary);
+                            }
+                            for (java.io.File repo : discovery.getGitRepositories()) {
+                                String path = repo.getAbsolutePath();
+                                if (!targetHistory.contains(path)) targetHistory.add(path);
+                            }
+                        });
+                    }
+                } catch (Throwable t) {
+                    // Ignore background discovery errors
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        discoveryJob.setPriority(Job.DECORATE);
+        discoveryJob.schedule();
     }
 
     private String findEvoRepository() {
@@ -200,35 +209,40 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void setupJavaScriptBridges() {
-        if (browser.isDisposed()) return;
+        if (browser == null || browser.isDisposed() || bridgesInstalled) return;
 
-        new BrowserFunction(browser, "navigatorFunction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 2) {
-                    String id = (String) arguments[0];
-                    String action = (String) arguments[1];
-                    handleNavigatorAction(id, action);
-                }
-                return null;
-            }
-        };
-
-        new BrowserFunction(browser, "logFunction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 1) {
-                    String msg = (String) arguments[0];
-                    if ("ready".equals(msg)) {
-                        isJsReady = true;
-                        refreshBrowser();
-                    } else {
-                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + msg);
+        try {
+            new BrowserFunction(browser, "navigatorFunction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments != null && arguments.length >= 2) {
+                        String id = (String) arguments[0];
+                        String action = (String) arguments[1];
+                        handleNavigatorAction(id, action);
                     }
+                    return null;
                 }
-                return null;
-            }
-        };
+            };
+
+            new BrowserFunction(browser, "logFunction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments != null && arguments.length >= 1) {
+                        String msg = (String) arguments[0];
+                        if ("ready".equals(msg)) {
+                            isJsReady = true;
+                            refreshBrowser();
+                        } else {
+                            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + msg);
+                        }
+                    }
+                    return null;
+                }
+            };
+            bridgesInstalled = true;
+        } catch (Throwable t) {
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Error setting up JavaScript bridges: " + t.getMessage());
+        }
     }
 
     private void handleNavigatorAction(String id, String action) {

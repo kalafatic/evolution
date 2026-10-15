@@ -30,7 +30,7 @@ public class WorkspaceSourceResolver {
 
     public SourceDiscoveryResult discover(SourceDiscoveryRequest request) {
         SourceDiscoveryResult result = new SourceDiscoveryResult();
-        Log.log("[DISCOVERY] Starting Workspace Source Discovery...");
+        Log.log("[DISCOVERY] Starting Workspace Source Discovery" + (request != null && request.isFastMode() ? " (Fast Mode)..." : "..."));
 
         // Phase 1 - Resolve Eclipse Projects
         resolveProjects(result);
@@ -38,11 +38,11 @@ public class WorkspaceSourceResolver {
         // Phase 2 - Find Git Roots
         findGitRoots(result);
 
-        // Phase 3-5 - Build File Inventory & Filtering & Exclusions
-        buildInventory(result, request);
-
-        // Phase 6 - Repository Compression / Statistics
-        buildStatistics(result);
+        // Phase 3-5 - Build File Inventory & Filtering & Exclusions (Skip in Fast Mode for UI thread responsiveness)
+        if (request == null || !request.isFastMode()) {
+            buildInventory(result, request);
+            buildStatistics(result);
+        }
 
         calculateConfidence(result);
 

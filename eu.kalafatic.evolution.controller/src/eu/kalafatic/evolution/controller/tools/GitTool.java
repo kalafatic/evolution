@@ -74,16 +74,24 @@ public class GitTool implements ITool {
             findRepositories(wsHomeDir, 0, 3, results);
         }
 
-        // Priority 3: user home
-        findRepositories(new File(userHome), 0, 2, results);
+        // Priority 3: <user-home>/Projects
+        File projectsHomeDir = new File(userHome, "Projects");
+        if (projectsHomeDir.exists()) {
+            findRepositories(projectsHomeDir, 0, 3, results);
+        }
 
-        // Priority 4: system roots
-        File[] roots = File.listRoots();
-        if (roots != null) {
-            for (File root : roots) {
-                 findRepositories(root, 0, 2, results);
+        // Priority 4: user.dir
+        String userDir = System.getProperty("user.dir");
+        if (userDir != null) {
+            File current = new File(userDir);
+            findRepositories(current, 0, 2, results);
+            if (current.getParentFile() != null) {
+                findRepositories(current.getParentFile(), 0, 2, results);
             }
         }
+
+        // Priority 5: user home top-level
+        findRepositories(new File(userHome), 0, 1, results);
 
         return results;
     }

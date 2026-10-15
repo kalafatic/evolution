@@ -1119,7 +1119,25 @@ public class ProjectModelManager {
     public synchronized SourceDiscoveryResult getOrDiscoverWorkspace() {
         if (cachedDiscoveryResult == null) {
             WorkspaceSourceResolver resolver = new WorkspaceSourceResolver();
-            cachedDiscoveryResult = resolver.discover(new SourceDiscoveryRequest());
+            SourceDiscoveryRequest fastReq = new SourceDiscoveryRequest();
+            fastReq.setFastMode(true);
+            cachedDiscoveryResult = resolver.discover(fastReq);
+
+            // Asynchronously build full inventory in low-priority background thread
+            Thread inventoryThread = new Thread(() -> {
+                try {
+                    SourceDiscoveryRequest fullReq = new SourceDiscoveryRequest();
+                    SourceDiscoveryResult fullResult = resolver.discover(fullReq);
+                    synchronized (ProjectModelManager.this) {
+                        cachedDiscoveryResult = fullResult;
+                    }
+                } catch (Throwable t) {
+                    // Ignore background inventory build errors
+                }
+            }, "WorkspaceInventoryDiscovery");
+            inventoryThread.setDaemon(true);
+            inventoryThread.setPriority(Thread.MIN_PRIORITY);
+            inventoryThread.start();
         }
         return cachedDiscoveryResult;
     }
