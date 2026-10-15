@@ -42,7 +42,7 @@
             <div class="sidebar-section">
                 <h2>✨ Guidance</h2>
                 <div id="guidance-content" style="font-size: 0.85em; color: var(--text-dim); line-height: 1.4;">
-                    Select an architecture perspective or target repository to explore discovered modules, dependencies, and hotspots.
+                    Click <b>🔍 Discover Architecture</b> to scan high levels (top folders and modules) first. Select any node and click <b>🔍 Scan Next Level</b> to continue progressive scanning.
                 </div>
             </div>
 
@@ -56,7 +56,8 @@
                         <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;" title="Browse local filesystem">📁</button>
                     </div>
                     <input type="text" id="target-path-input" style="width: 100%; box-sizing: border-box; margin-top: 2px;" placeholder="Target path..." onchange="javaAction(this.value, 'SET_TARGET')">
-                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')" data-guidance="Trigger deep architecture discovery across code, OSGi bundles, Maven modules, and metadata sidecars.">🔍 Discover Architecture</button>
+                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')" data-guidance="Trigger structured high-level architecture scan (top folders and modules first).">🔍 Discover Architecture</button>
+                    <button class="btn" onclick="javaAction('', 'DISCOVER_FULL')" style="margin-top:4px;" data-guidance="Trigger full deep scan across all levels (packages, classes, methods).">⚡ Deep Scan All</button>
                 </div>
             </div>
 

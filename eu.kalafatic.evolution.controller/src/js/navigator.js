@@ -149,6 +149,8 @@
             path: c.path || '',
             parentId: c.parentId || '',
             level: c.level || 2,
+            scannedLevel: c.scannedLevel || c.level || 2,
+            hasUnscannedChildren: c.hasUnscannedChildren || false,
             qualifiedName: c.qualifiedName || c.name || c.id,
             superClass: c.superClass || '',
             interfaces: c.interfaces || [],
@@ -469,6 +471,36 @@
             badgeText.textContent = getRoleIcon(n.type) + " " + (n.type || 'COMPONENT') + " [L" + (n.level || 2) + "]";
             nodeG.appendChild(badgeText);
 
+            // Scan Badge for Unscanned Level Children
+            if (n.hasUnscannedChildren || (n.scannedLevel && n.scannedLevel < 5 && getChildrenCount(n.id) === 0 && n.type !== 'METHOD' && n.type !== 'FIELD')) {
+                const scanGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                scanGroup.setAttribute("class", "scan-badge");
+                scanGroup.setAttribute("transform", `translate(${w/2 - 84}, ${-h/2 + 14})`);
+                scanGroup.setAttribute("style", "cursor:pointer;");
+                scanGroup.onclick = (e) => {
+                    e.stopPropagation();
+                    javaAction(n.id, 'SCAN_NEXT_LEVEL');
+                };
+
+                const scanRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                scanRect.setAttribute("width", "56");
+                scanRect.setAttribute("height", "16");
+                scanRect.setAttribute("rx", "4");
+                scanRect.setAttribute("fill", "#0284c7");
+                scanRect.setAttribute("stroke", roleColor);
+                scanGroup.appendChild(scanRect);
+
+                const scanText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                scanText.setAttribute("x", "28");
+                scanText.setAttribute("y", "12");
+                scanText.setAttribute("text-anchor", "middle");
+                scanText.setAttribute("style", "font-size:9px; font-weight:bold; fill:#ffffff;");
+                scanText.textContent = `🔍 +L${(n.scannedLevel || n.level || 2) + 1}`;
+                scanGroup.appendChild(scanText);
+
+                nodeG.appendChild(scanGroup);
+            }
+
             // Expand / Collapse Badge
             const childrenCount = getChildrenCount(n.id);
             if (childrenCount > 0) {
@@ -711,6 +743,11 @@
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px;">
+                    ${node.hasUnscannedChildren || (node.scannedLevel && node.scannedLevel < 5 && node.type !== 'METHOD' && node.type !== 'FIELD') ? `
+                        <button onclick="javaAction('${node.id}', 'SCAN_NEXT_LEVEL')" class="btn btn-primary" style="width:100%; background: #0284c7; border-color: #0369a1;">
+                            🔍 Scan Next Level (Level ${(node.scannedLevel || node.level || 2) + 1})
+                        </button>
+                    ` : ''}
                     <div style="display:flex; gap:8px;">
                         <button onclick="javaAction('${node.path}', 'OPEN')" class="btn btn-primary" style="flex:1;">📂 Open Source File</button>
                         <button onclick="focusNode('${node.id}')" class="btn" style="flex:1;">🎯 Show References</button>
@@ -751,6 +788,9 @@
 
         menu.innerHTML = `
             <div class="menu-item" onclick="focusNode('${node.id}')">🎯 <b>Focus Node & References</b></div>
+            ${node.hasUnscannedChildren || (node.scannedLevel && node.scannedLevel < 5 && node.type !== 'METHOD' && node.type !== 'FIELD') ? `
+                <div class="menu-item" onclick="javaAction('${node.id}', 'SCAN_NEXT_LEVEL')">🔍 <b>Scan Next Level (Level ${(node.scannedLevel || node.level || 2) + 1})</b></div>
+            ` : ''}
             <div class="menu-item" onclick="toggleNodeExpand('${node.id}')">${expandedNodeIds.has(node.id) ? '➖ Collapse Children' : '➕ Expand Children'}</div>
             <hr>
             <div class="menu-item" onclick="javaAction('${node.path}', 'OPEN')">📂 Open Source File</div>

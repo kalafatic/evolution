@@ -41,6 +41,10 @@ public class RepoArchitectureScanner {
     private static final Pattern METHOD_CALL_PATTERN = Pattern.compile("([a-zA-Z0-9_]+)\\.([a-zA-Z0-9_]+)\\s*\\(");
 
     public DesignModel scanRepository(File repoRoot) {
+        return scanRepository(repoRoot, 5); // Full scan by default for backward compatibility
+    }
+
+    public DesignModel scanRepository(File repoRoot, int maxLevel) {
         if (repoRoot == null || !repoRoot.exists() || !repoRoot.isDirectory()) {
             DesignModel empty = new DesignModel();
             empty.setName("Empty Repository");
@@ -60,11 +64,18 @@ public class RepoArchitectureScanner {
         repoNode.setQualifiedName(repoRoot.getName());
         repoNode.setType("REPOSITORY");
         repoNode.setLevel(1);
+        repoNode.setScannedLevel(Math.min(maxLevel, 1));
+        repoNode.setHasUnscannedChildren(maxLevel < 2);
         repoNode.setPath(".");
         repoNode.setDescription("Root Git Repository: " + repoRoot.getName());
         repoNode.setImportanceScore(1.0);
         nodeMap.put("repo", repoNode);
         model.getComponents().add(repoNode);
+
+        if (maxLevel < 2) {
+            model.setRelationships(relationships);
+            return model;
+        }
 
         // Map class simple names and qualified names for cross-linking
         Map<String, String> simpleToQualifiedMap = new HashMap<>();
@@ -87,8 +98,11 @@ public class RepoArchitectureScanner {
             moduleNode.setQualifiedName(moduleName);
             moduleNode.setType(hasManifest(moduleDir) ? "BUNDLE" : (hasPom(moduleDir) ? "MAVEN_MODULE" : "MODULE"));
             moduleNode.setLevel(2);
+            moduleNode.setScannedLevel(Math.min(maxLevel, 2));
+            boolean hasDeeper = hasJavaFiles(moduleDir);
+            moduleNode.setHasUnscannedChildren(hasDeeper && maxLevel < 3);
             moduleNode.setParentId("repo");
-            moduleNode.setPath(relPath);
+            moduleNode.setPath(relPath.isEmpty() ? "." : relPath);
             moduleNode.setDescription(moduleNode.getType() + ": " + moduleName);
             moduleNode.setImportanceScore(0.85);
 
@@ -107,18 +121,103 @@ public class RepoArchitectureScanner {
             // Parse plugin.xml
             parsePluginXml(moduleDir, moduleId, relationships, moduleNode);
 
-            // Discover Packages & Classes in this module
-            scanModuleSources(moduleDir, repoRoot, moduleId, nodeMap, model, relationships, simpleToQualifiedMap, packageClassesMap);
+            // Discover Packages & Classes if maxLevel >= 3
+            if (maxLevel >= 3) {
+                scanModuleSources(moduleDir, repoRoot, moduleId, nodeMap, model, relationships, simpleToQualifiedMap, packageClassesMap, maxLevel);
+            }
         }
 
         // Phase 3: Post-process & Link References Across Classes & Packages
-        resolveReferencesAndAggregations(nodeMap, relationships, simpleToQualifiedMap, packageClassesMap);
+        if (maxLevel >= 4) {
+            resolveReferencesAndAggregations(nodeMap, relationships, simpleToQualifiedMap, packageClassesMap);
+        }
 
         // Compute incoming & outgoing reference counts
         computeReferenceCounts(nodeMap, relationships);
 
         model.setRelationships(relationships);
         return model;
+    }
+
+    public boolean scanNextLevel(File repoRoot, DesignModel existingModel, String targetNodeId) {
+        if (repoRoot == null || existingModel == null || targetNodeId == null) return false;
+
+        ComponentRecord targetNode = existingModel.getComponents().stream()
+                .filter(c -> targetNodeId.equals(c.getId()))
+                .findFirst().orElse(null);
+
+        if (targetNode == null) return false;
+
+        Map<String, ComponentRecord> nodeMap = new HashMap<>();
+        for (ComponentRecord c : existingModel.getComponents()) {
+            nodeMap.put(c.getId(), c);
+        }
+
+        List<RelationshipRecord> relationships = existingModel.getRelationships();
+        Map<String, String> simpleToQualifiedMap = new HashMap<>();
+        Map<String, Set<String>> packageClassesMap = new HashMap<>();
+
+        int currentLevel = targetNode.getLevel();
+        int nextLevel = Math.min(currentLevel + 1, 5);
+
+        if (currentLevel == 1) { // Root -> Modules
+            List<File> moduleDirs = findModules(repoRoot, repoRoot);
+            if (moduleDirs.isEmpty()) moduleDirs.add(repoRoot);
+
+            for (File moduleDir : moduleDirs) {
+                String relPath = getRelativePath(repoRoot, moduleDir);
+                String moduleName = moduleDir.getName();
+                String moduleId = "module:" + (relPath.isEmpty() ? moduleName : relPath);
+
+                if (!nodeMap.containsKey(moduleId)) {
+                    ComponentRecord moduleNode = new ComponentRecord();
+                    moduleNode.setId(moduleId);
+                    moduleNode.setName(moduleName);
+                    moduleNode.setQualifiedName(moduleName);
+                    moduleNode.setType(hasManifest(moduleDir) ? "BUNDLE" : (hasPom(moduleDir) ? "MAVEN_MODULE" : "MODULE"));
+                    moduleNode.setLevel(2);
+                    moduleNode.setScannedLevel(2);
+                    moduleNode.setHasUnscannedChildren(hasJavaFiles(moduleDir));
+                    moduleNode.setParentId("repo");
+                    moduleNode.setPath(relPath.isEmpty() ? "." : relPath);
+                    moduleNode.setDescription(moduleNode.getType() + ": " + moduleName);
+                    moduleNode.setImportanceScore(0.85);
+
+                    nodeMap.put(moduleId, moduleNode);
+                    existingModel.getComponents().add(moduleNode);
+                    addRelationship(relationships, "repo", moduleId, "CONTAINS", 1, "Module contained in repo");
+                }
+            }
+            targetNode.setScannedLevel(2);
+            targetNode.setHasUnscannedChildren(false);
+
+        } else if (currentLevel == 2) { // Module -> Packages (Level 3)
+            String relPath = targetNode.getPath();
+            File moduleDir = (".".equals(relPath) || relPath.isEmpty()) ? repoRoot : new File(repoRoot, relPath);
+            scanModulePackagesOnly(moduleDir, repoRoot, targetNode.getId(), nodeMap, existingModel, relationships);
+
+            targetNode.setScannedLevel(3);
+            targetNode.setHasUnscannedChildren(false);
+
+        } else if (currentLevel == 3) { // Package -> Classes (Level 4)
+            String relPath = targetNode.getPath();
+            File pkgDir = new File(repoRoot, relPath);
+            scanPackageClassesOnly(pkgDir, repoRoot, targetNode.getId(), nodeMap, existingModel, relationships, simpleToQualifiedMap, packageClassesMap);
+
+            targetNode.setScannedLevel(4);
+            targetNode.setHasUnscannedChildren(false);
+
+        } else if (currentLevel == 4) { // Class -> Members (Level 5)
+            String relPath = targetNode.getPath();
+            File javaFile = new File(repoRoot, relPath);
+            scanClassMembersOnly(javaFile, repoRoot, targetNode.getId(), nodeMap, existingModel, relationships);
+
+            targetNode.setScannedLevel(5);
+            targetNode.setHasUnscannedChildren(false);
+        }
+
+        computeReferenceCounts(nodeMap, relationships);
+        return true;
     }
 
     private List<File> findModules(File current, File root) {
@@ -246,50 +345,81 @@ public class RepoArchitectureScanner {
                                   Map<String, ComponentRecord> nodeMap, DesignModel model,
                                   List<RelationshipRecord> relationships,
                                   Map<String, String> simpleToQualifiedMap,
-                                  Map<String, Set<String>> packageClassesMap) {
+                                  Map<String, Set<String>> packageClassesMap, int maxLevel) {
 
+        scanModulePackagesOnly(moduleDir, repoRoot, moduleId, nodeMap, model, relationships);
+
+        if (maxLevel >= 4) {
+            List<ComponentRecord> pkgNodes = new ArrayList<>(model.getComponents());
+            for (ComponentRecord pkg : pkgNodes) {
+                if (pkg.getLevel() == 3 && moduleId.equals(pkg.getParentId())) {
+                    File pkgDir = new File(repoRoot, pkg.getPath());
+                    scanPackageClassesOnly(pkgDir, repoRoot, pkg.getId(), nodeMap, model, relationships, simpleToQualifiedMap, packageClassesMap);
+                }
+            }
+        }
+
+        if (maxLevel >= 5) {
+            List<ComponentRecord> classNodes = new ArrayList<>(model.getComponents());
+            for (ComponentRecord cls : classNodes) {
+                if (cls.getLevel() == 4) {
+                    File javaFile = new File(repoRoot, cls.getPath());
+                    scanClassMembersOnly(javaFile, repoRoot, cls.getId(), nodeMap, model, relationships);
+                }
+            }
+        }
+    }
+
+    private void scanModulePackagesOnly(File moduleDir, File repoRoot, String moduleId,
+                                       Map<String, ComponentRecord> nodeMap, DesignModel model,
+                                       List<RelationshipRecord> relationships) {
         List<File> javaFiles = findJavaFiles(moduleDir);
-        Map<String, ComponentRecord> packageNodes = new HashMap<>();
+        for (File javaFile : javaFiles) {
+            try {
+                String code = Files.readString(javaFile.toPath());
+                Matcher pkgMatcher = PACKAGE_PATTERN.matcher(code);
+                String packageName = pkgMatcher.find() ? pkgMatcher.group(1) : "default";
+
+                String pkgId = "pkg:" + packageName;
+                if (!nodeMap.containsKey(pkgId)) {
+                    ComponentRecord pkgNode = new ComponentRecord();
+                    pkgNode.setId(pkgId);
+                    pkgNode.setName(packageName);
+                    pkgNode.setQualifiedName(packageName);
+                    pkgNode.setType("PACKAGE");
+                    pkgNode.setLevel(3);
+                    pkgNode.setScannedLevel(3);
+                    pkgNode.setHasUnscannedChildren(true);
+                    pkgNode.setParentId(moduleId);
+                    pkgNode.setPath(getRelativePath(repoRoot, javaFile.getParentFile()));
+                    pkgNode.setDescription("Java Package: " + packageName);
+                    pkgNode.setImportanceScore(0.70);
+
+                    nodeMap.put(pkgId, pkgNode);
+                    model.getComponents().add(pkgNode);
+                    addRelationship(relationships, moduleId, pkgId, "CONTAINS", 1, "Module contains package " + packageName);
+                }
+            } catch (Exception e) {}
+        }
+    }
+
+    private void scanPackageClassesOnly(File pkgDir, File repoRoot, String pkgId,
+                                       Map<String, ComponentRecord> nodeMap, DesignModel model,
+                                       List<RelationshipRecord> relationships,
+                                       Map<String, String> simpleToQualifiedMap,
+                                       Map<String, Set<String>> packageClassesMap) {
+        List<File> javaFiles = findJavaFiles(pkgDir);
+        ComponentRecord pkgNode = nodeMap.get(pkgId);
+        String packageName = pkgNode != null ? pkgNode.getQualifiedName() : "default";
 
         for (File javaFile : javaFiles) {
             try {
                 String code = Files.readString(javaFile.toPath());
                 String relPath = getRelativePath(repoRoot, javaFile);
 
-                // Extract Package
-                Matcher pkgMatcher = PACKAGE_PATTERN.matcher(code);
-                String packageName = pkgMatcher.find() ? pkgMatcher.group(1) : "default";
-
-                // Package Node
-                String pkgId = "pkg:" + packageName;
-                ComponentRecord pkgNode = packageNodes.get(pkgId);
-                if (pkgNode == null) {
-                    pkgNode = nodeMap.get(pkgId);
-                }
-                if (pkgNode == null) {
-                    pkgNode = new ComponentRecord();
-                    pkgNode.setId(pkgId);
-                    pkgNode.setName(packageName);
-                    pkgNode.setQualifiedName(packageName);
-                    pkgNode.setType("PACKAGE");
-                    pkgNode.setLevel(3);
-                    pkgNode.setParentId(moduleId);
-                    pkgNode.setPath(getRelativePath(repoRoot, javaFile.getParentFile()));
-                    pkgNode.setDescription("Java Package: " + packageName);
-                    pkgNode.setImportanceScore(0.70);
-
-                    packageNodes.put(pkgId, pkgNode);
-                    nodeMap.put(pkgId, pkgNode);
-                    model.getComponents().add(pkgNode);
-
-                    // Module -> Package Link
-                    addRelationship(relationships, moduleId, pkgId, "CONTAINS", 1, "Module contains package " + packageName);
-                }
-
-                // Extract Type Declaration (Class, Interface, Enum, Record)
                 Matcher typeMatcher = TYPE_HEADER_PATTERN.matcher(code);
                 if (typeMatcher.find()) {
-                    String kind = typeMatcher.group(1).toUpperCase(); // CLASS, INTERFACE, ENUM, RECORD
+                    String kind = typeMatcher.group(1).toUpperCase();
                     String simpleName = typeMatcher.group(2);
                     String superClass = typeMatcher.group(3);
                     String interfacesStr = typeMatcher.group(4);
@@ -297,112 +427,162 @@ public class RepoArchitectureScanner {
                     String qualifiedName = packageName + "." + simpleName;
                     String classId = "class:" + qualifiedName;
 
-                    simpleToQualifiedMap.put(simpleName, qualifiedName);
-                    packageClassesMap.computeIfAbsent(packageName, k -> new HashSet<>()).add(qualifiedName);
+                    if (!nodeMap.containsKey(classId)) {
+                        simpleToQualifiedMap.put(simpleName, qualifiedName);
+                        packageClassesMap.computeIfAbsent(packageName, k -> new HashSet<>()).add(qualifiedName);
 
-                    ComponentRecord classNode = new ComponentRecord();
-                    classNode.setId(classId);
-                    classNode.setName(simpleName);
-                    classNode.setQualifiedName(qualifiedName);
-                    classNode.setType(kind);
-                    classNode.setLevel(4);
-                    classNode.setParentId(pkgId);
-                    classNode.setPath(relPath);
-                    classNode.setSuperClass(superClass != null ? superClass.trim() : "");
-                    classNode.setDescription(kind + " " + qualifiedName);
-                    classNode.setImportanceScore(0.60);
+                        ComponentRecord classNode = new ComponentRecord();
+                        classNode.setId(classId);
+                        classNode.setName(simpleName);
+                        classNode.setQualifiedName(qualifiedName);
+                        classNode.setType(kind);
+                        classNode.setLevel(4);
+                        classNode.setScannedLevel(4);
+                        classNode.setHasUnscannedChildren(hasMembers(javaFile));
+                        classNode.setParentId(pkgId);
+                        classNode.setPath(relPath);
+                        classNode.setSuperClass(superClass != null ? superClass.trim() : "");
+                        classNode.setDescription(kind + " " + qualifiedName);
+                        classNode.setImportanceScore(0.60);
 
-                    if (interfacesStr != null) {
-                        for (String iface : interfacesStr.split(",")) {
-                            String trimmed = iface.trim().split("<")[0];
-                            if (!trimmed.isEmpty()) {
-                                classNode.getInterfaces().add(trimmed);
+                        if (interfacesStr != null) {
+                            for (String iface : interfacesStr.split(",")) {
+                                String trimmed = iface.trim().split("<")[0];
+                                if (!trimmed.isEmpty()) classNode.getInterfaces().add(trimmed);
                             }
                         }
-                    }
 
-                    // Package -> Class Link
-                    addRelationship(relationships, pkgId, classId, "CONTAINS", 1, "Package contains " + simpleName);
+                        nodeMap.put(classId, classNode);
+                        model.getComponents().add(classNode);
+                        addRelationship(relationships, pkgId, classId, "CONTAINS", 1, "Package contains " + simpleName);
 
-                    // Extract Imports
-                    Matcher importMatcher = IMPORT_PATTERN.matcher(code);
-                    while (importMatcher.find()) {
-                        String imported = importMatcher.group(1);
-                        addRelationship(relationships, classId, "class:" + imported, "IMPORT", 1, "Imports " + imported);
-                    }
-
-                    // Extract Fields
-                    Matcher fieldMatcher = FIELD_PATTERN.matcher(code);
-                    while (fieldMatcher.find()) {
-                        String fType = fieldMatcher.group(1);
-                        String fName = fieldMatcher.group(2);
-                        classNode.getFields().add(fType + " " + fName);
-
-                        // Level 5 Member Node for Field
-                        String fieldMemberId = "member:" + qualifiedName + "#" + fName;
-                        ComponentRecord fieldMember = new ComponentRecord();
-                        fieldMember.setId(fieldMemberId);
-                        fieldMember.setName(fName);
-                        fieldMember.setQualifiedName(qualifiedName + "." + fName);
-                        fieldMember.setType("FIELD");
-                        fieldMember.setLevel(5);
-                        fieldMember.setParentId(classId);
-                        fieldMember.setPath(relPath);
-                        fieldMember.setDescription("Field " + fType + " " + fName + " in " + simpleName);
-                        nodeMap.put(fieldMemberId, fieldMember);
-                        model.getComponents().add(fieldMember);
-
-                        addRelationship(relationships, classId, fieldMemberId, "CONTAINS", 1, "Contains field " + fName);
-                        addRelationship(relationships, fieldMemberId, "class:" + fType, "FIELD_REFERENCE", 1, "Type " + fType);
-                    }
-
-                    // Extract Methods
-                    Matcher methodMatcher = METHOD_PATTERN.matcher(code);
-                    while (methodMatcher.find()) {
-                        String retType = methodMatcher.group(1);
-                        String mName = methodMatcher.group(2);
-                        String params = methodMatcher.group(3);
-
-                        String methodSig = retType + " " + mName + "(" + params + ")";
-                        classNode.getMethods().add(methodSig);
-
-                        // Level 5 Member Node for Method
-                        String methodMemberId = "member:" + qualifiedName + "#" + mName + "()";
-                        ComponentRecord methodMember = new ComponentRecord();
-                        methodMember.setId(methodMemberId);
-                        methodMember.setName(mName + "()");
-                        methodMember.setQualifiedName(qualifiedName + "." + mName + "()");
-                        methodMember.setType("METHOD");
-                        methodMember.setLevel(5);
-                        methodMember.setParentId(classId);
-                        methodMember.setPath(relPath);
-                        methodMember.setDescription("Method " + methodSig + " in " + simpleName);
-                        nodeMap.put(methodMemberId, methodMember);
-                        model.getComponents().add(methodMember);
-
-                        addRelationship(relationships, classId, methodMemberId, "CONTAINS", 1, "Contains method " + mName);
-                    }
-
-                    // Method Calls inside code body
-                    Matcher callMatcher = METHOD_CALL_PATTERN.matcher(code);
-                    Set<String> callsSeen = new HashSet<>();
-                    while (callMatcher.find()) {
-                        String targetObj = callMatcher.group(1);
-                        String targetMethod = callMatcher.group(2);
-                        String key = targetObj + "." + targetMethod;
-                        if (!callsSeen.contains(key) && !targetObj.equals("this") && !targetObj.equals("super")) {
-                            callsSeen.add(key);
-                            addRelationship(relationships, classId, "class:" + targetObj, "METHOD_CALL", 1, "Invokes " + targetObj + "." + targetMethod + "()");
+                        Matcher importMatcher = IMPORT_PATTERN.matcher(code);
+                        while (importMatcher.find()) {
+                            String imported = importMatcher.group(1);
+                            addRelationship(relationships, classId, "class:" + imported, "IMPORT", 1, "Imports " + imported);
                         }
                     }
+                }
+            } catch (Exception e) {}
+        }
+    }
 
-                    nodeMap.put(classId, classNode);
-                    model.getComponents().add(classNode);
+    private void scanClassMembersOnly(File javaFile, File repoRoot, String classId,
+                                     Map<String, ComponentRecord> nodeMap, DesignModel model,
+                                     List<RelationshipRecord> relationships) {
+        if (!javaFile.exists()) return;
+        ComponentRecord classNode = nodeMap.get(classId);
+        if (classNode == null) return;
+
+        try {
+            String code = Files.readString(javaFile.toPath());
+            String relPath = getRelativePath(repoRoot, javaFile);
+            String qualifiedName = classNode.getQualifiedName();
+
+            Matcher fieldMatcher = FIELD_PATTERN.matcher(code);
+            while (fieldMatcher.find()) {
+                String fType = fieldMatcher.group(1);
+                String fName = fieldMatcher.group(2);
+                if (!classNode.getFields().contains(fType + " " + fName)) {
+                    classNode.getFields().add(fType + " " + fName);
                 }
 
-            } catch (Exception e) {
-                // Ignore unparseable files gracefully
+                String fieldMemberId = "member:" + qualifiedName + "#" + fName;
+                if (!nodeMap.containsKey(fieldMemberId)) {
+                    ComponentRecord fieldMember = new ComponentRecord();
+                    fieldMember.setId(fieldMemberId);
+                    fieldMember.setName(fName);
+                    fieldMember.setQualifiedName(qualifiedName + "." + fName);
+                    fieldMember.setType("FIELD");
+                    fieldMember.setLevel(5);
+                    fieldMember.setScannedLevel(5);
+                    fieldMember.setHasUnscannedChildren(false);
+                    fieldMember.setParentId(classId);
+                    fieldMember.setPath(relPath);
+                    fieldMember.setDescription("Field " + fType + " " + fName + " in " + classNode.getName());
+
+                    nodeMap.put(fieldMemberId, fieldMember);
+                    model.getComponents().add(fieldMember);
+
+                    addRelationship(relationships, classId, fieldMemberId, "CONTAINS", 1, "Contains field " + fName);
+                    addRelationship(relationships, fieldMemberId, "class:" + fType, "FIELD_REFERENCE", 1, "Type " + fType);
+                }
             }
+
+            Matcher methodMatcher = METHOD_PATTERN.matcher(code);
+            while (methodMatcher.find()) {
+                String retType = methodMatcher.group(1);
+                String mName = methodMatcher.group(2);
+                String params = methodMatcher.group(3);
+
+                String methodSig = retType + " " + mName + "(" + params + ")";
+                if (!classNode.getMethods().contains(methodSig)) {
+                    classNode.getMethods().add(methodSig);
+                }
+
+                String methodMemberId = "member:" + qualifiedName + "#" + mName + "()";
+                if (!nodeMap.containsKey(methodMemberId)) {
+                    ComponentRecord methodMember = new ComponentRecord();
+                    methodMember.setId(methodMemberId);
+                    methodMember.setName(mName + "()");
+                    methodMember.setQualifiedName(qualifiedName + "." + mName + "()");
+                    methodMember.setType("METHOD");
+                    methodMember.setLevel(5);
+                    methodMember.setScannedLevel(5);
+                    methodMember.setHasUnscannedChildren(false);
+                    methodMember.setParentId(classId);
+                    methodMember.setPath(relPath);
+                    methodMember.setDescription("Method " + methodSig + " in " + classNode.getName());
+
+                    nodeMap.put(methodMemberId, methodMember);
+                    model.getComponents().add(methodMember);
+
+                    addRelationship(relationships, classId, methodMemberId, "CONTAINS", 1, "Contains method " + mName);
+                }
+            }
+
+            Matcher callMatcher = METHOD_CALL_PATTERN.matcher(code);
+            Set<String> callsSeen = new HashSet<>();
+            while (callMatcher.find()) {
+                String targetObj = callMatcher.group(1);
+                String targetMethod = callMatcher.group(2);
+                String key = targetObj + "." + targetMethod;
+                if (!callsSeen.contains(key) && !targetObj.equals("this") && !targetObj.equals("super")) {
+                    callsSeen.add(key);
+                    addRelationship(relationships, classId, "class:" + targetObj, "METHOD_CALL", 1, "Invokes " + targetObj + "." + targetMethod + "()");
+                }
+            }
+
+            classNode.setScannedLevel(5);
+            classNode.setHasUnscannedChildren(false);
+
+        } catch (Exception e) {}
+    }
+
+    private boolean hasJavaFiles(File dir) {
+        if (dir == null || !dir.isDirectory()) return false;
+        if (IGNORE_DIRS.contains(dir.getName())) return false;
+
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) {
+                    if (hasJavaFiles(f)) return true;
+                } else if (f.getName().endsWith(".java")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasMembers(File javaFile) {
+        if (javaFile == null || !javaFile.exists()) return false;
+        try {
+            String code = Files.readString(javaFile.toPath());
+            return METHOD_PATTERN.matcher(code).find() || FIELD_PATTERN.matcher(code).find();
+        } catch (Exception e) {
+            return false;
         }
     }
 
