@@ -412,7 +412,7 @@ public class EvoLlmTrainer {
         return microBatchRawLoss;
     }
 
-    private double evaluateValidation(List<TrainingSample> valSamples) {
+    public double evaluateValidation(List<TrainingSample> valSamples) {
         if (valSamples.isEmpty()) return 0.0;
         double totalLoss = 0.0;
         long totalValidTokens = 0;
