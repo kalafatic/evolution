@@ -83,10 +83,33 @@ public class ForgeTrainingEstimationAgent {
         return false;
     }
 
+    public enum BackendType {
+        JVM_JAVA_CPU("JVM Native Java CPU Trainer (EvoLlmTrainer)"),
+        EXTERNAL_GPU_CUDA("External GPU CUDA Accelerated Engine"),
+        UNKNOWN("Unknown Backend");
+
+        private final String description;
+
+        BackendType(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    public BackendType getActiveBackendType() {
+        // Native EvoLlmTrainer runs in-process on JVM CPU
+        return BackendType.JVM_JAVA_CPU;
+    }
+
     public String getHardwareProfile() {
-        String gpuInfo = isGpuAvailable() ? " | GPU: CUDA Enabled" : " | GPU: CPU Fallback";
-        return String.format("CPU: %d Cores | JVM RAM: %d MB%s | OS: %s (%s)",
-            getCpuCores(), getMaxMemoryMb(), gpuInfo, System.getProperty("os.name"), System.getProperty("os.arch"));
+        String gpuDetected = isGpuAvailable() ? " | GPU Hardware: Detected" : " | GPU Hardware: None";
+        String backend = " | Engine: " + getActiveBackendType().getDescription();
+        return String.format("CPU: %d Cores | JVM RAM: %d MB%s%s | OS: %s (%s)",
+            getCpuCores(), getMaxMemoryMb(), gpuDetected, backend,
+            System.getProperty("os.name"), System.getProperty("os.arch"));
     }
 
     public double getModelComplexityFactor(String sizeName) {
@@ -124,6 +147,13 @@ public class ForgeTrainingEstimationAgent {
         double flopsPerToken = 6.0 * params;
         double estimatedTokPerSec = totalFlops / flopsPerToken;
         return Math.max(5.0, Math.min(25_000.0, estimatedTokPerSec));
+    }
+
+    public double getMeasuredBaselineTokensPerSecond(double measuredTokPerSec) {
+        if (Double.isNaN(measuredTokPerSec) || Double.isInfinite(measuredTokPerSec) || measuredTokPerSec <= 0.0) {
+            return 0.0;
+        }
+        return measuredTokPerSec;
     }
 
     public double calculateRemainingSecondsFromMeasuredThroughput(long remainingTokens, double measuredTokensPerSecond) {
@@ -191,41 +221,56 @@ public class ForgeTrainingEstimationAgent {
 
     public long estimateTotalTrainingTokens(List<? extends IDatasetTargetItem> datasetItems, int epochs) {
         long datasetBytes = calculateTotalDatasetBytes(datasetItems);
-        if (datasetBytes <= 0) return 0;
+        if (datasetBytes <= 0 || epochs <= 0) return 0L;
         long tokensPerByte = 4L; // ~1 token per 4 bytes of text/json
         long estimatedDatasetTokens = Math.max(1L, datasetBytes / tokensPerByte);
-        return estimatedDatasetTokens * Math.max(1, epochs);
+        long safeEpochs = Math.max(1L, (long) epochs);
+        try {
+            return Math.multiplyExact(estimatedDatasetTokens, safeEpochs);
+        } catch (ArithmeticException ex) {
+            return Long.MAX_VALUE;
+        }
     }
 
     public double calculateEstimatedForgingSeconds(String modelSize, int epochs, long datasetBytes) {
-        if (datasetBytes <= 0) return 0;
+        if (datasetBytes <= 0 || epochs <= 0) return 0.0;
         long estimatedDatasetTokens = Math.max(1L, datasetBytes / 4L);
-        long totalTokensToTrain = estimatedDatasetTokens * Math.max(1, epochs);
+        double totalTokensToTrain = (double) estimatedDatasetTokens * (double) Math.max(1, epochs);
         double tokPerSec = getBaselineTokensPerSecond(modelSize);
-        return totalTokensToTrain / tokPerSec;
+        if (tokPerSec <= 0.0 || Double.isNaN(tokPerSec) || Double.isInfinite(tokPerSec)) {
+            return 0.0;
+        }
+        double seconds = totalTokensToTrain / tokPerSec;
+        return Double.isNaN(seconds) || Double.isInfinite(seconds) ? 0.0 : seconds;
     }
 
     public String formatDuration(double seconds) {
-        if (seconds <= 0) {
+        if (Double.isNaN(seconds) || Double.isInfinite(seconds) || seconds <= 0) {
             return "0 seconds";
         } else if (seconds < 60) {
             return String.format("%.0f seconds", seconds);
         } else if (seconds < 3600) {
-            int mins = (int) (seconds / 60);
-            int secs = (int) (seconds % 60);
+            long mins = (long) (seconds / 60);
+            long secs = (long) (seconds % 60);
             return String.format("%d min %d sec", mins, secs);
-        } else {
-            int hours = (int) (seconds / 3600);
-            int mins = (int) ((seconds % 3600) / 60);
+        } else if (seconds < 86400) {
+            long hours = (long) (seconds / 3600);
+            long mins = (long) ((seconds % 3600) / 60);
             return String.format("%d hr %d min", hours, mins);
+        } else {
+            long days = (long) (seconds / 86400);
+            long hours = (long) ((seconds % 86400) / 3600);
+            long mins = (long) ((seconds % 3600) / 60);
+            return String.format("%d days %d hr %d min", days, hours, mins);
         }
     }
 
     public SmartScalingResult applySmartDataScaling(List<? extends IDatasetTargetItem> datasetItems, String modelSize, int epochs, double targetHours) {
-        if (targetHours <= 0 || datasetItems == null || datasetItems.isEmpty()) {
+        if (targetHours <= 0 || Double.isNaN(targetHours) || datasetItems == null || datasetItems.isEmpty()) {
             return new SmartScalingResult(false, 1.0, epochs);
         }
 
+        // Calculate total unscaled full size without compounding previous ratios
         long unscaledTotal = 0;
         for (IDatasetTargetItem item : datasetItems) {
             if (item != null && item.isChecked() && item.getPath() != null) {
@@ -254,11 +299,13 @@ public class ForgeTrainingEstimationAgent {
             scaleFactor = Math.min(1.0, targetDatasetBytesPerEpoch / (double) unscaledTotal);
         }
 
+        scaleFactor = Math.max(0.01, Math.min(1.0, scaleFactor));
+
         for (IDatasetTargetItem item : datasetItems) {
             if (item != null && item.isChecked() && item.getPath() != null) {
                 long fullSize = calculatePathSize(item.getPath());
                 if (fullSize > 0) {
-                    item.setScaleRatio(Math.max(0.01, scaleFactor));
+                    item.setScaleRatio(scaleFactor);
                     long targetItemBytes = (long) (fullSize * scaleFactor);
                     long targetItemTokens = targetItemBytes / 4L;
                     item.setRecordLimit(Math.max(10L, targetItemTokens / 50L));
