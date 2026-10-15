@@ -314,6 +314,23 @@ public class FunctionalityInventoryManager {
         list.add(entry);
     }
 
+    public static String formatTimestamp(String ts) {
+        if (ts == null || ts.trim().isEmpty()) {
+            return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        }
+        ts = ts.trim();
+        if (ts.matches("^\\d+$")) {
+            try {
+                long millis = Long.parseLong(ts);
+                return java.time.Instant.ofEpochMilli(millis)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            } catch (Exception ignored) {
+            }
+        }
+        return ts;
+    }
+
     private void enrichWithSourceMetricsAndMetadata(FunctionalityEntry entry, File repoRoot) {
         File srcFile = new File(repoRoot, entry.sourcePath);
         if (srcFile.exists()) {
@@ -335,6 +352,9 @@ public class FunctionalityInventoryManager {
                 }
                 if (sidecar.getEvaluationMethod() != null && !sidecar.getEvaluationMethod().isEmpty()) {
                     entry.method = sidecar.getEvaluationMethod();
+                }
+                if (sidecar.getEvaluationTimestamp() != null && !sidecar.getEvaluationTimestamp().isEmpty()) {
+                    entry.timestamp = formatTimestamp(sidecar.getEvaluationTimestamp());
                 }
             } else {
                 // Save initial sidecar for functionality primary class

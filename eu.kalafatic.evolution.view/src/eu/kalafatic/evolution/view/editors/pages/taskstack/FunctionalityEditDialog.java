@@ -69,6 +69,9 @@ public class FunctionalityEditDialog extends DynamicMapDialog {
         entry.rationale = getString(RATIONALE);
         entry.method = "USER_EDIT";
 
+        String nowStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        entry.timestamp = nowStr;
+
         // Persist updated metadata sidecar
         if (repoRoot != null && entry.sourcePath != null) {
             File srcFile = new File(repoRoot, entry.sourcePath);
@@ -92,7 +95,7 @@ public class FunctionalityEditDialog extends DynamicMapDialog {
                 meta.setEvaluationRationale(entry.rationale);
                 meta.setEvaluationMethod("USER_EDIT");
                 meta.setConfidenceLevel(1.0);
-                meta.setEvaluationTimestamp(String.valueOf(System.currentTimeMillis()));
+                meta.setEvaluationTimestamp(nowStr);
 
                 contextTool.saveFunctionalityMetadata(srcFile, meta);
                 entry.metadataFresh = true;
