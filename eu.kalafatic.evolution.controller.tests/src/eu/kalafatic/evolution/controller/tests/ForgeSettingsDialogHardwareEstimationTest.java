@@ -82,6 +82,39 @@ public class ForgeSettingsDialogHardwareEstimationTest {
     }
 
     @Test
+    public void testZeroAndNegativeInputs() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        assertEquals(0.0, agent.calculateEstimatedForgingSeconds("SMALL", 0, 1000L), 0.001);
+        assertEquals(0.0, agent.calculateEstimatedForgingSeconds("SMALL", 16, 0L), 0.001);
+        assertEquals(0.0, agent.calculateEstimatedForgingSeconds("SMALL", -5, 1000L), 0.001);
+        assertEquals(0L, agent.estimateTotalTrainingTokens(null, 16));
+        assertEquals("0 seconds", agent.formatDuration(-10.0));
+        assertEquals("0 seconds", agent.formatDuration(Double.NaN));
+    }
+
+    @Test
+    public void testLargeDatasetOverflowProtection() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        DatasetItem item = new DatasetItem(true, "/simulated/huge/data.txt", "FILE") {
+            @Override
+            public double getScaleRatio() { return 1.0; }
+        };
+        // Verify format duration handles days and large durations without overflow
+        assertEquals("2 days 2 hr 0 min", agent.formatDuration(180000.0));
+    }
+
+    @Test
+    public void testPreliminaryVersusMeasuredThroughput() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        assertEquals(ForgeTrainingEstimationAgent.BackendType.JVM_JAVA_CPU, agent.getActiveBackendType());
+        double prelim = agent.getBaselineTokensPerSecond("SMALL");
+        assertTrue("Preliminary throughput estimate must be positive", prelim > 0.0);
+        double measured = agent.getMeasuredBaselineTokensPerSecond(1500.0);
+        assertEquals(1500.0, measured, 0.001);
+        assertEquals(0.0, agent.getMeasuredBaselineTokensPerSecond(-1.0), 0.001);
+    }
+
+    @Test
     public void testEstimatedForgingSecondsAndFormatDuration() {
         long datasetBytes = 10 * 1024 * 1024L; // 10 MB
         int epochs = 16;
