@@ -31,8 +31,52 @@ public class FunctionalityInventoryTest {
             assertNotNull("FQCN should not be null", e.fqcn);
             assertNotNull("Module should not be null", e.module);
             assertNotNull("Source Path should not be null", e.sourcePath);
+            assertNotNull("Timestamp should not be null", e.timestamp);
+            assertTrue("Timestamp should not be empty", !e.timestamp.isEmpty());
             assertTrue("Overall score should be between 0 and 100", e.calculateOverallScore() >= 0 && e.calculateOverallScore() <= 100);
         }
+    }
+
+    @Test
+    public void testTimestampFormatting() {
+        String formattedNull = FunctionalityInventoryManager.formatTimestamp(null);
+        assertNotNull(formattedNull);
+        assertTrue("Null timestamp should default to formatted current date", formattedNull.length() >= 10);
+
+        String standardDate = "2025-02-23 14:30:00";
+        assertEquals("Standard date format should be preserved", standardDate, FunctionalityInventoryManager.formatTimestamp(standardDate));
+
+        String millisStr = "1740319200000"; // 2025-02-23T14:00:00Z approx
+        String formattedFromMillis = FunctionalityInventoryManager.formatTimestamp(millisStr);
+        assertNotNull(formattedFromMillis);
+        assertTrue("Millis should be converted to readable date string", formattedFromMillis.contains("-"));
+    }
+
+    @Test
+    public void testFunctionalityMetadataTimestampEnrichment() throws Exception {
+        File tempDir = Files.createTempDir();
+        File dummySource = new File(tempDir, "SelfDevOrchestrator.java");
+        Files.touch(dummySource);
+
+        AIContextTool tool = new AIContextTool();
+
+        FunctionalityMetadata meta = new FunctionalityMetadata();
+        meta.setFunctionalityId("FUNC-01");
+        meta.setFunctionalityName("Autonomous Self-Development Pipeline");
+        meta.setPrimaryClass("SelfDevOrchestrator");
+        meta.setFqcn("eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevOrchestrator");
+        meta.setModuleName("eu.kalafatic.evolution.controller");
+        meta.setSourcePath("SelfDevOrchestrator.java");
+        meta.setImplementationStatus("IMPLEMENTED");
+        meta.setEvaluationTimestamp("2025-02-23 15:45:00");
+
+        tool.saveFunctionalityMetadata(dummySource, meta);
+
+        FunctionalityMetadata loaded = tool.loadFunctionalityMetadata(dummySource);
+        assertNotNull("Loaded functionality metadata should not be null", loaded);
+        assertEquals("2025-02-23 15:45:00", loaded.getEvaluationTimestamp());
+
+        deleteDirectory(tempDir);
     }
 
     @Test
