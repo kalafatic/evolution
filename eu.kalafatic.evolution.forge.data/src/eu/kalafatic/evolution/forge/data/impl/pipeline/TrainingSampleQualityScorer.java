@@ -69,21 +69,56 @@ public class TrainingSampleQualityScorer implements DataFilter {
             }
         }
 
-        // Signal 3: Semantically repetitive conversation turns
-        if ((sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CONVERSATION ||
-             sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CHAT) &&
-            sample.getConversationMessages() != null && sample.getConversationMessages().size() >= 2) {
+        // Signal 3: Conversational Structure and Turn Validation
+        if (sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CONVERSATION ||
+            sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CHAT) {
 
             var msgs = sample.getConversationMessages();
-            for (int i = 1; i < msgs.size(); i++) {
-                String prevText = msgs.get(i - 1).getText() != null ? msgs.get(i - 1).getText().trim() : "";
-                String currText = msgs.get(i).getText() != null ? msgs.get(i).getText().trim() : "";
-                if (!prevText.isEmpty() && prevText.length() > 15) {
-                    String normPrev = prevText.toLowerCase().replaceAll("[^a-z0-9]", "");
-                    String normCurr = currText.toLowerCase().replaceAll("[^a-z0-9]", "");
-                    if (normPrev.equals(normCurr)) {
-                        score -= 0.5; // Repeated turn in conversation
+            if (msgs == null || msgs.isEmpty()) {
+                // Check legacy messages list if present
+                if (sample.getMessages() != null && !sample.getMessages().isEmpty()) {
+                    boolean hasUser = false;
+                    boolean hasAssistant = false;
+                    for (var m : sample.getMessages()) {
+                        if (m != null && m.getContent() != null && !m.getContent().trim().isEmpty()) {
+                            String r = m.getRole() != null ? m.getRole().toLowerCase() : "";
+                            if (r.contains("user") || r.contains("human")) hasUser = true;
+                            if (r.contains("assistant") || r.contains("gpt") || r.contains("bot") || r.contains("system")) hasAssistant = true;
+                        }
                     }
+                    if (!hasUser || !hasAssistant) {
+                        score -= 0.5; // Missing required user or assistant role content
+                    }
+                } else {
+                    score = 0.0; // Empty conversation
+                }
+            } else {
+                boolean hasUser = false;
+                boolean hasAssistant = false;
+                for (int i = 0; i < msgs.size(); i++) {
+                    var m = msgs.get(i);
+                    if (m == null || m.getText() == null || m.getText().trim().isEmpty()) {
+                        score -= 0.3; // Empty message turn
+                        continue;
+                    }
+                    String r = m.getRole() != null ? m.getRole().toLowerCase() : "";
+                    if (r.contains("user") || r.contains("human")) hasUser = true;
+                    if (r.contains("assistant") || r.contains("gpt") || r.contains("bot") || r.contains("system")) hasAssistant = true;
+
+                    if (i > 0) {
+                        String prevText = msgs.get(i - 1).getText() != null ? msgs.get(i - 1).getText().trim() : "";
+                        String currText = m.getText().trim();
+                        if (!prevText.isEmpty() && prevText.length() > 15) {
+                            String normPrev = prevText.toLowerCase().replaceAll("\\s+", " ");
+                            String normCurr = currText.toLowerCase().replaceAll("\\s+", " ");
+                            if (normPrev.equals(normCurr)) {
+                                score -= 0.5; // Identical repeated turns
+                            }
+                        }
+                    }
+                }
+                if (!hasUser || !hasAssistant) {
+                    score -= 0.5; // Missing user or assistant response
                 }
             }
         }

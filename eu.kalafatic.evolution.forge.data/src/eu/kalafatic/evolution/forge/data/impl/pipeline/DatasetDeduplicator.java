@@ -34,15 +34,17 @@ public class DatasetDeduplicator implements DataDeduplicator {
         String hash = sample.getHash();
         if (hash != null && !hash.isEmpty()) {
             if (exactHashes.contains(hash)) {
+                exactDuplicateCount++;
                 return true;
             }
         }
 
-        // 2. Normalized hash check (lowercased, whitespace/punctuation-normalized text hash)
+        // 2. Normalized hash check (Unicode NFC, lowercased, normalized whitespace)
         String normText = computeNormalizedText(sample.toFullText());
         if (!normText.isEmpty()) {
             String normHash = computeNormalizedHash(normText);
             if (normalizedHashes.contains(normHash)) {
+                normalizedDuplicateCount++;
                 return true;
             }
         }
@@ -52,6 +54,7 @@ public class DatasetDeduplicator implements DataDeduplicator {
             String text = sample.toFullText();
             long fp = computeShingleFingerprint(text);
             if (fp != 0L && shingleFingerprints.contains(fp)) {
+                nearDuplicateCount++;
                 return true;
             }
         }
@@ -62,37 +65,30 @@ public class DatasetDeduplicator implements DataDeduplicator {
     @Override
     public void register(NormalizedSample sample) {
         if (sample == null) return;
-        boolean wasDuplicate = false;
 
         if (sample.getHash() != null && !sample.getHash().isEmpty()) {
-            if (!exactHashes.add(sample.getHash())) {
-                exactDuplicateCount++;
-                wasDuplicate = true;
-            }
+            exactHashes.add(sample.getHash());
         }
 
         String normText = computeNormalizedText(sample.toFullText());
         if (!normText.isEmpty()) {
             String normHash = computeNormalizedHash(normText);
-            if (!normalizedHashes.add(normHash) && !wasDuplicate) {
-                normalizedDuplicateCount++;
-                wasDuplicate = true;
-            }
+            normalizedHashes.add(normHash);
         }
 
         if (nearDuplicateEnabled) {
             long fp = computeShingleFingerprint(sample.toFullText());
             if (fp != 0L) {
-                if (!shingleFingerprints.add(fp) && !wasDuplicate) {
-                    nearDuplicateCount++;
-                }
+                shingleFingerprints.add(fp);
             }
         }
     }
 
     private String computeNormalizedText(String text) {
         if (text == null) return "";
-        return text.toLowerCase().replaceAll("[^a-z0-9]", "");
+        // Unicode NFC normalization & whitespace collapse preserving diacritics, symbols, math & code
+        String nfc = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
+        return nfc.toLowerCase().replaceAll("\\s+", " ").trim();
     }
 
     private String computeNormalizedHash(String text) {
