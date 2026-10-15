@@ -547,29 +547,25 @@ public class ChatMgmtGroup extends AEvoGroup {
         }
 
         if (dlg.open() == Window.OK) {
-            String selectedSize = dlg.getSelectedModelSize();
-            int epochs = dlg.getEpochs();
-            String lossThreshold = dlg.getLossThreshold();
-            double desiredLoss = dlg.getDesiredLossThreshold();
-            String updatedDatasetsJson = dlg.getDatasetsJson();
+            org.json.JSONObject uiStateJson = dlg.getUiStateJson();
 
             Map<String, Object> settings = new HashMap<>();
-            settings.put("modelSize", selectedSize);
-            settings.put("epochs", epochs);
-            settings.put("lossThreshold", lossThreshold);
-            settings.put("desiredLossThreshold", desiredLoss);
-            settings.put("datasets", updatedDatasetsJson);
+            java.util.Iterator<String> keys = uiStateJson.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                settings.put(key, uiStateJson.get(key));
+            }
             page.updateConfiguration(settings);
             page.saveLastUsedSettings();
 
             try {
                 Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
                 Object instance = fsmClass.getMethod("getInstance").invoke(null);
-                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "modelSize", selectedSize);
-                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "epochs", epochs);
-                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "lossThreshold", lossThreshold);
-                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "desiredLossThreshold", desiredLoss);
-                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "datasets", updatedDatasetsJson);
+                java.util.Iterator<String> keys2 = uiStateJson.keys();
+                while (keys2.hasNext()) {
+                    String key = keys2.next();
+                    fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, key, uiStateJson.get(key));
+                }
             } catch (Exception ex) {
                 // Ignore if controller not loaded
             }
@@ -583,11 +579,11 @@ public class ChatMgmtGroup extends AEvoGroup {
                             if (hpStr != null && !hpStr.isEmpty() && !hpStr.equals("{}")) {
                                 try { hpJson = new org.json.JSONObject(hpStr); } catch (Exception ex) {}
                             }
-                            hpJson.put("modelSize", selectedSize);
-                            hpJson.put("epochs", epochs);
-                            hpJson.put("lossThreshold", lossThreshold);
-                            hpJson.put("desiredLossThreshold", desiredLoss);
-                            hpJson.put("datasets", updatedDatasetsJson);
+                            java.util.Iterator<String> keys3 = uiStateJson.keys();
+                            while (keys3.hasNext()) {
+                                String key = keys3.next();
+                                hpJson.put(key, uiStateJson.get(key));
+                            }
                             fs.getModelState().setHyperparameters(hpJson.toString());
                             fs.setLastModified(System.currentTimeMillis());
                         }
