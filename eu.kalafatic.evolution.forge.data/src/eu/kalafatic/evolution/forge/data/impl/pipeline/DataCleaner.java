@@ -30,17 +30,53 @@ public class DataCleaner implements DataNormalizer {
     public NormalizedSample clean(NormalizedSample sample) {
         if (sample == null) return null;
 
+        boolean isCode = sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CODE;
+
+        if (sample.getInstruction() != null) {
+            sample.setInstruction(cleanString(sample.getInstruction(), false));
+        }
+        if (sample.getResponse() != null) {
+            sample.setResponse(cleanString(sample.getResponse(), false));
+        }
+        if (sample.getConversationMessages() != null && !sample.getConversationMessages().isEmpty()) {
+            for (var msg : sample.getConversationMessages()) {
+                if (msg != null && msg.getText() != null) {
+                    msg.setText(cleanString(msg.getText(), false));
+                }
+            }
+        }
+        if (sample.getMessages() != null && !sample.getMessages().isEmpty()) {
+            for (var msg : sample.getMessages()) {
+                if (msg != null && msg.getContent() != null) {
+                    msg.setContent(cleanString(msg.getContent(), false));
+                }
+            }
+        }
+        if (sample.getText() != null) {
+            sample.setText(cleanString(sample.getText(), isCode));
+        }
+
         String rawText = sample.toFullText();
         if (rawText == null || rawText.trim().isEmpty()) {
             return null;
         }
 
-        String text = rawText;
+        // 4. Length checks (allow short meaningful code statements like "int x = 1;")
+        int effMinLength = isCode ? Math.min(3, minCharLength) : minCharLength;
+        if (rawText.length() < effMinLength || rawText.length() > maxCharLength) {
+            return null;
+        }
+
+        sample.recalculateCountsAndHash();
+        return sample;
+    }
+
+    private String cleanString(String input, boolean isCode) {
+        if (input == null) return null;
+        String text = input;
 
         // 1. Strip non-printable ASCII control characters and Unicode replacement chars
         text = text.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFD]", "");
-
-        boolean isCode = sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CODE;
 
         // 2. Whitespace normalization
         if (normalizeWhitespace) {
@@ -55,17 +91,7 @@ public class DataCleaner implements DataNormalizer {
             text = text.replaceAll("\\s+", " ").trim();
         }
 
-        // 4. Length checks (allow short meaningful code statements like "int x = 1;")
-        int effMinLength = isCode ? Math.min(3, minCharLength) : minCharLength;
-        if (text.length() < effMinLength || text.length() > maxCharLength) {
-            return null;
-        }
-
-        // Update sample text
-        sample.setText(text);
-        sample.recalculateCountsAndHash();
-
-        return sample;
+        return text;
     }
 
     public boolean isNormalizeWhitespace() { return normalizeWhitespace; }

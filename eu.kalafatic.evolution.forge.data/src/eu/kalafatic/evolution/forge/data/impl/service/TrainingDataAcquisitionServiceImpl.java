@@ -196,12 +196,20 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         if (clean == null) {
                             cleanerRejections++;
                             accounting.recordRejected(rawLen);
+                            accounting.getSnapshot().incrementEmptyMeaningless();
                             continue;
                         }
 
                         if (!filter.accept(clean)) {
                             filterRejections++;
                             accounting.recordRejected(rawLen);
+                            if (clean.getQualityScore() == 0.0) {
+                                accounting.getSnapshot().incrementEmptyMeaningless();
+                            } else if (clean.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.INSTRUCTION) {
+                                accounting.getSnapshot().incrementInvalidQa();
+                            } else {
+                                accounting.getSnapshot().incrementCorruptedText();
+                            }
                             continue;
                         }
 
@@ -300,6 +308,11 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         accounting.setTrainValidationRatio(valSplitRatio);
         DatasetSourceStats stats = accounting.getSnapshot();
         stats.setRequestedUsableBytes(targetUsableBytes);
+        if (deduplicator instanceof DatasetDeduplicator dd) {
+            stats.setExactDuplicates(dd.getExactDuplicateCount());
+            stats.setNormalizedDuplicates(dd.getNormalizedDuplicateCount());
+            stats.setNearDuplicates(dd.getNearDuplicateCount());
+        }
 
         TrainingDataPreferenceEvaluation eval = preferenceEvaluator.evaluate(prefs, stats);
 

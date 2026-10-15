@@ -18,7 +18,14 @@ public class DatasetSourceStats {
     private long acceptedSamples = 0;
     private long rejectedSamples = 0;
     private long exactDuplicates = 0;
+    private long normalizedDuplicates = 0;
     private long nearDuplicates = 0;
+
+    private long malformedJsonCount = 0;
+    private long emptyMeaninglessCount = 0;
+    private long corruptedTextCount = 0;
+    private long invalidQaCount = 0;
+    private long trainValLeakageCount = 0;
 
     private long estimatedTokens = 0;
     private long trainingTokens = 0;
@@ -83,11 +90,30 @@ public class DatasetSourceStats {
     public void setExactDuplicates(long exactDuplicates) { this.exactDuplicates = exactDuplicates; }
     public void incrementExactDuplicates() { this.exactDuplicates++; }
 
+    public long getNormalizedDuplicates() { return normalizedDuplicates; }
+    public void setNormalizedDuplicates(long normalizedDuplicates) { this.normalizedDuplicates = normalizedDuplicates; }
+    public void incrementNormalizedDuplicates() { this.normalizedDuplicates++; }
+
     public long getNearDuplicates() { return nearDuplicates; }
     public void setNearDuplicates(long nearDuplicates) { this.nearDuplicates = nearDuplicates; }
     public void incrementNearDuplicates() { this.nearDuplicates++; }
 
-    public long getDuplicateRecords() { return exactDuplicates + nearDuplicates; }
+    public long getDuplicateRecords() { return exactDuplicates + normalizedDuplicates + nearDuplicates; }
+
+    public long getMalformedJsonCount() { return malformedJsonCount; }
+    public void incrementMalformedJson() { this.malformedJsonCount++; }
+
+    public long getEmptyMeaninglessCount() { return emptyMeaninglessCount; }
+    public void incrementEmptyMeaningless() { this.emptyMeaninglessCount++; }
+
+    public long getCorruptedTextCount() { return corruptedTextCount; }
+    public void incrementCorruptedText() { this.corruptedTextCount++; }
+
+    public long getInvalidQaCount() { return invalidQaCount; }
+    public void incrementInvalidQa() { this.invalidQaCount++; }
+
+    public long getTrainValLeakageCount() { return trainValLeakageCount; }
+    public void incrementTrainValLeakage() { this.trainValLeakageCount++; }
 
     public long getEstimatedTokens() { return estimatedTokens; }
     public void setEstimatedTokens(long estimatedTokens) { this.estimatedTokens = estimatedTokens; }
