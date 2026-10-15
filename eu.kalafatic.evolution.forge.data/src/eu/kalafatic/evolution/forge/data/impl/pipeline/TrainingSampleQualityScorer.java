@@ -32,9 +32,63 @@ public class TrainingSampleQualityScorer implements DataFilter {
         String text = sample.toFullText();
         if (text == null || text.trim().isEmpty()) return 0.0;
 
+        String strippedText = text.replaceAll("[^a-zA-Z0-9]", "").trim();
+        if (strippedText.isEmpty()) {
+            sample.setQualityScore(0.0);
+            return 0.0; // Punctuation / noise only
+        }
+
         double score = 1.0;
 
-        // Signal 1: Character repetition penalty
+        // Signal 1: Corrupted character check (\uFFFD or unprintable noise ratio)
+        long replacementChars = text.chars().filter(ch -> ch == '\uFFFD').count();
+        if (text.length() > 0 && (double) replacementChars / text.length() > 0.05) {
+            score -= 0.6;
+        }
+
+        // Signal 2: Invalid Instruction / Question-Answer pairs
+        if (sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.INSTRUCTION) {
+            String inst = sample.getInstruction() != null ? sample.getInstruction().trim() : "";
+            String resp = sample.getResponse() != null ? sample.getResponse().trim() : "";
+
+            if (inst.isEmpty() || resp.isEmpty()) {
+                score = 0.0; // Empty prompt or response
+            } else {
+                String normInst = inst.toLowerCase().replaceAll("[^a-z0-9]", "");
+                String normResp = resp.toLowerCase().replaceAll("[^a-z0-9]", "");
+
+                if (normInst.equals(normResp)) {
+                    score -= 0.6; // Prompt equals response
+                } else if (normInst.contains(normResp) && normResp.length() > 10 && normResp.length() == normInst.length()) {
+                    score -= 0.5; // Response simply repeats instruction
+                }
+
+                if (resp.equalsIgnoreCase("n/a") || resp.equalsIgnoreCase("none") || resp.equalsIgnoreCase("no answer") || resp.equalsIgnoreCase("i don't know")) {
+                    score -= 0.5; // Trivial non-answer
+                }
+            }
+        }
+
+        // Signal 3: Semantically repetitive conversation turns
+        if ((sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CONVERSATION ||
+             sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CHAT) &&
+            sample.getConversationMessages() != null && sample.getConversationMessages().size() >= 2) {
+
+            var msgs = sample.getConversationMessages();
+            for (int i = 1; i < msgs.size(); i++) {
+                String prevText = msgs.get(i - 1).getText() != null ? msgs.get(i - 1).getText().trim() : "";
+                String currText = msgs.get(i).getText() != null ? msgs.get(i).getText().trim() : "";
+                if (!prevText.isEmpty() && prevText.length() > 15) {
+                    String normPrev = prevText.toLowerCase().replaceAll("[^a-z0-9]", "");
+                    String normCurr = currText.toLowerCase().replaceAll("[^a-z0-9]", "");
+                    if (normPrev.equals(normCurr)) {
+                        score -= 0.5; // Repeated turn in conversation
+                    }
+                }
+            }
+        }
+
+        // Signal 4: Character repetition & diversity penalty
         int len = text.length();
         int uniqueChars = (int) text.chars().distinct().count();
         double charDiversity = (double) uniqueChars / Math.min(len, 100);
@@ -42,7 +96,7 @@ public class TrainingSampleQualityScorer implements DataFilter {
             score -= 0.4;
         }
 
-        // Signal 2: Word repetition penalty
+        // Signal 5: Word repetition penalty
         String[] words = text.split("\\s+");
         if (words.length > 10) {
             long uniqueWords = java.util.Arrays.stream(words).distinct().count();
@@ -54,7 +108,7 @@ public class TrainingSampleQualityScorer implements DataFilter {
 
         boolean isCode = sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CODE;
 
-        // Signal 3: Structural validity (extreme uppercase penalty for non-code text)
+        // Signal 6: Structural validity (extreme uppercase penalty for non-code text)
         if (!isCode) {
             long uppercaseCount = text.chars().filter(Character::isUpperCase).count();
             if (len > 20 && (double) uppercaseCount / len > 0.8) {
@@ -62,7 +116,7 @@ public class TrainingSampleQualityScorer implements DataFilter {
             }
         }
 
-        // Signal 4: Pathological sequence or word repetition
+        // Signal 7: Pathological sequence or word repetition
         if (words.length > 5) {
             int maxConsecutiveMatches = 0;
             int currentMatches = 1;
