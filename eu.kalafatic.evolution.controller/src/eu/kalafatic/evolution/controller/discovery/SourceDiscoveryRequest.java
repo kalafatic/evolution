@@ -6,6 +6,7 @@ public class SourceDiscoveryRequest {
     private Pattern includeExtensions;
     private Pattern pathFilter;
     private int maxFiles = 50000;
+    private boolean fastMode = false;
 
     public Pattern getIncludeExtensions() { return includeExtensions; }
     public void setIncludeExtensions(Pattern includeExtensions) { this.includeExtensions = includeExtensions; }
@@ -15,4 +16,7 @@ public class SourceDiscoveryRequest {
 
     public int getMaxFiles() { return maxFiles; }
     public void setMaxFiles(int maxFiles) { this.maxFiles = maxFiles; }
+
+    public boolean isFastMode() { return fastMode; }
+    public void setFastMode(boolean fastMode) { this.fastMode = fastMode; }
 }
