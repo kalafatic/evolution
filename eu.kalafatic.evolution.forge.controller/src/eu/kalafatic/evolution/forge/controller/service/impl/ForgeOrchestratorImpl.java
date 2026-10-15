@@ -202,6 +202,9 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             );
 
             EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
+            if (job.getTrainingConfig().getBatchSize() > 0) {
+                trainer.setMicroBatchSize(job.getTrainingConfig().getBatchSize());
+            }
             try {
                 Class<?> fsmClass = null;
                 try {

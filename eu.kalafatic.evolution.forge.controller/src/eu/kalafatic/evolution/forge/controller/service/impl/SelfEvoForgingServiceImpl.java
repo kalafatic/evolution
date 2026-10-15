@@ -108,14 +108,16 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 job.setSourcePaths(activeSources);
 
                 // Populate model hyperparameters
-                double lr = uiState.optDouble("lr", 0.01);
-                int epochs = uiState.optInt("epochs", 1);
+                double lr = uiState.optDouble("learningRate", uiState.optDouble("lr", 0.01));
+                int epochs = uiState.optInt("epochs", 32);
+                int batchSize = uiState.optInt("batchSize", 16);
                 String modelSizeName = uiState.optString("modelSize", "SMALL").toUpperCase();
-                int hiddenSize = uiState.optInt("hidden_size", 512);
+                int hiddenSize = uiState.optInt("hiddenSize", uiState.optInt("hidden_size", 512));
                 int layers = uiState.optInt("layers", 8);
                 int heads = uiState.optInt("heads", 8);
-                int dff = hiddenSize * 4;
-                int maxSeqLen = 1024;
+                int dff = uiState.optInt("dff", hiddenSize * 4);
+                int maxSeqLen = uiState.optInt("maxSeqLen", 1024);
+                int vocabSize = uiState.optInt("vocabSize", 4096);
 
                 int[] resolvedParams = new int[] { hiddenSize, layers, heads, dff, maxSeqLen };
                 resolveModelSizePreset(modelSizeName, resolvedParams);
@@ -126,9 +128,23 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 job.getModelConfig().setHeads(resolvedParams[2]);
                 job.getModelConfig().setDff(resolvedParams[3]);
                 job.getModelConfig().setMaxSeqLen(resolvedParams[4]);
+                job.getModelConfig().setVocabSize(vocabSize);
 
                 job.getTrainingConfig().setLearningRate(lr);
                 job.getTrainingConfig().setEpochs(epochs);
+                job.getTrainingConfig().setBatchSize(batchSize);
+                job.getTrainingConfig().setTimeBudgetHours(uiState.optDouble("timeBudgetHours", 12.0));
+                job.getTrainingConfig().setCheckpointFrequencyEpochs(uiState.optInt("checkpointFrequencyEpochs", 5));
+                job.getTrainingConfig().setValidationRatio(uiState.optDouble("validationRatio", 0.15));
+                job.getTrainingConfig().setTargetLossThreshold(uiState.optDouble("desiredLossThreshold", uiState.optDouble("targetLossThreshold", 1.0)));
+                job.getTrainingConfig().setFilterQuality(uiState.optBoolean("filterQuality", true));
+
+                job.getEvolutionConfig().setGenerations(uiState.optInt("generations", 1));
+                job.getEvolutionConfig().setCandidatesPerGeneration(uiState.optInt("candidatesPerGeneration", 1));
+
+                if (uiState.has("outputModelName") && !uiState.getString("outputModelName").trim().isEmpty()) {
+                    job.setOutputModelName(uiState.getString("outputModelName").trim());
+                }
 
                 // Delegate complete job execution to the authoritative ForgeOrchestrator
                 forgeOrchestrator.executeJob(job, projectPath);
