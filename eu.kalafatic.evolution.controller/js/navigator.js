@@ -11,6 +11,7 @@
 
     let allNodes = [];
     let allLinks = [];
+    let globalNodeMap = new Map();
     let visibleGraph = { nodes: [], links: [] };
 
     let currentLayout = 'GRID';
@@ -164,7 +165,7 @@
             y: 0
         }));
 
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+        globalNodeMap = new Map(allNodes.map(n => [n.id, n]));
 
         allLinks = (data.relationships || []).map(r => ({
             sourceId: r.from,
@@ -235,13 +236,12 @@
         if (!node.parentId || node.parentId === 'repo' || node.id === 'repo') return true;
 
         let current = node;
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]));
 
         while (current && current.parentId) {
             if (!expandedNodeIds.has(current.parentId)) {
                 return false;
             }
-            current = nodeMap.get(current.parentId);
+            current = globalNodeMap.get(current.parentId);
         }
         return true;
     }
@@ -249,14 +249,13 @@
     function findVisibleAncestor(nodeId, visibleNodesMap) {
         if (visibleNodesMap.has(nodeId)) return visibleNodesMap.get(nodeId);
 
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]));
-        let current = nodeMap.get(nodeId);
+        let current = globalNodeMap.get(nodeId);
 
         while (current) {
             if (visibleNodesMap.has(current.id)) {
                 return visibleNodesMap.get(current.id);
             }
-            current = nodeMap.get(current.parentId);
+            current = globalNodeMap.get(current.parentId);
         }
         return null;
     }
@@ -807,14 +806,13 @@
     window.focusNode = function(id) {
         focusedNodeId = id;
         window.focusedNodeId = id;
-        const node = allNodes.find(n => n.id === id);
+        const node = globalNodeMap.get(id) || allNodes.find(n => n.id === id);
         if (node) {
             // Auto expand parents so the focused node is visible
             let curr = node;
-            const nodeMap = new Map(allNodes.map(n => [n.id, n]));
             while (curr && curr.parentId) {
                 expandedNodeIds.add(curr.parentId);
-                curr = nodeMap.get(curr.parentId);
+                curr = globalNodeMap.get(curr.parentId);
             }
 
             recomputeGraphAndRender();

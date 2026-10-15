@@ -414,6 +414,7 @@ public class ArchitectureController {
     }
 
     private DesignModel filterModel(DesignModel model, ViewMode mode) {
+        if (model == null) return new DesignModel();
         DesignModel filtered = new DesignModel();
         filtered.setName(model.getName() + " - " + mode.name());
 
@@ -451,17 +452,38 @@ public class ArchitectureController {
                 break;
 
             case COMPONENTS:
-                filtered.setComponents(model.getComponents().stream()
-                    .filter(c -> !"USE_CASE".equals(c.getType()) && !"SUBSYSTEM".equals(c.getType()) && !"DOMAIN".equals(c.getType()))
-                    .collect(Collectors.toList()));
+            case KNOWLEDGE_GRAPH:
+            default:
+                List<ComponentRecord> candidates = model.getComponents().stream()
+                    .filter(c -> mode != ViewMode.COMPONENTS || (!"USE_CASE".equals(c.getType()) && !"SUBSYSTEM".equals(c.getType()) && !"DOMAIN".equals(c.getType())))
+                    .collect(Collectors.toList());
+
+                if (candidates.size() <= 500) {
+                    filtered.setComponents(candidates);
+                } else {
+                    java.util.Set<String> expandedParentIds = new java.util.HashSet<>();
+                    expandedParentIds.add("repo");
+                    for (ComponentRecord c : candidates) {
+                        if (c.isExpanded()) {
+                            expandedParentIds.add(c.getId());
+                        }
+                    }
+
+                    List<ComponentRecord> levelBounded = new ArrayList<>();
+                    for (ComponentRecord c : candidates) {
+                        if (c.getLevel() <= 2 || c.getParentId() == null || c.getParentId().isEmpty() || c.getParentId().equals("repo") || expandedParentIds.contains(c.getParentId())) {
+                            levelBounded.add(c);
+                            if (levelBounded.size() >= 1000) break;
+                        }
+                    }
+                    filtered.setComponents(levelBounded);
+                }
+
                 List<String> compIds = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
                 filtered.setRelationships(model.getRelationships().stream()
                     .filter(r -> compIds.contains(r.getFrom()) && compIds.contains(r.getTo()))
                     .collect(Collectors.toList()));
                 break;
-
-            case KNOWLEDGE_GRAPH:
-                return model;
         }
 
         return filtered;
