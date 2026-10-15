@@ -20,7 +20,6 @@ public class SelfDevOrchestrator {
         this.supervisorLifecycle = new DefaultSupervisorLifecycle();
 
         registerTasks();
-        executePreflightInternal();
     }
 
     public SelfDevOrchestrator(SelfDevContext context,
@@ -31,7 +30,6 @@ public class SelfDevOrchestrator {
         this.supervisorLifecycle = supervisorLifecycle != null ? supervisorLifecycle : new DefaultSupervisorLifecycle();
 
         registerTasks();
-        executePreflightInternal();
     }
 
     public SelfDevPreflightResult executePreflight() {
