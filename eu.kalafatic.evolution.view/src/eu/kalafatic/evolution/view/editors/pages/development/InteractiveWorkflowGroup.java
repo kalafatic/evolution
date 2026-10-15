@@ -35,6 +35,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     private String sessionId;
     private GraphActionExecutor executor;
     private boolean isLoaded = false;
+    private boolean bridgesInstalled = false;
 
     private final Consumer<RuntimeProjection> projectionObserver = projection -> {
         if (browser == null || browser.isDisposed()) return;
@@ -130,15 +131,22 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     }
 
     private void setupJavaScriptBridges() {
-        new BrowserFunction(browser, "javaAction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 2) {
-                    executor.execute(arguments[0].toString(), arguments[1].toString());
+        if (browser == null || browser.isDisposed() || bridgesInstalled) return;
+
+        try {
+            new BrowserFunction(browser, "javaAction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments.length >= 2) {
+                        executor.execute(arguments[0].toString(), arguments[1].toString());
+                    }
+                    return null;
                 }
-                return null;
-            }
-        };
+            };
+            bridgesInstalled = true;
+        } catch (Throwable t) {
+            System.err.println("[WORKFLOW_GROUP] Error setting up JavaScript bridges: " + t.getMessage());
+        }
     }
 
     private void loadWorkflowHtml() {

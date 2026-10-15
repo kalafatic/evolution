@@ -60,6 +60,7 @@ public class ChatGroup extends AEvoGroup {
     private ChatSession currentSession;
     private EditMessageCallback editCallback;
     private int logCount = 0;
+    private boolean bridgesInstalled = false;
 
     public interface EditMessageCallback {
         void onEditMessage(int index, String oldText);
@@ -444,146 +445,153 @@ public class ChatGroup extends AEvoGroup {
     }
 
     private void setupJavaScriptBridges() {
-        // Logging bridge
-        new BrowserFunction(browser, "JavaLog") {
-            @Override
-            public Object function(Object[] args) {
-                if (args.length > 0) {
-                    System.out.println("[Chat Browser] " + args[0]);
-                }
-                return null;
-            }
-        };
+        if (browser == null || browser.isDisposed() || bridgesInstalled) return;
 
-        new BrowserFunction(browser, "JavaBridgeReady") {
-            @Override
-            public Object function(Object[] args) {
-                return null;
-            }
-        };
-
-        new BrowserFunction(browser, "JavaHandler") {
-            @Override
-            public Object function(Object[] args) {
-                if (args.length < 1) return null;
-                try {
-                    String action = (String) args[0];
-
-                    if ("ready".equals(action)) {
-                        isLoaded = true;
-                        isJsReady = true;
-                        refreshBrowser();
-                        return null;
+        try {
+            // Logging bridge
+            new BrowserFunction(browser, "JavaLog") {
+                @Override
+                public Object function(Object[] args) {
+                    if (args.length > 0) {
+                        System.out.println("[Chat Browser] " + args[0]);
                     }
+                    return null;
+                }
+            };
 
-                    if (args.length < 2) return null;
-                    String indexStr = (String) args[1];
-                    int index = -1;
+            new BrowserFunction(browser, "JavaBridgeReady") {
+                @Override
+                public Object function(Object[] args) {
+                    return null;
+                }
+            };
+
+            new BrowserFunction(browser, "JavaHandler") {
+                @Override
+                public Object function(Object[] args) {
+                    if (args.length < 1) return null;
                     try {
-                        index = Integer.parseInt(indexStr);
-                    } catch (NumberFormatException e) {
-                        // Safe fallback for non-numeric indices (like "undefined" or null)
-                    }
+                        String action = (String) args[0];
 
-                    String text = args.length >= 3 ? (String) args[2] : "";
+                        if ("ready".equals(action)) {
+                            isLoaded = true;
+                            isJsReady = true;
+                            refreshBrowser();
+                            return null;
+                        }
 
-                    switch (action) {
-                        case "edit":
-                            handleEdit(index, text);
-                            break;
-                        case "copy":
-                            handleCopy(text);
-                            break;
-                        case "quote":
-                            page.handleQuote(text);
-                            break;
-                        case "approve":
-                            handleApprove(index);
-                            page.provideApproval(true);
-                            break;
-                        case "approveDarwinVariant":
-                            handleApproveDarwinVariant(index, text);
-                            page.handleExecuteProposal("Approve variant " + text);
-                            break;
-                        case "rejectDarwinVariant":
-                            handleRejectDarwinVariant(index, text);
-                            page.handleExecuteProposal("Reject variant " + text);
-                            break;
-                        case "keepDarwinVariant":
-                            handleKeepDarwinVariant(index, text);
-                            page.handleExecuteProposal("Keep variant " + text);
-                            break;
-                        case "editDarwinVariant":
-                            handleEditDarwinVariant(index, text);
-                            break;
-                        case "forceSolution":
-                            page.handleForceSolution();
-                            break;
-                        case "create":
-                            page.provideApproval(true);
-                            break;
-                        case "clarify":
-                            page.handleClarify();
-                            break;
-                        case "helloworld":
-                            page.handleSimpleSolution();
-                            break;
-                        case "executeProposal":
-                            page.handleExecuteProposal(text);
-                            break;
-                        case "openDiff":
-                            page.handleOpenDiff(text);
-                            break;
-                        case "getDiff":
-                            fetchDiff(text);
-                            break;
-                        case "refreshGit":
-                            refreshGitStatus();
-                            break;
-                        case "commitGit":
-                            commitGitChanges(text);
-                            break;
-                        case "revertFile":
-                            // Strip status prefix if present
-                            String revertPath = text;
-                            if (revertPath.length() > 2 && (revertPath.startsWith("M ") || revertPath.startsWith("A ") || revertPath.startsWith("D "))) {
-                                revertPath = revertPath.substring(2);
-                            }
-                            ChatGroup.this.revertGitFile(revertPath);
-                            break;
-                        case "downloadZip":
-                            ChatGroup.this.downloadChangesAsZip();
-                            break;
-                        case "openInWorkspace":
-                            page.handleOpenDiff(text);
-                            break;
-                        case "openInMediatedEditor":
-                            page.handleOpenMediatedEditor(text);
-                            break;
-                        case "openAllFiles":
-                            page.handleOpenAllFiles(text);
-                            break;
-                        case "openInReviewEditor":
-                            // Strip status prefix if present
-                            String reviewPath = text;
-                            if (reviewPath.length() > 2 && (reviewPath.startsWith("M ") || reviewPath.startsWith("A ") || reviewPath.startsWith("D "))) {
-                                reviewPath = reviewPath.substring(2);
-                            }
-                            ChatGroup.this.openInComparePage(reviewPath);
-                            break;
-                        case "openPeerReview":
-                            editor.showPeerReviewPage();
-                            break;
-                        case "addDimension":
-                            page.provideInput("Add dimension: " + text);
-                            break;
+                        if (args.length < 2) return null;
+                        String indexStr = (String) args[1];
+                        int index = -1;
+                        try {
+                            index = Integer.parseInt(indexStr);
+                        } catch (NumberFormatException e) {
+                            // Safe fallback for non-numeric indices (like "undefined" or null)
+                        }
+
+                        String text = args.length >= 3 ? (String) args[2] : "";
+
+                        switch (action) {
+                            case "edit":
+                                handleEdit(index, text);
+                                break;
+                            case "copy":
+                                handleCopy(text);
+                                break;
+                            case "quote":
+                                page.handleQuote(text);
+                                break;
+                            case "approve":
+                                handleApprove(index);
+                                page.provideApproval(true);
+                                break;
+                            case "approveDarwinVariant":
+                                handleApproveDarwinVariant(index, text);
+                                page.handleExecuteProposal("Approve variant " + text);
+                                break;
+                            case "rejectDarwinVariant":
+                                handleRejectDarwinVariant(index, text);
+                                page.handleExecuteProposal("Reject variant " + text);
+                                break;
+                            case "keepDarwinVariant":
+                                handleKeepDarwinVariant(index, text);
+                                page.handleExecuteProposal("Keep variant " + text);
+                                break;
+                            case "editDarwinVariant":
+                                handleEditDarwinVariant(index, text);
+                                break;
+                            case "forceSolution":
+                                page.handleForceSolution();
+                                break;
+                            case "create":
+                                page.provideApproval(true);
+                                break;
+                            case "clarify":
+                                page.handleClarify();
+                                break;
+                            case "helloworld":
+                                page.handleSimpleSolution();
+                                break;
+                            case "executeProposal":
+                                page.handleExecuteProposal(text);
+                                break;
+                            case "openDiff":
+                                page.handleOpenDiff(text);
+                                break;
+                            case "getDiff":
+                                fetchDiff(text);
+                                break;
+                            case "refreshGit":
+                                refreshGitStatus();
+                                break;
+                            case "commitGit":
+                                commitGitChanges(text);
+                                break;
+                            case "revertFile":
+                                // Strip status prefix if present
+                                String revertPath = text;
+                                if (revertPath.length() > 2 && (revertPath.startsWith("M ") || revertPath.startsWith("A ") || revertPath.startsWith("D "))) {
+                                    revertPath = revertPath.substring(2);
+                                }
+                                ChatGroup.this.revertGitFile(revertPath);
+                                break;
+                            case "downloadZip":
+                                ChatGroup.this.downloadChangesAsZip();
+                                break;
+                            case "openInWorkspace":
+                                page.handleOpenDiff(text);
+                                break;
+                            case "openInMediatedEditor":
+                                page.handleOpenMediatedEditor(text);
+                                break;
+                            case "openAllFiles":
+                                page.handleOpenAllFiles(text);
+                                break;
+                            case "openInReviewEditor":
+                                // Strip status prefix if present
+                                String reviewPath = text;
+                                if (reviewPath.length() > 2 && (reviewPath.startsWith("M ") || reviewPath.startsWith("A ") || reviewPath.startsWith("D "))) {
+                                    reviewPath = reviewPath.substring(2);
+                                }
+                                ChatGroup.this.openInComparePage(reviewPath);
+                                break;
+                            case "openPeerReview":
+                                editor.showPeerReviewPage();
+                                break;
+                            case "addDimension":
+                                page.provideInput("Add dimension: " + text);
+                                break;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    return null;
                 }
-                return null;
-            }
-        };
+            };
+            bridgesInstalled = true;
+        } catch (Throwable t) {
+            System.err.println("[CHAT_PAGE] Error setting up JavaScript bridges: " + t.getMessage());
+        }
     }
     
    

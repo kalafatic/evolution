@@ -25,6 +25,7 @@ public class SafeBrowserWrapper {
     private final AtomicBoolean pageLoaded = new AtomicBoolean(false);
     private final AtomicBoolean jsReady = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean bridgesInstalled = new AtomicBoolean(false);
 
     private String pendingHtml;
     private String pendingUrl;
@@ -136,16 +137,21 @@ public class SafeBrowserWrapper {
     }
 
     private void installJSReadyBridge() {
-        if (browser.isDisposed()) return;
+        if (browser == null || browser.isDisposed() || bridgesInstalled.get()) return;
 
-        new BrowserFunction(browser, "JavaBridgeReady") {
-            @Override
-            public Object function(Object[] arguments) {
-                jsReady.set(true);
-                flushQueue();
-                return null;
-            }
-        };
+        try {
+            new BrowserFunction(browser, "JavaBridgeReady") {
+                @Override
+                public Object function(Object[] arguments) {
+                    jsReady.set(true);
+                    flushQueue();
+                    return null;
+                }
+            };
+            bridgesInstalled.set(true);
+        } catch (Throwable t) {
+            System.err.println("[SAFE_BROWSER] Error setting up JavaScript bridges: " + t.getMessage());
+        }
     }
 
     private void flushQueue() {
