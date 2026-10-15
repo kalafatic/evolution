@@ -124,4 +124,57 @@ public class RepoArchitectureScannerTest {
         assertTrue("JSON should contain CognitiveLoopEngine", json.contains("CognitiveLoopEngine"));
         assertTrue("JSON should contain OSGI_REQUIRE_BUNDLE", json.contains("OSGI_REQUIRE_BUNDLE"));
     }
+
+    @Test
+    public void testProgressiveLevelScanning() throws IOException {
+        File repoRoot = tempFolder.newFolder("evo-prog-test-repo");
+
+        File mod = new File(repoRoot, "eu.kalafatic.evolution.demo");
+        File src = new File(mod, "src/eu/kalafatic/demo");
+        src.mkdirs();
+
+        File javaClass = new File(src, "DemoRunner.java");
+        try (FileWriter fw = new FileWriter(javaClass)) {
+            fw.write("package eu.kalafatic.demo;\n\n");
+            fw.write("public class DemoRunner {\n");
+            fw.write("    private int counter = 0;\n");
+            fw.write("    public void run() {}\n");
+            fw.write("}\n");
+        }
+
+        RepoArchitectureScanner scanner = new RepoArchitectureScanner();
+
+        // Step 1: High level scan (maxLevel = 2)
+        DesignModel modelL2 = scanner.scanRepository(repoRoot, 2);
+        assertNotNull("L2 model should not be null", modelL2);
+
+        ComponentRecord repoNode = modelL2.getComponents().stream().filter(c -> c.getLevel() == 1).findFirst().orElse(null);
+        assertNotNull("Repo node should exist at level 1", repoNode);
+
+        ComponentRecord modNode = modelL2.getComponents().stream().filter(c -> c.getLevel() == 2).findFirst().orElse(null);
+        assertNotNull("Module node should exist at level 2", modNode);
+        assertTrue("Module node should report unscanned children", modNode.hasUnscannedChildren());
+
+        // Step 2: Progressive scan module to packages (Level 3)
+        boolean scannedL3 = scanner.scanNextLevel(repoRoot, modelL2, modNode.getId());
+        assertTrue("scanNextLevel to L3 should succeed", scannedL3);
+
+        ComponentRecord pkgNode = modelL2.getComponents().stream().filter(c -> c.getLevel() == 3).findFirst().orElse(null);
+        assertNotNull("Package node should exist after L3 scan", pkgNode);
+
+        // Step 3: Progressive scan package to classes (Level 4)
+        boolean scannedL4 = scanner.scanNextLevel(repoRoot, modelL2, pkgNode.getId());
+        assertTrue("scanNextLevel to L4 should succeed", scannedL4);
+
+        ComponentRecord classNode = modelL2.getComponents().stream().filter(c -> c.getLevel() == 4).findFirst().orElse(null);
+        assertNotNull("Class node should exist after L4 scan", classNode);
+        assertEquals("DemoRunner", classNode.getName());
+
+        // Step 4: Progressive scan class to members (Level 5)
+        boolean scannedL5 = scanner.scanNextLevel(repoRoot, modelL2, classNode.getId());
+        assertTrue("scanNextLevel to L5 should succeed", scannedL5);
+
+        ComponentRecord memberNode = modelL2.getComponents().stream().filter(c -> c.getLevel() == 5).findFirst().orElse(null);
+        assertNotNull("Member node should exist after L5 scan", memberNode);
+    }
 }

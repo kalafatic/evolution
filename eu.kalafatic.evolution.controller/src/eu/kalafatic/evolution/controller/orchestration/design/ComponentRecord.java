@@ -14,6 +14,8 @@ public class ComponentRecord {
     private int y;
     private String parentId;
     private int level = 2;
+    private int scannedLevel = 2;
+    private boolean hasUnscannedChildren = false;
     private String qualifiedName;
     private String superClass;
     private boolean expanded = false;
@@ -75,6 +77,12 @@ public class ComponentRecord {
 
     public int getLevel() { return level; }
     public void setLevel(int level) { this.level = level; }
+
+    public int getScannedLevel() { return scannedLevel; }
+    public void setScannedLevel(int scannedLevel) { this.scannedLevel = scannedLevel; }
+
+    public boolean hasUnscannedChildren() { return hasUnscannedChildren; }
+    public void setHasUnscannedChildren(boolean hasUnscannedChildren) { this.hasUnscannedChildren = hasUnscannedChildren; }
 
     public String getQualifiedName() { return qualifiedName; }
     public void setQualifiedName(String qualifiedName) { this.qualifiedName = qualifiedName; }

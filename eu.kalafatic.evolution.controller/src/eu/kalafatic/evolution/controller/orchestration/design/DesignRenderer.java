@@ -118,6 +118,8 @@ public class DesignRenderer {
             c.put("importanceScore", cr.getImportanceScore());
             c.put("parentId", cr.getParentId() != null ? cr.getParentId() : "");
             c.put("level", cr.getLevel());
+            c.put("scannedLevel", cr.getScannedLevel());
+            c.put("hasUnscannedChildren", cr.hasUnscannedChildren());
             c.put("qualifiedName", cr.getQualifiedName() != null ? cr.getQualifiedName() : cr.getName());
             c.put("superClass", cr.getSuperClass() != null ? cr.getSuperClass() : "");
             c.put("expanded", cr.isExpanded());
