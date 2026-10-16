@@ -453,7 +453,25 @@ public class ChatGroup extends AEvoGroup {
                 @Override
                 public Object function(Object[] args) {
                     if (args.length > 0) {
-                        System.out.println("[Chat Browser] " + args[0]);
+                        String msg = String.valueOf(args[0]);
+                        System.out.println("[Chat Browser] " + msg);
+                        if (msg.startsWith("UI_ACTION:")) {
+                            try {
+                                JSONObject json = new JSONObject(msg.substring("UI_ACTION:".length()));
+                                eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor desc = new eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor()
+                                    .setControlId(json.optString("controlId", "html_control"))
+                                    .setLabel(json.optString("label", ""))
+                                    .setControlType(json.optString("controlType", "HTML_Element"))
+                                    .setComponentName("ChatGroup_HTML")
+                                    .setOperationName(json.optString("action", "html_interaction"))
+                                    .setTrigger(eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor.TriggerType.HTML_INTERACTION);
+                                if (orchestrator != null) desc.setSessionId(orchestrator.getName());
+                                eu.kalafatic.evolution.controller.ui.EvoUiActionLogger.getInstance().logStart(desc);
+                                eu.kalafatic.evolution.controller.ui.EvoUiActionLogger.getInstance().logSuccess(desc, "HTML interaction processed");
+                            } catch (Exception ex) {
+                                // ignore parse error
+                            }
+                        }
                     }
                     return null;
                 }

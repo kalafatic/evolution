@@ -924,6 +924,20 @@ public class GUIFactory {
 		button.setForeground(new Color(Display.getDefault(), 50, 150, 50));
 		button.setFont(fontRegistry.get("button-text"));
 
+		try {
+			Class<?> helperClazz = Class.forName("eu.kalafatic.evolution.view.util.EvoUiListenerHelper");
+			Class<?> descClazz = Class.forName("eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor");
+			Object desc = descClazz.getDeclaredConstructor().newInstance();
+			descClazz.getMethod("setControlId", String.class).invoke(desc, name != null ? name.toLowerCase().replaceAll("\\s+", "_") : "button");
+			descClazz.getMethod("setLabel", String.class).invoke(desc, name != null ? name : "");
+			descClazz.getMethod("setControlType", String.class).invoke(desc, "Button");
+			descClazz.getMethod("setOperationName", String.class).invoke(desc, name != null ? name : "button_click");
+			helperClazz.getMethod("attachActionDescriptor", Control.class, descClazz).invoke(null, button, desc);
+			helperClazz.getMethod("attachButtonLogging", Button.class, org.eclipse.swt.events.SelectionListener.class).invoke(null, button, null);
+		} catch (Throwable t) {
+			// Fallback if controller/view helper not on classpath during isolated utils runs
+		}
+
 		return button;
 	}
 
@@ -1141,6 +1155,21 @@ public class GUIFactory {
 
 		combo.setForeground(new Color(Display.getDefault(), 50, 150, 50));
 		combo.setFont(fontRegistry.get("button-text"));
+
+		try {
+			Class<?> helperClazz = Class.forName("eu.kalafatic.evolution.view.util.EvoUiListenerHelper");
+			Class<?> descClazz = Class.forName("eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor");
+			Object desc = descClazz.getDeclaredConstructor().newInstance();
+			descClazz.getMethod("setControlId", String.class).invoke(desc, name != null ? name.toLowerCase().replaceAll("\\s+", "_") : "combo");
+			descClazz.getMethod("setLabel", String.class).invoke(desc, name != null ? name : "");
+			descClazz.getMethod("setControlType", String.class).invoke(desc, "Combo");
+			descClazz.getMethod("setOperationName", String.class).invoke(desc, "select_option");
+			helperClazz.getMethod("attachActionDescriptor", Control.class, descClazz).invoke(null, combo, desc);
+			helperClazz.getMethod("attachComboLogging", Combo.class, org.eclipse.swt.events.SelectionListener.class).invoke(null, combo, null);
+		} catch (Throwable t) {
+			// Fallback
+		}
+
 		return combo;
 	}
 

@@ -53,6 +53,12 @@ public class SupervisorGroup extends AEvoGroup {
         deployedCheck = toolkit.createButton(group, "", SWT.CHECK);
         deployedCheck.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
 
+        registerControlAction(executablePathText, "executable_path", "Executable Path", "update_supervisor_executable", "setExecutablePath", null);
+        registerControlAction(sourcePathText, "source_path", "Source Path", "update_supervisor_source", "setSourcePath", null);
+        registerControlAction(commandsText, "commands", "Commands", "update_supervisor_commands", "setCommands", null);
+        registerControlAction(settingsText, "settings", "Settings", "update_supervisor_settings", "setSettings", null);
+        registerControlAction(deployedCheck, "deployed_check", "Deployed Checkbox", "toggle_supervisor_deployed", "setDeployed", null);
+
         load();
 
         ModifyListener ml = e -> {

@@ -196,8 +196,38 @@ public abstract class AEvoGroup {
     protected void setToolTipSafe(Control control, String toolTip) {
         if (control == null || control.isDisposed()) return;
         String safeToolTip = toolTip != null ? toolTip : "";
-        if (!safeToolTip.equals(control.getToolTipText())) {
+        eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor desc = eu.kalafatic.evolution.view.util.EvoUiListenerHelper.getActionDescriptor(control);
+        if (desc != null) {
+            desc.setLabel(safeToolTip);
+            eu.kalafatic.evolution.view.util.EvoUiListenerHelper.updateControlTooltip(control, desc);
+        } else if (!safeToolTip.equals(control.getToolTipText())) {
             control.setToolTipText(safeToolTip);
+        }
+    }
+
+    public void registerControlAction(Control control, String controlId, String label, String operationName, String methodName, String targetPath) {
+        if (control == null || control.isDisposed()) return;
+        String compName = getClass().getSimpleName();
+        eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor desc = new eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor()
+            .setControlId(controlId)
+            .setLabel(label)
+            .setControlType(control.getClass().getSimpleName())
+            .setComponentName(compName)
+            .setOperationName(operationName)
+            .setMethodName(methodName)
+            .setTargetPath(targetPath);
+
+        if (orchestrator != null) {
+            desc.setSessionId(orchestrator.getName());
+        }
+        eu.kalafatic.evolution.view.util.EvoUiListenerHelper.attachActionDescriptor(control, desc);
+
+        if (control instanceof Button btn) {
+            eu.kalafatic.evolution.view.util.EvoUiListenerHelper.attachButtonLogging(btn, null);
+        } else if (control instanceof Combo combo) {
+            eu.kalafatic.evolution.view.util.EvoUiListenerHelper.attachComboLogging(combo, null);
+        } else if (control instanceof Text txt) {
+            eu.kalafatic.evolution.view.util.EvoUiListenerHelper.attachTextLogging(txt);
         }
     }
 
