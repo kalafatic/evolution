@@ -59,7 +59,11 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         context.log("[forge.dataset] Preparing source JSONL: " + file.getName());
 
         int linesCount = 0;
-        int malformedCount = 0;
+        int emptyLinesCount = 0;
+        int validJsonCount = 0;
+        int invalidJsonCount = 0;
+        int rejectedConversationCount = 0;
+        int unsupportedStructureCount = 0;
 
         InputStream fis = new FileInputStream(file);
         if (file.getName().endsWith(".gz")) {
@@ -69,41 +73,61 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (context.isCancelled()) break;
+                if (context != null && context.isCancelled()) break;
                 linesCount++;
                 String trimmed = line.trim();
-                if (trimmed.isEmpty()) continue;
+                if (trimmed.isEmpty()) {
+                    emptyLinesCount++;
+                    continue;
+                }
 
+                JSONObject json;
                 try {
-                    JSONObject json = new JSONObject(trimmed);
-                    NormalizedSample sample = parseJsonObject(json, file.getName());
-                    if (sample != null) {
-                        samples.add(sample);
-                    } else {
-                        malformedCount++;
-                    }
+                    json = new JSONObject(trimmed);
+                    validJsonCount++;
                 } catch (Exception ex) {
-                    // Reject malformed JSON lines
-                    malformedCount++;
+                    invalidJsonCount++;
+                    continue;
+                }
+
+                NormalizedSample sample = parseJsonObject(json, file.getName(), linesCount);
+                if (sample != null) {
+                    samples.add(sample);
+                } else {
+                    if (json.has("text") && json.optString("text", "").contains("<|im_start|>")) {
+                        rejectedConversationCount++;
+                    } else {
+                        unsupportedStructureCount++;
+                    }
                 }
             }
         }
 
-        context.log("[forge.dataset] JSONL Read lines: " + linesCount + ", Valid samples: " + samples.size() + ", Malformed rejected: " + malformedCount);
+        if (context != null) {
+            context.log(String.format(
+                "[forge.dataset] JSONL Read lines: %d (empty: %d), Valid JSON: %d, Invalid JSON: %d, Invalid conversations: %d, Unsupported structures: %d, Accepted samples: %d",
+                linesCount, emptyLinesCount, validJsonCount, invalidJsonCount, rejectedConversationCount, unsupportedStructureCount, samples.size()
+            ));
+        }
         return samples;
     }
 
     public static NormalizedSample parseJsonObject(JSONObject json, String sourceName) {
+        return parseJsonObject(json, sourceName, -1);
+    }
+
+    public static NormalizedSample parseJsonObject(JSONObject json, String sourceName, long lineIndex) {
         if (json == null) return null;
+
+        String recordId = json.optString("conversationId", json.optString("id", null));
+        if (recordId == null || recordId.trim().isEmpty()) {
+            recordId = lineIndex >= 0 ? (sourceName + "#" + lineIndex) : sourceName;
+        }
 
         if (json.has("text") && !json.isNull("text")) {
             String txtVal = json.optString("text", "");
             if (txtVal.contains("<|im_start|>")) {
-                String convoId = json.optString("conversationId", json.optString("id", sourceName));
-                NormalizedSample imSample = parseImStartConversation(txtVal, convoId, sourceName);
-                if (imSample != null) {
-                    return imSample;
-                }
+                return parseImStartConversation(txtVal, recordId, sourceName);
             }
         }
 
@@ -186,26 +210,56 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         while (pos < text.length()) {
             int startIdx = text.indexOf("<|im_start|>", pos);
             if (startIdx == -1) {
+                // If there is non-whitespace leftover after last <|im_end|>, reject as malformed conversation
+                if (!text.substring(pos).trim().isEmpty()) {
+                    return null;
+                }
                 break;
             }
-            int roleStart = startIdx + "<|im_start|>".length();
-            int roleEnd = text.indexOf("\n", roleStart);
-            if (roleEnd == -1) {
+            // Disallow unparsed non-whitespace text before/between <|im_start|> markers
+            if (!text.substring(pos, startIdx).trim().isEmpty()) {
                 return null;
             }
-            String rawRole = text.substring(roleStart, roleEnd).trim();
+
+            int roleStart = startIdx + "<|im_start|>".length();
+            int lineEnd = text.indexOf("\n", roleStart);
+            if (lineEnd == -1) {
+                return null;
+            }
+
+            String headerLine = text.substring(roleStart, lineEnd);
+            if (headerLine.endsWith("\r")) {
+                headerLine = headerLine.substring(0, headerLine.length() - 1);
+            }
+            String rawRole = headerLine.trim();
             String normalizedRole = NormalizedMessage.normalizeRole(rawRole);
             if (normalizedRole == null) {
                 return null;
             }
 
-            int endIdx = text.indexOf("<|im_end|>", roleEnd);
+            int endIdx = text.indexOf("<|im_end|>", lineEnd);
             if (endIdx == -1) {
                 return null;
             }
 
-            String msgText = text.substring(roleEnd + 1, endIdx);
-            normMsgs.add(new NormalizedMessage(normalizedRole, msgText.trim()));
+            String msgText = text.substring(lineEnd + 1, endIdx);
+
+            // Strip leading \r\n or \n and trailing \r\n or \n added by marker formatting without stripping internal whitespace/indentation
+            if (msgText.startsWith("\r\n")) {
+                msgText = msgText.substring(2);
+            } else if (msgText.startsWith("\n")) {
+                msgText = msgText.substring(1);
+            }
+
+            if (msgText.endsWith("\r\n")) {
+                msgText = msgText.substring(0, msgText.length() - 2);
+            } else if (msgText.endsWith("\n")) {
+                msgText = msgText.substring(0, msgText.length() - 1);
+            } else if (msgText.endsWith("\r")) {
+                msgText = msgText.substring(0, msgText.length() - 1);
+            }
+
+            normMsgs.add(new NormalizedMessage(normalizedRole, msgText));
             pos = endIdx + "<|im_end|>".length();
         }
 

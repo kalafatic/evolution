@@ -303,4 +303,89 @@ public class StructuredConversationAndOasstTest {
         assertEquals(2, loadedDobber.getConversationMessages().size());
         assertTrue(loadedDobber.getConversationMessages().get(0).getText().contains("Consigliami 5 nomi"));
     }
+
+    @Test
+    public void testJsonlAdapterDetailedCases() throws Exception {
+        eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONLAdapter adapter =
+            new eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONLAdapter();
+
+        // Case 1: Italian user/assistant conversation
+        JSONObject italianJson = new JSONObject("{\"text\":\"<|im_start|>user\\nConsigliami 5 nomi per il mio cucciolo di dobberman<|im_end|>\\n<|im_start|>assistant\\n- Zeus\\n- Apollo<|im_end|>\\n\"}");
+        NormalizedSample italianSample = adapter.parseJsonObject(italianJson, "test_source", 1);
+        assertNotNull(italianSample);
+        assertEquals(TrainingSampleType.CONVERSATION, italianSample.getType());
+        assertEquals("user", italianSample.getConversationMessages().get(0).getRole());
+        assertEquals("Consigliami 5 nomi per il mio cucciolo di dobberman", italianSample.getConversationMessages().get(0).getText());
+        assertEquals("assistant", italianSample.getConversationMessages().get(1).getRole());
+        assertEquals("- Zeus\n- Apollo", italianSample.getConversationMessages().get(1).getText());
+
+        // Case 2: Multi-turn conversation with exact role/order
+        JSONObject multiTurnJson = new JSONObject("{\"text\":\"<|im_start|>user\\nTurn 1<|im_end|>\\n<|im_start|>assistant\\nReply 1<|im_end|>\\n<|im_start|>user\\nTurn 2<|im_end|>\\n<|im_start|>assistant\\nReply 2<|im_end|>\\n\"}");
+        NormalizedSample multiTurnSample = adapter.parseJsonObject(multiTurnJson, "test_source", 2);
+        assertNotNull(multiTurnSample);
+        assertEquals(4, multiTurnSample.getConversationMessages().size());
+        assertEquals("user", multiTurnSample.getConversationMessages().get(0).getRole());
+        assertEquals("assistant", multiTurnSample.getConversationMessages().get(1).getRole());
+        assertEquals("user", multiTurnSample.getConversationMessages().get(2).getRole());
+        assertEquals("assistant", multiTurnSample.getConversationMessages().get(3).getRole());
+
+        // Case 3 & 4: Multiline content and code indentation preservation
+        String multilineCode = "def hello():\n    print(\"World\")\n    return True";
+        JSONObject codeJson = new JSONObject("{\"text\":\"<|im_start|>user\\nWrite python code<|im_end|>\\n<|im_start|>assistant\\n" + multilineCode.replace("\n", "\\n").replace("\"", "\\\"") + "<|im_end|>\\n\"}");
+        NormalizedSample codeSample = adapter.parseJsonObject(codeJson, "test_source", 3);
+        assertNotNull(codeSample);
+        assertEquals(multilineCode, codeSample.getConversationMessages().get(1).getText());
+
+        // Case 5: Malformed conversation with missing <|im_end|> -> MUST BE REJECTED (null)
+        JSONObject missingEndJson = new JSONObject("{\"text\":\"<|im_start|>user\\nHello without end\\n<|im_start|>assistant\\nReply<|im_end|>\\n\"}");
+        NormalizedSample missingEndSample = adapter.parseJsonObject(missingEndJson, "test_source", 4);
+        assertNull("Malformed conversation missing im_end must be rejected", missingEndSample);
+
+        // Case 6: Malformed header -> MUST BE REJECTED (null)
+        JSONObject badHeaderJson = new JSONObject("{\"text\":\"<|im_start|>invalid_role_xyz\\nHello<|im_end|>\\n<|im_start|>assistant\\nReply<|im_end|>\\n\"}");
+        NormalizedSample badHeaderSample = adapter.parseJsonObject(badHeaderJson, "test_source", 5);
+        assertNull("Malformed conversation with unknown role must be rejected", badHeaderSample);
+
+        // Case 7: Plain text without conversation markers
+        JSONObject plainTextJson = new JSONObject("{\"text\":\"This is a plain text passage without markers.\"}");
+        NormalizedSample plainTextSample = adapter.parseJsonObject(plainTextJson, "test_source", 6);
+        assertNotNull(plainTextSample);
+        assertEquals(TrainingSampleType.TEXT, plainTextSample.getType());
+        assertEquals("This is a plain text passage without markers.", plainTextSample.getText());
+
+        // Case 8: Valid instruction-response schema
+        JSONObject instRespJson = new JSONObject("{\"instruction\":\"What is 2+2?\",\"response\":\"4\"}");
+        NormalizedSample instRespSample = adapter.parseJsonObject(instRespJson, "test_source", 7);
+        assertNotNull(instRespSample);
+        assertEquals(TrainingSampleType.INSTRUCTION, instRespSample.getType());
+        assertEquals("What is 2+2?", instRespSample.getInstruction());
+        assertEquals("4", instRespSample.getResponse());
+
+        // Case 9: CRLF header handling
+        JSONObject crlfJson = new JSONObject("{\"text\":\"<|im_start|>user\\r\\nCRLF prompt<|im_end|>\\r\\n<|im_start|>assistant\\r\\nCRLF reply<|im_end|>\\r\\n\"}");
+        NormalizedSample crlfSample = adapter.parseJsonObject(crlfJson, "test_source", 8);
+        assertNotNull(crlfSample);
+        assertEquals(TrainingSampleType.CONVERSATION, crlfSample.getType());
+        assertEquals("CRLF prompt", crlfSample.getConversationMessages().get(0).getText());
+
+        // Case 10: .evodata roundtrip equality test for CONVERSATION
+        File tempEvodata = File.createTempFile("jsonl_test_roundtrip", ".evodata");
+        tempEvodata.deleteOnExit();
+
+        List<NormalizedSample> roundtripList = new ArrayList<>();
+        roundtripList.add(multiTurnSample);
+
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(tempEvodata);
+        artifact.save(roundtripList, null, null, 0.0);
+
+        EvoDatasetArtifact loadedArtifact = EvoDatasetArtifact.load(tempEvodata);
+        assertEquals(1, loadedArtifact.getTrainSamples().size());
+
+        NormalizedSample reloadedSample = loadedArtifact.getTrainSamples().get(0);
+        assertEquals(TrainingSampleType.CONVERSATION, reloadedSample.getType());
+        assertEquals(4, reloadedSample.getConversationMessages().size());
+        assertEquals(multiTurnSample.getConversationMessages().get(0).getRole(), reloadedSample.getConversationMessages().get(0).getRole());
+        assertEquals(multiTurnSample.getConversationMessages().get(0).getText(), reloadedSample.getConversationMessages().get(0).getText());
+        assertEquals(multiTurnSample.getConversationMessages().get(1).getText(), reloadedSample.getConversationMessages().get(1).getText());
+    }
 }
