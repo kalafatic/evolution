@@ -1,15 +1,18 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevHttpUtils.HttpResponse;
 
 public class CreateEvoProjectTask extends AbstractSelfDevTask {
+
+    private static final String DEFAULT_PROJECT_NAME = "SelfDevProject";
+    private static final int CONNECT_TIMEOUT_MS = 5000;
+    private static final int READ_TIMEOUT_MS = 10000;
+    private static final int MAX_ATTEMPTS = 2;
 
     public CreateEvoProjectTask(String id) {
         super(id, "Create EVO Project (" + id + ")");
@@ -22,99 +25,156 @@ public class CreateEvoProjectTask extends AbstractSelfDevTask {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
 
+        long startTime = System.currentTimeMillis();
+        String projectName = DEFAULT_PROJECT_NAME;
+        String jsonPayload = "{\"name\":\"" + projectName + "\"}";
+
         int serverPort = context.getEffectiveServerPort();
         int supervisorPort = context.getEffectiveSupervisorPort();
-        int[] portsToTry = (serverPort != supervisorPort) ? new int[] { serverPort, supervisorPort } : new int[] { serverPort };
 
-        String projectName = "SelfDevProject";
-        String body = "{\"name\":\"" + projectName + "\"}";
-        byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+        // Build target ports list: primary server port first, supervisor port second if distinct
+        Set<Integer> portsToTry = new LinkedHashSet<>();
+        portsToTry.add(serverPort);
+        if (supervisorPort > 0) {
+            portsToTry.add(supervisorPort);
+        }
 
-        long startTime = System.currentTimeMillis();
-        Exception lastException = null;
+        // Canonical primary endpoint first, fallback endpoint second
+        String[] endpointPaths = new String[] { "/server/project/create", "/create-project" };
 
-        String[] endpointPaths = new String[] { "/server/project/create", "/create-project", "/project/create" };
+        HttpResponse lastResponse = null;
+        HttpResponse primaryErrorResponse = null;
+        String lastAttemptedEndpoint = "";
+        String primaryErrorEndpoint = "";
+        int totalAttempts = 0;
 
         for (int port : portsToTry) {
             for (String path : endpointPaths) {
                 String spec = "http://127.0.0.1:" + port + path;
-                logInfo("Creating EVO project via HTTP endpoint: " + spec);
+                lastAttemptedEndpoint = spec;
 
-                for (int attempt = 1; attempt <= 3; attempt++) {
-                    logInfo("Attempt " + attempt + "/3 on port " + port + path);
-                    try {
-                        URL url = new URL(spec);
-                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                        conn.setRequestMethod("POST");
-                        conn.setConnectTimeout(5000);
-                        conn.setReadTimeout(10000);
-                        conn.setRequestProperty("Content-Type", "application/json");
-                        conn.setRequestProperty("Content-Length", String.valueOf(bodyBytes.length));
-                        conn.setFixedLengthStreamingMode(bodyBytes.length);
-                        conn.setDoOutput(true);
-
-                        try (OutputStream os = conn.getOutputStream()) {
-                            os.write(bodyBytes);
-                            os.flush();
-                        }
-
-                        int code = conn.getResponseCode();
-                        StringBuilder responseBuffer = new StringBuilder();
-                        try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                                code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                            String line;
-                            while ((line = br.readLine()) != null) {
-                                responseBuffer.append(line).append("\n");
-                            }
-                        }
-
-                        String respText = responseBuffer.toString().trim();
-                        logInfo("HTTP Response Code: " + code + ", Body: " + respText);
+                for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        logInfo("Thread interrupted during project creation task. Stopping retries.");
                         long duration = System.currentTimeMillis() - startTime;
-
-                        if (code == 200 && (respText.contains("\"status\":\"OK\"") || respText.contains("\"status\": \"OK\"") || respText.contains(projectName))) {
-                            return new TaskResult.Builder(id)
-                                    .status(TaskStatus.SUCCESS)
-                                    .message("EVO Project '" + projectName + "' created successfully via HTTP endpoint on port " + port)
-                                    .duration(duration)
-                                    .diagnostic("port", String.valueOf(port))
-                                    .diagnostic("response", respText)
-                                    .build();
-                        } else {
-                            lastException = new RuntimeException("HTTP " + code + ": " + respText);
-                        }
-                    } catch (Exception e) {
-                        lastException = e;
-                        logError("Attempt " + attempt + " failed on port " + port + path + ": " + e.getMessage(), e);
+                        return new TaskResult.Builder(id)
+                                .status(TaskStatus.SKIPPED)
+                                .message("Project creation task interrupted")
+                                .duration(duration)
+                                .build();
                     }
 
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
+                    totalAttempts++;
+                    logInfo("Attempt " + attempt + "/" + MAX_ATTEMPTS + " creating project '" + projectName + "' on target endpoint: " + spec);
+
+                    HttpResponse response = SelfDevHttpUtils.executePost(spec, jsonPayload, CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
+                    lastResponse = response;
+
+                    if (response.isInterrupted()) {
                         Thread.currentThread().interrupt();
+                        long duration = System.currentTimeMillis() - startTime;
+                        return new TaskResult.Builder(id)
+                                .status(TaskStatus.SKIPPED)
+                                .message("Project creation task interrupted during HTTP execution")
+                                .duration(duration)
+                                .build();
+                    }
+
+                    logInfo("HTTP Response Code: " + response.getStatusCode() + ", Duration: " + response.getDurationMs() + "ms, Body: " + response.getBody());
+
+                    if (SelfDevHttpUtils.isProjectCreationSuccessful(response, projectName)) {
+                        long totalDuration = System.currentTimeMillis() - startTime;
+                        return new TaskResult.Builder(id)
+                                .status(TaskStatus.SUCCESS)
+                                .message("EVO Project '" + projectName + "' created successfully via HTTP endpoint on port " + port + path)
+                                .duration(totalDuration)
+                                .diagnostic("projectName", projectName)
+                                .diagnostic("port", String.valueOf(port))
+                                .diagnostic("endpoint", path)
+                                .diagnostic("totalAttempts", String.valueOf(totalAttempts))
+                                .diagnostic("responseCode", String.valueOf(response.getStatusCode()))
+                                .diagnostic("responseBody", response.getBody())
+                                .build();
+                    }
+
+                    if (primaryErrorResponse == null && response.getStatusCode() > 0 && response.getStatusCode() != 404) {
+                        primaryErrorResponse = response;
+                        primaryErrorEndpoint = spec;
+                    }
+
+                    // If HTTP 404 (wrong endpoint path on this port), do not retry same path; break to try next path
+                    if (response.getStatusCode() == 404) {
+                        logInfo("Endpoint " + spec + " returned HTTP 404. Trying alternative endpoint path.");
                         break;
                     }
+
+                    // Sleep before attempt retry
+                    if (attempt < MAX_ATTEMPTS) {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            long duration = System.currentTimeMillis() - startTime;
+                            return new TaskResult.Builder(id)
+                                    .status(TaskStatus.SKIPPED)
+                                    .message("Project creation task interrupted during retry delay")
+                                    .duration(duration)
+                                    .build();
+                        }
+                    }
                 }
+
+                // If primary endpoint responded with non-404 error (e.g. 500, 400), do not try fallback paths
+                if (primaryErrorResponse != null) {
+                    break;
+                }
+            }
+            if (primaryErrorResponse != null) {
+                break;
             }
         }
 
-        long duration = System.currentTimeMillis() - startTime;
-        String errMsg = "HTTP connection error during project creation on port " + serverPort + ": " +
-                (lastException != null ? lastException.getMessage() : "All attempts failed");
+        HttpResponse reportedResponse = primaryErrorResponse != null ? primaryErrorResponse : lastResponse;
+        String reportedEndpoint = primaryErrorResponse != null ? primaryErrorEndpoint : lastAttemptedEndpoint;
+
+        long totalDuration = System.currentTimeMillis() - startTime;
+        String failureReason;
+        Exception lastException = reportedResponse != null ? reportedResponse.getException() : null;
+
+        if (reportedResponse != null && reportedResponse.getStatusCode() > 0) {
+            failureReason = "Project creation rejected by server at " + reportedEndpoint +
+                    " (HTTP " + reportedResponse.getStatusCode() + "): " + reportedResponse.getBody();
+        } else if (lastException != null) {
+            failureReason = "Failed to connect to EVO project creation endpoint (" + reportedEndpoint + "): " + lastException.getMessage();
+        } else {
+            failureReason = "Failed to create EVO project '" + projectName + "' after " + totalAttempts + " attempts across endpoints";
+        }
 
         StringWriter sw = new StringWriter();
         if (lastException != null) {
             lastException.printStackTrace(new PrintWriter(sw));
         }
 
-        return new TaskResult.Builder(id)
+        TaskResult.Builder failBuilder = new TaskResult.Builder(id)
                 .status(TaskStatus.FAILED)
-                .message(errMsg)
-                .duration(duration)
+                .message(failureReason)
+                .duration(totalDuration)
                 .error(lastException)
+                .diagnostic("projectName", projectName)
                 .diagnostic("serverPort", String.valueOf(serverPort))
                 .diagnostic("supervisorPort", String.valueOf(supervisorPort))
-                .diagnostic("stackTrace", sw.toString())
-                .build();
+                .diagnostic("lastEndpoint", reportedEndpoint)
+                .diagnostic("totalAttempts", String.valueOf(totalAttempts));
+
+        if (reportedResponse != null) {
+            for (var entry : reportedResponse.toDiagnosticMap().entrySet()) {
+                failBuilder.diagnostic(entry.getKey(), entry.getValue());
+            }
+        }
+        if (sw.getBuffer().length() > 0) {
+            failBuilder.diagnostic("stackTrace", sw.toString());
+        }
+
+        return failBuilder.build();
     }
 }
