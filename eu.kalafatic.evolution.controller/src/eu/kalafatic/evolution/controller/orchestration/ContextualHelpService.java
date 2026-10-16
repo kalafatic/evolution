@@ -119,7 +119,6 @@ public class ContextualHelpService {
                 .build();
 
         long duration = System.currentTimeMillis() - startMs;
-        System.out.println("[CONTEXT_HELP] Snapshot captured in " + duration + "ms: " + snapshot);
         return snapshot;
     }
 
@@ -143,8 +142,6 @@ public class ContextualHelpService {
         String cognitiveAssistance = buildCognitiveAssistance(snapshot, actions);
 
         long duration = System.currentTimeMillis() - startMs;
-        System.out.println("[CONTEXT_HELP] Assistance generated in " + duration + "ms for snapshot " + snapshot.getSnapshotId());
-
         return new ContextualHelpResult(snapshot, selectionHelp, processAwareness, cognitiveAssistance, actions, duration);
     }
 
@@ -162,19 +159,16 @@ public class ContextualHelpService {
         synchronized (this) {
             if (pendingTask != null && !pendingTask.isDone()) {
                 pendingTask.cancel(true);
-                System.out.println("[CONTEXT_HELP] Cancelled stale request " + (requestId - 1));
             }
 
             pendingTask = debounceExecutor.schedule(() -> {
                 if (Thread.currentThread().isInterrupted() || requestId != requestCounter.get()) {
-                    System.out.println("[CONTEXT_HELP] Discarded outdated assistance computation for request " + requestId);
                     return;
                 }
 
                 ContextSnapshot snapshot = resolveSnapshot(activePartName, selectedObjectName, selectedObjectType, resourcePath, projectName, selectionText, sessionId);
 
                 if (Thread.currentThread().isInterrupted() || requestId != requestCounter.get()) {
-                    System.out.println("[CONTEXT_HELP] Discarded stale result after resolution for request " + requestId);
                     return;
                 }
 
