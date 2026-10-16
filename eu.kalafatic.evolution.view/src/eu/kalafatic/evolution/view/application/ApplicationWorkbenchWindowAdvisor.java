@@ -202,21 +202,64 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 //		createProject(Platform.getProduct().getName());
 //		openMultiPageEditor();
 
-		new ProjectManager().refreshAllProjects();
-
 		// Install Global EVO Context Menu Listener across all controls
 		eu.kalafatic.evolution.view.menu.EvoGlobalContextMenuManager.getInstance().install();
 
-		Job initJob = new Job("Evolution Repositories Initialization") {
-			@Override
-			protected IStatus run(IProgressMonitor monitor) {
-				EclipseGitEvoTool.initializeRepositories();
-				EclipseGitEvoTool.lockMasterBranchForPush();
-				return Status.OK_STATUS;
+		// Post-Startup Process & Memory Monitoring Report
+		logPostStartupReport();
+	}
+
+	private void logPostStartupReport() {
+		try {
+			Runtime rt = Runtime.getRuntime();
+			long maxMemMb = rt.maxMemory() / (1024 * 1024);
+			long totalMemMb = rt.totalMemory() / (1024 * 1024);
+			long freeMemMb = rt.freeMemory() / (1024 * 1024);
+			long usedMemMb = totalMemMb - freeMemMb;
+
+			StringBuilder sb = new StringBuilder();
+			sb.append("\n================================================================================\n");
+			sb.append("EVO POST-STARTUP PROCESS & MEMORY MONITORING REPORT\n");
+			sb.append("--------------------------------------------------------------------------------\n");
+			sb.append(String.format("JVM Memory       : Used=%d MB, Free=%d MB, Total=%d MB, Max=%d MB\n", usedMemMb, freeMemMb, totalMemMb, maxMemMb));
+
+			// List Active Eclipse Jobs
+			Job[] jobs = Job.getJobManager().find(null);
+			sb.append("Active Jobs      : ").append(jobs != null ? jobs.length : 0).append("\n");
+			if (jobs != null && jobs.length > 0) {
+				for (Job j : jobs) {
+					int state = j.getState();
+					String stateStr = switch (state) {
+						case Job.RUNNING -> "RUNNING";
+						case Job.WAITING -> "WAITING";
+						case Job.SLEEPING -> "SLEEPING";
+						default -> "IDLE";
+					};
+					sb.append("  - Job: ").append(j.getName()).append(" [State: ").append(stateStr).append(", Priority: ").append(j.getPriority()).append("]\n");
+				}
+			} else {
+				sb.append("  - No background jobs currently running or scheduled.\n");
 			}
-		};
-		initJob.setPriority(Job.LONG);
-		initJob.schedule();
+
+			// Active Services & Configured Ports
+			try {
+				List<eu.kalafatic.evolution.controller.resource.EvoService> services = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getServices();
+				sb.append("Configured Services:\n");
+				for (var s : services) {
+					sb.append(String.format("  - %-12s : %s:%d (Enabled: %s)\n", s.getId(), s.getHost(), s.getPort(), s.isEnabled()));
+				}
+			} catch (Throwable t) {
+				sb.append("  - Services info unavailable: ").append(t.getMessage()).append("\n");
+			}
+
+			sb.append("System Status    : Workbench initialization complete. Auto-scanning disabled.\n");
+			sb.append("================================================================================\n");
+
+			Log.log(sb.toString());
+			System.out.print(sb.toString());
+		} catch (Throwable t) {
+			Log.log("[STARTUP_MONITOR] Error generating post-startup report: " + t.getMessage());
+		}
 	}
 	
 	

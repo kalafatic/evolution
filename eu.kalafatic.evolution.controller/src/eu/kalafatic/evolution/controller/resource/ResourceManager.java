@@ -512,6 +512,26 @@ public class ResourceManager {
         return svc != null ? Optional.ofNullable(svc.getHost()) : Optional.empty();
     }
 
+    public synchronized void setServerPort(int port) {
+        Orchestrator orch = getOrchestrator();
+        if (orch != null) {
+            if (orch.getServerSettings() == null) {
+                orch.setServerSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createServerSettings());
+            }
+            orch.getServerSettings().setPort(port);
+        }
+    }
+
+    public synchronized void setSupervisorPort(int port) {
+        Orchestrator orch = getOrchestrator();
+        if (orch != null) {
+            if (orch.getSupervisorSettings() == null) {
+                orch.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSupervisorSettings());
+            }
+            orch.getSupervisorSettings().setSettings("port=" + port);
+        }
+    }
+
     public OptionalInt getPort(String serviceId) {
         EvoService svc = getService(serviceId);
         return svc != null && svc.getPort() > 0 ? OptionalInt.of(svc.getPort()) : OptionalInt.empty();

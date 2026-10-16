@@ -502,14 +502,7 @@ public class IntentReconstructionEngine extends ADarwinEngine {
             sb.append("Target Classifications: ").append(classifications).append("\n");
         }
 
-        if (rm != null && rm.getDomain() != null && !rm.getDomain().isEmpty()) {
-            sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
-        }
-
-        if (rm != null && rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
-            sb.append("Project Purpose: ").append(rm.getPurpose()).append("\n");
-        }
-
+        if (rm != null) {
             if (rm.getDomain() != null && !rm.getDomain().isEmpty()) {
                 sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
             }
