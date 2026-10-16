@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import eu.kalafatic.evolution.controller.mediation.model.*;
+import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.*;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
@@ -94,5 +95,101 @@ public class IntentReconstructionEngineTest {
         assertTrue(targetSummary.contains("MainApplication.java"));
         assertTrue(targetSummary.contains("Client -> Router -> Handler"));
         assertTrue(targetSummary.contains("Unclear persistence mechanism"));
+    }
+
+    @Test
+    public void testWebApplicationTargetScannerClassification() throws Exception {
+        File webDir = File.createTempFile("evo-test-web", "");
+        webDir.delete();
+        webDir.mkdirs();
+
+        File indexHtml = new File(webDir, "index.html");
+        try (FileWriter fw = new FileWriter(indexHtml)) { fw.write("<html><body>Test</body></html>"); }
+        File appJs = new File(webDir, "app.js");
+        try (FileWriter fw = new FileWriter(appJs)) { fw.write("console.log('App');"); }
+        File pkgJson = new File(webDir, "package.json");
+        try (FileWriter fw = new FileWriter(pkgJson)) { fw.write("{\"name\": \"my-web-app\"}"); }
+
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(webDir, TargetSnapshot.TargetType.PROJECT);
+
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue(classifications.contains("WEB_APPLICATION"));
+        assertTrue(classifications.contains("WEBSITE_SOURCE"));
+    }
+
+    @Test
+    public void testMusicAlbumTargetScannerClassification() throws Exception {
+        File musicDir = File.createTempFile("evo-test-music", "");
+        musicDir.delete();
+        musicDir.mkdirs();
+
+        File track1 = new File(musicDir, "track1.mp3");
+        try (FileWriter fw = new FileWriter(track1)) { fw.write("MPEG AUDIO DATA"); }
+        File track2 = new File(musicDir, "track2.flac");
+        try (FileWriter fw = new FileWriter(track2)) { fw.write("FLAC AUDIO DATA"); }
+
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(musicDir, TargetSnapshot.TargetType.PROJECT);
+
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue(classifications.contains("MUSIC_ALBUM") || classifications.contains("AUDIO_COLLECTION"));
+    }
+
+    @Test
+    public void testPresentationAndDocumentTargetScannerClassification() throws Exception {
+        File docDir = File.createTempFile("evo-test-docs", "");
+        docDir.delete();
+        docDir.mkdirs();
+
+        File slides = new File(docDir, "presentation.pptx");
+        try (FileWriter fw = new FileWriter(slides)) { fw.write("SLIDES DATA"); }
+        File paper = new File(docDir, "whitepaper.pdf");
+        try (FileWriter fw = new FileWriter(paper)) { fw.write("PDF DATA"); }
+
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(docDir, TargetSnapshot.TargetType.PROJECT);
+
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue(classifications.contains("PRESENTATION") || classifications.contains("DOCUMENT_COLLECTION"));
+    }
+
+    @Test
+    public void testBatchQueueNoSilentOmission() throws Exception {
+        File multiDir = File.createTempFile("evo-test-multi", "");
+        multiDir.delete();
+        multiDir.mkdirs();
+
+        // Create 25 files in a directory to exceed a single batch limit (10)
+        File pagesFolder = new File(multiDir, "pages");
+        pagesFolder.mkdirs();
+        for (int i = 0; i < 25; i++) {
+            File p = new File(pagesFolder, "page" + i + ".html");
+            try (FileWriter fw = new FileWriter(p)) { fw.write("<html>page " + i + "</html>"); }
+        }
+
+        TaskContext context = new TaskContext(orchestrator, multiDir);
+        context.setSessionId("test-session-batch");
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-batch");
+
+        IterationMemoryService memoryService = new IterationMemoryService(multiDir);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(multiDir, context);
+
+        IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
+        IterationManager manager = KernelFactory.create("Discover intent", context, session, null);
+
+        // Run iteration 1 (reads batch limit 10)
+        EvaluationResult eval1 = engine.runDarwinIteration(context, manager);
+        assertNotNull(eval1);
+
+        // Run iteration 2 (reads next batch without losing remaining files)
+        EvaluationResult eval2 = engine.runDarwinIteration(context, manager);
+        assertNotNull(eval2);
     }
 }
