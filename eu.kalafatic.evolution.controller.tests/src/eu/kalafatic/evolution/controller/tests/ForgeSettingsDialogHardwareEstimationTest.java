@@ -115,6 +115,49 @@ public class ForgeSettingsDialogHardwareEstimationTest {
     }
 
     @Test
+    public void testMultiModelCapacityAndBudgetFeasibility() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        long datasetBytes = 50 * 1024 * 1024L; // 50 MB
+        int epochs = 16;
+        double budgetHours = 2.0;
+
+        double nanoSec = agent.calculateEstimatedForgingSeconds("NANO", epochs, datasetBytes);
+        double smallSec = agent.calculateEstimatedForgingSeconds("SMALL", epochs, datasetBytes);
+        double xlargeSec = agent.calculateEstimatedForgingSeconds("XLARGE", epochs, datasetBytes);
+
+        assertTrue("Simpler models must finish faster", nanoSec < smallSec);
+        assertTrue("Larger models must take longer", smallSec < xlargeSec);
+
+        boolean nanoFits = (nanoSec / 3600.0) <= budgetHours;
+        boolean xlargeFits = (xlargeSec / 3600.0) <= budgetHours;
+
+        assertTrue("NANO model with 50MB should fit 2.0 hr budget", nanoFits);
+    }
+
+    @Test
+    public void testDialogUiStateJsonAndDatasetSizing() {
+        DatasetItem d1 = new DatasetItem(true, "/path/to/data1.jsonl", "FILE", 1000, 1.0, 524288000L, 1024);
+        DatasetItem d2 = new DatasetItem(false, "/path/to/data2.jsonl", "FILE", 500, 0.5, 262144000L, 512);
+
+        List<DatasetItem> list = new ArrayList<>();
+        list.add(d1);
+        list.add(d2);
+
+        ForgeSettingsDialog dialog = new ForgeSettingsDialog(null, "MEDIUM", 64, "Stage 3", 0.5, null, list);
+
+        assertEquals("MEDIUM", dialog.getSelectedModelSize());
+        assertEquals(64, dialog.getEpochs());
+        assertEquals(0.5, dialog.getDesiredLossThreshold(), 0.001);
+        assertEquals(2, dialog.getDatasets().size());
+
+        JSONObject uiJson = dialog.getUiStateJson();
+        assertNotNull(uiJson);
+        assertEquals("MEDIUM", uiJson.optString("modelSize"));
+        assertEquals(64, uiJson.optInt("epochs"));
+        assertEquals(0.5, uiJson.optDouble("desiredLossThreshold"), 0.001);
+    }
+
+    @Test
     public void testEstimatedForgingSecondsAndFormatDuration() {
         long datasetBytes = 10 * 1024 * 1024L; // 10 MB
         int epochs = 16;
