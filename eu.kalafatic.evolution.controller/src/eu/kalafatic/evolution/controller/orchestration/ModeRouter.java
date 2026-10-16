@@ -74,25 +74,7 @@ public class ModeRouter {
 			prompt = "";
 		String lower = prompt.toLowerCase().trim();
 
-		// 1. Try explicit overrides (Manual Routing)
-		if (lower.contains("mode: dream") || lower.equals("dream"))
-			return createDreamMode();
-		if (lower.contains("mode: chat"))
-			return createSimpleChatMode();
-		if (lower.contains("mode: assisted"))
-			return createAssistedCodingMode();
-		if (lower.contains("mode: darwin"))
-			return createDarwinMode();
-		if (lower.contains("mode: self-dev"))
-			return createSelfDevMode();
-		if (lower.contains("mode: intent-reconstruction") || lower.contains("reconstruct intent") || lower.contains("intent discovery"))
-			return createIntentReconstructionMode();
-		if (lower.contains("mode: intent") || lower.contains("reconstruct intent"))
-			return createIntentReconstructionMode();
-		if (lower.contains("mode: mediated") || lower.contains("analyze target"))
-			return createHybridManualExportMode();
-
-		// 2. Check explicit Orchestrator model overrides (User UI selection)
+		// 1. Check explicit Orchestrator model overrides FIRST (User UI selection - NON-NEGOTIABLE)
 		if (orchestrator != null) {
 			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.DREAM) {
 				return createDreamMode();
@@ -115,6 +97,15 @@ public class ModeRouter {
 				}
 				return createIntentReconstructionMode();
 			}
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.FORGE);
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createForgeMode();
+			}
 			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
 					&& orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
 				return createSelfDevMode();
@@ -123,6 +114,26 @@ public class ModeRouter {
 				return createDarwinMode();
 			}
 		}
+
+		// 2. Try explicit prompt overrides (Manual Routing)
+		if (lower.contains("mode: dream") || lower.equals("dream"))
+			return createDreamMode();
+		if (lower.contains("mode: chat"))
+			return createSimpleChatMode();
+		if (lower.contains("mode: assisted"))
+			return createAssistedCodingMode();
+		if (lower.contains("mode: darwin"))
+			return createDarwinMode();
+		if (lower.contains("mode: self-dev"))
+			return createSelfDevMode();
+		if (lower.contains("mode: intent-reconstruction") || lower.contains("mode: intent"))
+			return createIntentReconstructionMode();
+		if (lower.contains("mode: mediated"))
+			return createHybridManualExportMode();
+		if (lower.contains("reconstruct intent") || lower.contains("intent discovery"))
+			return createIntentReconstructionMode();
+		if (lower.contains("analyze target"))
+			return createHybridManualExportMode();
 
 		// 3. Use the cognitive pipeline for evidence-based detection
 		CognitiveAnalysisPipeline pipeline = new CognitiveAnalysisPipeline();
@@ -146,21 +157,7 @@ public class ModeRouter {
 			prompt = "";
 		String lower = prompt.toLowerCase().trim();
 
-		// 1. Check explicit prompt overrides first (e.g. "mode: chat")
-		if (lower.contains("mode: dream") || lower.equals("dream"))
-			return createDreamMode();
-		if (lower.contains("mode: chat"))
-			return createSimpleChatMode();
-		if (lower.contains("mode: assisted"))
-			return createAssistedCodingMode();
-		if (lower.contains("mode: darwin"))
-			return createDarwinMode();
-		if (lower.contains("mode: self-dev"))
-			return createSelfDevMode();
-		if (lower.contains("mode: mediated") || lower.contains("analyze target"))
-			return createHybridManualExportMode();
-
-		// 2. Check explicit Orchestrator model overrides (User UI selection)
+		// 1. Check explicit Orchestrator model overrides FIRST (User UI selection - NON-NEGOTIABLE)
 		if (orchestrator != null) {
 			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.DREAM) {
 				return createDreamMode();
@@ -201,6 +198,22 @@ public class ModeRouter {
 				return createDarwinMode();
 			}
 		}
+
+		// 2. Check explicit prompt overrides next (e.g. "mode: chat")
+		if (lower.contains("mode: dream") || lower.equals("dream"))
+			return createDreamMode();
+		if (lower.contains("mode: chat"))
+			return createSimpleChatMode();
+		if (lower.contains("mode: assisted"))
+			return createAssistedCodingMode();
+		if (lower.contains("mode: darwin"))
+			return createDarwinMode();
+		if (lower.contains("mode: self-dev"))
+			return createSelfDevMode();
+		if (lower.contains("mode: intent-reconstruction") || lower.contains("mode: intent"))
+			return createIntentReconstructionMode();
+		if (lower.contains("mode: mediated"))
+			return createHybridManualExportMode();
 
 		// 3. Process through Cognitive State Engine if session exists (Conversation
 		// Trajectory)

@@ -102,6 +102,7 @@ public class OllamaSettingsPage extends AWizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
+				eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, pathText.getText());
 				String path = dialog.open();
 				if (path != null) {
 					pathText.setText(path);
@@ -312,6 +313,7 @@ public class OllamaSettingsPage extends AWizardPage {
 	private void loadInstallPackageFromDisk() {
 		FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
 		dialog.setText("Select Ollama Install Package");
+		eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
 		String sourcePath = dialog.open();
 		if (sourcePath != null) {
 			File sourceFile = new File(sourcePath);

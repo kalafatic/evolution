@@ -1548,15 +1548,71 @@ public class IterationManager {
 			}
 
 			StringBuilder summaryBuilder = new StringBuilder();
-			summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
+			summaryBuilder.append("### Mediated Darwin Evolution Analysis & Export\n\n");
 
 			String packageUri = exportPackage.toURI().toString();
-			summaryBuilder.append("**Unified Export Package (ZIP):** [").append(exportPackage.getName()).append("](")
-					.append(packageUri).append(")\n");
-			summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Limit: 16)\n\n");
+			summaryBuilder.append("📦 **Unified Export Package (ZIP):** [").append(exportPackage.getName()).append("](")
+					.append(packageUri).append(")\n\n");
+
+			summaryBuilder.append("#### 🏛️ Target & Architectural Analysis\n\n");
 			summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
-			summaryBuilder.append("**Inferred Architecture:** ")
-					.append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
+			if (model.getDomain() != null && !model.getDomain().isEmpty()) {
+				summaryBuilder.append("**Domain:** ").append(model.getDomain()).append("\n");
+			}
+			if (model.getPurpose() != null && !model.getPurpose().isEmpty()) {
+				summaryBuilder.append("**Purpose:** ").append(model.getPurpose()).append("\n");
+			}
+
+			String archSummary = (architectureSummary != null && !architectureSummary.isEmpty()) ? architectureSummary : model.getArchitectureSummary();
+			if (archSummary != null && !archSummary.isEmpty()) {
+				summaryBuilder.append("\n**Architecture Summary:**\n").append(archSummary).append("\n\n");
+			} else {
+				Object inf = snapshot.getMetadata().get("architectureInference");
+				if (inf != null && !inf.toString().equals("null")) {
+					summaryBuilder.append("\n**Inferred Architecture:** ").append(inf).append("\n\n");
+				}
+			}
+
+			if (!model.getSubsystems().isEmpty()) {
+				summaryBuilder.append("**Discovered Subsystems:**\n");
+				for (Subsystem s : model.getSubsystems()) {
+					String purpose = s.getPurpose() != null && !s.getPurpose().isEmpty() ? s.getPurpose() : s.getDescription();
+					summaryBuilder.append("- **").append(s.getName()).append("**: ").append(purpose != null ? purpose : "Discovered subsystem").append("\n");
+				}
+				summaryBuilder.append("\n");
+			}
+
+			if (!model.getHotspots().isEmpty()) {
+				summaryBuilder.append("**Identified Hotspots:**\n");
+				for (eu.kalafatic.evolution.controller.mediation.model.Hotspot h : model.getHotspots()) {
+					summaryBuilder.append("- **").append(h.getName()).append("** [").append(h.getType() != null ? h.getType() : "GENERAL").append("]: ").append(h.getDescription() != null ? h.getDescription() : "High-signal evolution hotspot").append(" (Significance: ").append(String.format("%.2f", h.getSignificance())).append(")\n");
+				}
+				summaryBuilder.append("\n");
+			}
+
+			if (!model.getArchitecturalFacts().isEmpty()) {
+				summaryBuilder.append("**Architectural Facts:**\n");
+				for (ArchitecturalFact f : model.getArchitecturalFacts()) {
+					summaryBuilder.append("- ").append(f.toString()).append("\n");
+				}
+				summaryBuilder.append("\n");
+			}
+
+			if (!model.getKnowledgeGaps().isEmpty()) {
+				summaryBuilder.append("**Knowledge Gaps:**\n");
+				for (var gap : model.getKnowledgeGaps()) {
+					summaryBuilder.append("- ").append(gap.getDescription()).append("\n");
+				}
+				summaryBuilder.append("\n");
+			}
+
+			summaryBuilder.append("**Selected Context Files:** ").append(selectedPaths.size()).append(" (Limit: 16)\n");
+			if (!selectedPaths.isEmpty()) {
+				for (String file : selectedPaths) {
+					summaryBuilder.append("- `").append(file).append("`\n");
+				}
+				summaryBuilder.append("\n");
+			}
 
 			summaryBuilder.append("#### Evolutionary Lineage Analysis\n");
 			summaryBuilder.append(memoryService.getHistoryAnalysis()).append("\n\n");

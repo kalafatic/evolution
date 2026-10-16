@@ -69,6 +69,7 @@ public class ArchitecturePage extends AEvoPage {
     private List<String> targetHistory = new ArrayList<>();
     private MilestoneGenerator milestoneGenerator = new MilestoneGenerator();
 	private Composite content;
+    private boolean bridgesInstalled = false;
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -111,10 +112,7 @@ public class ArchitecturePage extends AEvoPage {
 
 	private void initTargetPath() {
         // First check if Evolution repository path can be resolved dynamically
-        String evoRepoPath = ProjectModelManager.getCodebasePath();
-        if (evoRepoPath == null || evoRepoPath.isEmpty()) {
-            evoRepoPath = findEvoRepository();
-        }
+        String evoRepoPath = findEvoRepository();
 
         if (evoRepoPath != null && !evoRepoPath.isEmpty() && new java.io.File(evoRepoPath).exists()) {
             defaultTargetPath = evoRepoPath;
@@ -127,22 +125,6 @@ public class ArchitecturePage extends AEvoPage {
             defaultTargetPath = orchestrator.getDefaultTarget();
             currentTargetPath = defaultTargetPath;
             eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Default target from model: " + currentTargetPath);
-        }
-
-        // Use discovery to populate target history and fallback paths
-        SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
-        if (discovery.getPrimaryRepository() != null) {
-            String primary = discovery.getPrimaryRepository().getAbsolutePath();
-            if (currentTargetPath == null) {
-                currentTargetPath = primary;
-                defaultTargetPath = primary;
-            }
-            if (!targetHistory.contains(primary)) targetHistory.add(primary);
-        }
-
-        for (java.io.File repo : discovery.getGitRepositories()) {
-            String path = repo.getAbsolutePath();
-            if (!targetHistory.contains(path)) targetHistory.add(path);
         }
 
         if (currentTargetPath == null && editor != null) {
@@ -168,6 +150,33 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         synchronizeSnapshotsWithDisk();
+
+        // Offload background workspace repository discovery so UI thread doesn't block on startup
+        Job discoveryJob = new Job("Discovering Workspace Repositories") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
+                    if (discovery != null) {
+                        Display.getDefault().asyncExec(() -> {
+                            if (discovery.getPrimaryRepository() != null) {
+                                String primary = discovery.getPrimaryRepository().getAbsolutePath();
+                                if (!targetHistory.contains(primary)) targetHistory.add(primary);
+                            }
+                            for (java.io.File repo : discovery.getGitRepositories()) {
+                                String path = repo.getAbsolutePath();
+                                if (!targetHistory.contains(path)) targetHistory.add(path);
+                            }
+                        });
+                    }
+                } catch (Throwable t) {
+                    // Ignore background discovery errors
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        discoveryJob.setPriority(Job.DECORATE);
+        discoveryJob.schedule();
     }
 
     private String findEvoRepository() {
@@ -200,35 +209,40 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void setupJavaScriptBridges() {
-        if (browser.isDisposed()) return;
+        if (browser == null || browser.isDisposed() || bridgesInstalled) return;
 
-        new BrowserFunction(browser, "navigatorFunction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 2) {
-                    String id = (String) arguments[0];
-                    String action = (String) arguments[1];
-                    handleNavigatorAction(id, action);
-                }
-                return null;
-            }
-        };
-
-        new BrowserFunction(browser, "logFunction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 1) {
-                    String msg = (String) arguments[0];
-                    if ("ready".equals(msg)) {
-                        isJsReady = true;
-                        refreshBrowser();
-                    } else {
-                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + msg);
+        try {
+            new BrowserFunction(browser, "navigatorFunction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments != null && arguments.length >= 2) {
+                        String id = (String) arguments[0];
+                        String action = (String) arguments[1];
+                        handleNavigatorAction(id, action);
                     }
+                    return null;
                 }
-                return null;
-            }
-        };
+            };
+
+            new BrowserFunction(browser, "logFunction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments != null && arguments.length >= 1) {
+                        String msg = (String) arguments[0];
+                        if ("ready".equals(msg)) {
+                            isJsReady = true;
+                            refreshBrowser();
+                        } else {
+                            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + msg);
+                        }
+                    }
+                    return null;
+                }
+            };
+            bridgesInstalled = true;
+        } catch (Throwable t) {
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Error setting up JavaScript bridges: " + t.getMessage());
+        }
     }
 
     private void handleNavigatorAction(String id, String action) {
@@ -242,6 +256,13 @@ public class ArchitecturePage extends AEvoPage {
                 case "DISCOVER":
                     invalidateInMemoryCache();
                     handleDiscover();
+                    break;
+                case "DISCOVER_FULL":
+                    invalidateInMemoryCache();
+                    handleDiscoverFull();
+                    break;
+                case "SCAN_NEXT_LEVEL":
+                    handleScanNextLevel(id);
                     break;
                 case "DISCOVER_INTENT":
                     invalidateInMemoryCache();
@@ -435,8 +456,9 @@ public class ArchitecturePage extends AEvoPage {
             if (snapshot != null) {
                 showingSnapshot = true;
                 currentSnapshotTimestamp = timestamp;
-                loadMilestoneDashboard(snapshot);
-                return;
+            } else {
+                showingSnapshot = false;
+                currentSnapshotTimestamp = null;
             }
         }
         scheduleRefresh();
@@ -446,7 +468,7 @@ public class ArchitecturePage extends AEvoPage {
         org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getShell());
         dialog.setText("Select Architecture Target");
         dialog.setMessage("Choose a folder to analyze repository architecture.");
-        if (currentTargetPath != null) dialog.setFilterPath(currentTargetPath);
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, currentTargetPath);
         String selected = dialog.open();
         if (selected != null) {
             setTargetPath(selected);
@@ -870,7 +892,7 @@ public class ArchitecturePage extends AEvoPage {
 
                         currentSnapshotTimestamp = timestamp;
                         showingSnapshot = true;
-                        loadMilestoneDashboard(snapshot);
+                        scheduleRefresh();
                     });
 
                     return org.eclipse.core.runtime.Status.OK_STATUS;
@@ -883,23 +905,7 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void loadMilestoneDashboard(GenomeSnapshot snapshot) {
-        if (currentTargetPath == null || browser == null || browser.isDisposed()) return;
-
-        java.io.File dashboardFile = resolveDashboardFile(snapshot);
-        if (dashboardFile != null && dashboardFile.exists()) {
-            try {
-                String html = java.nio.file.Files.readString(dashboardFile.toPath());
-                browser.setText(html);
-                lastJson = ""; // Invalidate lastJson to force reload when switching back to Current
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            MessageBox box = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-            box.setText("Dashboard Missing");
-            box.setMessage("Milestone dashboard HTML not found: " + (snapshot != null ? snapshot.getDashboardArtifact() : "null"));
-            box.open();
-        }
+        scheduleRefresh();
     }
 
     private void hookContextMenu() {
@@ -1001,88 +1007,165 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         java.io.File root = new java.io.File(currentTargetPath);
-        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Target path: " + currentTargetPath);
-        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Mode: " + currentMode.name());
-        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Starting async background scan...");
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] High-level structured scan for: " + currentTargetPath);
 
         if (browser != null && !browser.isDisposed()) {
-            browser.execute("if(window.showPopup) { window.showPopup('Discovering Architecture', ['Scanning repository structure in background...', 'Progress will update dynamically.']); }");
+            browser.execute("if(window.showPopup) { window.showPopup('Discovering High Levels', ['Scanning top-level folders and module boundaries...', 'Select nodes to continue scanning next levels.']); }");
         }
 
-        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture: " + root.getName()) {
+        Job job = new Job("Discovering High-Level Architecture: " + root.getName()) {
             @Override
-            protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+            protected IStatus run(IProgressMonitor monitor) {
                 try {
-                    monitor.beginTask("Discovering Architecture in " + root.getName(), 100);
+                    monitor.beginTask("Scanning High Levels in " + root.getName(), 100);
 
-                    // 1. Physical Node Scan in Background Thread
-                    monitor.subTask("Scanning repository architecture nodes & modules...");
-                    DesignModel scannedModel = discoverArchitectureNodes(root);
+                    eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner scanner = new eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner();
+                    DesignModel scannedModel = scanner.scanRepository(root, 2); // Structured high-level scan (depth 2)
                     scannedModel.setName(root.getName() + " Architecture");
-                    monitor.worked(40);
-
-                    // 2. Physical Target Scan
-                    monitor.subTask("Scanning filesystem structure & metadata...");
-                    eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
-                    eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
-                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Physical Scan complete. Found " + snapshot.getNodes().size() + " nodes.");
-                    monitor.worked(20);
-
-                    // 3. AI Understanding (Mediated Mode Style)
-                    if (orchestrator != null) {
-                        String sid = (orchestrator.getSelfDevSession() != null && orchestrator.getSelfDevSession().getId() != null) ?
-                                     orchestrator.getSelfDevSession().getId() : "discovery-session";
-
-                        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
-                        eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) ?
-                                ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext() : null;
-
-                        if (ctx == null) {
-                            ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
-                            ctx.setSessionId(sid);
-                            if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-                                ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).setTaskContext(ctx);
-                            }
-                        }
-
-                        monitor.subTask("Mediating High-Signal Context");
-                        eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
-                        java.util.List<String> candidates = curator.selectContext(snapshot, "architectural overview and key entry points", 32);
-
-                        eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor extractor = new eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor();
-                        extractor.extractToSnapshot(snapshot, candidates);
-                        monitor.worked(15);
-
-                        monitor.subTask("Synthesizing Reality Model");
-                        eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
-                        agent.setAiService(ctx.getAiService());
-
-                        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, currentTargetPath);
-                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: " + reality.getDomain());
-
-                        ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
-                        convertRealityToModel(reality, scannedModel);
-                        monitor.worked(15);
-
-                        // Save to cache
-                        saveModelToCache(ctx, scannedModel);
-                    }
+                    monitor.worked(80);
 
                     cachedFullModel = scannedModel;
                     cachedFullModelPath = currentTargetPath;
 
+                    if (orchestrator != null) {
+                        String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
+                        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                        eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                        ctx.setSessionId(sid);
+                        saveModelToCache(ctx, scannedModel);
+                    }
+
                     Display.getDefault().asyncExec(() -> {
                         scheduleRefresh();
                         if (browser != null && !browser.isDisposed()) {
-                            String msg = "Discovered architecture for repository: " + root.getName() + " (" + scannedModel.getComponents().size() + " components)";
-                            browser.execute("if(window.showPopup) { window.showPopup('Discovery Complete', ['" + msg.replace("'", "\\'") + "']); }");
+                            String msg = "Discovered high-level architecture for repository: " + root.getName() + " (" + scannedModel.getComponents().size() + " top modules/folders). Select a node to scan next levels!";
+                            browser.execute("if(window.showPopup) { window.showPopup('High-Level Scan Complete', ['" + msg.replace("'", "\\'") + "']); }");
                         }
                     });
 
-                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                    return Status.OK_STATUS;
                 } catch (Exception e) {
-                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Discovery failed: " + e.getMessage());
-                    return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Discovery failed", e);
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] High-level scan failed: " + e.getMessage());
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "High-level scan failed", e);
+                } finally {
+                    monitor.done();
+                }
+            }
+        };
+        job.schedule();
+    }
+
+    private void handleDiscoverFull() {
+        if (currentTargetPath == null) {
+            handleBrowseTarget();
+            if (currentTargetPath == null) return;
+        }
+
+        java.io.File root = new java.io.File(currentTargetPath);
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Full deep discovery for target: " + currentTargetPath);
+
+        if (browser != null && !browser.isDisposed()) {
+            browser.execute("if(window.showPopup) { window.showPopup('Deep Discovering Architecture', ['Scanning full repository hierarchy across packages, classes, and methods...', 'Progress will update dynamically.']); }");
+        }
+
+        Job job = new Job("Deep Discovering Architecture: " + root.getName()) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    monitor.beginTask("Deep Discovering Architecture in " + root.getName(), 100);
+
+                    eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner scanner = new eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner();
+                    DesignModel scannedModel = scanner.scanRepository(root, 5); // Full deep scan
+                    scannedModel.setName(root.getName() + " Architecture");
+                    monitor.worked(80);
+
+                    cachedFullModel = scannedModel;
+                    cachedFullModelPath = currentTargetPath;
+
+                    if (orchestrator != null) {
+                        String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
+                        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                        eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                        ctx.setSessionId(sid);
+                        saveModelToCache(ctx, scannedModel);
+                    }
+
+                    Display.getDefault().asyncExec(() -> {
+                        scheduleRefresh();
+                        if (browser != null && !browser.isDisposed()) {
+                            String msg = "Full deep discovery complete for: " + root.getName() + " (" + scannedModel.getComponents().size() + " components)";
+                            browser.execute("if(window.showPopup) { window.showPopup('Full Discovery Complete', ['" + msg.replace("'", "\\'") + "']); }");
+                        }
+                    });
+
+                    return Status.OK_STATUS;
+                } catch (Exception e) {
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Full discovery failed: " + e.getMessage());
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Full discovery failed", e);
+                } finally {
+                    monitor.done();
+                }
+            }
+        };
+        job.schedule();
+    }
+
+    private void handleScanNextLevel(String id) {
+        if (currentTargetPath == null || id == null || id.isEmpty()) return;
+        java.io.File root = new java.io.File(currentTargetPath);
+
+        DesignModel activeModel = extractModel();
+        if (activeModel == null) return;
+
+        ComponentRecord targetNode = activeModel.getComponents().stream()
+                .filter(c -> id.equals(c.getId()))
+                .findFirst().orElse(null);
+
+        if (targetNode == null) return;
+
+        int currentLvl = targetNode.getScannedLevel() > 0 ? targetNode.getScannedLevel() : targetNode.getLevel();
+        int nextLvl = Math.min(currentLvl + 1, 5);
+        String nodeName = targetNode.getName() != null ? targetNode.getName() : id;
+
+        if (browser != null && !browser.isDisposed()) {
+            browser.execute("if(window.showPopup) { window.showPopup('Scanning Next Level', ['Scanning Level " + nextLvl + " for: " + nodeName.replace("'", "\\'") + "...']); }");
+        }
+
+        Job job = new Job("Scanning Level " + nextLvl + " for: " + nodeName) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    monitor.beginTask("Scanning Level " + nextLvl + " for " + nodeName, 100);
+
+                    eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner scanner = new eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner();
+                    boolean updated = scanner.scanNextLevel(root, activeModel, id);
+                    monitor.worked(80);
+
+                    if (updated) {
+                        cachedFullModel = activeModel;
+                        cachedFullModelPath = currentTargetPath;
+
+                        if (orchestrator != null) {
+                            String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
+                            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                            eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                            ctx.setSessionId(sid);
+                            saveModelToCache(ctx, activeModel);
+                        }
+                    }
+
+                    Display.getDefault().asyncExec(() -> {
+                        scheduleRefresh();
+                        if (browser != null && !browser.isDisposed()) {
+                            String msg = "Level " + nextLvl + " scanned successfully for: " + nodeName;
+                            browser.execute("if(window.showPopup) { window.showPopup('Scan Complete', ['" + msg.replace("'", "\\'") + "']); }");
+                        }
+                    });
+
+                    return Status.OK_STATUS;
+                } catch (Exception e) {
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Scan next level failed: " + e.getMessage());
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Scan next level failed", e);
                 } finally {
                     monitor.done();
                 }
@@ -1123,6 +1206,7 @@ public class ArchitecturePage extends AEvoPage {
         FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
         dialog.setFilterExtensions(new String[] { "*.html" });
         dialog.setFileName("architecture.html");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, currentTargetPath);
         String path = dialog.open();
         if (path != null) {
             try {
@@ -1139,6 +1223,7 @@ public class ArchitecturePage extends AEvoPage {
         FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
         dialog.setFilterExtensions(new String[] { "*.json" });
         dialog.setFileName("design_model.json");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, currentTargetPath);
         String path = dialog.open();
         if (path != null) {
             try {
@@ -1151,28 +1236,20 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void refreshBrowser() {
-        if (browser == null || browser.isDisposed() || !isLoaded || showingSnapshot) return;
+        if (browser == null || browser.isDisposed() || !isLoaded) return;
 
         Display.getDefault().asyncExec(() -> {
-            if (browser == null || browser.isDisposed() || showingSnapshot) return;
+            if (browser == null || browser.isDisposed()) return;
+
+            String genomeJson = loadGenomeJson();
 
             if (currentMode == ViewMode.GENOME) {
-                String genomeJson = loadGenomeJson();
                 if (!isJsReady) return;
-                if (genomeJson.equals(lastJson) && currentTargetPath.equals(lastTargetPath)) {
-                    return;
-                }
                 lastJson = genomeJson;
                 lastTargetPath = currentTargetPath;
 
                 browser.execute("if(window.updateGenome) { window.updateGenome(" + genomeJson + "); }");
-
-                // Update sidebar state
-                JSONObject sidebarData = new JSONObject();
-                sidebarData.put("mode", currentMode.name());
-                sidebarData.put("target", currentTargetPath);
-                sidebarData.put("defaultTarget", defaultTargetPath);
-                sidebarData.put("history", new JSONArray(targetHistory));
+                JSONObject sidebarData = createSidebarData();
                 browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
                 return;
             }
@@ -1181,13 +1258,9 @@ public class ArchitecturePage extends AEvoPage {
             String json = renderer.serializeModel(model);
 
             if (!isJsReady) {
-                 // Initial values are already in INITIAL_MODEL via initBrowser's renderer.render()
                  return;
             }
 
-            if (json.equals(lastJson) && currentTargetPath.equals(lastTargetPath)) {
-                return;
-            }
             lastJson = json;
             lastTargetPath = currentTargetPath;
 
@@ -1198,23 +1271,29 @@ public class ArchitecturePage extends AEvoPage {
             }
 
             browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
+            browser.execute("if(window.updateGenome) { window.updateGenome(" + genomeJson + "); }");
 
-            // Also update sidebar state
-            JSONObject sidebarData = new JSONObject();
-            sidebarData.put("mode", currentMode.name());
-            sidebarData.put("target", currentTargetPath);
-            sidebarData.put("defaultTarget", defaultTargetPath);
-            sidebarData.put("history", new JSONArray(targetHistory));
+            JSONObject sidebarData = createSidebarData();
+            browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
+        });
+    }
 
-            JSONArray snapArray = new JSONArray();
+    private JSONObject createSidebarData() {
+        JSONObject sidebarData = new JSONObject();
+        sidebarData.put("mode", currentMode.name());
+        sidebarData.put("target", currentTargetPath != null ? currentTargetPath : "");
+        sidebarData.put("defaultTarget", defaultTargetPath != null ? defaultTargetPath : "");
+        sidebarData.put("history", new JSONArray(targetHistory));
+
+        JSONArray snapArray = new JSONArray();
+        if (orchestrator != null) {
             for (GenomeSnapshot s : orchestrator.getGenomeSnapshots()) {
                 snapArray.put(new JSONObject().put("timestamp", s.getTimestamp()).put("dashboard", s.getDashboardArtifact()));
             }
-            sidebarData.put("snapshots", snapArray);
-            sidebarData.put("currentSnapshot", currentSnapshotTimestamp != null ? currentSnapshotTimestamp : "");
-
-            browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
-        });
+        }
+        sidebarData.put("snapshots", snapArray);
+        sidebarData.put("currentSnapshot", currentSnapshotTimestamp != null ? currentSnapshotTimestamp : "");
+        return sidebarData;
     }
 
     private void initBrowser() {
@@ -1222,26 +1301,9 @@ public class ArchitecturePage extends AEvoPage {
         try {
             lastJson = "";
             lastTargetPath = "";
-            if (currentMode == ViewMode.GENOME) {
-                String genomeJson = loadGenomeJson();
-
-                String baseUrl = "";
-                org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
-                if (bundle != null) {
-                    URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
-                    baseUrl = bundleRoot.toString();
-                }
-
-                String html = eu.kalafatic.evolution.selfdev.genome.util.DashboardTemplate.getHtml(
-                    orchestrator != null && orchestrator.getName() != null ? orchestrator.getName() : "Evolution",
-                    "live",
-                    "", "", "", genomeJson, baseUrl
-                );
-                browser.setText(html);
-                return;
-            }
 
             DesignModel model = extractModel();
+            String genomeJson = loadGenomeJson();
 
             String baseUrl = "";
             org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
@@ -1250,7 +1312,7 @@ public class ArchitecturePage extends AEvoPage {
                 baseUrl = bundleRoot.toString();
             }
 
-            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, "{}");
+            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, genomeJson);
             browser.setText(html);
         } catch (Exception e) {
             e.printStackTrace();
@@ -1275,7 +1337,18 @@ public class ArchitecturePage extends AEvoPage {
 
     private String loadGenomeJson() {
         if (currentTargetPath == null) return "{}";
-        java.io.File genomeFile = new java.io.File(currentTargetPath, "genome/current/genome.json");
+        java.io.File genomeFile = null;
+        if (currentSnapshotTimestamp != null && !currentSnapshotTimestamp.isEmpty()) {
+            GenomeSnapshot snapshot = orchestrator.getGenomeSnapshots().stream()
+                    .filter(s -> currentSnapshotTimestamp.equals(s.getTimestamp()))
+                    .findFirst().orElse(null);
+            if (snapshot != null && snapshot.getGenomeArtifact() != null && !snapshot.getGenomeArtifact().isEmpty()) {
+                genomeFile = new java.io.File(currentTargetPath, snapshot.getGenomeArtifact());
+            }
+        }
+        if (genomeFile == null || !genomeFile.exists()) {
+            genomeFile = new java.io.File(currentTargetPath, "genome/current/genome.json");
+        }
         if (!genomeFile.exists()) {
             return "{}";
         }
@@ -1591,6 +1664,7 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private DesignModel filterModel(DesignModel model, ViewMode mode) {
+        if (model == null) return new DesignModel();
         DesignModel filtered = new DesignModel();
         filtered.setName(model.getName() + " - " + mode.name());
 
@@ -1630,17 +1704,38 @@ public class ArchitecturePage extends AEvoPage {
                 break;
 
             case COMPONENTS:
-                filtered.setComponents(model.getComponents().stream()
-                    .filter(c -> !"USE_CASE".equals(c.getType()) && !"SUBSYSTEM".equals(c.getType()) && !"DOMAIN".equals(c.getType()))
-                    .collect(Collectors.toList()));
+            case KNOWLEDGE_GRAPH:
+            default:
+                List<ComponentRecord> candidates = model.getComponents().stream()
+                    .filter(c -> mode != ViewMode.COMPONENTS || (!"USE_CASE".equals(c.getType()) && !"SUBSYSTEM".equals(c.getType()) && !"DOMAIN".equals(c.getType())))
+                    .collect(Collectors.toList());
+
+                if (candidates.size() <= 500) {
+                    filtered.setComponents(candidates);
+                } else {
+                    java.util.Set<String> expandedParentIds = new java.util.HashSet<>();
+                    expandedParentIds.add("repo");
+                    for (ComponentRecord c : candidates) {
+                        if (c.isExpanded()) {
+                            expandedParentIds.add(c.getId());
+                        }
+                    }
+
+                    List<ComponentRecord> levelBounded = new ArrayList<>();
+                    for (ComponentRecord c : candidates) {
+                        if (c.getLevel() <= 2 || c.getParentId() == null || c.getParentId().isEmpty() || c.getParentId().equals("repo") || expandedParentIds.contains(c.getParentId())) {
+                            levelBounded.add(c);
+                            if (levelBounded.size() >= 1000) break;
+                        }
+                    }
+                    filtered.setComponents(levelBounded);
+                }
+
                 List<String> compIds = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
                 filtered.setRelationships(model.getRelationships().stream()
                     .filter(r -> compIds.contains(r.getFrom()) && compIds.contains(r.getTo()))
                     .collect(Collectors.toList()));
                 break;
-
-            case KNOWLEDGE_GRAPH:
-                return model;
         }
 
         return filtered;

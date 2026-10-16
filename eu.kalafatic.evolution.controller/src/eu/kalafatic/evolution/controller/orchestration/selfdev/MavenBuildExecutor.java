@@ -363,7 +363,6 @@ public class MavenBuildExecutor {
     }
 
     private void log(String message) {
-        Log.log(message);
-        System.out.println(message);
+        Log.log(taskId, message);
     }
 }

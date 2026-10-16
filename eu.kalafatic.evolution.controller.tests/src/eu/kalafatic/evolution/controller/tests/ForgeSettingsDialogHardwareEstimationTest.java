@@ -82,6 +82,39 @@ public class ForgeSettingsDialogHardwareEstimationTest {
     }
 
     @Test
+    public void testZeroAndNegativeInputs() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        assertEquals(0.0, agent.calculateEstimatedForgingSeconds("SMALL", 0, 1000L), 0.001);
+        assertEquals(0.0, agent.calculateEstimatedForgingSeconds("SMALL", 16, 0L), 0.001);
+        assertEquals(0.0, agent.calculateEstimatedForgingSeconds("SMALL", -5, 1000L), 0.001);
+        assertEquals(0L, agent.estimateTotalTrainingTokens(null, 16));
+        assertEquals("0 seconds", agent.formatDuration(-10.0));
+        assertEquals("0 seconds", agent.formatDuration(Double.NaN));
+    }
+
+    @Test
+    public void testLargeDatasetOverflowProtection() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        DatasetItem item = new DatasetItem(true, "/simulated/huge/data.txt", "FILE") {
+            @Override
+            public double getScaleRatio() { return 1.0; }
+        };
+        // Verify format duration handles days and large durations without overflow
+        assertEquals("2 days 2 hr 0 min", agent.formatDuration(180000.0));
+    }
+
+    @Test
+    public void testPreliminaryVersusMeasuredThroughput() {
+        ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
+        assertEquals(ForgeTrainingEstimationAgent.BackendType.JVM_JAVA_CPU, agent.getActiveBackendType());
+        double prelim = agent.getBaselineTokensPerSecond("SMALL");
+        assertTrue("Preliminary throughput estimate must be positive", prelim > 0.0);
+        double measured = agent.getMeasuredBaselineTokensPerSecond(1500.0);
+        assertEquals(1500.0, measured, 0.001);
+        assertEquals(0.0, agent.getMeasuredBaselineTokensPerSecond(-1.0), 0.001);
+    }
+
+    @Test
     public void testEstimatedForgingSecondsAndFormatDuration() {
         long datasetBytes = 10 * 1024 * 1024L; // 10 MB
         int epochs = 16;
@@ -96,13 +129,17 @@ public class ForgeSettingsDialogHardwareEstimationTest {
 
     @Test
     public void testDatasetItemRecordLimitAndScaleRatioSerialization() {
-        DatasetItem item = new DatasetItem(true, "/path/to/dataset.jsonl", "FILE", 500, 0.5);
+        DatasetItem item = new DatasetItem(true, "/path/to/dataset.jsonl", "FILE", 500, 0.5, 1048576L, 2048);
         assertEquals(500, item.getRecordLimit());
         assertEquals(0.5, item.getScaleRatio(), 0.001);
+        assertEquals(1048576L, item.getMaxSizeBytes());
+        assertEquals(2048, item.getMaxSeqLen());
 
         JSONObject json = item.toJsonObject();
         assertEquals(500, json.optLong("recordLimit"));
         assertEquals(0.5, json.optDouble("scaleRatio"), 0.001);
+        assertEquals(1048576L, json.optLong("maxSizeBytes"));
+        assertEquals(2048, json.optInt("maxSeqLen"));
 
         DatasetItem restored = DatasetItem.fromJsonObject(json);
         assertTrue(restored.isChecked());
@@ -110,6 +147,28 @@ public class ForgeSettingsDialogHardwareEstimationTest {
         assertEquals("FILE", restored.getType());
         assertEquals(500, restored.getRecordLimit());
         assertEquals(0.5, restored.getScaleRatio(), 0.001);
+        assertEquals(1048576L, restored.getMaxSizeBytes());
+        assertEquals(2048, restored.getMaxSeqLen());
+    }
+
+    @Test
+    public void testForgeJobConfigMappingAndDefaults() {
+        eu.kalafatic.evolution.forge.controller.api.ForgeJob job = new eu.kalafatic.evolution.forge.controller.api.ForgeJob("test-job-1");
+        assertNotNull(job.getTrainingConfig());
+        assertEquals(0.01, job.getTrainingConfig().getLearningRate(), 0.001);
+        assertEquals(32, job.getTrainingConfig().getEpochs());
+        assertEquals(16, job.getTrainingConfig().getBatchSize());
+        assertEquals(12.0, job.getTrainingConfig().getTimeBudgetHours(), 0.001);
+        assertEquals(0.15, job.getTrainingConfig().getValidationRatio(), 0.001);
+
+        assertNotNull(job.getEvolutionConfig());
+        assertEquals(1, job.getEvolutionConfig().getGenerations());
+        assertEquals(1, job.getEvolutionConfig().getCandidatesPerGeneration());
+
+        assertNotNull(job.getModelConfig());
+        assertEquals("SMALL", job.getModelConfig().getModelSize());
+        assertEquals(512, job.getModelConfig().getHiddenSize());
+        assertEquals(8, job.getModelConfig().getHeads());
     }
 
     @Test

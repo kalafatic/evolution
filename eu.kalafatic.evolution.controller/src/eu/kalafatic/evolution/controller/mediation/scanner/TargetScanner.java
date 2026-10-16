@@ -97,10 +97,23 @@ public class TargetScanner {
 
     private String getExtension(String fileName) {
         int lastDot = fileName.lastIndexOf('.');
-        if (lastDot <= 0) return "unknown";
+        if (lastDot <= 0) return "carrier";
         String ext = fileName.substring(lastDot + 1).toLowerCase();
 
-        // Categorize file types into carrier classes
+        // 1. Dynamic dataset adapter check via SourceAdapterRegistry
+        try {
+            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
+                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, fileName, "FILE");
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = registry.findAdapter(item);
+            if (adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.TextAdapter)
+                    && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter)) {
+                return "data";
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Categorize common carrier types
         return switch (ext) {
             case "java", "c", "cpp", "py", "js", "ts", "jsx", "tsx", "html", "css", "scss", "sql", "sh", "bat" -> "source_code";
             case "md", "txt", "pdf", "docx", "doc", "odt" -> "document";

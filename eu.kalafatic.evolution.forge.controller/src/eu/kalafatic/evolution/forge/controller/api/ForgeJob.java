@@ -149,10 +149,16 @@ public class ForgeJob {
 
     public static class TrainingConfig {
         private double learningRate = 0.01;
-        private int epochs = 1;
+        private int epochs = 32;
         private int batchSize = 16;
         private int warmupSteps = 10;
         private String forgeMode = "NEW_MODEL";
+        private double timeBudgetHours = 12.0;
+        private int checkpointFrequencyEpochs = 5;
+        private double validationRatio = 0.15;
+        private boolean earlyStoppingEnabled = true;
+        private double targetLossThreshold = 1.0;
+        private boolean filterQuality = true;
 
         public double getLearningRate() { return learningRate; }
         public void setLearningRate(double learningRate) { this.learningRate = learningRate; }
@@ -168,6 +174,35 @@ public class ForgeJob {
 
         public String getForgeMode() { return forgeMode; }
         public void setForgeMode(String forgeMode) { this.forgeMode = forgeMode; }
+
+        public double getTimeBudgetHours() { return timeBudgetHours; }
+        public void setTimeBudgetHours(double timeBudgetHours) { this.timeBudgetHours = timeBudgetHours; }
+
+        public int getCheckpointFrequencyEpochs() { return checkpointFrequencyEpochs; }
+        public void setCheckpointFrequencyEpochs(int checkpointFrequencyEpochs) { this.checkpointFrequencyEpochs = checkpointFrequencyEpochs; }
+
+        public double getValidationRatio() { return validationRatio; }
+        public void setValidationRatio(double validationRatio) { this.validationRatio = validationRatio; }
+
+        public boolean isEarlyStoppingEnabled() { return earlyStoppingEnabled; }
+        public void setEarlyStoppingEnabled(boolean earlyStoppingEnabled) { this.earlyStoppingEnabled = earlyStoppingEnabled; }
+
+        public double getTargetLossThreshold() { return targetLossThreshold; }
+        public void setTargetLossThreshold(double targetLossThreshold) { this.targetLossThreshold = targetLossThreshold; }
+
+        public boolean isFilterQuality() { return filterQuality; }
+        public void setFilterQuality(boolean filterQuality) { this.filterQuality = filterQuality; }
+    }
+
+    public static class EvolutionConfig {
+        private int generations = 1;
+        private int candidatesPerGeneration = 1;
+
+        public int getGenerations() { return generations; }
+        public void setGenerations(int generations) { this.generations = generations; }
+
+        public int getCandidatesPerGeneration() { return candidatesPerGeneration; }
+        public void setCandidatesPerGeneration(int candidatesPerGeneration) { this.candidatesPerGeneration = candidatesPerGeneration; }
     }
 
     public static class PreflightResult {
@@ -240,6 +275,7 @@ public class ForgeJob {
     private CompositionStrategy compositionStrategy = new CompositionStrategy();
     private ModelConfig modelConfig = new ModelConfig();
     private TrainingConfig trainingConfig = new TrainingConfig();
+    private EvolutionConfig evolutionConfig = new EvolutionConfig();
     private PreflightResult preflightResult = new PreflightResult();
     private EvaluationResult evaluationResult = new EvaluationResult();
     private SmokeTestResult smokeTestResult = new SmokeTestResult();
@@ -318,6 +354,9 @@ public class ForgeJob {
 
     public TrainingConfig getTrainingConfig() { return trainingConfig; }
     public void setTrainingConfig(TrainingConfig trainingConfig) { this.trainingConfig = trainingConfig; }
+
+    public EvolutionConfig getEvolutionConfig() { return evolutionConfig; }
+    public void setEvolutionConfig(EvolutionConfig evolutionConfig) { this.evolutionConfig = evolutionConfig; }
 
     public PreflightResult getPreflightResult() { return preflightResult; }
     public void setPreflightResult(PreflightResult preflightResult) { this.preflightResult = preflightResult; }

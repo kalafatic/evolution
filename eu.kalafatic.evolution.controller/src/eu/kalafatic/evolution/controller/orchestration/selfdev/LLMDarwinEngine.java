@@ -86,9 +86,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 	}
 
 	// Configurable bounds on corpus files and sizes to prevent OutOfMemory
-	private static final int MAX_CORPUS_CHARS = 100_000;
+	private static final int MAX_CORPUS_CHARS = 10_000_000;
 	private static final int MAX_CORPUS_FILES = 100;
-	private static final int MAX_TOKENS_LIMIT = 20_000;
+	private static final int MAX_TOKENS_LIMIT = 100_000;
 	private static final int MAX_TRAINING_SAMPLES = 5_000;
 
 	// Supported head counts divisor checking
@@ -568,6 +568,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			candidates.set(i, normalizeCandidateConfig(candidates.get(i)));
 		}
 
+		int estCandidateRuns = generations * candidates.size();
+		int estWinnerRuns = 1;
+		context.log(String.format("[FORGE-PIPELINE] Starting Evolution Search. Generations: %d | Candidates/Gen: %d | Total Candidate Evaluation Runs: %d | Winner Refinement Runs: %d",
+				generations, candidates.size(), estCandidateRuns, estWinnerRuns));
+
 		CandidateResult overallWinner = null;
 		List<String> logs = new ArrayList<>();
 		List<JSONObject> genReports = new ArrayList<>();
@@ -971,6 +976,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		String dynamicModelName = generateDynamicModelName(context, overallWinner.config, targetPath);
 		context.log("[FORGE] Dynamically generated winning model ID: " + dynamicModelName);
 
+		// Pipeline timing summary metrics
+		long pipelineEndTime = System.currentTimeMillis();
+		long totalPipelineDurationMs = context.getStartTime() != null ?
+				java.time.Duration.between(context.getStartTime(), java.time.Instant.now()).toMillis() : 0;
+		context.log(String.format("[FORGE-METRICS] Complete Evolutionary Pipeline Search Executed in %d ms (%.2f s). Clean Corpus Chars: %d",
+				totalPipelineDurationMs, totalPipelineDurationMs / 1000.0, cleanCorpus.length()));
+
 		// Create new workspace output folder for the winning model
 		File workspaceDir;
 		String workspacePathStr = ProjectModelManager.getWorkspacePath();
@@ -1231,6 +1243,21 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		return response;
 	}
 
+	private SimpleBPETokenizer cachedTokenizer = null;
+	private String cachedTokenizerCorpus = null;
+	private int cachedTokenizerVocabSize = -1;
+
+	private synchronized SimpleBPETokenizer getOrCreateCachedTokenizer(String corpus, int targetVocabSize, ForgeModelSource modelSource) {
+		if (cachedTokenizer != null && cachedTokenizerVocabSize == targetVocabSize && java.util.Objects.equals(cachedTokenizerCorpus, corpus)) {
+			return cachedTokenizer;
+		}
+		SimpleBPETokenizer tok = modelSource != null ? modelSource.getTokenizer(corpus, targetVocabSize) : trainTokenizerWithFullVocab(corpus, targetVocabSize);
+		this.cachedTokenizer = tok;
+		this.cachedTokenizerCorpus = corpus;
+		this.cachedTokenizerVocabSize = targetVocabSize;
+		return tok;
+	}
+
 	private void recordCreatedFile(File file) {
 		if (file == null || !file.exists())
 			return;
@@ -1289,13 +1316,18 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> valSamples = null;
 		EvoLlmModel model = null;
 		EvoLlmTrainer trainer = null;
+		long tStart = System.currentTimeMillis();
 		try {
-			tokenizer = modelSource != null ? modelSource.getTokenizer(cleanCorpus, config.vocabSize) : trainTokenizerWithFullVocab(cleanCorpus, config.vocabSize);
+			long tTokStart = System.currentTimeMillis();
+			tokenizer = getOrCreateCachedTokenizer(cleanCorpus, config.vocabSize, modelSource);
+			long tTokDuration = System.currentTimeMillis() - tTokStart;
+
 			DatasetBuilder datasetBuilder = new DatasetBuilder();
 			int seqLen = config.maxSeqLen;
 
+			long tDataStart = System.currentTimeMillis();
 			if (normSamples != null && !normSamples.isEmpty()) {
-				samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen);
+				samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen, MAX_TRAINING_SAMPLES);
 			} else {
 				List<Integer> allTokens = tokenizer.encode(cleanCorpus);
 				if (allTokens.size() > MAX_TOKENS_LIMIT) {
@@ -1320,9 +1352,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				}
 			}
 
-			if (samples.size() > MAX_TRAINING_SAMPLES) {
-				samples = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
-			}
+			long tDataDuration = System.currentTimeMillis() - tDataStart;
 
 			// Bounded, deterministic 80/20 train/validation split
 			int totalCount = samples.size();
@@ -1334,6 +1364,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			trainSamples = new ArrayList<>(samples.subList(0, trainCount));
 			valSamples = new ArrayList<>(samples.subList(trainCount, totalCount));
 
+			long totalTrainTokens = trainSamples.stream().mapToLong(s -> s.inputIds.length).sum();
+			long totalValTokens = valSamples.stream().mapToLong(s -> s.inputIds.length).sum();
+
 			int dff = config.dff;
 			int actualVocabSize = tokenizer.getVocabSize();
 			config.vocabSize = actualVocabSize;
@@ -1344,6 +1377,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			for (Tensor p : model.parameters()) {
 				paramCount += p.getData().length;
 			}
+
+			context.log(String.format("[FORGE-CANDIDATE-METRICS] VocabSize: %d | Params: %d | Samples (Train/Val/Total): %d/%d/%d | Tokens (Train/Val): %d/%d | TokPrep: %d ms | DataPrep: %d ms",
+					actualVocabSize, paramCount, trainSamples.size(), valSamples.size(), totalCount, totalTrainTokens, totalValTokens, tTokDuration, tDataDuration));
 
 			trainer = new EvoLlmTrainer(model);
 			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
@@ -1359,7 +1395,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					}
 				});
 				if (!trainSamples.isEmpty()) {
-					trainer.train(trainSamples, config.epochs);
+					// Cap candidate architecture screening evaluation to 2 fast epochs
+					int screeningEpochs = Math.min(2, Math.max(1, config.epochs));
+					trainer.train(trainSamples, screeningEpochs);
 				}
 			} finally {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
@@ -1376,37 +1414,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
 			}
 
-			// Compute Validation Loss (forward pass only, no gradient backpropagation)
-			double valLossSum = 0;
-			int valCount = 0;
-			if (!valSamples.isEmpty()) {
-				for (eu.kalafatic.evolution.forge.data.api.TrainingSample valSample : valSamples) {
-					Tensor logits = model.forward(valSample.inputIds, valSample.getAttentionMaskAsFloat());
-					float[] logitsData = logits.getData();
-					int sLen = valSample.inputIds.length;
-					int vSize = (int) logits.getShape()[1];
-
-					for (int t = 0; t < sLen; t++) {
-						if (!valSample.lossMask[t]) continue;
-						int offset = t * vSize;
-						int target = valSample.labels[t];
-
-						float max = Float.NEGATIVE_INFINITY;
-						for (int i = 0; i < vSize; i++) {
-							if (logitsData[offset + i] > max) max = logitsData[offset + i];
-						}
-						float sum = 0;
-						for (int i = 0; i < vSize; i++) sum += (float) Math.exp(logitsData[offset + i] - max);
-						float logSumExp = max + (float) Math.log(sum);
-
-						double sampleLoss = (logSumExp - logitsData[offset + target]);
-						valLossSum += sampleLoss;
-						valCount++;
-					}
-				}
-			}
-
-			double valLoss = valCount > 0 ? (valLossSum / valCount) : trainLoss;
+			// Reuse EvoLlmTrainer's optimized validation evaluation
+			double valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : trainLoss;
 
 			if (Double.isNaN(trainLoss) || Double.isInfinite(trainLoss)) {
 				trainLoss = 10.0;
@@ -1417,7 +1426,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			// Combine validation loss (75%) and training loss (25%) with size penalty to
 			// prevent overfitting and encourage generalizability
-			double sizePenalty = paramCount * 0.000001;
+			double sizePenalty = paramCount * 0.00000001;
 			double fitness = (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty;
 
 			return new CandidateTrainingResult(valLoss, paramCount, fitness);

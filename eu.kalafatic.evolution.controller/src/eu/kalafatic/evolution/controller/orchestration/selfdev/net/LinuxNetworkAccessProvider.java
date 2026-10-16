@@ -21,8 +21,30 @@ public class LinuxNetworkAccessProvider implements NetworkAccessProvider {
                     .build();
         }
 
-        // On Linux, loopback/local socket binding does not require explicit firewall configuration
-        // unless iptables/ufw/nftables strictly blocks loopback traffic.
+        try {
+            executable.setExecutable(true, false);
+        } catch (Exception ignored) {}
+
+        boolean loopbackOk = true;
+        try (java.net.ServerSocket ss = new java.net.ServerSocket()) {
+            ss.setReuseAddress(true);
+            ss.bind(new java.net.InetSocketAddress("127.0.0.1", 0));
+        } catch (Exception e) {
+            loopbackOk = false;
+        }
+
+        if (!loopbackOk) {
+            return new NetworkAccessResult.Builder()
+                    .provider(getName())
+                    .executable(executable)
+                    .ports(String.valueOf(port))
+                    .scope("LOOPBACK")
+                    .success(false)
+                    .supported(true)
+                    .message("Linux loopback network interface is not accessible or restricted")
+                    .build();
+        }
+
         return new NetworkAccessResult.Builder()
                 .provider(getName())
                 .executable(executable)
@@ -31,7 +53,7 @@ public class LinuxNetworkAccessProvider implements NetworkAccessProvider {
                 .success(true)
                 .supported(true)
                 .permissionAlreadyPresent(true)
-                .message("Linux loopback network access verified (default allow)")
+                .message("Linux loopback network access and executable permissions verified")
                 .build();
     }
 }

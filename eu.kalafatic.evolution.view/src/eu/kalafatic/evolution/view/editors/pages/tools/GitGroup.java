@@ -106,6 +106,7 @@ public class GitGroup extends AToolGroup {
             public void widgetSelected(SelectionEvent e) {
                 DirectoryDialog dialog = new DirectoryDialog(group.getShell());
                 dialog.setText("Select Git Repository Folder");
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, gitLocalPathText.getText());
                 String path = dialog.open();
                 if (path != null) {
                     gitLocalPathText.setText(path);

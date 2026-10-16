@@ -38,14 +38,31 @@ public class DatasetBuilder {
     }
 
     public List<eu.kalafatic.evolution.forge.data.api.TrainingSample> buildTrainingSamples(List<NormalizedSample> normSamples, SimpleBPETokenizer tokenizer, int maxSeqLen) {
+        return buildTrainingSamples(normSamples, tokenizer, maxSeqLen, Integer.MAX_VALUE);
+    }
+
+    public List<eu.kalafatic.evolution.forge.data.api.TrainingSample> buildTrainingSamples(List<NormalizedSample> normSamples, SimpleBPETokenizer tokenizer, int maxSeqLen, int maxSamples) {
         List<eu.kalafatic.evolution.forge.data.api.TrainingSample> trainingSamples = new ArrayList<>();
-        if (normSamples == null || normSamples.isEmpty() || tokenizer == null) {
+        if (normSamples == null || normSamples.isEmpty() || tokenizer == null || maxSamples <= 0) {
             return trainingSamples;
+        }
+
+        // If normSamples exceeds maxSamples, sample with uniform striding to ensure deterministic and representative coverage
+        List<NormalizedSample> targetNormSamples = normSamples;
+        if (normSamples.size() > maxSamples && maxSamples > 0) {
+            targetNormSamples = new ArrayList<>(maxSamples);
+            double stride = (double) normSamples.size() / maxSamples;
+            for (int i = 0; i < maxSamples; i++) {
+                int idx = (int) (i * stride);
+                if (idx < normSamples.size()) {
+                    targetNormSamples.add(normSamples.get(idx));
+                }
+            }
         }
 
         int eosTokenId = tokenizer.getEosTokenId();
 
-        for (NormalizedSample norm : normSamples) {
+        for (NormalizedSample norm : targetNormSamples) {
             if (norm == null) continue;
 
             if (norm.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.INSTRUCTION && norm.getInstruction() != null) {

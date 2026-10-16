@@ -11,6 +11,7 @@
 
     let allNodes = [];
     let allLinks = [];
+    let globalNodeMap = new Map();
     let visibleGraph = { nodes: [], links: [] };
 
     let currentLayout = 'GRID';
@@ -149,6 +150,8 @@
             path: c.path || '',
             parentId: c.parentId || '',
             level: c.level || 2,
+            scannedLevel: c.scannedLevel || c.level || 2,
+            hasUnscannedChildren: c.hasUnscannedChildren || false,
             qualifiedName: c.qualifiedName || c.name || c.id,
             superClass: c.superClass || '',
             interfaces: c.interfaces || [],
@@ -162,7 +165,7 @@
             y: 0
         }));
 
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+        globalNodeMap = new Map(allNodes.map(n => [n.id, n]));
 
         allLinks = (data.relationships || []).map(r => ({
             sourceId: r.from,
@@ -233,13 +236,12 @@
         if (!node.parentId || node.parentId === 'repo' || node.id === 'repo') return true;
 
         let current = node;
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]));
 
         while (current && current.parentId) {
             if (!expandedNodeIds.has(current.parentId)) {
                 return false;
             }
-            current = nodeMap.get(current.parentId);
+            current = globalNodeMap.get(current.parentId);
         }
         return true;
     }
@@ -247,14 +249,13 @@
     function findVisibleAncestor(nodeId, visibleNodesMap) {
         if (visibleNodesMap.has(nodeId)) return visibleNodesMap.get(nodeId);
 
-        const nodeMap = new Map(allNodes.map(n => [n.id, n]));
-        let current = nodeMap.get(nodeId);
+        let current = globalNodeMap.get(nodeId);
 
         while (current) {
             if (visibleNodesMap.has(current.id)) {
                 return visibleNodesMap.get(current.id);
             }
-            current = nodeMap.get(current.parentId);
+            current = globalNodeMap.get(current.parentId);
         }
         return null;
     }
@@ -468,6 +469,36 @@
             badgeText.setAttribute("style", `font-weight: 700; font-size: 10px; fill: ${roleColor}; letter-spacing: 0.5px;`);
             badgeText.textContent = getRoleIcon(n.type) + " " + (n.type || 'COMPONENT') + " [L" + (n.level || 2) + "]";
             nodeG.appendChild(badgeText);
+
+            // Scan Badge for Unscanned Level Children
+            if (n.hasUnscannedChildren || (n.scannedLevel && n.scannedLevel < 5 && getChildrenCount(n.id) === 0 && n.type !== 'METHOD' && n.type !== 'FIELD')) {
+                const scanGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                scanGroup.setAttribute("class", "scan-badge");
+                scanGroup.setAttribute("transform", `translate(${w/2 - 84}, ${-h/2 + 14})`);
+                scanGroup.setAttribute("style", "cursor:pointer;");
+                scanGroup.onclick = (e) => {
+                    e.stopPropagation();
+                    javaAction(n.id, 'SCAN_NEXT_LEVEL');
+                };
+
+                const scanRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                scanRect.setAttribute("width", "56");
+                scanRect.setAttribute("height", "16");
+                scanRect.setAttribute("rx", "4");
+                scanRect.setAttribute("fill", "#0284c7");
+                scanRect.setAttribute("stroke", roleColor);
+                scanGroup.appendChild(scanRect);
+
+                const scanText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                scanText.setAttribute("x", "28");
+                scanText.setAttribute("y", "12");
+                scanText.setAttribute("text-anchor", "middle");
+                scanText.setAttribute("style", "font-size:9px; font-weight:bold; fill:#ffffff;");
+                scanText.textContent = `🔍 +L${(n.scannedLevel || n.level || 2) + 1}`;
+                scanGroup.appendChild(scanText);
+
+                nodeG.appendChild(scanGroup);
+            }
 
             // Expand / Collapse Badge
             const childrenCount = getChildrenCount(n.id);
@@ -711,6 +742,11 @@
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px;">
+                    ${node.hasUnscannedChildren || (node.scannedLevel && node.scannedLevel < 5 && node.type !== 'METHOD' && node.type !== 'FIELD') ? `
+                        <button onclick="javaAction('${node.id}', 'SCAN_NEXT_LEVEL')" class="btn btn-primary" style="width:100%; background: #0284c7; border-color: #0369a1;">
+                            🔍 Scan Next Level (Level ${(node.scannedLevel || node.level || 2) + 1})
+                        </button>
+                    ` : ''}
                     <div style="display:flex; gap:8px;">
                         <button onclick="javaAction('${node.path}', 'OPEN')" class="btn btn-primary" style="flex:1;">📂 Open Source File</button>
                         <button onclick="focusNode('${node.id}')" class="btn" style="flex:1;">🎯 Show References</button>
@@ -751,6 +787,9 @@
 
         menu.innerHTML = `
             <div class="menu-item" onclick="focusNode('${node.id}')">🎯 <b>Focus Node & References</b></div>
+            ${node.hasUnscannedChildren || (node.scannedLevel && node.scannedLevel < 5 && node.type !== 'METHOD' && node.type !== 'FIELD') ? `
+                <div class="menu-item" onclick="javaAction('${node.id}', 'SCAN_NEXT_LEVEL')">🔍 <b>Scan Next Level (Level ${(node.scannedLevel || node.level || 2) + 1})</b></div>
+            ` : ''}
             <div class="menu-item" onclick="toggleNodeExpand('${node.id}')">${expandedNodeIds.has(node.id) ? '➖ Collapse Children' : '➕ Expand Children'}</div>
             <hr>
             <div class="menu-item" onclick="javaAction('${node.path}', 'OPEN')">📂 Open Source File</div>
@@ -766,14 +805,14 @@
 
     window.focusNode = function(id) {
         focusedNodeId = id;
-        const node = allNodes.find(n => n.id === id);
+        window.focusedNodeId = id;
+        const node = globalNodeMap.get(id) || allNodes.find(n => n.id === id);
         if (node) {
             // Auto expand parents so the focused node is visible
             let curr = node;
-            const nodeMap = new Map(allNodes.map(n => [n.id, n]));
             while (curr && curr.parentId) {
                 expandedNodeIds.add(curr.parentId);
-                curr = nodeMap.get(curr.parentId);
+                curr = globalNodeMap.get(curr.parentId);
             }
 
             recomputeGraphAndRender();
@@ -790,14 +829,159 @@
 
             const clearBtn = document.getElementById("clear-focus-btn");
             if (clearBtn) clearBtn.style.display = "inline-flex";
+
+            if (window.updateBreadcrumbs) window.updateBreadcrumbs();
+            if (window.pushNavState) {
+                window.pushNavState({
+                    targetPath: window.TARGET_PATH,
+                    viewMode: window.CURRENT_VIEW_MODE,
+                    snapshot: window.CURRENT_SNAPSHOT || "",
+                    focusedNodeId: focusedNodeId
+                });
+            }
         }
     };
 
     window.clearFocus = function() {
         focusedNodeId = null;
+        window.focusedNodeId = null;
         const clearBtn = document.getElementById("clear-focus-btn");
         if (clearBtn) clearBtn.style.display = "none";
         recomputeGraphAndRender();
+        if (window.updateBreadcrumbs) window.updateBreadcrumbs();
+        if (window.pushNavState) {
+            window.pushNavState({
+                targetPath: window.TARGET_PATH,
+                viewMode: window.CURRENT_VIEW_MODE,
+                snapshot: window.CURRENT_SNAPSHOT || "",
+                focusedNodeId: null
+            });
+        }
+    };
+
+    // Navigation History Stack & Breadcrumbs UI
+    window.navHistory = [];
+    window.navHistoryIndex = -1;
+    let isNavigatingHistory = false;
+
+    window.pushNavState = function(state) {
+        if (isNavigatingHistory) return;
+
+        if (window.navHistoryIndex >= 0 && window.navHistoryIndex < window.navHistory.length) {
+            const cur = window.navHistory[window.navHistoryIndex];
+            if (cur.targetPath === state.targetPath &&
+                cur.viewMode === state.viewMode &&
+                cur.snapshot === state.snapshot &&
+                cur.focusedNodeId === state.focusedNodeId) {
+                return;
+            }
+        }
+
+        if (window.navHistoryIndex < window.navHistory.length - 1) {
+            window.navHistory = window.navHistory.slice(0, window.navHistoryIndex + 1);
+        }
+
+        window.navHistory.push(state);
+        window.navHistoryIndex = window.navHistory.length - 1;
+        window.updateNavButtons();
+    };
+
+    window.updateNavButtons = function() {
+        const backBtn = document.getElementById("nav-back-btn");
+        const fwdBtn = document.getElementById("nav-forward-btn");
+
+        if (backBtn) backBtn.disabled = (window.navHistoryIndex <= 0);
+        if (fwdBtn) fwdBtn.disabled = (window.navHistoryIndex >= window.navHistory.length - 1);
+    };
+
+    window.navigateHistory = function(delta) {
+        const newIndex = window.navHistoryIndex + delta;
+        if (newIndex < 0 || newIndex >= window.navHistory.length) return;
+
+        isNavigatingHistory = true;
+        window.navHistoryIndex = newIndex;
+        const state = window.navHistory[newIndex];
+
+        if (state.targetPath && state.targetPath !== window.TARGET_PATH) {
+            window.javaAction(state.targetPath, 'SET_TARGET');
+        }
+        if (state.viewMode && state.viewMode !== window.CURRENT_VIEW_MODE) {
+            window.javaAction(state.viewMode, 'SET_VIEW_MODE');
+        }
+        if (state.snapshot !== undefined && state.snapshot !== window.CURRENT_SNAPSHOT) {
+            window.javaAction(state.snapshot, 'SELECT_SNAPSHOT');
+        }
+        if (state.focusedNodeId !== undefined) {
+            if (state.focusedNodeId) {
+                window.focusNode(state.focusedNodeId);
+            } else {
+                window.clearFocus();
+            }
+        }
+
+        window.updateNavButtons();
+        window.updateBreadcrumbs();
+        isNavigatingHistory = false;
+    };
+
+    window.updateBreadcrumbs = function() {
+        const container = document.getElementById("breadcrumbs");
+        if (!container) return;
+
+        const items = [];
+
+        // 1. Root: Target Repository
+        let repoName = "Repository";
+        if (window.TARGET_PATH) {
+            const parts = window.TARGET_PATH.replace(/\\/g, '/').split('/');
+            repoName = parts[parts.length - 1] || parts[parts.length - 2] || "Repository";
+        }
+        if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
+            repoName = window.INITIAL_MODEL.name.replace(" Architecture", "").replace(/ - .*/, "");
+        }
+        items.push({ label: "📁 " + repoName, action: "RESET" });
+
+        // 2. View Mode or Milestone Snapshot
+        if (window.CURRENT_SNAPSHOT && window.CURRENT_SNAPSHOT !== "") {
+            items.push({ label: "🏁 genome_" + window.CURRENT_SNAPSHOT, action: "SNAPSHOT" });
+        } else {
+            const modeNames = {
+                'COMPONENTS': '📊 Components',
+                'SUBSYSTEMS': '🧱 Subsystems',
+                'USE_CASES': '🎯 Use Cases',
+                'KNOWLEDGE_GRAPH': '🌳 Knowledge Graph',
+                'GENOME': '🧬 Genome View'
+            };
+            const modeLabel = modeNames[window.CURRENT_VIEW_MODE] || window.CURRENT_VIEW_MODE || "Components";
+            items.push({ label: modeLabel, action: "MODE" });
+        }
+
+        // 3. Focused Component
+        if (focusedNodeId) {
+            const node = allNodes ? allNodes.find(n => n.id === focusedNodeId) : null;
+            const nodeLabel = node ? (getRoleIcon(node.type) + " " + node.name) : focusedNodeId;
+            items.push({ label: nodeLabel, action: "NODE", id: focusedNodeId });
+        }
+
+        container.innerHTML = items.map((item, idx) => {
+            const isLast = idx === items.length - 1;
+            const activeClass = isLast ? ' active' : '';
+            const itemHtml = `<span class="breadcrumb-item${activeClass}" onclick="onBreadcrumbClick('${item.action}', '${item.id || ''}')">${item.label}</span>`;
+            if (idx < items.length - 1) {
+                return itemHtml + `<span class="breadcrumb-separator">/</span>`;
+            }
+            return itemHtml;
+        }).join('');
+    };
+
+    window.onBreadcrumbClick = function(action, id) {
+        if (action === "RESET") {
+            window.clearFocus();
+        } else if (action === "MODE" || action === "SNAPSHOT") {
+            window.clearFocus();
+        } else if (action === "NODE" && id) {
+            window.focusNode(id);
+        }
     };
 
     window.onGraphSearch = function(query) {

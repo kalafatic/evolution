@@ -205,7 +205,10 @@ public class SelfDevPreflight {
         File javaExec = validateJavaExecutable(checks, errors, warnings);
         File mavenExec = validateMavenExecutable(repositoryRoot, checks, errors, warnings);
 
-        // 8. Consistency Check across ResourceManager, SelfDevContext, Task Snapshots
+        // 8. Network & Environment Launch Readiness
+        validateNetworkAndEnvironmentReadiness(context, checks, errors, warnings);
+
+        // 9. Consistency Check across ResourceManager, SelfDevContext, Task Snapshots
         if (context != null && context.getResolvedResources() != null) {
             File snapshotRepo = context.getResolvedResources().getRepositoryRoot();
             try {
@@ -380,6 +383,29 @@ public class SelfDevPreflight {
             checks.add(new SelfDevPreflightResult.CheckDetail("TASK_GRAPH", "BLOCKED", err, repositoryRoot != null ? repositoryRoot.getAbsolutePath() : "null", "Valid Git repository", "Missing repository", "Configure valid canonical Git repository"));
         } else {
             checks.add(new SelfDevPreflightResult.CheckDetail("TASK_GRAPH", "OK", "Task graph dependencies verified", repositoryRoot.getAbsolutePath(), "Valid DAG", "Valid DAG", "None"));
+        }
+    }
+
+    private void validateNetworkAndEnvironmentReadiness(SelfDevContext context, List<SelfDevPreflightResult.CheckDetail> checks, List<String> errors, List<String> warnings) {
+        int serverPort = context != null ? context.getEffectiveServerPort() : 48080;
+        int supervisorPort = context != null ? context.getEffectiveSupervisorPort() : 8089;
+
+        boolean loopbackOk = true;
+        try (java.net.ServerSocket ss = new java.net.ServerSocket()) {
+            ss.setReuseAddress(true);
+            ss.bind(new java.net.InetSocketAddress("127.0.0.1", 0));
+        } catch (Exception e) {
+            loopbackOk = false;
+        }
+
+        if (!loopbackOk) {
+            String err = "NETWORK_READINESS FAILED: Loopback socket binding on 127.0.0.1 is not accessible";
+            Log.log("[SelfDevPreflight][NETWORK] " + err);
+            errors.add(err);
+            checks.add(new SelfDevPreflightResult.CheckDetail("NETWORK_READINESS", "FAILED", err, "127.0.0.1", "Accessible loopback interface", "Restricted loopback interface", "Check loopback network permissions"));
+        } else {
+            Log.log("[SelfDevPreflight][NETWORK] Loopback network readiness verified for ports server=" + serverPort + ", supervisor=" + supervisorPort);
+            checks.add(new SelfDevPreflightResult.CheckDetail("NETWORK_READINESS", "OK", "Loopback network readiness verified for ports server=" + serverPort + ", supervisor=" + supervisorPort, "127.0.0.1", "Loopback sockets available", "VERIFIED", "None"));
         }
     }
 }

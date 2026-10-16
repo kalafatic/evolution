@@ -67,7 +67,7 @@ public class EvoDatasetArtifact {
             artifactFile.getParentFile().mkdirs();
         }
 
-        // Split samples after deduplication
+        // Split samples after deduplication & prevent Train/Validation Leakage
         trainSamples.clear();
         valSamples.clear();
         totalTrainTokens = 0;
@@ -76,12 +76,34 @@ public class EvoDatasetArtifact {
         int valCount = (int) (allSamples.size() * valSplit);
         int trainCount = allSamples.size() - valCount;
 
+        java.util.Set<String> trainHashes = new java.util.HashSet<>();
+        java.util.Set<String> trainNormHashes = new java.util.HashSet<>();
+
         for (int i = 0; i < allSamples.size(); i++) {
             NormalizedSample sample = allSamples.get(i);
             if (i < trainCount) {
                 trainSamples.add(sample);
+                if (sample.getHash() != null) {
+                    trainHashes.add(sample.getHash());
+                }
+                String normText = sample.toFullText().toLowerCase().replaceAll("[^a-z0-9]", "");
+                if (!normText.isEmpty()) {
+                    trainNormHashes.add(normText);
+                }
                 totalTrainTokens += sample.getTokenCount() > 0 ? sample.getTokenCount() : (sample.getCharCount() / 4);
             } else {
+                // Check leakage against training set
+                String sampleHash = sample.getHash();
+                String normText = sample.toFullText().toLowerCase().replaceAll("[^a-z0-9]", "");
+                boolean isLeaking = (sampleHash != null && trainHashes.contains(sampleHash)) ||
+                                   (!normText.isEmpty() && trainNormHashes.contains(normText));
+                if (isLeaking) {
+                    if (stats != null) {
+                        stats.incrementTrainValLeakage();
+                    }
+                    continue; // Exclude leaking validation sample
+                }
+
                 valSamples.add(sample);
                 totalValTokens += sample.getTokenCount() > 0 ? sample.getTokenCount() : (sample.getCharCount() / 4);
             }
@@ -335,6 +357,16 @@ public class EvoDatasetArtifact {
         sb.append("    \"acceptedRecords\": ").append(acceptedRecs).append(",\n");
         sb.append("    \"rejectedRecords\": ").append(rejectedRecs).append(",\n");
         sb.append("    \"duplicateRecords\": ").append(duplicateRecs).append(",\n");
+        if (stats != null) {
+            sb.append("    \"exactDuplicates\": ").append(stats.getExactDuplicates()).append(",\n");
+            sb.append("    \"normalizedDuplicates\": ").append(stats.getNormalizedDuplicates()).append(",\n");
+            sb.append("    \"nearDuplicates\": ").append(stats.getNearDuplicates()).append(",\n");
+            sb.append("    \"malformedJsonCount\": ").append(stats.getMalformedJsonCount()).append(",\n");
+            sb.append("    \"emptyMeaninglessCount\": ").append(stats.getEmptyMeaninglessCount()).append(",\n");
+            sb.append("    \"corruptedTextCount\": ").append(stats.getCorruptedTextCount()).append(",\n");
+            sb.append("    \"invalidQaCount\": ").append(stats.getInvalidQaCount()).append(",\n");
+            sb.append("    \"trainValLeakageCount\": ").append(stats.getTrainValLeakageCount()).append(",\n");
+        }
         sb.append("    \"totalTrainingBytes\": ").append(stats != null ? stats.getTrainingBytes() + stats.getValidationBytes() : acceptedB).append(",\n");
         sb.append("    \"estimatedTokens\": ").append(estTokens).append("\n");
         sb.append("  },\n");
@@ -381,9 +413,22 @@ public class EvoDatasetArtifact {
             sb.append("Training Bytes: ").append(stats.getTrainingBytes()).append(" (").append(String.format("%.2f", stats.getTrainingBytes() / (1024.0 * 1024.0))).append(" MB)\n");
             sb.append("Validation Bytes: ").append(stats.getValidationBytes()).append(" (").append(String.format("%.2f", stats.getValidationBytes() / (1024.0 * 1024.0))).append(" MB)\n");
             sb.append("Estimated Tokens: ").append(String.format("%.1fM", (totalTrainTokens + totalValTokens) / 1000000.0)).append(" (").append(totalTrainTokens + totalValTokens).append(" tokens)\n");
+            sb.append("Input/Read Records: ").append(stats.getTotalSamplesRead() > 0 ? stats.getTotalSamplesRead() : (stats.getAcceptedRecords() + stats.getRejectedRecords() + stats.getDuplicateRecords())).append("\n");
             sb.append("Accepted Records: ").append(stats.getAcceptedRecords()).append("\n");
             sb.append("Rejected Records: ").append(stats.getRejectedRecords()).append(" (").append(stats.getRejectedBytes()).append(" bytes)\n");
+            if (stats.getMalformedJsonCount() > 0 || stats.getEmptyMeaninglessCount() > 0 || stats.getCorruptedTextCount() > 0 || stats.getInvalidQaCount() > 0) {
+                sb.append("  - Malformed JSON: ").append(stats.getMalformedJsonCount()).append("\n");
+                sb.append("  - Empty/Meaningless: ").append(stats.getEmptyMeaninglessCount()).append("\n");
+                sb.append("  - Corrupted Text: ").append(stats.getCorruptedTextCount()).append("\n");
+                sb.append("  - Invalid Q&A Pairs: ").append(stats.getInvalidQaCount()).append("\n");
+            }
             sb.append("Duplicate Records: ").append(stats.getDuplicateRecords()).append(" (").append(stats.getDuplicateBytes()).append(" bytes)\n");
+            if (stats.getExactDuplicates() > 0 || stats.getNormalizedDuplicates() > 0 || stats.getNearDuplicates() > 0) {
+                sb.append("  - Exact Duplicates: ").append(stats.getExactDuplicates()).append("\n");
+                sb.append("  - Normalized Duplicates: ").append(stats.getNormalizedDuplicates()).append("\n");
+                sb.append("  - Near-Duplicates: ").append(stats.getNearDuplicates()).append("\n");
+            }
+            sb.append("Train/Val Leakage Filtered: ").append(stats.getTrainValLeakageCount()).append("\n");
             if (stats.getRequestedUsableBytes() > 0) {
                 double coverage = (stats.getAcceptedBytes() * 100.0) / Math.max(1, stats.getRequestedUsableBytes());
                 sb.append("Source Coverage: ").append(String.format("%.1f%%", Math.min(100.0, coverage))).append("\n");
@@ -398,6 +443,11 @@ public class EvoDatasetArtifact {
         sb.append("Train Samples: ").append(trainSamples.size()).append(" (").append(totalTrainTokens).append(" estimated tokens)\n");
         sb.append("Validation Samples: ").append(valSamples.size()).append(" (").append(totalValTokens).append(" estimated tokens)\n");
         sb.append("Status: ").append(status.name()).append("\n");
+        sb.append("QUALITY LIMITATIONS & VERIFICATION SUMMARY:\n");
+        sb.append("  - Exact & Normalized Deduplication: APPLIED\n");
+        sb.append("  - Train/Val Leakage Prevention: APPLIED\n");
+        sb.append("  - Noise, Corrupted Text & Invalid Q&A Filtering: APPLIED\n");
+        sb.append("  - Remaining Limitations: High-level semantic overlap or specialized domain nuances may persist.\n");
         sb.append("------------------------------------------\n");
         return sb.toString();
     }

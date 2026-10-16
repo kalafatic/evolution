@@ -48,17 +48,25 @@ public class ForgeSettingsDialog extends Dialog {
         private String type; // "FILE" or "FOLDER"
         private long recordLimit = -1;
         private double scaleRatio = 1.0;
+        private long maxSizeBytes = -1;
+        private int maxSeqLen = 1024;
 
         public DatasetItem(boolean checked, String path, String type) {
-            this(checked, path, type, -1, 1.0);
+            this(checked, path, type, -1, 1.0, -1, 1024);
         }
 
         public DatasetItem(boolean checked, String path, String type, long recordLimit, double scaleRatio) {
+            this(checked, path, type, recordLimit, scaleRatio, -1, 1024);
+        }
+
+        public DatasetItem(boolean checked, String path, String type, long recordLimit, double scaleRatio, long maxSizeBytes, int maxSeqLen) {
             this.checked = checked;
             this.path = path != null ? path : "";
             this.type = type != null ? type : "FOLDER";
             this.recordLimit = recordLimit;
             this.scaleRatio = scaleRatio > 0 ? scaleRatio : 1.0;
+            this.maxSizeBytes = maxSizeBytes;
+            this.maxSeqLen = maxSeqLen > 0 ? maxSeqLen : 1024;
         }
 
         public boolean isChecked() {
@@ -101,6 +109,22 @@ public class ForgeSettingsDialog extends Dialog {
             this.scaleRatio = scaleRatio;
         }
 
+        public long getMaxSizeBytes() {
+            return maxSizeBytes;
+        }
+
+        public void setMaxSizeBytes(long maxSizeBytes) {
+            this.maxSizeBytes = maxSizeBytes;
+        }
+
+        public int getMaxSeqLen() {
+            return maxSeqLen;
+        }
+
+        public void setMaxSeqLen(int maxSeqLen) {
+            this.maxSeqLen = maxSeqLen;
+        }
+
         public JSONObject toJsonObject() {
             JSONObject obj = new JSONObject();
             obj.put("checked", checked);
@@ -108,6 +132,8 @@ public class ForgeSettingsDialog extends Dialog {
             obj.put("type", type);
             obj.put("recordLimit", recordLimit);
             obj.put("scaleRatio", scaleRatio);
+            obj.put("maxSizeBytes", maxSizeBytes);
+            obj.put("maxSeqLen", maxSeqLen);
             return obj;
         }
 
@@ -117,7 +143,9 @@ public class ForgeSettingsDialog extends Dialog {
             String type = obj.optString("type", "FOLDER");
             long recordLimit = obj.optLong("recordLimit", -1);
             double scaleRatio = obj.optDouble("scaleRatio", 1.0);
-            return new DatasetItem(checked, path, type, recordLimit, scaleRatio);
+            long maxSizeBytes = obj.optLong("maxSizeBytes", -1);
+            int maxSeqLen = obj.optInt("maxSeqLen", 1024);
+            return new DatasetItem(checked, path, type, recordLimit, scaleRatio, maxSizeBytes, maxSeqLen);
         }
     }
 
@@ -173,11 +201,23 @@ public class ForgeSettingsDialog extends Dialog {
         return ForgeTrainingEstimationAgent.getInstance().applySmartDataScaling(datasetItems, selectedModelSize, selectedEpochs, targetHours).isSuccess();
     }
 
+    private Combo quickPresetCombo;
     private Combo modelSizeCombo;
     private Combo epochCombo;
+    private Combo batchSizeCombo;
+    private Combo learningRateCombo;
+    private Combo generationsCombo;
+    private Combo candidatesCombo;
+    private Combo checkpointFreqCombo;
     private Combo lossThresholdCombo;
     private Combo desiredLossCombo;
     private Combo targetTimeCombo;
+    private org.eclipse.swt.widgets.Text maxDataSizeText;
+    private org.eclipse.swt.widgets.Text maxSampleCountText;
+    private org.eclipse.swt.widgets.Text maxSeqLenText;
+    private org.eclipse.swt.widgets.Text valRatioText;
+    private org.eclipse.swt.widgets.Text outputModelNameText;
+    private Button qualityFilterCheck;
     private Label estTimeLabel;
     private Label hwProfileLabel;
     private Browser graphBrowser;
@@ -185,6 +225,17 @@ public class ForgeSettingsDialog extends Dialog {
 
     private String selectedModelSize = "SMALL";
     private int selectedEpochs = 32;
+    private int selectedBatchSize = 16;
+    private double selectedLearningRate = 0.01;
+    private int selectedGenerations = 1;
+    private int selectedCandidates = 1;
+    private int selectedCheckpointFreq = 5;
+    private long selectedMaxDataSizeMb = 500;
+    private long selectedMaxSampleCount = -1;
+    private int selectedMaxSeqLen = 1024;
+    private double selectedValRatio = 0.15;
+    private boolean selectedQualityFilter = true;
+    private String selectedOutputModelName = "";
     private String selectedLossThreshold = "Epoch 16-30: Loss 2-5 → Learning phrases";
     private double selectedDesiredLoss = 1.0;
     private double selectedTargetHours = 12.0;
@@ -285,22 +336,58 @@ public class ForgeSettingsDialog extends Dialog {
         Composite settingsPanel = new Composite(sashForm, SWT.NONE);
         settingsPanel.setLayout(new GridLayout(2, false));
 
+        // Presets Group
+        Group presetGroup = new Group(settingsPanel, SWT.NONE);
+        presetGroup.setText("Configuration Preset");
+        presetGroup.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
+        presetGroup.setLayout(new GridLayout(2, false));
+
+        GUIFactory.INSTANCE.createLabel(presetGroup, "Quick Preset:");
+        quickPresetCombo = GUIFactory.INSTANCE.createCombo(presetGroup, new String[] {
+            "Custom (User Controlled)",
+            "Quick Test (1 Epoch, Nano Model, Fast Check)",
+            "Small Chat Experiment (Small Model, 16 Epochs)"
+        });
+        quickPresetCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        quickPresetCombo.select(0);
+        quickPresetCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = quickPresetCombo.getSelectionIndex();
+                if (idx == 1) { // Quick Test
+                    selectedModelSize = "NANO";
+                    selectedEpochs = 1;
+                    selectedBatchSize = 16;
+                    selectedLearningRate = 0.01;
+                    selectedGenerations = 1;
+                    selectedCandidates = 1;
+                } else if (idx == 2) { // Small Chat Experiment
+                    selectedModelSize = "SMALL";
+                    selectedEpochs = 16;
+                    selectedBatchSize = 16;
+                    selectedLearningRate = 0.001;
+                    selectedGenerations = 1;
+                    selectedCandidates = 1;
+                }
+                updateControlsFromFields();
+                updateHardwareAndTimeInfo();
+                updateGraphHtml();
+            }
+        });
+
         Group settingsGroup = new Group(settingsPanel, SWT.NONE);
         settingsGroup.setText("Forge Model & Training Configuration");
         settingsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
-        settingsGroup.setLayout(new GridLayout(2, false));
+        settingsGroup.setLayout(new GridLayout(4, false));
 
         // 1. Preset Model Sizes Combo
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Preset Model Size:");
         modelSizeCombo = GUIFactory.INSTANCE.createCombo(settingsGroup);
         modelSizeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
         for (ModelSizePreset.Size size : ModelSizePreset.Size.values()) {
             modelSizeCombo.add(size.getDisplayName());
         }
-
-        // Select initial model size
-        int defaultSizeIdx = 3; // SMALL by default
+        int defaultSizeIdx = 3;
         for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
             if (ModelSizePreset.Size.values()[i].name().equalsIgnoreCase(selectedModelSize) ||
                 ModelSizePreset.Size.values()[i].getDisplayName().equalsIgnoreCase(selectedModelSize)) {
@@ -323,26 +410,61 @@ public class ForgeSettingsDialog extends Dialog {
             }
         });
 
-        // 2. Epoch Integer Editable Combo
-        GUIFactory.INSTANCE.createLabel(settingsGroup, "Epoch Count:");
+        // 2. Epoch Count (With Tooltip)
+        Label epochLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Epoch Count:");
+        epochLabel.setToolTipText("Epochs: How many full passes the trainer makes through the training dataset for one model.");
         epochCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
         epochCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
+        epochCombo.setToolTipText("Epochs: How many full passes the trainer makes through the training dataset for one model.");
         for (String opt : EPOCH_OPTIONS) {
             epochCombo.add(opt);
         }
+        epochCombo.setText(String.valueOf(selectedEpochs));
 
-        int defaultEpochIdx = 4; // "32"
-        for (int i = 0; i < EPOCH_OPTIONS.length; i++) {
-            if (EPOCH_OPTIONS[i].equals(String.valueOf(selectedEpochs))) {
-                defaultEpochIdx = i;
-                break;
-            }
-        }
-        epochCombo.select(defaultEpochIdx);
-        if (epochCombo.getSelectionIndex() < 0) {
-            epochCombo.setText(String.valueOf(selectedEpochs));
-        }
+        // 3. Batch Size
+        GUIFactory.INSTANCE.createLabel(settingsGroup, "Batch Size:");
+        batchSizeCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
+        batchSizeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        for (String b : new String[] { "2", "4", "8", "16", "32", "64" }) batchSizeCombo.add(b);
+        batchSizeCombo.setText(String.valueOf(selectedBatchSize));
+
+        // 4. Learning Rate
+        GUIFactory.INSTANCE.createLabel(settingsGroup, "Learning Rate:");
+        learningRateCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
+        learningRateCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        for (String lr : new String[] { "0.05", "0.01", "0.005", "0.001", "0.0005", "0.0001" }) learningRateCombo.add(lr);
+        learningRateCombo.setText(String.valueOf(selectedLearningRate));
+
+        // 5. Evolutionary Generations (With Tooltip)
+        Label genLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Generations:");
+        genLabel.setToolTipText("Generations: How many evolutionary rounds are executed.");
+        generationsCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
+        generationsCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        generationsCombo.setToolTipText("Generations: How many evolutionary rounds are executed.");
+        for (String g : new String[] { "1", "2", "3", "5", "10" }) generationsCombo.add(g);
+        generationsCombo.setText(String.valueOf(selectedGenerations));
+
+        // 6. Candidates Per Generation (With Tooltip)
+        Label candLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Candidates / Gen:");
+        candLabel.setToolTipText("Candidates: How many model candidates are trained or evaluated in each evolutionary generation.");
+        candidatesCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
+        candidatesCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        candidatesCombo.setToolTipText("Candidates: How many model candidates are trained or evaluated in each evolutionary generation.");
+        for (String c : new String[] { "1", "2", "3", "4", "8" }) candidatesCombo.add(c);
+        candidatesCombo.setText(String.valueOf(selectedCandidates));
+
+        // 7. Checkpoint Frequency
+        GUIFactory.INSTANCE.createLabel(settingsGroup, "Checkpoint Freq (Epochs):");
+        checkpointFreqCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
+        checkpointFreqCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        for (String cf : new String[] { "1", "2", "5", "10", "20" }) checkpointFreqCombo.add(cf);
+        checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
+
+        // 8. Output Model Name
+        GUIFactory.INSTANCE.createLabel(settingsGroup, "Output Model Name:");
+        outputModelNameText = GUIFactory.INSTANCE.createText(settingsGroup);
+        outputModelNameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        outputModelNameText.setText(selectedOutputModelName != null ? selectedOutputModelName : "");
 
         // 3. Loss Threshold Stage Combo
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Loss Threshold Stage:");
@@ -441,9 +563,41 @@ public class ForgeSettingsDialog extends Dialog {
 
         // Group 3: Training Datasets (Ordered Target Data)
         Group datasetsGroup = new Group(settingsPanel, SWT.NONE);
-        datasetsGroup.setText("Training Datasets (Ordered Target Data)");
+        datasetsGroup.setText("Training Datasets & Dataset Input Limits");
         datasetsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
         datasetsGroup.setLayout(new GridLayout(2, false));
+
+        // Limits composite inside datasets group
+        Composite datasetLimitsComp = new Composite(datasetsGroup, SWT.NONE);
+        datasetLimitsComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
+        datasetLimitsComp.setLayout(new GridLayout(4, false));
+
+        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Data Size (MB):");
+        maxDataSizeText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
+        maxDataSizeText.setText(String.valueOf(selectedMaxDataSizeMb));
+        maxDataSizeText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        maxDataSizeText.setToolTipText("Maximum input dataset size limit in MB (-1 for unlimited). EVO compiles usable records into .evodata.");
+
+        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Sample Count:");
+        maxSampleCountText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
+        maxSampleCountText.setText(String.valueOf(selectedMaxSampleCount));
+        maxSampleCountText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        maxSampleCountText.setToolTipText("Maximum accepted training records/samples (-1 for unlimited).");
+
+        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Sequence Length:");
+        maxSeqLenText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
+        maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
+        maxSeqLenText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Validation Ratio (%):");
+        valRatioText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
+        valRatioText.setText(String.valueOf((int) (selectedValRatio * 100)));
+        valRatioText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        qualityFilterCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Enable Quality Filtering & Rejection");
+        qualityFilterCheck.setSelection(selectedQualityFilter);
+        GridData qfData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
+        qualityFilterCheck.setLayoutData(qfData);
 
         datasetsTable = new Table(datasetsGroup, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
         datasetsTable.setHeaderVisible(true);
@@ -501,6 +655,7 @@ public class ForgeSettingsDialog extends Dialog {
             public void widgetSelected(SelectionEvent e) {
                 FileDialog dlg = new FileDialog(getShell(), SWT.OPEN | SWT.MULTI);
                 dlg.setText("Select Training Data Files");
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                 if (dlg.open() != null) {
                     String filterPath = dlg.getFilterPath();
                     String[] fileNames = dlg.getFileNames();
@@ -519,6 +674,7 @@ public class ForgeSettingsDialog extends Dialog {
             public void widgetSelected(SelectionEvent e) {
                 DirectoryDialog dlg = new DirectoryDialog(getShell());
                 dlg.setText("Select Training Data Directory");
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                 String selectedDir = dlg.open();
                 if (selectedDir != null && !selectedDir.trim().isEmpty()) {
                     DatasetItem ds = new DatasetItem(true, selectedDir, "FOLDER");
@@ -534,6 +690,7 @@ public class ForgeSettingsDialog extends Dialog {
                 FileDialog dlg = new FileDialog(getShell(), SWT.OPEN);
                 dlg.setText("Select Forging Target Path (.evo model, workspace, or dataset file)");
                 dlg.setFilterExtensions(new String[] { "*.evo;*.txt;*.pdf;*.html;*.json;*.md;*.csv", "*.*" });
+                eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dlg, null);
                 String selectedFile = dlg.open();
                 if (selectedFile != null && !selectedFile.trim().isEmpty()) {
                     boolean found = false;
@@ -1134,6 +1291,54 @@ public class ForgeSettingsDialog extends Dialog {
         }
     }
 
+    private void updateControlsFromFields() {
+        if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
+            for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
+                if (ModelSizePreset.Size.values()[i].name().equalsIgnoreCase(selectedModelSize) ||
+                    ModelSizePreset.Size.values()[i].getDisplayName().equalsIgnoreCase(selectedModelSize)) {
+                    modelSizeCombo.select(i);
+                    break;
+                }
+            }
+        }
+        if (epochCombo != null && !epochCombo.isDisposed()) {
+            epochCombo.setText(String.valueOf(selectedEpochs));
+        }
+        if (batchSizeCombo != null && !batchSizeCombo.isDisposed()) {
+            batchSizeCombo.setText(String.valueOf(selectedBatchSize));
+        }
+        if (learningRateCombo != null && !learningRateCombo.isDisposed()) {
+            learningRateCombo.setText(String.valueOf(selectedLearningRate));
+        }
+        if (generationsCombo != null && !generationsCombo.isDisposed()) {
+            generationsCombo.setText(String.valueOf(selectedGenerations));
+        }
+        if (candidatesCombo != null && !candidatesCombo.isDisposed()) {
+            candidatesCombo.setText(String.valueOf(selectedCandidates));
+        }
+        if (checkpointFreqCombo != null && !checkpointFreqCombo.isDisposed()) {
+            checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
+        }
+        if (outputModelNameText != null && !outputModelNameText.isDisposed()) {
+            outputModelNameText.setText(selectedOutputModelName != null ? selectedOutputModelName : "");
+        }
+        if (maxDataSizeText != null && !maxDataSizeText.isDisposed()) {
+            maxDataSizeText.setText(String.valueOf(selectedMaxDataSizeMb));
+        }
+        if (maxSampleCountText != null && !maxSampleCountText.isDisposed()) {
+            maxSampleCountText.setText(String.valueOf(selectedMaxSampleCount));
+        }
+        if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
+            maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
+        }
+        if (valRatioText != null && !valRatioText.isDisposed()) {
+            valRatioText.setText(String.valueOf((int) (selectedValRatio * 100)));
+        }
+        if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
+            qualityFilterCheck.setSelection(selectedQualityFilter);
+        }
+    }
+
     private void updateHardwareAndTimeInfo() {
         if (hwProfileLabel != null && !hwProfileLabel.isDisposed()) {
             hwProfileLabel.setText("Hardware Profile: " + getHardwareProfile());
@@ -1160,11 +1365,54 @@ public class ForgeSettingsDialog extends Dialog {
         }
 
         if (epochCombo != null && !epochCombo.isDisposed()) {
+            try { selectedEpochs = Math.max(1, Integer.parseInt(epochCombo.getText().trim())); } catch (Exception e) { selectedEpochs = 32; }
+        }
+
+        if (batchSizeCombo != null && !batchSizeCombo.isDisposed()) {
+            try { selectedBatchSize = Math.max(1, Integer.parseInt(batchSizeCombo.getText().trim())); } catch (Exception e) { selectedBatchSize = 16; }
+        }
+
+        if (learningRateCombo != null && !learningRateCombo.isDisposed()) {
+            try { selectedLearningRate = Math.max(0.00001, Double.parseDouble(learningRateCombo.getText().trim())); } catch (Exception e) { selectedLearningRate = 0.01; }
+        }
+
+        if (generationsCombo != null && !generationsCombo.isDisposed()) {
+            try { selectedGenerations = Math.max(1, Integer.parseInt(generationsCombo.getText().trim())); } catch (Exception e) { selectedGenerations = 1; }
+        }
+
+        if (candidatesCombo != null && !candidatesCombo.isDisposed()) {
+            try { selectedCandidates = Math.max(1, Integer.parseInt(candidatesCombo.getText().trim())); } catch (Exception e) { selectedCandidates = 1; }
+        }
+
+        if (checkpointFreqCombo != null && !checkpointFreqCombo.isDisposed()) {
+            try { selectedCheckpointFreq = Math.max(1, Integer.parseInt(checkpointFreqCombo.getText().trim())); } catch (Exception e) { selectedCheckpointFreq = 5; }
+        }
+
+        if (outputModelNameText != null && !outputModelNameText.isDisposed()) {
+            selectedOutputModelName = outputModelNameText.getText().trim();
+        }
+
+        if (maxDataSizeText != null && !maxDataSizeText.isDisposed()) {
+            try { selectedMaxDataSizeMb = Long.parseLong(maxDataSizeText.getText().trim()); } catch (Exception e) { selectedMaxDataSizeMb = 500; }
+        }
+
+        if (maxSampleCountText != null && !maxSampleCountText.isDisposed()) {
+            try { selectedMaxSampleCount = Long.parseLong(maxSampleCountText.getText().trim()); } catch (Exception e) { selectedMaxSampleCount = -1; }
+        }
+
+        if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
+            try { selectedMaxSeqLen = Math.max(16, Integer.parseInt(maxSeqLenText.getText().trim())); } catch (Exception e) { selectedMaxSeqLen = 1024; }
+        }
+
+        if (valRatioText != null && !valRatioText.isDisposed()) {
             try {
-                selectedEpochs = Integer.parseInt(epochCombo.getText().trim());
-            } catch (Exception e) {
-                selectedEpochs = 32;
-            }
+                int pct = Integer.parseInt(valRatioText.getText().trim());
+                selectedValRatio = Math.max(0.0, Math.min(0.5, pct / 100.0));
+            } catch (Exception e) { selectedValRatio = 0.15; }
+        }
+
+        if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
+            selectedQualityFilter = qualityFilterCheck.getSelection();
         }
 
         if (lossThresholdCombo != null && !lossThresholdCombo.isDisposed()) {
@@ -1199,6 +1447,50 @@ public class ForgeSettingsDialog extends Dialog {
         return selectedEpochs;
     }
 
+    public int getBatchSize() {
+        return selectedBatchSize;
+    }
+
+    public double getLearningRate() {
+        return selectedLearningRate;
+    }
+
+    public int getGenerations() {
+        return selectedGenerations;
+    }
+
+    public int getCandidatesPerGeneration() {
+        return selectedCandidates;
+    }
+
+    public int getCheckpointFrequencyEpochs() {
+        return selectedCheckpointFreq;
+    }
+
+    public String getOutputModelName() {
+        return selectedOutputModelName;
+    }
+
+    public long getMaxDataSizeMb() {
+        return selectedMaxDataSizeMb;
+    }
+
+    public long getMaxSampleCount() {
+        return selectedMaxSampleCount;
+    }
+
+    public int getMaxSeqLen() {
+        return selectedMaxSeqLen;
+    }
+
+    public double getValidationRatio() {
+        return selectedValRatio;
+    }
+
+    public boolean isFilterQuality() {
+        return selectedQualityFilter;
+    }
+
     public String getLossThreshold() {
         return selectedLossThreshold;
     }
@@ -1217,6 +1509,27 @@ public class ForgeSettingsDialog extends Dialog {
             arr.put(item.toJsonObject());
         }
         return arr.toString();
+    }
+
+    public JSONObject getUiStateJson() {
+        JSONObject json = new JSONObject();
+        json.put("modelSize", selectedModelSize);
+        json.put("epochs", selectedEpochs);
+        json.put("batchSize", selectedBatchSize);
+        json.put("learningRate", selectedLearningRate);
+        json.put("generations", selectedGenerations);
+        json.put("candidatesPerGeneration", selectedCandidates);
+        json.put("checkpointFrequencyEpochs", selectedCheckpointFreq);
+        json.put("maxDataSizeMb", selectedMaxDataSizeMb);
+        json.put("maxSampleCount", selectedMaxSampleCount);
+        json.put("maxSeqLen", selectedMaxSeqLen);
+        json.put("validationRatio", selectedValRatio);
+        json.put("filterQuality", selectedQualityFilter);
+        json.put("outputModelName", selectedOutputModelName);
+        json.put("lossThreshold", selectedLossThreshold);
+        json.put("desiredLossThreshold", selectedDesiredLoss);
+        json.put("datasets", getDatasetsJson());
+        return json;
     }
 
     @Override

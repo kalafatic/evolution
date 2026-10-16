@@ -155,12 +155,12 @@ public class TaskContext {
     public void log(String message) {
         String formatted = "[" + sessionId + "] " + message;
         logs.add(formatted);
-        Log.log(formatted);
+        Log.log(sessionId, formatted);
         notifyListeners(formatted);
     }
 
     public void consoleLog(String message) {
-        Log.log("[" + sessionId + "] " + message);
+        Log.log(sessionId, "[" + sessionId + "] " + message);
     }
 
     public void addLogListener(LogListener listener) {

@@ -12,8 +12,13 @@ import java.util.Set;
 public class DatasetDeduplicator implements DataDeduplicator {
 
     private final Set<String> exactHashes = new HashSet<>();
+    private final Set<String> normalizedHashes = new HashSet<>();
     private final Set<Long> shingleFingerprints = new HashSet<>();
     private boolean nearDuplicateEnabled = true;
+
+    private int exactDuplicateCount = 0;
+    private int normalizedDuplicateCount = 0;
+    private int nearDuplicateCount = 0;
 
     public DatasetDeduplicator() {}
 
@@ -29,15 +34,27 @@ public class DatasetDeduplicator implements DataDeduplicator {
         String hash = sample.getHash();
         if (hash != null && !hash.isEmpty()) {
             if (exactHashes.contains(hash)) {
+                exactDuplicateCount++;
                 return true;
             }
         }
 
-        // 2. Near-duplicate check using MinHash 5-gram shingle fingerprinting for long documents (>= 150 chars)
+        // 2. Normalized hash check (Unicode NFC, lowercased, normalized whitespace)
+        String normText = computeNormalizedText(sample.toFullText());
+        if (!normText.isEmpty()) {
+            String normHash = computeNormalizedHash(normText);
+            if (normalizedHashes.contains(normHash)) {
+                normalizedDuplicateCount++;
+                return true;
+            }
+        }
+
+        // 3. Near-duplicate check using MinHash 5-gram shingle fingerprinting for long documents (>= 150 chars)
         if (nearDuplicateEnabled) {
             String text = sample.toFullText();
             long fp = computeShingleFingerprint(text);
             if (fp != 0L && shingleFingerprints.contains(fp)) {
+                nearDuplicateCount++;
                 return true;
             }
         }
@@ -48,14 +65,45 @@ public class DatasetDeduplicator implements DataDeduplicator {
     @Override
     public void register(NormalizedSample sample) {
         if (sample == null) return;
-        if (sample.getHash() != null) {
+
+        if (sample.getHash() != null && !sample.getHash().isEmpty()) {
             exactHashes.add(sample.getHash());
         }
+
+        String normText = computeNormalizedText(sample.toFullText());
+        if (!normText.isEmpty()) {
+            String normHash = computeNormalizedHash(normText);
+            normalizedHashes.add(normHash);
+        }
+
         if (nearDuplicateEnabled) {
             long fp = computeShingleFingerprint(sample.toFullText());
             if (fp != 0L) {
                 shingleFingerprints.add(fp);
             }
+        }
+    }
+
+    private String computeNormalizedText(String text) {
+        if (text == null) return "";
+        // Unicode NFC normalization & whitespace collapse preserving diacritics, symbols, math & code
+        String nfc = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
+        return nfc.toLowerCase().replaceAll("\\s+", " ").trim();
+    }
+
+    private String computeNormalizedHash(String text) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            return String.valueOf(text.hashCode());
         }
     }
 
@@ -115,10 +163,26 @@ public class DatasetDeduplicator implements DataDeduplicator {
     @Override
     public void clear() {
         exactHashes.clear();
+        normalizedHashes.clear();
         shingleFingerprints.clear();
+        exactDuplicateCount = 0;
+        normalizedDuplicateCount = 0;
+        nearDuplicateCount = 0;
     }
 
     public int getExactDuplicateCount() {
-        return exactHashes.size();
+        return exactDuplicateCount;
+    }
+
+    public int getNormalizedDuplicateCount() {
+        return normalizedDuplicateCount;
+    }
+
+    public int getNearDuplicateCount() {
+        return nearDuplicateCount;
+    }
+
+    public int getTotalDuplicateCount() {
+        return exactDuplicateCount + normalizedDuplicateCount + nearDuplicateCount;
     }
 }

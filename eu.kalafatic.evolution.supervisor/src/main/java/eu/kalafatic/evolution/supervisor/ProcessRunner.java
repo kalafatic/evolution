@@ -194,9 +194,17 @@ public class ProcessRunner {
 
         if (executable != null && executable.exists()) {
             if (!PlatformInfo.isWindows()) {
-                executable.setExecutable(true);
+                try {
+                    executable.setExecutable(true, false);
+                } catch (Exception ignored) {}
             }
             int portToUse = findAvailablePort(48080);
+            boolean ready = prepareNetworkAndExecutableAccess(executable, portToUse);
+            if (!ready) {
+                System.err.println("[RUN] Mandatory network readiness gate failed for executable: " + executable.getAbsolutePath() + ". Aborting application startup.");
+                return false;
+            }
+
             List<String> command = new ArrayList<>();
             command.add(executable.getAbsolutePath());
             command.add("--mode=SELF_DEV");
@@ -358,9 +366,22 @@ public class ProcessRunner {
             }
         }
 
+        int portToUse = findAvailablePort(48080);
+        boolean ready = prepareNetworkAndExecutableAccess(targetFile, portToUse);
+        if (!ready) {
+            File logDir = new File(variantDir, "self-dev-run");
+            File taskLogFile = new File(logDir, (taskId != null) ? "task_execution_" + taskId + ".log" : "evo_execution.log");
+            String errStr = "[RUN] Mandatory network readiness gate failed for target: " + targetFile.getAbsolutePath() + ". Aborting RCP launch.";
+            System.err.println(errStr);
+            appendToLog(taskLogFile, errStr);
+            return false;
+        }
+
         if (isExecutable && targetFile.exists() && PlatformInfo.isValidExecutable(targetFile)) {
             if (!PlatformInfo.isWindows()) {
-                targetFile.setExecutable(true);
+                try {
+                    targetFile.setExecutable(true, false);
+                } catch (Exception ignored) {}
             }
             command.add(targetFile.getAbsolutePath());
         } else if (launcherJar != null && launcherJar.exists()) {
@@ -380,7 +401,6 @@ public class ProcessRunner {
             command.add(targetFile.getAbsolutePath());
         }
 
-        int portToUse = findAvailablePort(48080);
         command.add("-consoleLog");
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
@@ -426,5 +446,34 @@ public class ProcessRunner {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private boolean prepareNetworkAndExecutableAccess(File executable, int port) {
+        if (executable == null || !executable.exists()) return true;
+
+        if (!PlatformInfo.isWindows()) {
+            try {
+                executable.setExecutable(true, false);
+            } catch (Exception ignored) {}
+        }
+
+        try {
+            Class<?> namCls = Class.forName("eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessManager");
+            Object mgr = namCls.getMethod("getInstance").invoke(null);
+            Object resObj = namCls.getMethod("prepareNetworkAccess", File.class, int.class, Class.forName("eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext"))
+                    .invoke(mgr, executable, port, null);
+
+            if (resObj != null) {
+                Boolean success = (Boolean) resObj.getClass().getMethod("isSuccess").invoke(resObj);
+                if (Boolean.FALSE.equals(success)) {
+                    String msg = (String) resObj.getClass().getMethod("getMessage").invoke(resObj);
+                    System.err.println("[READINESS][FAILURE] Network readiness preparation failed for " + executable.getName() + ": " + msg);
+                    return false;
+                }
+            }
+        } catch (Throwable ignored) {
+            System.out.println("[READINESS] NetworkAccessManager invoked via fallback check for executable: " + executable.getName());
+        }
+        return true;
     }
 }

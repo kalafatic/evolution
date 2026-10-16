@@ -12,10 +12,12 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -24,6 +26,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import eu.kalafatic.utils.constants.FUIConstants;
 
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
@@ -87,6 +91,8 @@ public class FunctionalityInventoryGroup {
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
 
+        ColumnViewerToolTipSupport.enableFor(tableViewer);
+
         createColumn("#", 40, e -> String.valueOf(entries.indexOf(e) + 1));
         createColumn("Action", 50, e -> "▶");
         createModeColumn("Mode", 80);
@@ -106,6 +112,7 @@ public class FunctionalityInventoryGroup {
         createColumn("Method", 75, e -> e.method);
         createColumn("Confidence", 80, e -> String.valueOf(e.confidence));
         createColumn("Freshness", 75, e -> e.metadataFresh ? "FRESH" : "STALE");
+        createColumn("Updated", 130, e -> FunctionalityInventoryManager.formatTimestamp(e.timestamp));
         createColumn("Rationale", 250, e -> e.rationale);
 
         tableViewer.setContentProvider(ArrayContentProvider.getInstance());
@@ -219,6 +226,71 @@ public class FunctionalityInventoryGroup {
         }
     }
 
+    private Color getEntryBackground(FunctionalityEntry entry) {
+        if (entry == null) return null;
+        String status = entry.status != null ? entry.status.toUpperCase() : "";
+
+        // RED / PROBLEM
+        if (status.contains("ERROR") || status.contains("FAIL") || status.contains("PROBLEM") || entry.risk >= 75) {
+            return FUIConstants.LIGHT_RED;
+        }
+
+        // ORANGE / ALERT
+        if (status.contains("RUNNING") || status.contains("CHECKING") || status.contains("ANALYZING") || status.contains("REFACTORING")
+                || !entry.metadataFresh || "PARTIAL".equalsIgnoreCase(status) || (entry.risk >= 50 && entry.risk < 75) || entry.confidence < 0.8) {
+            return FUIConstants.SAND_COLOR;
+        }
+
+        // LIGHT BLUE / PROVISIONAL or BLOCKED
+        if ("PROVISIONAL".equalsIgnoreCase(status) || "BLOCKED".equalsIgnoreCase(status)) {
+            return FUIConstants.LIGHT_BLUE;
+        }
+
+        // GREEN / RUNNING / SUCCESS / IMPLEMENTED
+        if ("IMPLEMENTED".equalsIgnoreCase(status) || "SUCCESS".equalsIgnoreCase(status) || "OK".equalsIgnoreCase(status) || "FRESH".equalsIgnoreCase(status)) {
+            return FUIConstants.LIGHT_GREEN;
+        }
+
+        return null;
+    }
+
+    private String getEntryTooltip(FunctionalityEntry entry) {
+        if (entry == null) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("[").append(entry.id != null ? entry.id : "FUNC").append("] ").append(entry.name != null ? entry.name : "").append("\n");
+        sb.append("--------------------------------------------------\n");
+
+        String status = entry.status != null ? entry.status.toUpperCase() : "UNKNOWN";
+        String stateStr = "SUCCESS";
+        if (status.contains("ERROR") || status.contains("FAIL") || status.contains("PROBLEM") || entry.risk >= 75) {
+            stateStr = "PROBLEM (High Risk / Error)";
+        } else if (status.contains("RUNNING") || status.contains("ANALYZING") || status.contains("REFACTORING")) {
+            stateStr = "RUNNING (Active Session)";
+        } else if (!entry.metadataFresh || "PARTIAL".equalsIgnoreCase(status) || entry.risk >= 50 || entry.confidence < 0.8) {
+            stateStr = "ALERT (Stale Metadata / Partial / Moderate Risk)";
+        } else if ("PROVISIONAL".equalsIgnoreCase(status) || "BLOCKED".equalsIgnoreCase(status)) {
+            stateStr = "PROVISIONAL / BLOCKED";
+        }
+
+        sb.append("State Info: ").append(stateStr).append("\n");
+        sb.append("Implementation Status: ").append(status).append("\n");
+        sb.append("Metadata Freshness: ").append(entry.metadataFresh ? "FRESH" : "STALE (Source Code Modified)").append("\n");
+        sb.append("Overall Score: ").append(entry.calculateOverallScore()).append(" / 100\n");
+        sb.append("Evaluation Scores: Imp=").append(formatScore(entry.importance))
+          .append(" | Usg=").append(formatScore(entry.usage))
+          .append(" | Cmp=").append(formatScore(entry.complexity))
+          .append(" | Ref=").append(formatScore(entry.references))
+          .append(" | Mat=").append(formatScore(entry.maturity))
+          .append(" | Risk=").append(formatScore(entry.risk)).append("\n");
+        sb.append("Date of Analysis (Updated): ").append(FunctionalityInventoryManager.formatTimestamp(entry.timestamp)).append("\n");
+        sb.append("Evaluation Method: ").append(entry.method != null ? entry.method : "STATIC").append(" (Confidence: ").append((int)(entry.confidence * 100)).append("%)\n");
+        sb.append("Primary Class: ").append(entry.primaryClass != null ? entry.primaryClass : "N/A").append(" (").append(entry.module != null ? entry.module : "").append(")\n");
+        if (entry.rationale != null && !entry.rationale.isEmpty()) {
+            sb.append("Rationale: ").append(entry.rationale).append("\n");
+        }
+        return sb.toString();
+    }
+
     private void createModeColumn(String title, int width) {
         TableViewerColumn col = new TableViewerColumn(tableViewer, SWT.NONE);
         col.getColumn().setText(title);
@@ -231,6 +303,22 @@ public class FunctionalityInventoryGroup {
                     return fe.selectedMode != null ? fe.selectedMode : "self-dev";
                 }
                 return "self-dev";
+            }
+
+            @Override
+            public Color getBackground(Object element) {
+                if (element instanceof FunctionalityEntry fe) {
+                    return getEntryBackground(fe);
+                }
+                return null;
+            }
+
+            @Override
+            public String getToolTipText(Object element) {
+                if (element instanceof FunctionalityEntry fe) {
+                    return getEntryTooltip(fe);
+                }
+                return null;
             }
         });
 
@@ -279,10 +367,26 @@ public class FunctionalityInventoryGroup {
         col.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                if (element instanceof FunctionalityEntry) {
-                    return labelFunc.apply((FunctionalityEntry) element);
+                if (element instanceof FunctionalityEntry fe) {
+                    return labelFunc.apply(fe);
                 }
                 return "";
+            }
+
+            @Override
+            public Color getBackground(Object element) {
+                if (element instanceof FunctionalityEntry fe) {
+                    return getEntryBackground(fe);
+                }
+                return null;
+            }
+
+            @Override
+            public String getToolTipText(Object element) {
+                if (element instanceof FunctionalityEntry fe) {
+                    return getEntryTooltip(fe);
+                }
+                return null;
             }
         });
     }

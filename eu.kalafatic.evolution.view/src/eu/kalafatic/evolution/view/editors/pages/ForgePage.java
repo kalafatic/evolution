@@ -16,6 +16,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 public class ForgePage extends AEvoPage {
     private Browser browser;
     private boolean isJsReady = false;
+    private boolean bridgesInstalled = false;
 
     public ForgePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -70,62 +71,69 @@ public class ForgePage extends AEvoPage {
     }
 
     private void setupJavaScriptBridges() {
-        if (browser.isDisposed()) return;
+        if (browser == null || browser.isDisposed() || bridgesInstalled) return;
 
-        new BrowserFunction(browser, "forgeAction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 1) {
-                    String action = (String) arguments[0];
-                    handleForgeAction(action, arguments.length > 1 ? arguments[1] : null);
-                }
-                return null;
-            }
-        };
-
-        new BrowserFunction(browser, "browseDirectory") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (browser.isDisposed()) return null;
-                final String[] result = new String[1];
-                Display.getDefault().syncExec(() -> {
-                    org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(browser.getShell());
-                    dialog.setText("Select Data Source Directory");
-                    result[0] = dialog.open();
-                });
-                return result[0];
-            }
-        };
-
-        new BrowserFunction(browser, "browseFile") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (browser.isDisposed()) return null;
-                final String[] result = new String[1];
-                Display.getDefault().syncExec(() -> {
-                    org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(browser.getShell(), org.eclipse.swt.SWT.OPEN);
-                    dialog.setText("Select Data Source File");
-                    result[0] = dialog.open();
-                });
-                return result[0];
-            }
-        };
-
-        new BrowserFunction(browser, "logFunction") {
-            @Override
-            public Object function(Object[] arguments) {
-                if (arguments.length >= 1) {
-                    String msg = (String) arguments[0];
-                    if ("ready".equals(msg)) {
-                        isJsReady = true;
-                        refreshUI();
-                    } else {
-                        System.out.println("[FORGE_JS] " + msg);
+        try {
+            new BrowserFunction(browser, "forgeAction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments.length >= 1) {
+                        String action = (String) arguments[0];
+                        handleForgeAction(action, arguments.length > 1 ? arguments[1] : null);
                     }
+                    return null;
                 }
-                return null;
-            }
-        };
+            };
+
+            new BrowserFunction(browser, "browseDirectory") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (browser.isDisposed()) return null;
+                    final String[] result = new String[1];
+                    Display.getDefault().syncExec(() -> {
+                        org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(browser.getShell());
+                        dialog.setText("Select Data Source Directory");
+                        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
+                        result[0] = dialog.open();
+                    });
+                    return result[0];
+                }
+            };
+
+            new BrowserFunction(browser, "browseFile") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (browser.isDisposed()) return null;
+                    final String[] result = new String[1];
+                    Display.getDefault().syncExec(() -> {
+                        org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(browser.getShell(), org.eclipse.swt.SWT.OPEN);
+                        dialog.setText("Select Data Source File");
+                        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
+                        result[0] = dialog.open();
+                    });
+                    return result[0];
+                }
+            };
+
+            new BrowserFunction(browser, "logFunction") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments.length >= 1) {
+                        String msg = (String) arguments[0];
+                        if ("ready".equals(msg)) {
+                            isJsReady = true;
+                            refreshUI();
+                        } else {
+                            System.out.println("[FORGE_JS] " + msg);
+                        }
+                    }
+                    return null;
+                }
+            };
+            bridgesInstalled = true;
+        } catch (Throwable t) {
+            System.err.println("[FORGE_PAGE] Error setting up JavaScript bridges: " + t.getMessage());
+        }
     }
 
     private void handleForgeAction(String action, Object data) {

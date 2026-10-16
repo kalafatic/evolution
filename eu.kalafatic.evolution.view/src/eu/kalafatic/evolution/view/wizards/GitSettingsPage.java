@@ -140,6 +140,7 @@ public class GitSettingsPage extends AWizardPage {
 			public void widgetSelected(SelectionEvent e) {
 				DirectoryDialog dialog = new DirectoryDialog(getShell());
 				dialog.setText("Select Local Git Repository Directory");
+				eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, localPathCombo.getText());
 				String selected = dialog.open();
 				if (selected != null) localPathCombo.setText(selected);
 			}

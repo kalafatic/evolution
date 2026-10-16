@@ -57,8 +57,14 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         // 1. Structural Scan to Snapshot
         eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
         File root = new File(targetPath);
-        TargetSnapshot.TargetType type = targetPath.contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
+        eu.kalafatic.evolution.controller.mediation.scanner.TargetClassificationDetector.ClassificationResult classResult =
+                eu.kalafatic.evolution.controller.mediation.scanner.TargetClassificationDetector.detect(root);
+        TargetSnapshot.TargetType type = classResult.getCategory();
         TargetSnapshot snapshot = scanner.scanToSnapshot(root, type);
+
+        model.setTargetCategory(type);
+        model.setClassificationConfidence(classResult.getConfidence());
+        model.setTargetNature(classResult.getSummary());
 
         // Null-safety fallback for ExecutionProfile
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
@@ -188,6 +194,13 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             if (known) continue;
 
             context.log("[DISCOVERY] Analyzing meaning of: " + node.getPath());
+
+            if (node.getSummary() == null || node.getSummary().isEmpty()) {
+                String sampleSummary = extractDatasetSampleSummary(new File(context.getProjectRoot(), node.getPath()), context);
+                if (sampleSummary != null && !sampleSummary.isEmpty()) {
+                    node.setSummary(sampleSummary);
+                }
+            }
 
             StringBuilder sb = new StringBuilder();
             sb.append("ARTIFACT: ").append(node.getPath()).append("\n");
@@ -333,12 +346,22 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     private void discoverSubsystems(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
-        context.log("[DISCOVERY] Pass 4: Subsystem Discovery.");
+        context.log("[DISCOVERY] Pass 4: Subsystem / Component Cluster Discovery.");
 
         StringBuilder sb = new StringBuilder();
+        sb.append("TARGET CATEGORY: ").append(model.getTargetCategory()).append("\n");
         sb.append("EXISTING ARCHITECTURAL FACTS:\n");
         model.getArchitecturalFacts().stream().limit(20).forEach(f -> sb.append("- ").append(f.toString()).append("\n"));
-        sb.append("\nIdentify strongly interacting clusters and define Subsystems.");
+
+        if (model.getTargetCategory() == TargetSnapshot.TargetType.DATASET) {
+            sb.append("\nIdentify major Data Categories, Splits, or Feature Clusters for this dataset.");
+        } else if (model.getTargetCategory() == TargetSnapshot.TargetType.KNOWLEDGE_BASE) {
+            sb.append("\nIdentify major Topic Areas, Document Sections, or Knowledge Hubs.");
+        } else if (model.getTargetCategory() == TargetSnapshot.TargetType.AI_MODEL) {
+            sb.append("\nIdentify Model Sub-Components, Layers, or Configuration Groups.");
+        } else {
+            sb.append("\nIdentify strongly interacting software clusters and define Subsystems.");
+        }
 
         String prompt = sb.toString() + "\n\n" +
                 "Output a JSON object:\n" +
@@ -520,15 +543,23 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     private void discoverUseCases(TargetRealityModel model, TaskContext context) throws Exception {
-        context.log("[DISCOVERY] Pass 8: Use Case Discovery.");
+        context.log("[DISCOVERY] Pass 8: Capability & Use Case Discovery.");
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SUBSYSTEMS:\n");
+        sb.append("TARGET CATEGORY: ").append(model.getTargetCategory()).append("\n");
+        sb.append("SUBSYSTEMS / CLUSTERS:\n");
         model.getSubsystems().forEach(s -> sb.append("- ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n"));
         sb.append("\nARCHITECTURAL FACTS:\n");
         model.getArchitecturalFacts().stream().limit(15).forEach(f -> sb.append("- ").append(f.toString()).append("\n"));
-        sb.append("\nIdentify major repository-wide Use Cases derived from these architectural structures.\n");
-        sb.append("Every use case MUST have supporting components, supporting files (evidence), and a confidence score.");
+
+        if (model.getTargetCategory() == TargetSnapshot.TargetType.DATASET) {
+            sb.append("\nIdentify primary Data Workflows, Model Training/Evaluation Uses, or Feature Transformations derived from this dataset.\n");
+        } else if (model.getTargetCategory() == TargetSnapshot.TargetType.KNOWLEDGE_BASE) {
+            sb.append("\nIdentify primary Information Needs, Query Intents, or Knowledge Workflows.\n");
+        } else {
+            sb.append("\nIdentify major repository-wide Use Cases derived from these architectural structures.\n");
+        }
+        sb.append("Every use case / capability MUST have supporting components, supporting files (evidence), and a confidence score.");
 
         String prompt = sb.toString() + "\n\n" +
                 "Output a JSON object:\n" +
@@ -604,21 +635,79 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     private void detectPartialAnalysis(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) {
         if (snapshot == null) return;
         int totalNodes = snapshot.getNodes().size();
-        int metadataNodes = model.getMetadataEntries();
-        double coverage = totalNodes > 0 ? (double) metadataNodes / totalNodes : 0;
+        if (totalNodes == 0) return;
 
-        if (coverage < 0.2) {
-            String warning = "Analysis covered only " + metadataNodes + " of " + totalNodes + " source files. Architecture model incomplete.";
+        int metadataNodes = model.getMetadataEntries();
+        long analyzedNodesCount = snapshot.getNodes().values().stream()
+                .filter(node -> (node.getSummary() != null && !node.getSummary().isEmpty())
+                        || model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath())))
+                .count();
+
+        int effectiveCovered = (int) Math.max(metadataNodes, analyzedNodesCount);
+        double coverage = (double) effectiveCovered / totalNodes;
+
+        if (coverage < 0.2 && totalNodes > 1) {
+            String warning = "Analysis covered only " + effectiveCovered + " of " + totalNodes + " source files. Architecture model incomplete.";
             model.setAnalysisWarning(warning);
             context.log("[DISCOVERY] WARNING: " + warning);
             // Reduce confidence of all use cases
             model.getUseCases().forEach(uc -> uc.setConfidence(uc.getConfidence() * 0.5));
             model.setRealityCompleteness(model.getRealityCompleteness() * 0.5);
-        } else if (coverage < 0.5) {
+        } else if (coverage < 0.5 && totalNodes > 1) {
             String warning = "Analysis covered " + String.format("%.1f", coverage * 100) + "% of source files. Results may be partial.";
             model.setAnalysisWarning(warning);
             context.log("[DISCOVERY] WARNING: " + warning);
         }
+    }
+
+    private String extractDatasetSampleSummary(File file, TaskContext context) {
+        if (file == null || !file.exists() || !file.isFile()) return null;
+        try {
+            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
+                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "FILE");
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = registry.findAdapter(item);
+
+            if (adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter)) {
+                eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext prepCtx =
+                        new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
+                List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> samples = adapter.convert(item, prepCtx);
+                if (samples != null && !samples.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Dataset file containing ").append(samples.size()).append("+ extracted samples. Sample records:\n");
+                    for (int i = 0; i < Math.min(3, samples.size()); i++) {
+                        sb.append(" Sample ").append(i + 1).append(": ").append(limitString(samples.get(i).toFullText(), 200)).append("\n");
+                    }
+                    return sb.toString();
+                }
+            }
+
+            // Fallback for general text or readable files
+            List<String> lines = java.nio.file.Files.readAllLines(file.toPath());
+            if (lines != null && !lines.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("File containing ").append(lines.size()).append(" records/lines. Sample:\n");
+                for (int i = 0; i < Math.min(3, lines.size()); i++) {
+                    if (!lines.get(i).trim().isEmpty()) {
+                        sb.append(" - ").append(limitString(lines.get(i).trim(), 150)).append("\n");
+                    }
+                }
+                return sb.toString();
+            }
+        } catch (Exception ex) {
+            if (context != null) {
+                context.log("[DISCOVERY] Dataset sample extraction note for " + file.getName() + ": " + ex.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private String limitString(String str, int max) {
+        if (str == null) return "";
+        String trimmed = str.trim().replaceAll("\\s+", " ");
+        if (trimmed.length() <= max) return trimmed;
+        return trimmed.substring(0, max) + "...";
     }
 
     private void identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {

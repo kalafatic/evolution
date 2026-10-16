@@ -20,7 +20,6 @@ public class SelfDevOrchestrator {
         this.supervisorLifecycle = new DefaultSupervisorLifecycle();
 
         registerTasks();
-        executePreflightInternal();
     }
 
     public SelfDevOrchestrator(SelfDevContext context,
@@ -31,7 +30,6 @@ public class SelfDevOrchestrator {
         this.supervisorLifecycle = supervisorLifecycle != null ? supervisorLifecycle : new DefaultSupervisorLifecycle();
 
         registerTasks();
-        executePreflightInternal();
     }
 
     public SelfDevPreflightResult executePreflight() {
@@ -202,6 +200,17 @@ public class SelfDevOrchestrator {
             for (String depId : task.getDependencies()) {
                 System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] requires dependency [" + depId + "]. Evaluating...");
                 TaskResult depRes = context.getTaskResult(depId);
+
+                // Fallback check: If dependency is START_EVO, check if START_EVO_SUPERVISOR succeeded
+                if (depRes == null && "START_EVO".equalsIgnoreCase(depId)) {
+                    TaskResult superEvoRes = context.getTaskResult("START_EVO_SUPERVISOR");
+                    if (superEvoRes != null && superEvoRes.isSuccess()) {
+                        System.out.println("[SelfDevOrchestrator] Dependency START_EVO satisfied via START_EVO_SUPERVISOR success.");
+                        depRes = superEvoRes;
+                        context.recordTaskResult(TaskResult.success("START_EVO", "EVO RCP started via START_EVO_SUPERVISOR"));
+                    }
+                }
+
                 if (depRes == null) {
                     System.out.println("[SelfDevOrchestrator] Dependency [" + depId + "] for task [" + taskId + "] not yet executed. Executing dependency...");
                     depRes = executeTaskWithDependenciesInternal(depId, visitingStack);
