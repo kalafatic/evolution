@@ -115,18 +115,43 @@ public class TargetScanner {
 
         // 2. Categorize common carrier types
         return switch (ext) {
-            case "java", "c", "cpp", "h", "hpp", "py", "js", "ts", "html", "css", "sql", "sh", "bat", "rb", "go", "rs", "kt", "scala" -> "source_code";
-            case "md", "txt", "pdf", "docx", "pptx", "xlsx", "csv", "rst", "adoc" -> "document";
-            case "json", "xml", "yaml", "yml", "toml", "ini", "properties" -> "data";
-            case "png", "jpg", "jpeg", "webp", "gif", "svg", "bmp", "ico" -> "image";
-            case "zip", "tar", "gz", "rar", "7z", "bz2", "xz" -> "archive";
+            case "java", "c", "cpp", "py", "js", "ts", "jsx", "tsx", "html", "css", "scss", "sql", "sh", "bat" -> "source_code";
+            case "md", "txt", "pdf", "docx", "doc", "odt" -> "document";
+            case "pptx", "odp", "key" -> "presentation";
+            case "json", "xml", "yaml", "yml" -> "data";
+            case "evodata", "parquet", "jsonl", "csv", "tsv" -> "dataset";
+            case "png", "jpg", "jpeg", "webp", "gif", "svg" -> "image";
+            case "mp3", "wav", "flac", "m4a", "aac", "ogg" -> "audio";
+            case "mp4", "webm", "mkv", "avi", "mov" -> "video";
+            case "zip", "tar", "gz", "rar", "7z" -> "archive";
             default -> ext;
         };
     }
 
     private void detectTechnologies(TargetDescriptor target) {
-        // REFACTOR: Technology detection is no longer assumed by labels.
-        // It is an emergent property discovered during semantic extraction and curation.
+        Set<String> classifications = new java.util.LinkedHashSet<>();
+        long audioCount = target.getFiles().stream().filter(f -> "audio".equals(f.getType())).count();
+        long videoCount = target.getFiles().stream().filter(f -> "video".equals(f.getType())).count();
+        long docCount = target.getFiles().stream().filter(f -> "document".equals(f.getType())).count();
+        long presCount = target.getFiles().stream().filter(f -> "presentation".equals(f.getType())).count();
+        long datasetCount = target.getFiles().stream().filter(f -> "dataset".equals(f.getType())).count();
+        long codeCount = target.getFiles().stream().filter(f -> "source_code".equals(f.getType())).count();
+
+        boolean hasJava = target.getFiles().stream().anyMatch(f -> f.getPath().endsWith(".java") || "pom.xml".equalsIgnoreCase(f.getPath()) || "build.gradle".equalsIgnoreCase(f.getPath()));
+        boolean hasWeb = target.getFiles().stream().anyMatch(f -> f.getPath().endsWith(".html") || f.getPath().endsWith(".js") || f.getPath().endsWith(".ts") || "package.json".equalsIgnoreCase(f.getPath()));
+
+        if (hasJava) { classifications.add("JAVA_CODEBASE"); classifications.add("SOFTWARE_PROJECT"); }
+        if (hasWeb) { classifications.add("WEB_APPLICATION"); classifications.add("WEBSITE_SOURCE"); }
+        if (presCount > 0) classifications.add("PRESENTATION");
+        if (audioCount > 0) { classifications.add("MUSIC_ALBUM"); classifications.add("AUDIO_COLLECTION"); }
+        if (videoCount > 0) { classifications.add("VIDEO_PROJECT"); classifications.add("MULTIMEDIA_PROJECT"); }
+        if (docCount > 0 && codeCount == 0) classifications.add("DOCUMENT_COLLECTION");
+        if (datasetCount > 0) classifications.add("DATASET");
+
+        if (classifications.size() > 2) classifications.add("MIXED_PROJECT");
+        if (classifications.isEmpty()) classifications.add("UNKNOWN");
+
+        target.getDetectedTechnologies().addAll(classifications);
     }
 
     private void addIfNotExists(List<String> list, String value) {
@@ -134,6 +159,28 @@ public class TargetScanner {
     }
 
     private void detectTechnologiesInSnapshot(TargetSnapshot snapshot) {
-        // REFACTOR: Move technology detection to runtime cognitive inference.
+        Set<String> classifications = new java.util.LinkedHashSet<>();
+        long audioCount = snapshot.getNodes().values().stream().filter(n -> "audio".equals(n.getType())).count();
+        long videoCount = snapshot.getNodes().values().stream().filter(n -> "video".equals(n.getType())).count();
+        long docCount = snapshot.getNodes().values().stream().filter(n -> "document".equals(n.getType())).count();
+        long presCount = snapshot.getNodes().values().stream().filter(n -> "presentation".equals(n.getType())).count();
+        long datasetCount = snapshot.getNodes().values().stream().filter(n -> "dataset".equals(n.getType())).count();
+        long codeCount = snapshot.getNodes().values().stream().filter(n -> "source_code".equals(n.getType())).count();
+
+        boolean hasJava = snapshot.getNodes().values().stream().anyMatch(n -> n.getPath().endsWith(".java") || n.getPath().endsWith("pom.xml") || n.getPath().endsWith("build.gradle"));
+        boolean hasWeb = snapshot.getNodes().values().stream().anyMatch(n -> n.getPath().endsWith(".html") || n.getPath().endsWith(".js") || n.getPath().endsWith(".ts") || n.getPath().endsWith("package.json"));
+
+        if (hasJava) { classifications.add("JAVA_CODEBASE"); classifications.add("SOFTWARE_PROJECT"); }
+        if (hasWeb) { classifications.add("WEB_APPLICATION"); classifications.add("WEBSITE_SOURCE"); }
+        if (presCount > 0) classifications.add("PRESENTATION");
+        if (audioCount > 0) { classifications.add("MUSIC_ALBUM"); classifications.add("AUDIO_COLLECTION"); }
+        if (videoCount > 0) { classifications.add("VIDEO_PROJECT"); classifications.add("MULTIMEDIA_PROJECT"); }
+        if (docCount > 0 && codeCount == 0) classifications.add("DOCUMENT_COLLECTION");
+        if (datasetCount > 0) classifications.add("DATASET");
+
+        if (classifications.size() > 2) classifications.add("MIXED_PROJECT");
+        if (classifications.isEmpty()) classifications.add("UNKNOWN");
+
+        snapshot.getMetadata().put("targetClassifications", String.join(", ", classifications));
     }
 }

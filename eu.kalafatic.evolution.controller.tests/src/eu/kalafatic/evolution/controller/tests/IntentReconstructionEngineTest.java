@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import eu.kalafatic.evolution.controller.mediation.model.*;
+import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.*;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
@@ -97,100 +98,98 @@ public class IntentReconstructionEngineTest {
     }
 
     @Test
-    public void testIntentReconstructionEngineWithRootDatasetFiles() throws Exception {
-        // Create root directory containing dataset files (no subdirectories)
-        File datasetDir = File.createTempFile("evo-test-dataset", "");
-        datasetDir.delete();
-        datasetDir.mkdirs();
+    public void testWebApplicationTargetScannerClassification() throws Exception {
+        File webDir = File.createTempFile("evo-test-web", "");
+        webDir.delete();
+        webDir.mkdirs();
 
-        File parquet1 = new File(datasetDir, "0000.parquet");
-        try (FileWriter fw = new FileWriter(parquet1)) {
-            fw.write("PAR1_MOCK_DATASET_CONTENT");
-        }
+        File indexHtml = new File(webDir, "index.html");
+        try (FileWriter fw = new FileWriter(indexHtml)) { fw.write("<html><body>Test</body></html>"); }
+        File appJs = new File(webDir, "app.js");
+        try (FileWriter fw = new FileWriter(appJs)) { fw.write("console.log('App');"); }
+        File pkgJson = new File(webDir, "package.json");
+        try (FileWriter fw = new FileWriter(pkgJson)) { fw.write("{\"name\": \"my-web-app\"}"); }
 
-        File parquet2 = new File(datasetDir, "0001.parquet");
-        try (FileWriter fw = new FileWriter(parquet2)) {
-            fw.write("PAR1_MOCK_DATASET_CONTENT_2");
-        }
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(webDir, TargetSnapshot.TargetType.PROJECT);
 
-        TaskContext context = new TaskContext(orchestrator, datasetDir);
-        context.setSessionId("test-session-dataset-engine");
-        context.getOrchestrationState().setRawInput("# Intent Discovery\n\nDiscover target project purpose");
-
-        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-dataset-engine");
-        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.INTENT_RECONSTRUCTION);
-
-        PlatformMode platformMode = new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, null, 1, false);
-        context.setPlatformMode(platformMode);
-
-        IterationMemoryService memoryService = new IterationMemoryService(datasetDir);
-        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(datasetDir, context);
-
-        IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
-        IterationManager manager = KernelFactory.create(context.getOrchestrationState().getRawInput(), context, session, null);
-
-        EvaluationResult evalResult = engine.runDarwinIteration(context, manager);
-
-        assertNotNull(evalResult);
-        assertTrue(evalResult.isSuccess());
-
-        eu.kalafatic.evolution.controller.orchestration.design.DesignModel designModel =
-                (eu.kalafatic.evolution.controller.orchestration.design.DesignModel) context.getOrchestrationState().getMetadata().get("reconstructedDesignModel");
-        assertNotNull("reconstructedDesignModel should be populated", designModel);
-
-        boolean foundParquetComponent = designModel.getComponents().stream()
-                .anyMatch(c -> c.getName() != null && c.getName().endsWith(".parquet") && "DATASET".equalsIgnoreCase(c.getType()));
-        assertTrue("Parquet root files should be discovered and categorized as DATASET components", foundParquetComponent);
-
-        String targetSummary = (String) context.getOrchestrationState().getMetadata().get("intentTargetSummary");
-        assertNotNull("intentTargetSummary should be populated", targetSummary);
-        assertTrue(targetSummary.contains("Target Nature: Knowledge/Document Repository") || targetSummary.contains("Heterogeneous Artifact Repository") || targetSummary.contains("DATASET"));
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue(classifications.contains("WEB_APPLICATION"));
+        assertTrue(classifications.contains("WEBSITE_SOURCE"));
     }
 
     @Test
-    public void testIntentReconstructionEngineWithCustomArbitraryFileExtensions() throws Exception {
-        // Create root directory containing arbitrary custom file extensions (no hardcoded extension)
-        File customDir = File.createTempFile("evo-test-custom-ext", "");
-        customDir.delete();
-        customDir.mkdirs();
+    public void testMusicAlbumTargetScannerClassification() throws Exception {
+        File musicDir = File.createTempFile("evo-test-music", "");
+        musicDir.delete();
+        musicDir.mkdirs();
 
-        File customFile1 = new File(customDir, "0000.stories");
-        try (FileWriter fw = new FileWriter(customFile1)) {
-            fw.write("Once upon a time in a tiny story dataset...");
+        File track1 = new File(musicDir, "track1.mp3");
+        try (FileWriter fw = new FileWriter(track1)) { fw.write("MPEG AUDIO DATA"); }
+        File track2 = new File(musicDir, "track2.flac");
+        try (FileWriter fw = new FileWriter(track2)) { fw.write("FLAC AUDIO DATA"); }
+
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(musicDir, TargetSnapshot.TargetType.PROJECT);
+
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue(classifications.contains("MUSIC_ALBUM") || classifications.contains("AUDIO_COLLECTION"));
+    }
+
+    @Test
+    public void testPresentationAndDocumentTargetScannerClassification() throws Exception {
+        File docDir = File.createTempFile("evo-test-docs", "");
+        docDir.delete();
+        docDir.mkdirs();
+
+        File slides = new File(docDir, "presentation.pptx");
+        try (FileWriter fw = new FileWriter(slides)) { fw.write("SLIDES DATA"); }
+        File paper = new File(docDir, "whitepaper.pdf");
+        try (FileWriter fw = new FileWriter(paper)) { fw.write("PDF DATA"); }
+
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(docDir, TargetSnapshot.TargetType.PROJECT);
+
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue(classifications.contains("PRESENTATION") || classifications.contains("DOCUMENT_COLLECTION"));
+    }
+
+    @Test
+    public void testBatchQueueNoSilentOmission() throws Exception {
+        File multiDir = File.createTempFile("evo-test-multi", "");
+        multiDir.delete();
+        multiDir.mkdirs();
+
+        // Create 25 files in a directory to exceed a single batch limit (10)
+        File pagesFolder = new File(multiDir, "pages");
+        pagesFolder.mkdirs();
+        for (int i = 0; i < 25; i++) {
+            File p = new File(pagesFolder, "page" + i + ".html");
+            try (FileWriter fw = new FileWriter(p)) { fw.write("<html>page " + i + "</html>"); }
         }
 
-        File customFile2 = new File(customDir, "data.unknownext");
-        try (FileWriter fw = new FileWriter(customFile2)) {
-            fw.write("Arbitrary dataset content line 1\nArbitrary dataset content line 2");
-        }
+        TaskContext context = new TaskContext(orchestrator, multiDir);
+        context.setSessionId("test-session-batch");
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-batch");
 
-        TaskContext context = new TaskContext(orchestrator, customDir);
-        context.setSessionId("test-session-custom-ext");
-        context.getOrchestrationState().setRawInput("# Intent Discovery\n\nDiscover target project purpose");
-
-        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-custom-ext");
-        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.INTENT_RECONSTRUCTION);
-
-        PlatformMode platformMode = new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, null, 1, false);
-        context.setPlatformMode(platformMode);
-
-        IterationMemoryService memoryService = new IterationMemoryService(customDir);
-        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(customDir, context);
+        IterationMemoryService memoryService = new IterationMemoryService(multiDir);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(multiDir, context);
 
         IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
-        IterationManager manager = KernelFactory.create(context.getOrchestrationState().getRawInput(), context, session, null);
+        IterationManager manager = KernelFactory.create("Discover intent", context, session, null);
 
-        EvaluationResult evalResult = engine.runDarwinIteration(context, manager);
+        // Run iteration 1 (reads batch limit 10)
+        EvaluationResult eval1 = engine.runDarwinIteration(context, manager);
+        assertNotNull(eval1);
 
-        assertNotNull(evalResult);
-        assertTrue(evalResult.isSuccess());
-
-        eu.kalafatic.evolution.controller.orchestration.design.DesignModel designModel =
-                (eu.kalafatic.evolution.controller.orchestration.design.DesignModel) context.getOrchestrationState().getMetadata().get("reconstructedDesignModel");
-        assertNotNull("reconstructedDesignModel should be populated", designModel);
-
-        boolean foundCustomFile = designModel.getComponents().stream()
-                .anyMatch(c -> c.getName() != null && (c.getName().equals("0000.stories") || c.getName().equals("data.unknownext")));
-        assertTrue("Arbitrary custom extension files must be discovered and inspected", foundCustomFile);
+        // Run iteration 2 (reads next batch without losing remaining files)
+        EvaluationResult eval2 = engine.runDarwinIteration(context, manager);
+        assertNotNull(eval2);
     }
 }

@@ -100,7 +100,7 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     }
 
     private void scoreDirectory(File dir, int depth) {
-        if (depth > 3) return; // Limit depth for initial scan
+        if (depth > 5) return; // Allow deeper directory scans
 
         File[] children = dir.listFiles();
         if (children == null) return;
@@ -109,25 +109,43 @@ public class IntentReconstructionEngine extends ADarwinEngine {
             if (child.isDirectory()) {
                 String name = child.getName();
                 if (isExcluded(name)) continue;
+                String absPath = child.getAbsolutePath();
 
-                double score = 0;
-                if (name.equals("src")) score += 50;
-                if (name.equals("main")) score += 50;
-                if (name.equals("java")) score += 100;
-                if (name.equals("api") || name.equals("core") || name.equals("model")) score += 30;
-                if (name.contains("controller") || name.contains("service") || name.contains("repository")) score += 20;
+                double score = 10.0;
+                String lower = name.toLowerCase();
+
+                // Software / Java
+                if (lower.equals("src") || lower.equals("main") || lower.equals("java") || lower.equals("app")) score += 50;
+                if (lower.contains("controller") || lower.contains("service") || lower.contains("repository") || lower.contains("api") || lower.contains("core") || lower.contains("model")) score += 30;
+
+                // Web
+                if (lower.contains("components") || lower.contains("pages") || lower.contains("routes") || lower.contains("views") || lower.contains("public") || lower.contains("styles") || lower.contains("scripts")) score += 30;
+
+                // Media / Audio / Video
+                if (lower.contains("audio") || lower.contains("music") || lower.contains("tracks") || lower.contains("songs") || lower.contains("video") || lower.contains("media") || lower.contains("images") || lower.contains("photos")) score += 30;
+
+                // Documents / Presentations / Knowledge
+                if (lower.contains("docs") || lower.contains("documentation") || lower.contains("slides") || lower.contains("presentation") || lower.contains("papers") || lower.contains("books") || lower.contains("articles")) score += 30;
+
+                // Datasets
+                if (lower.contains("data") || lower.contains("datasets") || lower.contains("records") || lower.contains("samples") || lower.contains("corpus")) score += 30;
 
                 // Identify SUBSYSTEMS based on package depth and naming
-                if (depth >= 2 && !name.equals("java") && !name.equals("main") && !name.equals("src")) {
-                    ComponentRecord sub = new ComponentRecord();
-                    sub.setId("subsystem:" + child.getName());
-                    sub.setName(child.getName());
-                    sub.setType("SUBSYSTEM");
-                    sub.setDescription("Architectural subsystem discovered at depth " + depth);
-                    designModel.getComponents().add(sub);
+                if (depth >= 1 && !lower.equals("java") && !lower.equals("main") && !lower.equals("src")) {
+                    String subId = "subsystem:" + child.getName();
+                    if (designModel.getComponents().stream().noneMatch(c -> subId.equalsIgnoreCase(c.getId()))) {
+                        ComponentRecord sub = new ComponentRecord();
+                        sub.setId(subId);
+                        sub.setName(child.getName());
+                        sub.setType("SUBSYSTEM");
+                        sub.setDescription("Discovered structural subsystem: " + child.getName());
+                        designModel.getComponents().add(sub);
+                    }
                 }
 
-                explorationQueue.add(new ExplorationNode(child, score, depth));
+                if (!exploredPaths.contains(absPath)) {
+                    explorationQueue.add(new ExplorationNode(child, score, depth));
+                }
                 scoreDirectory(child, depth + 1);
             }
         }
@@ -135,31 +153,44 @@ public class IntentReconstructionEngine extends ADarwinEngine {
 
     /**
      * Step 1: The "Peek".
-     * Selects files from the exploration queue based on filename heuristics.
+     * Selects files from the exploration queue based on filename heuristics without discarding unqueued files.
      */
     private List<File> selectNextBatch(int limit) {
         List<File> batch = new ArrayList<>();
-        List<ExplorationNode> pendingFolders = new ArrayList<>();
 
         while (batch.size() < limit && !explorationQueue.isEmpty()) {
             ExplorationNode node = explorationQueue.poll();
+            if (node.file == null || !node.file.exists()) continue;
+
             if (node.file.isDirectory()) {
                 List<File> filesInFolder = peekFolder(node.file);
+                List<File> unqueuedFiles = new ArrayList<>();
+
                 for (File f : filesInFolder) {
                     if (batch.size() < limit) {
                         batch.add(f);
                         exploredPaths.add(f.getAbsolutePath());
                     } else {
-                        // If we hit limit, we might want to put this folder back or handle it
-                        // For now, let's just add the files we can and stop
+                        unqueuedFiles.add(f);
                     }
                 }
-                // Also add subfolders to queue
+
+                // FIX: Re-queue remaining files that exceeded the batch size limit
+                if (!unqueuedFiles.isEmpty()) {
+                    for (File remainingFile : unqueuedFiles) {
+                        if (!exploredPaths.contains(remainingFile.getAbsolutePath())) {
+                            explorationQueue.add(new ExplorationNode(remainingFile, node.score * 0.95, node.depth));
+                        }
+                    }
+                }
+
+                // Add subdirectories to queue if not already explored or queued
                 File[] subdirs = node.file.listFiles(File::isDirectory);
                 if (subdirs != null) {
                     for (File sd : subdirs) {
-                        if (!isExcluded(sd.getName())) {
+                        if (!isExcluded(sd.getName()) && !exploredPaths.contains(sd.getAbsolutePath())) {
                             explorationQueue.add(new ExplorationNode(sd, node.score * 0.9, node.depth + 1));
+                            exploredPaths.add(sd.getAbsolutePath()); // Track queued directories to prevent duplicates
                         }
                     }
                 }
@@ -182,55 +213,86 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     }
 
     private double scoreFileName(File file) {
+        if (file == null || !file.exists()) return 0;
         String name = file.getName();
-        String lowerName = name.toLowerCase();
+        String lower = name.toLowerCase();
 
-        // 1. High-value entry points and manifest indicators
-        if (name.contains("Application") || name.contains("Main") || lowerName.contains("main") || lowerName.contains("index")) return 10;
-        if (lowerName.contains("readme") || lowerName.contains("architecture") || lowerName.contains("package") || lowerName.contains("pom")) return 10;
+        // Manifests & Entry points across domains
+        if (lower.equalsIgnoreCase("readme.md") || lower.equals("package.json") || lower.equals("pom.xml") || lower.equals("index.html") || lower.equals("manifest.json") || lower.equals("build.gradle") || lower.contains("architecture")) return 10;
+        if (lower.contains("application") || lower.contains("main") || lower.equals("main.js") || lower.equals("index.js") || lower.equals("app.js") || lower.equals("server.js")) return 10;
 
-        // 2. Dynamic dataset source detection via SourceAdapterRegistry
-        try {
-            eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
-                    eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
-            eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
-                    new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, file.getAbsolutePath(), "FILE");
-            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter adapter = registry.findAdapter(item);
-            if (adapter != null && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.TextAdapter)
-                    && !(adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter)) {
-                return 9;
-            }
-        } catch (Throwable ignored) {}
+        // Web & Software Components
+        if (lower.contains("controller") || lower.contains("resource") || lower.contains("router") || lower.contains("component")) return 9;
+        if (lower.contains("service") || lower.contains("manager") || lower.contains("handler") || lower.contains("api")) return 8;
 
-        // 3. Structural component indicators
-        if (name.contains("Controller") || name.contains("Resource") || name.contains("Router")) return 9;
-        if (name.contains("Service") || name.contains("Manager") || name.contains("Handler")) return 8;
-        if (name.contains("Repository") || name.contains("Dao") || name.contains("Model")) return 7;
+        // Presentations & Documents
+        if (lower.endsWith(".pptx") || lower.endsWith(".pdf") || lower.endsWith(".odp") || lower.endsWith(".docx") || lower.endsWith(".md")) return 8;
 
-        // 4. Config, docs, and general files
-        if (name.contains("Config") || file.length() > 0) return 6;
-        if (name.contains("Util")) return 1;
+        // Audio & Music Albums
+        if (lower.endsWith(".mp3") || lower.endsWith(".flac") || lower.endsWith(".wav") || lower.endsWith(".m4a") || lower.contains("track") || lower.contains("cover") || lower.equalsIgnoreCase("playlist.m3u")) return 8;
+
+        // Datasets
+        if (lower.endsWith(".evodata") || lower.endsWith(".parquet") || lower.endsWith(".jsonl") || lower.endsWith(".csv")) return 8;
+
+        // Generic Code & Config
+        if (lower.endsWith(".java") || lower.endsWith(".ts") || lower.endsWith(".py") || lower.endsWith(".cpp") || lower.endsWith(".c")) return 7;
+        if (lower.endsWith(".json") || lower.endsWith(".xml") || lower.endsWith(".yml") || lower.endsWith(".yaml")) return 6;
+
         return 5;
     }
 
     /**
-     * Step 2 & 3: Read Metadata and Update Knowledge Graph.
+     * Step 2 & 3: Read Metadata and Update Knowledge Graph safely.
      */
     private void processBatch(List<File> batch) {
         context.log("[INTENT_RECONSTRUCTION] Processing batch of " + batch.size() + " files.");
         for (File file : batch) {
-            EvoMetadata meta = contextTool.loadMetadata(file);
-            if (meta == null) {
-                // Generate metadata if missing (lazy generation)
-                metadataAgent.generate(file.getParentFile()); // Simplification: generate for parent
-                meta = contextTool.loadMetadata(file);
+            if (file == null || !file.exists()) continue;
+
+            // Safe handling for large or binary files (> 10MB)
+            if (file.length() > 10 * 1024 * 1024) {
+                context.log("[INTENT_RECONSTRUCTION] Skipping large file text scanning: " + file.getName() + " (" + file.length() + " bytes)");
+                updateDesignModelForLargeFile(file);
+                continue;
             }
 
-            if (meta != null) {
-                updateDesignModel(file, meta);
-                discoverNewHooks(meta);
+            try {
+                EvoMetadata meta = contextTool.loadMetadata(file);
+                if (meta == null) {
+                    // Generate metadata if missing (lazy generation)
+                    metadataAgent.generate(file.getParentFile()); // Simplification: generate for parent
+                    meta = contextTool.loadMetadata(file);
+                }
+
+                if (meta != null) {
+                    updateDesignModel(file, meta);
+                    discoverNewHooks(meta);
+                }
+            } catch (Exception e) {
+                context.log("[INTENT_RECONSTRUCTION] Warning: Could not process file " + file.getName() + ": " + e.getMessage());
             }
         }
+    }
+
+    private void updateDesignModelForLargeFile(File file) {
+        ComponentRecord record = new ComponentRecord();
+        record.setId(file.getAbsolutePath());
+        record.setName(file.getName());
+        record.setPath(file.getAbsolutePath());
+        String lower = file.getName().toLowerCase();
+
+        if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".flac") || lower.endsWith(".m4a") || lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv")) {
+            record.setType("MEDIA");
+        } else if (lower.endsWith(".evodata") || lower.endsWith(".parquet") || lower.endsWith(".zip") || lower.endsWith(".tar.gz")) {
+            record.setType("DATASET");
+        } else if (lower.endsWith(".pdf") || lower.endsWith(".pptx") || lower.endsWith(".docx")) {
+            record.setType("DOCUMENTATION");
+        } else {
+            record.setType("LARGE_ARTIFACT");
+        }
+
+        record.setDescription("Large artifact (" + (file.length() / (1024 * 1024)) + " MB)");
+        designModel.getComponents().add(record);
     }
 
     private void updateDesignModel(File file, EvoMetadata meta) {
@@ -423,16 +485,30 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         long docCount = designModel.getComponents().stream().filter(c -> "DOCUMENTATION".equals(c.getType())).count();
         long dataCount = designModel.getComponents().stream().filter(c -> "DATASET".equals(c.getType()) || "DATA".equals(c.getType())).count();
 
+        Object snapshotObj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+        String classifications = null;
+        if (snapshotObj instanceof eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) {
+            Object metaVal = ((eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) snapshotObj).getMetadata().get("targetClassifications");
+            if (metaVal instanceof String) {
+                classifications = (String) metaVal;
+            }
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("Reconstructed Target Purpose & Knowledge:\n");
         sb.append("Target Path: ").append(root != null ? root.getAbsolutePath() : "Unknown").append("\n");
 
-        if (rm != null) {
-            sb.append("Target Category: ").append(rm.getTargetCategory()).append("\n");
-            if (rm.getTargetNature() != null && !rm.getTargetNature().isEmpty()) {
-                sb.append("Target Nature: ").append(rm.getTargetNature()).append("\n");
-            }
-            sb.append("Classification Confidence: ").append(String.format(Locale.US, "%.2f", rm.getClassificationConfidence())).append("\n");
+        if (classifications != null && !classifications.isEmpty()) {
+            sb.append("Target Classifications: ").append(classifications).append("\n");
+        }
+
+        if (rm != null && rm.getDomain() != null && !rm.getDomain().isEmpty()) {
+            sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
+        }
+
+        if (rm != null && rm.getPurpose() != null && !rm.getPurpose().isEmpty()) {
+            sb.append("Project Purpose: ").append(rm.getPurpose()).append("\n");
+        }
 
             if (rm.getDomain() != null && !rm.getDomain().isEmpty()) {
                 sb.append("Target Domain: ").append(rm.getDomain()).append("\n");
