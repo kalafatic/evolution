@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.forge.data.api.source;
 
+import java.io.File;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -14,6 +15,7 @@ public class DatasetPreparationContext {
     private Consumer<String> logger = System.out::println;
     private DatasetSourceConfig sourceConfig;
     private DatasetSourceStats stats = new DatasetSourceStats();
+    private File targetOutputFile;
 
     public DatasetPreparationContext() {}
 
@@ -84,5 +86,13 @@ public class DatasetPreparationContext {
         if (stats != null) {
             this.stats = stats;
         }
+    }
+
+    public File getTargetOutputFile() {
+        return targetOutputFile;
+    }
+
+    public void setTargetOutputFile(File targetOutputFile) {
+        this.targetOutputFile = targetOutputFile;
     }
 }
