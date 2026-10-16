@@ -10,8 +10,11 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -332,9 +335,37 @@ public class ForgeSettingsDialog extends Dialog {
         SashForm sashForm = new SashForm(container, SWT.HORIZONTAL | SWT.SMOOTH);
         sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
 
+        // Reusable auto-refresh listeners for UI controls
+        SelectionListener autoRefreshSelectionAdapter = new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                readEffectiveSettingsFromUi();
+                updateHardwareAndTimeInfo();
+                updateGraphHtml();
+            }
+        };
+
+        ModifyListener autoRefreshModifyAdapter = e -> {
+            readEffectiveSettingsFromUi();
+            updateHardwareAndTimeInfo();
+            updateGraphHtml();
+        };
+
+        // Left Scrolled Composite for Settings Panel
+        ScrolledComposite leftScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        leftScrolled.setExpandHorizontal(true);
+        leftScrolled.setExpandVertical(true);
+        leftScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+
         // Panel 1: Settings Panel
-        Composite settingsPanel = new Composite(sashForm, SWT.NONE);
+        Composite settingsPanel = new Composite(leftScrolled, SWT.NONE);
         settingsPanel.setLayout(new GridLayout(2, false));
+        leftScrolled.setContent(settingsPanel);
+
+        settingsPanel.addListener(SWT.Resize, event -> {
+            Point size = settingsPanel.computeSize(leftScrolled.getClientArea().width, SWT.DEFAULT, true);
+            leftScrolled.setMinSize(size);
+        });
 
         // Presets Group
         Group presetGroup = new Group(settingsPanel, SWT.NONE);
@@ -420,6 +451,8 @@ public class ForgeSettingsDialog extends Dialog {
             epochCombo.add(opt);
         }
         epochCombo.setText(String.valueOf(selectedEpochs));
+        epochCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        epochCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // 3. Batch Size
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Batch Size:");
@@ -427,6 +460,8 @@ public class ForgeSettingsDialog extends Dialog {
         batchSizeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         for (String b : new String[] { "2", "4", "8", "16", "32", "64" }) batchSizeCombo.add(b);
         batchSizeCombo.setText(String.valueOf(selectedBatchSize));
+        batchSizeCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        batchSizeCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // 4. Learning Rate
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Learning Rate:");
@@ -434,6 +469,8 @@ public class ForgeSettingsDialog extends Dialog {
         learningRateCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         for (String lr : new String[] { "0.05", "0.01", "0.005", "0.001", "0.0005", "0.0001" }) learningRateCombo.add(lr);
         learningRateCombo.setText(String.valueOf(selectedLearningRate));
+        learningRateCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        learningRateCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // 5. Evolutionary Generations (With Tooltip)
         Label genLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Generations:");
@@ -443,6 +480,8 @@ public class ForgeSettingsDialog extends Dialog {
         generationsCombo.setToolTipText("Generations: How many evolutionary rounds are executed.");
         for (String g : new String[] { "1", "2", "3", "5", "10" }) generationsCombo.add(g);
         generationsCombo.setText(String.valueOf(selectedGenerations));
+        generationsCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        generationsCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // 6. Candidates Per Generation (With Tooltip)
         Label candLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Candidates / Gen:");
@@ -452,6 +491,8 @@ public class ForgeSettingsDialog extends Dialog {
         candidatesCombo.setToolTipText("Candidates: How many model candidates are trained or evaluated in each evolutionary generation.");
         for (String c : new String[] { "1", "2", "3", "4", "8" }) candidatesCombo.add(c);
         candidatesCombo.setText(String.valueOf(selectedCandidates));
+        candidatesCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        candidatesCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // 7. Checkpoint Frequency
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Checkpoint Freq (Epochs):");
@@ -459,12 +500,15 @@ public class ForgeSettingsDialog extends Dialog {
         checkpointFreqCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         for (String cf : new String[] { "1", "2", "5", "10", "20" }) checkpointFreqCombo.add(cf);
         checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
+        checkpointFreqCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        checkpointFreqCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // 8. Output Model Name
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Output Model Name:");
         outputModelNameText = GUIFactory.INSTANCE.createText(settingsGroup);
         outputModelNameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         outputModelNameText.setText(selectedOutputModelName != null ? selectedOutputModelName : "");
+        outputModelNameText.addModifyListener(autoRefreshModifyAdapter);
 
         // 3. Loss Threshold Stage Combo
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Loss Threshold Stage:");
@@ -484,6 +528,7 @@ public class ForgeSettingsDialog extends Dialog {
             }
         }
         lossThresholdCombo.select(defaultLossIdx);
+        lossThresholdCombo.addSelectionListener(autoRefreshSelectionAdapter);
 
         // 4. Desired / Finish Threshold Combo (When loss < target finish forging)
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Desired Finish Loss:");
@@ -506,6 +551,8 @@ public class ForgeSettingsDialog extends Dialog {
         if (desiredLossCombo.getSelectionIndex() < 0) {
             desiredLossCombo.setText(String.valueOf(selectedDesiredLoss));
         }
+        desiredLossCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        desiredLossCombo.addModifyListener(autoRefreshModifyAdapter);
 
         // Help / Info label
         Label helpLabel = new Label(settingsGroup, SWT.WRAP);
@@ -577,25 +624,30 @@ public class ForgeSettingsDialog extends Dialog {
         maxDataSizeText.setText(String.valueOf(selectedMaxDataSizeMb));
         maxDataSizeText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         maxDataSizeText.setToolTipText("Maximum input dataset size limit in MB (-1 for unlimited). EVO compiles usable records into .evodata.");
+        maxDataSizeText.addModifyListener(autoRefreshModifyAdapter);
 
         GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Sample Count:");
         maxSampleCountText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
         maxSampleCountText.setText(String.valueOf(selectedMaxSampleCount));
         maxSampleCountText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         maxSampleCountText.setToolTipText("Maximum accepted training records/samples (-1 for unlimited).");
+        maxSampleCountText.addModifyListener(autoRefreshModifyAdapter);
 
         GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Sequence Length:");
         maxSeqLenText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
         maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
         maxSeqLenText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        maxSeqLenText.addModifyListener(autoRefreshModifyAdapter);
 
         GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Validation Ratio (%):");
         valRatioText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
         valRatioText.setText(String.valueOf((int) (selectedValRatio * 100)));
         valRatioText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        valRatioText.addModifyListener(autoRefreshModifyAdapter);
 
         qualityFilterCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Enable Quality Filtering & Rejection");
         qualityFilterCheck.setSelection(selectedQualityFilter);
+        qualityFilterCheck.addSelectionListener(autoRefreshSelectionAdapter);
         GridData qfData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
         qualityFilterCheck.setLayoutData(qfData);
 
@@ -770,32 +822,31 @@ public class ForgeSettingsDialog extends Dialog {
 
         refreshDatasetsTable();
 
-        // Panel 2: Progress Graph Panel (HTML Browser)
-        Composite graphPanel = new Composite(sashForm, SWT.NONE);
+        // Right Scrolled Composite for Graphs Panel
+        ScrolledComposite rightScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        rightScrolled.setExpandHorizontal(true);
+        rightScrolled.setExpandVertical(true);
+        rightScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        // Panel 2: Progress Graph Panel (HTML Browser Container)
+        Composite graphPanel = new Composite(rightScrolled, SWT.NONE);
         graphPanel.setLayout(new GridLayout(1, true));
+        rightScrolled.setContent(graphPanel);
+
+        graphPanel.addListener(SWT.Resize, event -> {
+            Point size = graphPanel.computeSize(rightScrolled.getClientArea().width, SWT.DEFAULT, true);
+            rightScrolled.setMinSize(size);
+        });
 
         Group graphGroup = new Group(graphPanel, SWT.NONE);
-        graphGroup.setText("Loss / Epoch Relation Graph");
+        graphGroup.setText("Training Performance & Capacity Visualizations");
         graphGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         graphGroup.setLayout(new GridLayout(1, true));
 
         graphBrowser = new Browser(graphGroup, SWT.NONE);
-        graphBrowser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-        SelectionAdapter redrawAdapter = new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                updateDesiredLossFromCombo();
-                updateGraphHtml();
-            }
-        };
-
-        epochCombo.addSelectionListener(redrawAdapter);
-        desiredLossCombo.addSelectionListener(redrawAdapter);
-        desiredLossCombo.addModifyListener(e -> {
-            updateDesiredLossFromCombo();
-            updateGraphHtml();
-        });
+        GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        browserData.minHeight = 820;
+        graphBrowser.setLayoutData(browserData);
 
         sashForm.setWeights(new int[] { 45, 55 });
 
@@ -805,104 +856,228 @@ public class ForgeSettingsDialog extends Dialog {
         return container;
     }
 
-    private void updateDesiredLossFromCombo() {
+    private void readEffectiveSettingsFromUi() {
+        if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
+            int idx = modelSizeCombo.getSelectionIndex();
+            if (idx >= 0 && idx < ModelSizePreset.Size.values().length) {
+                selectedModelSize = ModelSizePreset.Size.values()[idx].name();
+            } else if (!modelSizeCombo.getText().trim().isEmpty()) {
+                selectedModelSize = modelSizeCombo.getText().trim();
+            }
+        }
+
+        if (epochCombo != null && !epochCombo.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(epochCombo.getText().trim());
+                if (parsed > 0) selectedEpochs = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (batchSizeCombo != null && !batchSizeCombo.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(batchSizeCombo.getText().trim());
+                if (parsed > 0) selectedBatchSize = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (learningRateCombo != null && !learningRateCombo.isDisposed()) {
+            try {
+                double parsed = Double.parseDouble(learningRateCombo.getText().trim());
+                if (parsed > 0.0) selectedLearningRate = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (generationsCombo != null && !generationsCombo.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(generationsCombo.getText().trim());
+                if (parsed > 0) selectedGenerations = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (candidatesCombo != null && !candidatesCombo.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(candidatesCombo.getText().trim());
+                if (parsed > 0) selectedCandidates = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (checkpointFreqCombo != null && !checkpointFreqCombo.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(checkpointFreqCombo.getText().trim());
+                if (parsed > 0) selectedCheckpointFreq = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (outputModelNameText != null && !outputModelNameText.isDisposed()) {
+            selectedOutputModelName = outputModelNameText.getText().trim();
+        }
+
+        if (lossThresholdCombo != null && !lossThresholdCombo.isDisposed()) {
+            if (!lossThresholdCombo.getText().trim().isEmpty()) {
+                selectedLossThreshold = lossThresholdCombo.getText().trim();
+            }
+        }
+
         if (desiredLossCombo != null && !desiredLossCombo.isDisposed()) {
             try {
                 double parsed = Double.parseDouble(desiredLossCombo.getText().trim());
-                if (parsed >= 0.0) {
-                    selectedDesiredLoss = parsed;
-                }
-            } catch (Exception ex) {}
+                if (parsed >= 0.0) selectedDesiredLoss = parsed;
+            } catch (Exception ignored) {}
         }
+
+        if (targetTimeCombo != null && !targetTimeCombo.isDisposed()) {
+            selectedTargetHours = ForgeTrainingEstimationAgent.getInstance().parseHoursOption(targetTimeCombo.getText());
+        }
+
+        if (maxDataSizeText != null && !maxDataSizeText.isDisposed()) {
+            try {
+                long parsed = Long.parseLong(maxDataSizeText.getText().trim());
+                selectedMaxDataSizeMb = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (maxSampleCountText != null && !maxSampleCountText.isDisposed()) {
+            try {
+                long parsed = Long.parseLong(maxSampleCountText.getText().trim());
+                selectedMaxSampleCount = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(maxSeqLenText.getText().trim());
+                if (parsed > 0) selectedMaxSeqLen = parsed;
+            } catch (Exception ignored) {}
+        }
+
+        if (valRatioText != null && !valRatioText.isDisposed()) {
+            try {
+                int pct = Integer.parseInt(valRatioText.getText().trim());
+                selectedValRatio = Math.max(0.0, Math.min(0.5, pct / 100.0));
+            } catch (Exception ignored) {}
+        }
+
+        if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
+            selectedQualityFilter = qualityFilterCheck.getSelection();
+        }
+
+        if (datasetsTable != null && !datasetsTable.isDisposed()) {
+            for (int i = 0; i < datasetsTable.getItemCount(); i++) {
+                TableItem item = datasetsTable.getItem(i);
+                if (i < datasetItems.size()) {
+                    datasetItems.get(i).setChecked(item.getChecked());
+                }
+            }
+        }
+    }
+
+    private void updateDesiredLossFromCombo() {
+        readEffectiveSettingsFromUi();
     }
 
     private void updateGraphHtml() {
         if (graphBrowser != null && !graphBrowser.isDisposed()) {
-            int maxEpochs = 64;
-            try {
-                int parsed = Integer.parseInt(epochCombo.getText().trim());
-                if (parsed > 0) maxEpochs = parsed;
-            } catch (Exception ex) {}
-
-            double targetLoss = selectedDesiredLoss;
-            String html = generateGraphHtml(maxEpochs, targetLoss, lossHistory);
+            readEffectiveSettingsFromUi();
+            String html = generateGraphHtml(selectedEpochs, selectedDesiredLoss, lossHistory);
             graphBrowser.setText(html);
         }
     }
 
     private String generateGraphHtml(int maxEpochs, double targetFinishLoss, double[] history) {
-        int width = 720;
-        int height = 440;
-        int paddingLeft = 60;
-        int paddingRight = 35;
-        int paddingTop = 50;
-        int paddingBottom = 60;
+        long totalDataBytes = calculateTotalDatasetBytes();
+        double estSec = getEstimatedForgingSeconds();
+        double params = getModelParameterCount(selectedModelSize);
+        long totalTokens = estimateTotalTrainingTokens();
+        double budgetHours = selectedTargetHours;
+        double budgetSec = budgetHours * 3600.0;
+        boolean fitsBudget = estSec <= budgetSec;
 
-        int plotWidth = width - paddingLeft - paddingRight;
-        int plotHeight = height - paddingTop - paddingBottom;
-        int denom = Math.max(1, maxEpochs - 1);
+        // Configuration summary HTML header
+        String configSummaryHtml = String.format(
+            "<div class=\"summary-bar\">" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Model Size:</span> <span class=\"summary-value\">%s (%.1fM)</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Epochs:</span> <span class=\"summary-value\">%d</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Batch Size:</span> <span class=\"summary-value\">%d</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Data Size:</span> <span class=\"summary-value\">%.2f MB</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Est. Time:</span> <span class=\"summary-value\">%s</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Budget:</span> <span class=\"summary-value %.0f\">%.1f hrs (%s)</span></div>" +
+            "</div>",
+            selectedModelSize, params / 1_000_000.0,
+            selectedEpochs, selectedBatchSize,
+            totalDataBytes / (1024.0 * 1024.0),
+            formatDuration(estSec),
+            selectedTargetHours,
+            fitsBudget ? "FEASIBLE" : "EXCEEDS BUDGET"
+        );
 
-        StringBuilder svgBuilder = new StringBuilder();
+        // --- GRAPH 1: LOSS / EPOCH RELATION GRAPH ---
+        int width1 = 720;
+        int height1 = 320;
+        int paddingLeft1 = 60;
+        int paddingRight1 = 35;
+        int paddingTop1 = 40;
+        int paddingBottom1 = 50;
 
-        // 1. Grid Lines and Y-Axis Ticks (Loss 0 to 10)
+        int plotWidth1 = width1 - paddingLeft1 - paddingRight1;
+        int plotHeight1 = height1 - paddingTop1 - paddingBottom1;
+        int denom1 = Math.max(1, maxEpochs - 1);
+
+        StringBuilder svg1Builder = new StringBuilder();
+
         for (int lossVal = 0; lossVal <= 10; lossVal += 2) {
-            int y = paddingTop + plotHeight - (int) ((lossVal / 10.0) * plotHeight);
-            svgBuilder.append(String.format(
+            int y = paddingTop1 + plotHeight1 - (int) ((lossVal / 10.0) * plotHeight1);
+            svg1Builder.append(String.format(
                 "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#e2e8f0\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
-                paddingLeft, y, paddingLeft + plotWidth, y
+                paddingLeft1, y, paddingLeft1 + plotWidth1, y
             ));
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"end\">%d</text>",
-                paddingLeft - 10, y + 4, lossVal
+                paddingLeft1 - 10, y + 4, lossVal
             ));
         }
 
-        // 2. X-Axis Ticks (Epochs)
-        int[] xTicks = new int[] { 1, Math.max(2, maxEpochs / 4), Math.max(3, maxEpochs / 2), Math.max(4, (3 * maxEpochs) / 4), maxEpochs };
-        for (int ep : xTicks) {
+        int[] xTicks1 = new int[] { 1, Math.max(2, maxEpochs / 4), Math.max(3, maxEpochs / 2), Math.max(4, (3 * maxEpochs) / 4), maxEpochs };
+        for (int ep : xTicks1) {
             if (ep > maxEpochs) continue;
-            int x = paddingLeft + (int) (((double) (ep - 1) / denom) * plotWidth);
-            svgBuilder.append(String.format(
+            int x = paddingLeft1 + (int) (((double) (ep - 1) / denom1) * plotWidth1);
+            svg1Builder.append(String.format(
                 "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#e2e8f0\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
-                x, paddingTop, x, paddingTop + plotHeight
+                x, paddingTop1, x, paddingTop1 + plotHeight1
             ));
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"middle\">%d</text>",
-                x, paddingTop + plotHeight + 20, ep
+                x, paddingTop1 + plotHeight1 + 18, ep
             ));
         }
 
-        // 3. Axes Lines
-        svgBuilder.append(String.format(
+        svg1Builder.append(String.format(
             "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
-            paddingLeft, paddingTop, paddingLeft, paddingTop + plotHeight
+            paddingLeft1, paddingTop1, paddingLeft1, paddingTop1 + plotHeight1
         ));
-        svgBuilder.append(String.format(
+        svg1Builder.append(String.format(
             "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
-            paddingLeft, paddingTop + plotHeight, paddingLeft + plotWidth, paddingTop + plotHeight
+            paddingLeft1, paddingTop1 + plotHeight1, paddingLeft1 + plotWidth1, paddingTop1 + plotHeight1
         ));
 
-        // 4. Target Finish Line
-        int targetY = paddingTop + plotHeight - (int) (Math.min(10.0, Math.max(0.0, targetFinishLoss)) / 10.0 * plotHeight);
-        svgBuilder.append(String.format(
+        int targetY1 = paddingTop1 + plotHeight1 - (int) (Math.min(10.0, Math.max(0.0, targetFinishLoss)) / 10.0 * plotHeight1);
+        svg1Builder.append(String.format(
             "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#10b981\" stroke-width=\"2\" stroke-dasharray=\"6,4\" />",
-            paddingLeft, targetY, paddingLeft + plotWidth, targetY
+            paddingLeft1, targetY1, paddingLeft1 + plotWidth1, targetY1
         ));
-        svgBuilder.append(String.format(
+        svg1Builder.append(String.format(
             "<rect x=\"%d\" y=\"%d\" width=\"210\" height=\"22\" rx=\"4\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1\" />",
-            paddingLeft + plotWidth - 215, Math.max(paddingTop + 2, targetY - 26)
+            paddingLeft1 + plotWidth1 - 215, Math.max(paddingTop1 + 2, targetY1 - 26)
         ));
-        svgBuilder.append(String.format(
+        svg1Builder.append(String.format(
             "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#047857\">🏁 Target Finish Loss &lt; %.2f</text>",
-            paddingLeft + plotWidth - 208, Math.max(paddingTop + 16, targetY - 11), targetFinishLoss
+            paddingLeft1 + plotWidth1 - 208, Math.max(paddingTop1 + 16, targetY1 - 11), targetFinishLoss
         ));
 
-        // Status Card Header Logic
-        String statusTitle;
-        String statusSub;
-        String badgeClass;
+        String statusTitle1;
+        String statusSub1;
+        String badgeClass1;
 
-        StringBuilder dataPointsSvg = new StringBuilder();
+        StringBuilder dataPointsSvg1 = new StringBuilder();
 
         if (history != null && history.length > 0) {
             double currentLoss = history[history.length - 1];
@@ -910,32 +1085,30 @@ public class ForgeSettingsDialog extends Dialog {
             boolean targetMet = currentLoss <= targetFinishLoss;
 
             if (targetMet) {
-                statusTitle = "Target Loss Achieved";
-                statusSub = String.format("Epoch %d: Loss %.2f (Met Target &lt; %.2f)", currentEpoch, currentLoss, targetFinishLoss);
-                badgeClass = "badge-success";
+                statusTitle1 = "Target Loss Achieved";
+                statusSub1 = String.format("Epoch %d: Loss %.2f (Met Target &lt; %.2f)", currentEpoch, currentLoss, targetFinishLoss);
+                badgeClass1 = "badge-success";
             } else {
-                statusTitle = "Forging In Progress";
-                statusSub = String.format("Epoch %d / %d: Loss %.2f", currentEpoch, maxEpochs, currentLoss);
-                badgeClass = "badge-primary";
+                statusTitle1 = "Forging In Progress";
+                statusSub1 = String.format("Epoch %d / %d: Loss %.2f (Measured Training Loss)", currentEpoch, maxEpochs, currentLoss);
+                badgeClass1 = "badge-primary";
             }
 
-            // Real Loss Polyline
             StringBuilder polylinePoints = new StringBuilder();
-            int lastX = paddingLeft;
-            int lastY = paddingTop + plotHeight;
+            int lastX = paddingLeft1;
+            int lastY = paddingTop1 + plotHeight1;
 
             for (int i = 0; i < history.length; i++) {
                 int epNum = i + 1;
                 double lVal = history[i];
-                int px = paddingLeft + (int) (((double) (epNum - 1) / denom) * plotWidth);
-                int py = paddingTop + plotHeight - (int) ((Math.min(10.0, Math.max(0.0, lVal)) / 10.0) * plotHeight);
+                int px = paddingLeft1 + (int) (((double) (epNum - 1) / denom1) * plotWidth1);
+                int py = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, lVal)) / 10.0) * plotHeight1);
 
                 if (i > 0) polylinePoints.append(" ");
                 polylinePoints.append(px).append(",").append(py);
 
-                // Individual Point Dots
-                dataPointsSvg.append(String.format(
-                    "<circle cx=\"%d\" cy=\"%d\" r=\"4\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"1.5\" class=\"dot\" data-tooltip=\"Epoch %d: Loss %.2f\" />",
+                dataPointsSvg1.append(String.format(
+                    "<circle cx=\"%d\" cy=\"%d\" r=\"4\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"1.5\" class=\"dot\" data-tooltip=\"Epoch %d: Measured Loss %.2f\" />",
                     px, py, epNum, lVal
                 ));
 
@@ -943,22 +1116,20 @@ public class ForgeSettingsDialog extends Dialog {
                 lastY = py;
             }
 
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<polyline points=\"%s\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />",
                 polylinePoints.toString()
             ));
 
-            // Current State Halo Marker
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<circle cx=\"%d\" cy=\"%d\" r=\"10\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"2\" opacity=\"0.6\"><animate attributeName=\"r\" values=\"8;14;8\" dur=\"2s\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.8;0.2;0.8\" dur=\"2s\" repeatCount=\"indefinite\"/></circle>",
                 lastX, lastY
             ));
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"2\" />",
                 lastX, lastY
             ));
 
-            // Expected trajectory from current point
             if (history.length < maxEpochs) {
                 StringBuilder projPoints = new StringBuilder();
                 int steps = 25;
@@ -970,28 +1141,27 @@ public class ForgeSettingsDialog extends Dialog {
                     double cEp = startEp + t * (maxEpochs - startEp);
                     double cLoss = targetFinishLoss + (startLoss - targetFinishLoss) * Math.exp(-3.0 * t);
 
-                    int cx = paddingLeft + (int) (((cEp - 1.0) / denom) * plotWidth);
-                    int cy = paddingTop + plotHeight - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight);
+                    int cx = paddingLeft1 + (int) (((cEp - 1.0) / denom1) * plotWidth1);
+                    int cy = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight1);
 
                     if (i > 0) projPoints.append(" ");
                     projPoints.append(cx).append(",").append(cy);
                 }
 
-                svgBuilder.append(String.format(
+                svg1Builder.append(String.format(
                     "<polyline points=\"%s\" fill=\"none\" stroke=\"#1d5296\" stroke-width=\"2.5\" stroke-dasharray=\"6,4\" />",
                     projPoints.toString()
                 ));
             }
         } else {
-            statusTitle = "Ready to Forge";
-            statusSub = String.format("Configured: %d Max Epochs | Target Finish Loss &lt; %.2f", maxEpochs, targetFinishLoss);
-            badgeClass = "badge-neutral";
+            statusTitle1 = "Projected Loss Trajectory";
+            statusSub1 = String.format("Estimated trajectory for %d Epochs | Target Finish Loss &lt; %.2f", maxEpochs, targetFinishLoss);
+            badgeClass1 = "badge-neutral";
 
-            // Projected Curve from Epoch 1 (Loss ~8.87) to Max Epochs
             double ep1 = 1.0;
             double loss1 = 8.87;
-            int x1 = paddingLeft + (int) (((ep1 - 1.0) / denom) * plotWidth);
-            int y1 = paddingTop + plotHeight - (int) ((loss1 / 10.0) * plotHeight);
+            int x1 = paddingLeft1 + (int) (((ep1 - 1.0) / denom1) * plotWidth1);
+            int y1 = paddingTop1 + plotHeight1 - (int) ((loss1 / 10.0) * plotHeight1);
 
             StringBuilder projPoints = new StringBuilder();
             int steps = 40;
@@ -1001,39 +1171,148 @@ public class ForgeSettingsDialog extends Dialog {
                 double cEp = ep1 + t * (maxEpochs - ep1);
                 double cLoss = targetFinishLoss + (loss1 - targetFinishLoss) * Math.exp(-3.5 * t);
 
-                int cx = paddingLeft + (int) (((cEp - 1.0) / denom) * plotWidth);
-                int cy = paddingTop + plotHeight - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight);
+                int cx = paddingLeft1 + (int) (((cEp - 1.0) / denom1) * plotWidth1);
+                int cy = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight1);
 
                 if (i > 0) projPoints.append(" ");
                 projPoints.append(cx).append(",").append(cy);
             }
 
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<polyline points=\"%s\" fill=\"none\" stroke=\"#1d5296\" stroke-width=\"2.5\" stroke-dasharray=\"6,4\" />",
                 projPoints.toString()
             ));
 
-            // Initial State Point (Epoch 0 / Ready)
-            svgBuilder.append(String.format(
+            svg1Builder.append(String.format(
                 "<circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#1d5296\" stroke=\"#ffffff\" stroke-width=\"2\" />",
                 x1, y1
             ));
-            svgBuilder.append(String.format(
-                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#1d5296\">★ Ready (Epoch 0)</text>",
+            svg1Builder.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#1d5296\">★ Ready (Projected Start)</text>",
                 x1 + 12, y1 + 4
             ));
 
-            // Target Point Dot
-            int x2 = paddingLeft + plotWidth;
-            int y2 = paddingTop + plotHeight - (int) ((Math.min(10.0, Math.max(0.0, targetFinishLoss)) / 10.0) * plotHeight);
-            svgBuilder.append(String.format(
+            int x2 = paddingLeft1 + plotWidth1;
+            int y2 = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, targetFinishLoss)) / 10.0) * plotHeight1);
+            svg1Builder.append(String.format(
                 "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#10b981\" stroke=\"#ffffff\" stroke-width=\"2\" />",
                 x2, y2
             ));
         }
 
-        // Append Data Point Circles
-        svgBuilder.append(dataPointsSvg);
+        svg1Builder.append(dataPointsSvg1);
+
+        // --- GRAPH 2: TRAINING BUDGET & MODEL CAPACITY GRAPH ---
+        int width2 = 720;
+        int height2 = 320;
+        int paddingLeft2 = 60;
+        int paddingRight2 = 35;
+        int paddingTop2 = 40;
+        int paddingBottom2 = 50;
+
+        int plotWidth2 = width2 - paddingLeft2 - paddingRight2;
+        int plotHeight2 = height2 - paddingTop2 - paddingBottom2;
+
+        StringBuilder svg2Builder = new StringBuilder();
+
+        // Model sizes comparison: NANO, MICRO, MINI, SMALL, MEDIUM, LARGE, XLARGE
+        ModelSizePreset.Size[] allPresetSizes = ModelSizePreset.Size.values();
+        double[] modelEstHours = new double[allPresetSizes.length];
+        double maxEstHours = budgetHours * 1.25;
+
+        for (int i = 0; i < allPresetSizes.length; i++) {
+            String szName = allPresetSizes[i].name();
+            double sec = calculateEstimatedForgingSeconds(szName, selectedEpochs, totalDataBytes);
+            double hrs = sec / 3600.0;
+            modelEstHours[i] = hrs;
+            if (hrs > maxEstHours) {
+                maxEstHours = hrs;
+            }
+        }
+        if (maxEstHours <= 0.0) maxEstHours = 24.0;
+
+        // Y-Axis grid lines (Hours 0 to maxEstHours)
+        for (int step = 0; step <= 4; step++) {
+            double hrsVal = (maxEstHours / 4.0) * step;
+            int y = paddingTop2 + plotHeight2 - (int) ((hrsVal / maxEstHours) * plotHeight2);
+            svg2Builder.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#e2e8f0\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
+                paddingLeft2, y, paddingLeft2 + plotWidth2, y
+            ));
+            svg2Builder.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"end\">%.1fh</text>",
+                paddingLeft2 - 8, y + 4, hrsVal
+            ));
+        }
+
+        // Target Duration Budget Reference Line
+        int budgetY = paddingTop2 + plotHeight2 - (int) (Math.min(maxEstHours, Math.max(0.0, budgetHours)) / maxEstHours * plotHeight2);
+        svg2Builder.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"6,4\" />",
+            paddingLeft2, budgetY, paddingLeft2 + plotWidth2, budgetY
+        ));
+        svg2Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"180\" height=\"20\" rx=\"4\" fill=\"#fef3c7\" stroke=\"#f59e0b\" stroke-width=\"1\" />",
+            paddingLeft2 + 10, Math.max(paddingTop2 + 2, budgetY - 24)
+        ));
+        svg2Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#b45309\">⏱ Target Budget: %.1f hrs</text>",
+            paddingLeft2 + 16, Math.max(paddingTop2 + 15, budgetY - 10), budgetHours
+        ));
+
+        // X-Axis Columns for Model Sizes
+        int barCount = allPresetSizes.length;
+        int barGroupWidth = plotWidth2 / barCount;
+        int barWidth = Math.max(12, barGroupWidth - 20);
+
+        for (int i = 0; i < barCount; i++) {
+            ModelSizePreset.Size sz = allPresetSizes[i];
+            String szName = sz.name();
+            double hrs = modelEstHours[i];
+            boolean isSelected = szName.equalsIgnoreCase(selectedModelSize) || sz.getDisplayName().equalsIgnoreCase(selectedModelSize);
+
+            int centerX = paddingLeft2 + i * barGroupWidth + barGroupWidth / 2;
+            int barX = centerX - barWidth / 2;
+            int barHeight = (int) ((hrs / maxEstHours) * plotHeight2);
+            int barY = paddingTop2 + plotHeight2 - barHeight;
+
+            String fillColor = isSelected ? (hrs <= budgetHours ? "#10b981" : "#ef4444") : "#94a3b8";
+            String strokeColor = isSelected ? "#0f172a" : "#64748b";
+
+            // Draw Bar
+            svg2Builder.append(String.format(
+                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" class=\"dot\" data-tooltip=\"Model: %s | Est. Duration: %s | Params: %.1fM\" />",
+                barX, barY, barWidth, Math.max(2, barHeight), fillColor, strokeColor, isSelected ? "2" : "1",
+                sz.getDisplayName(), formatDuration(hrs * 3600.0), sz.getParamCount() / 1_000_000.0
+            ));
+
+            // Highlight Marker for Selected Model Size
+            if (isSelected) {
+                svg2Builder.append(String.format(
+                    "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\" text-anchor=\"middle\">★ SELECTED</text>",
+                    centerX, Math.max(paddingTop2 + 12, barY - 8), hrs <= budgetHours ? "#047857" : "#b91c1c"
+                ));
+            }
+
+            // X Label
+            svg2Builder.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"10\" font-weight=\"%s\" fill=\"#334155\" text-anchor=\"middle\">%s</text>",
+                centerX, paddingTop2 + plotHeight2 + 18, isSelected ? "700" : "400", sz.getDisplayName()
+            ));
+        }
+
+        // Axes Lines
+        svg2Builder.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
+            paddingLeft2, paddingTop2, paddingLeft2, paddingTop2 + plotHeight2
+        ));
+        svg2Builder.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
+            paddingLeft2, paddingTop2 + plotHeight2, paddingLeft2 + plotWidth2, paddingTop2 + plotHeight2
+        ));
+
+        String statusTitle2 = fitsBudget ? "Selected Configuration Fits Duration Budget" : "Selected Configuration Exceeds Duration Budget";
+        String badgeClass2 = fitsBudget ? "badge-success" : "badge-danger";
 
         return "<!DOCTYPE html>\n" +
             "<html>\n" +
@@ -1058,54 +1337,68 @@ public class ForgeSettingsDialog extends Dialog {
             "    color: var(--evo-text);\n" +
             "    padding: 12px;\n" +
             "    user-select: none;\n" +
-            "    overflow: hidden;\n" +
+            "    overflow-y: auto;\n" +
             "  }\n" +
+            "  .summary-bar {\n" +
+            "    display: flex;\n" +
+            "    flex-wrap: wrap;\n" +
+            "    gap: 12px;\n" +
+            "    background: #ffffff;\n" +
+            "    border: 1px solid #cbd5e1;\n" +
+            "    border-radius: 8px;\n" +
+            "    padding: 10px 14px;\n" +
+            "    margin-bottom: 12px;\n" +
+            "    box-shadow: 0 1px 2px rgba(0,0,0,0.03);\n" +
+            "  }\n" +
+            "  .summary-item { font-size: 11px; display: flex; align-items: center; gap: 4px; }\n" +
+            "  .summary-label { color: #64748b; font-weight: 500; }\n" +
+            "  .summary-value { color: #0f172a; font-weight: 700; }\n" +
             "  .card {\n" +
             "    background: #ffffff;\n" +
             "    border: 1px solid #cbd5e1;\n" +
             "    border-radius: 8px;\n" +
             "    box-shadow: 0 1px 3px rgba(0,0,0,0.05);\n" +
             "    padding: 14px;\n" +
+            "    margin-bottom: 12px;\n" +
             "    display: flex;\n" +
             "    flex-direction: column;\n" +
-            "    height: 100vh;\n" +
             "  }\n" +
             "  .header {\n" +
             "    display: flex;\n" +
             "    justify-content: space-between;\n" +
             "    align-items: center;\n" +
-            "    margin-bottom: 10px;\n" +
-            "    padding-bottom: 8px;\n" +
+            "    margin-bottom: 8px;\n" +
+            "    padding-bottom: 6px;\n" +
             "    border-bottom: 1px solid #e2e8f0;\n" +
             "  }\n" +
             "  .title-group { display: flex; flex-direction: column; }\n" +
-            "  .title { font-size: 14px; font-weight: 700; color: #0f172a; }\n" +
-            "  .subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }\n" +
+            "  .title { font-size: 13px; font-weight: 700; color: #0f172a; }\n" +
+            "  .subtitle { font-size: 11px; color: #64748b; margin-top: 1px; }\n" +
             "  .badge {\n" +
-            "    padding: 4px 10px;\n" +
+            "    padding: 3px 8px;\n" +
             "    border-radius: 12px;\n" +
-            "    font-size: 11px;\n" +
+            "    font-size: 10px;\n" +
             "    font-weight: 600;\n" +
             "    text-transform: uppercase;\n" +
             "    letter-spacing: 0.5px;\n" +
             "  }\n" +
             "  .badge-primary { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }\n" +
             "  .badge-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }\n" +
+            "  .badge-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }\n" +
             "  .badge-neutral { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }\n" +
             "  .graph-container {\n" +
-            "    flex: 1;\n" +
             "    position: relative;\n" +
             "    width: 100%;\n" +
             "    display: flex;\n" +
             "    justify-content: center;\n" +
             "    align-items: center;\n" +
             "  }\n" +
-            "  svg { width: 100%; height: 100%; max-height: 380px; overflow: visible; }\n" +
+            "  svg { width: 100%; height: 280px; overflow: visible; }\n" +
             "  .dot { cursor: pointer; transition: transform 0.15s ease; }\n" +
-            "  .dot:hover { transform: scale(1.5); fill: #b91c1c; }\n" +
+            "  .dot:hover { opacity: 0.8; transform: scale(1.05); }\n" +
             "  .tooltip {\n" +
             "    position: absolute;\n" +
-            "    background: rgba(15, 23, 42, 0.9);\n" +
+            "    background: rgba(15, 23, 42, 0.95);\n" +
             "    color: #ffffff;\n" +
             "    padding: 5px 9px;\n" +
             "    border-radius: 4px;\n" +
@@ -1115,37 +1408,39 @@ public class ForgeSettingsDialog extends Dialog {
             "    opacity: 0;\n" +
             "    transition: opacity 0.15s ease;\n" +
             "    white-space: nowrap;\n" +
-            "    box-shadow: 0 2px 6px rgba(0,0,0,0.15);\n" +
+            "    box-shadow: 0 2px 6px rgba(0,0,0,0.2);\n" +
+            "    z-index: 100;\n" +
             "  }\n" +
             "  .legend {\n" +
             "    display: flex;\n" +
             "    gap: 16px;\n" +
             "    justify-content: center;\n" +
-            "    margin-top: 8px;\n" +
+            "    margin-top: 6px;\n" +
             "    font-size: 11px;\n" +
             "    color: #475569;\n" +
             "  }\n" +
             "  .legend-item { display: flex; align-items: center; gap: 6px; }\n" +
-            "  .legend-line { width: 18px; height: 3px; border-radius: 2px; }\n" +
+            "  .legend-line { width: 16px; height: 3px; border-radius: 2px; }\n" +
             "</style>\n" +
             "</head>\n" +
             "<body>\n" +
+            configSummaryHtml + "\n" +
+
+            "<!-- CARD 1: LOSS / EPOCH RELATION GRAPH -->\n" +
             "<div class=\"card\">\n" +
             "  <div class=\"header\">\n" +
             "    <div class=\"title-group\">\n" +
-            "      <div class=\"title\">" + statusTitle + "</div>\n" +
-            "      <div class=\"subtitle\">" + statusSub + "</div>\n" +
+            "      <div class=\"title\">" + statusTitle1 + "</div>\n" +
+            "      <div class=\"subtitle\">" + statusSub1 + "</div>\n" +
             "    </div>\n" +
-            "    <div class=\"badge " + badgeClass + "\">EVO FORGE GRAPH</div>\n" +
+            "    <div class=\"badge " + badgeClass1 + "\">GRAPH 1: LOSS TRAJECTORY</div>\n" +
             "  </div>\n" +
-            "  <div class=\"graph-container\" id=\"graphContainer\">\n" +
-            "    <div class=\"tooltip\" id=\"tooltip\"></div>\n" +
-            "    <svg viewBox=\"0 0 " + width + " " + height + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
-            "      <!-- Y-Axis Title -->\n" +
-            "      <text x=\"20\" y=\"30\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"700\" fill=\"#334155\">Loss</text>\n" +
-            "      <!-- X-Axis Title -->\n" +
-            "      <text x=\"" + (width / 2) + "\" y=\"" + (height - 12) + "\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"700\" fill=\"#334155\" text-anchor=\"middle\">Epochs</text>\n" +
-            "      " + svgBuilder.toString() + "\n" +
+            "  <div class=\"graph-container\" id=\"graphContainer1\">\n" +
+            "    <div class=\"tooltip\" id=\"tooltip1\"></div>\n" +
+            "    <svg viewBox=\"0 0 " + width1 + " " + height1 + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
+            "      <text x=\"20\" y=\"25\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\">Loss</text>\n" +
+            "      <text x=\"" + (width1 / 2) + "\" y=\"" + (height1 - 8) + "\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\" text-anchor=\"middle\">Epochs</text>\n" +
+            "      " + svg1Builder.toString() + "\n" +
             "    </svg>\n" +
             "  </div>\n" +
             "  <div class=\"legend\">\n" +
@@ -1154,21 +1449,51 @@ public class ForgeSettingsDialog extends Dialog {
             "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #10b981; border-top: 2px dashed #10b981;\"></div>Target Finish Threshold</div>\n" +
             "  </div>\n" +
             "</div>\n" +
+
+            "<!-- CARD 2: TRAINING BUDGET & MODEL CAPACITY GRAPH -->\n" +
+            "<div class=\"card\">\n" +
+            "  <div class=\"header\">\n" +
+            "    <div class=\"title-group\">\n" +
+            "      <div class=\"title\">" + statusTitle2 + "</div>\n" +
+            "      <div class=\"subtitle\">Estimated Duration across Model Capacities for " + String.format("%.2f MB Data (%d Epochs)", totalDataBytes / (1024.0 * 1024.0), selectedEpochs) + "</div>\n" +
+            "    </div>\n" +
+            "    <div class=\"badge " + badgeClass2 + "\">GRAPH 2: CAPACITY BUDGET</div>\n" +
+            "  </div>\n" +
+            "  <div class=\"graph-container\" id=\"graphContainer2\">\n" +
+            "    <div class=\"tooltip\" id=\"tooltip2\"></div>\n" +
+            "    <svg viewBox=\"0 0 " + width2 + " " + height2 + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
+            "      <text x=\"18\" y=\"25\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\">Hours</text>\n" +
+            "      <text x=\"" + (width2 / 2) + "\" y=\"" + (height2 - 8) + "\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\" text-anchor=\"middle\">Model Capacity Preset</text>\n" +
+            "      " + svg2Builder.toString() + "\n" +
+            "    </svg>\n" +
+            "  </div>\n" +
+            "  <div class=\"legend\">\n" +
+            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #10b981;\"></div>Fits Budget</div>\n" +
+            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #ef4444;\"></div>Exceeds Budget</div>\n" +
+            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #f59e0b; border-top: 2px dashed #f59e0b;\"></div>Target Duration Budget</div>\n" +
+            "  </div>\n" +
+            "</div>\n" +
+
             "<script>\n" +
-            "  const tooltip = document.getElementById('tooltip');\n" +
-            "  const container = document.getElementById('graphContainer');\n" +
-            "  document.querySelectorAll('.dot').forEach(dot => {\n" +
-            "    dot.addEventListener('mousemove', (e) => {\n" +
-            "      const rect = container.getBoundingClientRect();\n" +
-            "      tooltip.style.left = (e.clientX - rect.left + 10) + 'px';\n" +
-            "      tooltip.style.top = (e.clientY - rect.top - 25) + 'px';\n" +
-            "      tooltip.textContent = dot.getAttribute('data-tooltip');\n" +
-            "      tooltip.style.opacity = '1';\n" +
+            "  function setupTooltips(containerId, tooltipId) {\n" +
+            "    const container = document.getElementById(containerId);\n" +
+            "    const tooltip = document.getElementById(tooltipId);\n" +
+            "    if (!container || !tooltip) return;\n" +
+            "    container.querySelectorAll('.dot').forEach(dot => {\n" +
+            "      dot.addEventListener('mousemove', (e) => {\n" +
+            "        const rect = container.getBoundingClientRect();\n" +
+            "        tooltip.style.left = (e.clientX - rect.left + 10) + 'px';\n" +
+            "        tooltip.style.top = (e.clientY - rect.top - 25) + 'px';\n" +
+            "        tooltip.textContent = dot.getAttribute('data-tooltip');\n" +
+            "        tooltip.style.opacity = '1';\n" +
+            "      });\n" +
+            "      dot.addEventListener('mouseleave', () => {\n" +
+            "        tooltip.style.opacity = '0';\n" +
+            "      });\n" +
             "    });\n" +
-            "    dot.addEventListener('mouseleave', () => {\n" +
-            "      tooltip.style.opacity = '0';\n" +
-            "    });\n" +
-            "  });\n" +
+            "  }\n" +
+            "  setupTooltips('graphContainer1', 'tooltip1');\n" +
+            "  setupTooltips('graphContainer2', 'tooltip2');\n" +
             "</script>\n" +
             "</body>\n" +
             "</html>";
