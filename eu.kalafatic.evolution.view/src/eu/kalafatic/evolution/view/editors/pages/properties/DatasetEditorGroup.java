@@ -296,6 +296,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         Button moveUpSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Move Up");
         Button moveDownSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Move Down");
         Button selectAllSrcBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Select All");
+        Button buildEvodataBtn = GUIFactory.INSTANCE.createButton(sourcesBtnComp, "Build .evodata");
 
         addFileSrcBtn.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -343,6 +344,13 @@ public class DatasetEditorGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handleSelectAllSources();
+            }
+        });
+
+        buildEvodataBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleBuildEvodataFromSources();
             }
         });
 
@@ -647,6 +655,152 @@ public class DatasetEditorGroup extends AEvoGroup {
                         if (!reportArea.isDisposed()) {
                             reportArea.setText("Discovery Error: " + ex.getMessage());
                             EvoDialogUtils.showErrorDialog(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage(), ex);
+                        }
+                    });
+                    return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
+                }
+            }
+        };
+        job.schedule();
+    }
+
+    private void handleBuildEvodataFromSources() {
+        List<DatasetItem> apiItems = new ArrayList<>();
+        for (DatasetItem item : sourceItemList) {
+            if (item.isChecked() && item.getPath() != null && !item.getPath().trim().isEmpty()) {
+                apiItems.add(item);
+            }
+        }
+
+        if (apiItems.isEmpty()) {
+            MessageDialog.openWarning(group.getShell(), "No Checked Dataset Sources", "Please select and check at least one dataset source in the table.");
+            return;
+        }
+
+        String defaultDir = outputDirText.getText().trim();
+        if (defaultDir.isEmpty()) {
+            String baseWorkspace = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getWorkspacePath();
+            if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+                baseWorkspace = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+            }
+            if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+                baseWorkspace = System.getProperty("user.dir");
+            }
+            defaultDir = new File(baseWorkspace, "forge-input").getAbsolutePath();
+        }
+
+        File defaultDirFile = new File(defaultDir);
+        if (!defaultDirFile.exists()) {
+            defaultDirFile.mkdirs();
+        }
+
+        org.eclipse.swt.widgets.FileDialog saveDlg = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.SAVE);
+        saveDlg.setText("Build & Export .evodata Dataset Artifact");
+        saveDlg.setFilterExtensions(new String[] { "*.evodata", "*.*" });
+        saveDlg.setFilterNames(new String[] { "EVO Dataset Artifact (*.evodata)", "All Files (*.*)" });
+        saveDlg.setFilterPath(defaultDirFile.getAbsolutePath());
+        saveDlg.setFileName("dataset.evodata");
+        saveDlg.setOverwrite(true);
+
+        String selectedPath = saveDlg.open();
+        if (selectedPath == null || selectedPath.trim().isEmpty()) {
+            return;
+        }
+
+        if (!selectedPath.toLowerCase().endsWith(".evodata")) {
+            selectedPath = selectedPath + ".evodata";
+        }
+
+        final File targetEvodataFile = new File(selectedPath);
+
+        setProgressBarVisible(true);
+        updateProgress(10);
+        updateStatusText("Status: Building .evodata dataset artifact...");
+
+        String orchId = getOrchestratorId();
+        OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Building .evodata artifact for " + apiItems.size() + " sources...");
+        reportArea.setText("Starting Native .evodata Optimization & Export for " + apiItems.size() + " checked sources...\nTarget Output File: " + targetEvodataFile.getAbsolutePath() + "\n");
+
+        Job job = new Job("Build .evodata Artifact: " + targetEvodataFile.getName()) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                long startTime = System.currentTimeMillis();
+                System.out.println("[DATASET][START] Building .evodata targetFile=" + targetEvodataFile.getAbsolutePath() + " sources=" + apiItems.size());
+
+                try {
+                    updateProgress(50);
+                    updateStatusText("Status: Compiling & optimizing .evodata container...");
+                    eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService service = new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
+                    eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext context = new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
+                    context.setTargetOutputFile(targetEvodataFile);
+
+                    eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult result = service.prepareDatasets(apiItems, context, targetEvodataFile.getParentFile());
+
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Build Complete");
+                    updateProgress(100);
+                    updateStatusText("Status: Build Complete");
+
+                    Display.getDefault().asyncExec(() -> {
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            if (result.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.SUCCESS && result.getOutputPath() != null) {
+                                File evodataFile = new File(result.getOutputPath());
+                                double sizeMb = evodataFile.length() / (1024.0 * 1024.0);
+
+                                outputDirText.setText(evodataFile.getParentFile().getAbsolutePath());
+                                String nameWithoutExt = evodataFile.getName().replaceAll("\\.evodata$", "");
+                                repoText.setText(nameWithoutExt);
+
+                                boolean found = false;
+                                for (DatasetItem item : sourceItemList) {
+                                    if (item.getPath().equalsIgnoreCase(evodataFile.getAbsolutePath())) {
+                                        item.setChecked(true);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    sourceItemList.add(new DatasetItem(true, evodataFile.getAbsolutePath(), "FILE"));
+                                }
+                                refreshSourcesTable();
+
+                                String reportText = String.format(Locale.US,
+                                    "BUILD .EVODATA SUCCESSFUL:\n" +
+                                    "- Output File: %s\n" +
+                                    "- Sources Processed: %d\n" +
+                                    "- Records Accepted: %d\n" +
+                                    "- Records Rejected: %d\n" +
+                                    "- Duplicate Count: %d\n" +
+                                    "- Usable Bytes: %d (%.2f MB)\n" +
+                                    "- Status: %s\n",
+                                    evodataFile.getAbsolutePath(), apiItems.size(), result.getRecordsAccepted(),
+                                    result.getRecordsRejected(), result.getDuplicateCount(), result.getAcceptedBytes(), sizeMb, result.getStatus());
+                                reportArea.setText(reportText);
+
+                                MessageDialog.openInformation(group.getShell(), "Dataset Built",
+                                    "Native .evodata artifact built successfully!\n\n" +
+                                    "Output File: " + evodataFile.getAbsolutePath() + "\n" +
+                                    "Records Accepted: " + result.getRecordsAccepted() + "\n" +
+                                    "Usable Bytes: " + result.getAcceptedBytes() + " (" + String.format(Locale.US, "%.2f", sizeMb) + " MB)");
+                            } else {
+                                String errorMsg = !result.getErrors().isEmpty() ? String.join("\n", result.getErrors()) : "Status: " + result.getStatus();
+                                reportArea.setText("BUILD .EVODATA FAILED:\n" + errorMsg);
+                                MessageDialog.openError(group.getShell(), "Dataset Build Failed", "Failed to build .evodata artifact:\n" + errorMsg);
+                            }
+                        }
+                    });
+
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[DATASET][END] Build .evodata complete targetFile=" + targetEvodataFile.getAbsolutePath() + " durationMs=" + duration + " status=" + result.getStatus());
+                    return Status.OK_STATUS;
+                } catch (Exception ex) {
+                    OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Build Error: " + ex.getMessage());
+                    Display.getDefault().asyncExec(() -> {
+                        updateStatusText("Status: Build Error - " + ex.getMessage());
+                        setProgressBarVisible(false);
+                        if (!reportArea.isDisposed()) {
+                            reportArea.setText("BUILD ERROR: " + ex.getMessage());
+                            EvoDialogUtils.showErrorDialog(group.getShell(), "Error Building Dataset", "Error building .evodata artifact: " + ex.getMessage(), ex);
                         }
                     });
                     return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex);
