@@ -1,0 +1,29 @@
+EVO DATA PREPARATION RESULT REPORT
+------------------------------------------
+Artifact: prepared_1baabbbe2f3220bd.evodata
+Source: MULTI_SOURCE (checked_sources_2)
+Requested Usable Data: 500 MB (524288000 bytes)
+Downloaded Bytes: 0
+Actual Usable Bytes: 30247970 (28.85 MB)
+Training Bytes: 0 (0.00 MB)
+Validation Bytes: 0 (0.00 MB)
+Estimated Tokens: 7.2M (7247051 tokens)
+Input/Read Records: 36173
+Accepted Records: 35105
+Rejected Records: 0 (0 bytes)
+Duplicate Records: 1068 (308994 bytes)
+  - Exact Duplicates: 1068
+  - Normalized Duplicates: 0
+  - Near-Duplicates: 0
+Train/Val Leakage Filtered: 18
+Source Coverage: 5.8%
+Note: Source dataset exhausted before target size was reached.
+Train Samples: 34403 (7155894 estimated tokens)
+Validation Samples: 693 (91157 estimated tokens)
+Status: INSUFFICIENT_SOURCE_DATA
+QUALITY LIMITATIONS & VERIFICATION SUMMARY:
+  - Exact & Normalized Deduplication: APPLIED
+  - Train/Val Leakage Prevention: APPLIED
+  - Noise, Corrupted Text & Invalid Q&A Filtering: APPLIED
+  - Remaining Limitations: High-level semantic overlap or specialized domain nuances may persist.
+------------------------------------------

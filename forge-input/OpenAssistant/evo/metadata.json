@@ -1,0 +1,58 @@
+{
+  "formatVersion": "1.0",
+  "datasetId": "prepared_1baabbbe2f3220bd.evodata",
+  "name": "prepared_1baabbbe2f3220bd.evodata",
+  "createdTimestamp": 1792167122245,
+  "timestamp": 1792167122245,
+  "status": "INSUFFICIENT_SOURCE_DATA",
+  "source": "MULTI_SOURCE",
+  "repository": "checked_sources_2",
+  "sources": [
+    {
+      "sourceType": "MULTI_SOURCE",
+      "target": "checked_sources_2",
+      "downloadedBytes": 0,
+      "acceptedBytes": 30247970
+    }
+  ],
+  "statistics": {
+    "totalSamples": 35096,
+    "trainSamples": 34403,
+    "valSamples": 693,
+    "acceptedRecords": 35105,
+    "rejectedRecords": 0,
+    "duplicateRecords": 1068,
+    "exactDuplicates": 1068,
+    "normalizedDuplicates": 0,
+    "nearDuplicates": 0,
+    "malformedJsonCount": 0,
+    "emptyMeaninglessCount": 0,
+    "corruptedTextCount": 0,
+    "invalidQaCount": 0,
+    "trainValLeakageCount": 18,
+    "totalTrainingBytes": 0,
+    "estimatedTokens": 7247051
+  },
+  "schema": {
+    "sampleTypes": ["TEXT", "INSTRUCTION", "CODE", "CHAT", "CONVERSATION"],
+    "columns": ["id", "type", "prompt", "response", "qualityScore"]
+  },
+  "requestedUsableBytes": 524288000,
+  "actualUsableBytes": 30247970,
+  "downloadedBytes": 0,
+  "extractedBytes": 0,
+  "rawContentBytes": 0,
+  "acceptedBytes": 30247970,
+  "rejectedBytes": 0,
+  "duplicateBytes": 308994,
+  "trainingBytes": 0,
+  "validationBytes": 0,
+  "acceptedRecords": 35105,
+  "rejectedRecords": 0,
+  "duplicateRecords": 1068,
+  "estimatedTokens": 0,
+  "trainSamples": 34403,
+  "valSamples": 693,
+  "trainTokens": 7155894,
+  "valTokens": 91157
+}
