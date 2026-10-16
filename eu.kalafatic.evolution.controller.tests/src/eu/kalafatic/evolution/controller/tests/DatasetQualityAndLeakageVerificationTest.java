@@ -69,6 +69,66 @@ public class DatasetQualityAndLeakageVerificationTest {
     }
 
     @Test
+    public void testDataCleanerPreservesJavaCodeSyntaxAndAnnotations() {
+        DataCleaner cleaner = new DataCleaner();
+        TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(0.5);
+
+        String javaCode = "package eu.kalafatic.demo;\n\n" +
+                          "import java.util.List;\n" +
+                          "import java.util.ArrayList;\n\n" +
+                          "public class PipelineDemo<T> {\n" +
+                          "    @Override\n" +
+                          "    public List<T> process(List<T> items) {\n" +
+                          "        if (items == null || items.isEmpty()) {\n" +
+                          "            return new ArrayList<>();\n" +
+                          "        }\n" +
+                          "        return items;\n" +
+                          "    }\n" +
+                          "}\n";
+
+        NormalizedSample codeSample = NormalizedSample.createTextSample(javaCode, "PipelineDemo.java");
+        codeSample.setCategory("source_code");
+        codeSample.setLanguage("java");
+
+        NormalizedSample cleanedCode = cleaner.clean(codeSample);
+        assertNotNull("Cleaner must accept valid Java code sample", cleanedCode);
+
+        String cleanedText = cleanedCode.toFullText();
+        assertTrue("Cleaner must preserve generics <T>", cleanedText.contains("List<T>"));
+        assertTrue("Cleaner must preserve annotations @Override", cleanedText.contains("@Override"));
+        assertTrue("Cleaner must preserve logical operators || and &&", cleanedText.contains("||"));
+        assertTrue("Cleaner must preserve braces { }", cleanedText.contains("{") && cleanedText.contains("}"));
+        assertTrue("Cleaner must preserve import statements", cleanedText.contains("import java.util.List;"));
+
+        assertTrue("Quality scorer must accept valid Java code sample", scorer.accept(cleanedCode));
+    }
+
+    @Test
+    public void testDecimalMbParsingAndTargetSizePreservation() throws Exception {
+        String inputMbStr = "12.5";
+        double parsedMb = Double.parseDouble(inputMbStr);
+        long targetBytes = (long) (parsedMb * 1024.0 * 1024.0);
+
+        assertEquals(12.5, parsedMb, 0.001);
+        assertEquals(13107200L, targetBytes);
+
+        DatasetSourceStats stats = new DatasetSourceStats();
+        stats.setRequestedUsableBytes(targetBytes);
+        stats.setAcceptedBytes(5242880L); // Actual generated usable size: 5 MB
+
+        // Verify target size is strictly preserved in stats and report output
+        assertEquals(13107200L, stats.getRequestedUsableBytes());
+
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(new File("dummy.evodata"));
+        DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", "test");
+        artifact.save(List.of(NormalizedSample.createTextSample("Test sample", "src")), config, stats, 0.1);
+
+        String report = artifact.buildReportText();
+        assertTrue("Report must display requested usable data size", report.contains("Requested Usable Data: 12 MB") || report.contains("13107200 bytes"));
+        assertTrue("Report must display actual usable bytes separately", report.contains("Actual Usable Bytes: 5242880"));
+    }
+
+    @Test
     public void testDatasetDeduplicatorDetectsExactAndNormalizedDuplicates() {
         DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
 
