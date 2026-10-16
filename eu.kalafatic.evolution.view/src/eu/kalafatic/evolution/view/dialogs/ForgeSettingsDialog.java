@@ -845,7 +845,8 @@ public class ForgeSettingsDialog extends Dialog {
 
         graphBrowser = new Browser(graphGroup, SWT.NONE);
         GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        browserData.minHeight = 820;
+        browserData.minimumHeight = 820;
+        browserData.heightHint = 820;
         graphBrowser.setLayoutData(browserData);
 
         sashForm.setWeights(new int[] { 45, 55 });
