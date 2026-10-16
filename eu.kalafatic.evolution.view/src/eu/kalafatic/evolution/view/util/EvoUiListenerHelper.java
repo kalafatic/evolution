@@ -79,7 +79,6 @@ public class EvoUiListenerHelper {
                     } else {
                         descriptor.setTrigger(EvoUiActionDescriptor.TriggerType.USER_CLICK);
                         EvoUiActionLogger.getInstance().logStart(descriptor);
-                        EvoUiActionLogger.getInstance().logSuccess(descriptor, "Button clicked");
                     }
                     updateControlTooltip(button, descriptor);
                 }

@@ -45,7 +45,7 @@ public class EvoUiActionDescriptor {
     private ActionStatus status = ActionStatus.NOT_STARTED;
     private String sessionId;
     private String processId = UUID.randomUUID().toString();
-    private long startTimeMs = System.currentTimeMillis();
+    private long startTimeMs = -1;
     private long durationMs = -1;
     private String resultSummary;
     private Throwable exception;
@@ -148,7 +148,7 @@ public class EvoUiActionDescriptor {
     }
 
     public EvoUiActionDescriptor setOldValue(String oldValue) {
-        this.oldValue = oldValue;
+        this.oldValue = sanitizeValue("oldValue", oldValue);
         return this;
     }
 
@@ -157,7 +157,7 @@ public class EvoUiActionDescriptor {
     }
 
     public EvoUiActionDescriptor setNewValue(String newValue) {
-        this.newValue = newValue;
+        this.newValue = sanitizeValue("newValue", newValue);
         return this;
     }
 
@@ -224,7 +224,7 @@ public class EvoUiActionDescriptor {
     }
 
     public EvoUiActionDescriptor setResultSummary(String resultSummary) {
-        this.resultSummary = resultSummary;
+        this.resultSummary = sanitizeValue("resultSummary", resultSummary);
         return this;
     }
 
@@ -261,16 +261,17 @@ public class EvoUiActionDescriptor {
     }
 
     public static String sanitizeValue(String key, String value) {
-        if (value == null) return null;
+        if (value == null) return "";
         if (key != null) {
             String lowerKey = key.toLowerCase();
-            if (lowerKey.contains("pass") || lowerKey.contains("token") || lowerKey.contains("secret") || lowerKey.contains("key")) {
+            if (lowerKey.contains("pass") || lowerKey.contains("password") || lowerKey.contains("token") || lowerKey.contains("secret") || lowerKey.contains("private_key") || lowerKey.contains("apikey") || lowerKey.contains("api_key") || lowerKey.contains("auth")) {
                 return "******";
             }
         }
-        if (value.length() > 200) {
-            return value.substring(0, 197) + "...";
+        String cleanValue = value.replace("\r\n", "\\n").replace("\n", "\\n").replace("\r", "\\n");
+        if (cleanValue.length() > 200) {
+            return cleanValue.substring(0, 197) + "...";
         }
-        return value;
+        return cleanValue;
     }
 }

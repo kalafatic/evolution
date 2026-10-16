@@ -845,7 +845,6 @@ public class ForgeSettingsDialog extends Dialog {
 
         graphBrowser = new Browser(graphGroup, SWT.NONE);
         GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        browserData.minimumHeight = 820;
         browserData.heightHint = 820;
         graphBrowser.setLayoutData(browserData);
 
@@ -1284,7 +1283,7 @@ public class ForgeSettingsDialog extends Dialog {
             svg2Builder.append(String.format(
                 "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" class=\"dot\" data-tooltip=\"Model: %s | Est. Duration: %s | Params: %.1fM\" />",
                 barX, barY, barWidth, Math.max(2, barHeight), fillColor, strokeColor, isSelected ? "2" : "1",
-                sz.getDisplayName(), formatDuration(hrs * 3600.0), sz.getParameterCount() / 1.0
+                sz.getDisplayName(), formatDuration(hrs * 3600.0), getModelParameterCount(sz.name()) / 1_000_000.0
             ));
 
             // Highlight Marker for Selected Model Size
