@@ -115,6 +115,11 @@ public class EvoStyleManager implements IEvoStyleManager {
             a:hover {
                 text-decoration: underline;
             }
+
+            /* Global UI Action & Dynamic Tooltip Helper for HTML Controls */
+            [data-evo-action] {
+                cursor: pointer;
+            }
             """;
     }
 
