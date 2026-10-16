@@ -21,17 +21,7 @@ public class GitRepositoryStartup implements IStartup {
 
 	@Override
 	public void earlyStartup() {
-		// Offload repository scanning and disk checks to a background Job
-		Job job = new Job("Git Repository Discovery") {
-			@Override
-			protected IStatus run(IProgressMonitor monitor) {
-				System.out.println("Registering all Git repositories in background job...");
-				scanAndRegisterRepositories();
-				return Status.OK_STATUS;
-			}
-		};
-		job.setPriority(Job.DECORATE);
-		job.schedule();
+		System.out.println("[GIT_STARTUP] Automatic startup Git scanning disabled to prevent memory/CPU freeze. Repositories will be loaded on demand.");
 	}
 	
 	 public void scanAndRegisterRepositories() {

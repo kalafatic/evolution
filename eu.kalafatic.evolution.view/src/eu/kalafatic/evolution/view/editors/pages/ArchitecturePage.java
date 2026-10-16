@@ -150,33 +150,6 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         synchronizeSnapshotsWithDisk();
-
-        // Offload background workspace repository discovery so UI thread doesn't block on startup
-        Job discoveryJob = new Job("Discovering Workspace Repositories") {
-            @Override
-            protected IStatus run(IProgressMonitor monitor) {
-                try {
-                    SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
-                    if (discovery != null) {
-                        Display.getDefault().asyncExec(() -> {
-                            if (discovery.getPrimaryRepository() != null) {
-                                String primary = discovery.getPrimaryRepository().getAbsolutePath();
-                                if (!targetHistory.contains(primary)) targetHistory.add(primary);
-                            }
-                            for (java.io.File repo : discovery.getGitRepositories()) {
-                                String path = repo.getAbsolutePath();
-                                if (!targetHistory.contains(path)) targetHistory.add(path);
-                            }
-                        });
-                    }
-                } catch (Throwable t) {
-                    // Ignore background discovery errors
-                }
-                return Status.OK_STATUS;
-            }
-        };
-        discoveryJob.setPriority(Job.DECORATE);
-        discoveryJob.schedule();
     }
 
     private String findEvoRepository() {

@@ -86,39 +86,6 @@ public class Activator extends AbstractUIPlugin {
 //		PreferenceInitializer.setUp();
 
 		registerP2Policy(bundleContext);
-
-		registerExistingEvoRepository();
-	}
-
-	private void registerExistingEvoRepository() {
-		Job job = new Job("Registering existing Evo repository") {
-			@Override
-			protected IStatus run(IProgressMonitor monitor) {
-				try {
-					// 1. Check workspace projects
-					for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
-						if (project.isOpen() && project.getLocation() != null) {
-							File projectDir = project.getLocation().toFile();
-							File gitDir = new File(projectDir, ".git");
-							if (gitDir.exists()) {
-								GitRegistryHelper.registerGitRepository(projectDir);
-							}
-						}
-					}
-
-					// 2. Discover on system
-					String evoRepoPath = ProjectModelManager.getInstance().findEvolutionRepository();
-					if (evoRepoPath != null) {
-						GitRegistryHelper.registerGitRepository(new File(evoRepoPath));
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				return Status.OK_STATUS;
-			}
-		};
-		job.setSystem(true);
-		job.schedule(5000); // Delay to allow workbench to initialize
 	}
 
 	// ---------------------------------------------------------------
