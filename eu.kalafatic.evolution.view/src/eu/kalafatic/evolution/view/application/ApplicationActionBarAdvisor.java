@@ -255,6 +255,14 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		MenuManager menuManager = new MenuManager("&Tools", "Tools");
 		menuManager.add(new GroupMarker("languageMarker"));
 		menuManager.add(new GroupMarker("toolsMarker"));
+
+		menuManager.add(new org.eclipse.jface.action.Action("Start Background Discovery (Git / Workspace)") {
+			@Override
+			public void run() {
+				eu.kalafatic.evolution.controller.manager.BackgroundDiscoveryService.getInstance().startAllScans();
+			}
+		});
+
 		menuManager.add(new GroupMarker("actionMarker"));
 		return menuManager;
 	}

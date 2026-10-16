@@ -23,6 +23,10 @@ public class GitRepositoryStartup implements IStartup {
 	public void earlyStartup() {
 		System.out.println("[GIT_STARTUP] Automatic startup Git scanning disabled to prevent memory/CPU freeze. Repositories will be loaded on demand.");
 	}
+
+	public static void startManualGitDiscovery() {
+		eu.kalafatic.evolution.controller.manager.BackgroundDiscoveryService.getInstance().startGitDiscoveryJob();
+	}
 	
 	 public void scanAndRegisterRepositories() {
          try {
