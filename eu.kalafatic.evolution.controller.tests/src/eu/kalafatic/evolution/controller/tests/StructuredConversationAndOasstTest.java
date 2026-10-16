@@ -246,4 +246,61 @@ public class StructuredConversationAndOasstTest {
             assertEquals("Code evolves, adapted to survive, algorithms thriving alive.", sample.getConversationMessages().get(1).getText());
         }
     }
+
+    @Test
+    public void testOpenAssistantAttachedFileRegression() throws Exception {
+        File inputFile = new File("forge-input/OpenAssistant/oasst_top1_2023-08-25_train-eng.jsonl");
+        assertTrue("Input file must exist", inputFile.exists());
+
+        eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONLAdapter adapter =
+            new eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONLAdapter();
+
+        eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
+            new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, inputFile.getAbsolutePath(), "JSONL");
+
+        List<NormalizedSample> samples = adapter.convert(item, null);
+        assertEquals(4353, samples.size());
+
+        // Check Italian Dobermann conversation
+        NormalizedSample dobber = samples.get(0);
+        assertEquals(TrainingSampleType.CONVERSATION, dobber.getType());
+        assertEquals(2, dobber.getConversationMessages().size());
+        assertEquals("user", dobber.getConversationMessages().get(0).getRole());
+        assertTrue(dobber.getConversationMessages().get(0).getText().contains("Consigliami 5 nomi"));
+        assertEquals("assistant", dobber.getConversationMessages().get(1).getRole());
+        assertTrue(dobber.getConversationMessages().get(1).getText().contains("Ecco 5 nomi"));
+
+        // Check Empire State Building multi-turn conversation
+        NormalizedSample empire = samples.get(2);
+        assertEquals(TrainingSampleType.CONVERSATION, empire.getType());
+        assertEquals(4, empire.getConversationMessages().size());
+        assertEquals("user", empire.getConversationMessages().get(0).getRole());
+        assertTrue(empire.getConversationMessages().get(0).getText().contains("empire state building"));
+        assertEquals("assistant", empire.getConversationMessages().get(1).getRole());
+        assertEquals("user", empire.getConversationMessages().get(2).getRole());
+        assertEquals("assistant", empire.getConversationMessages().get(3).getRole());
+        assertEquals("1454 feet", empire.getConversationMessages().get(3).getText());
+
+        // Roundtrip save and reload artifact
+        File tempEvodata = File.createTempFile("openassistant_test", ".evodata");
+        tempEvodata.deleteOnExit();
+
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(tempEvodata);
+        eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig config =
+            new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig("LOCAL", inputFile.getName());
+        eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats stats =
+            new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats();
+
+        artifact.save(samples, config, stats, 0.02);
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(tempEvodata);
+        assertEquals(4266, loaded.getTrainSamples().size());
+        assertEquals(87, loaded.getValSamples().size());
+
+        // Verify loaded Italian sample
+        NormalizedSample loadedDobber = loaded.getTrainSamples().get(0);
+        assertEquals(TrainingSampleType.CONVERSATION, loadedDobber.getType());
+        assertEquals(2, loadedDobber.getConversationMessages().size());
+        assertTrue(loadedDobber.getConversationMessages().get(0).getText().contains("Consigliami 5 nomi"));
+    }
 }

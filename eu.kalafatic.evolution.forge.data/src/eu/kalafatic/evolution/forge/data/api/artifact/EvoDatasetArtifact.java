@@ -121,6 +121,10 @@ public class EvoDatasetArtifact {
         // Write to temporary archive first (transactional semantics)
         File tempFile = new File(artifactFile.getAbsolutePath() + ".tmp");
         long fixedTimestamp = 1704067200000L; // Deterministic zip entry timestamp
+
+        long actualTrainingBytes = 0;
+        long actualValidationBytes = 0;
+
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(tempFile), StandardCharsets.UTF_8)) {
 
             // 1. data.jsonl
@@ -128,7 +132,9 @@ public class EvoDatasetArtifact {
             zeData.setTime(fixedTimestamp);
             zos.putNextEntry(zeData);
             for (NormalizedSample s : trainSamples) {
-                zos.write((s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8));
+                byte[] lineBytes = (s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8);
+                zos.write(lineBytes);
+                actualTrainingBytes += lineBytes.length;
             }
             zos.closeEntry();
 
@@ -137,9 +143,16 @@ public class EvoDatasetArtifact {
             zeVal.setTime(fixedTimestamp);
             zos.putNextEntry(zeVal);
             for (NormalizedSample s : valSamples) {
-                zos.write((s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8));
+                byte[] lineBytes = (s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8);
+                zos.write(lineBytes);
+                actualValidationBytes += lineBytes.length;
             }
             zos.closeEntry();
+
+            if (stats != null) {
+                stats.setTrainingBytes(actualTrainingBytes);
+                stats.setValidationBytes(actualValidationBytes);
+            }
 
             // 3. metadata.json
             ZipEntry zeMeta = new ZipEntry("metadata.json");

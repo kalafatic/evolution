@@ -96,6 +96,17 @@ public class JSONLAdapter implements DatasetSourceAdapter {
     public static NormalizedSample parseJsonObject(JSONObject json, String sourceName) {
         if (json == null) return null;
 
+        if (json.has("text") && !json.isNull("text")) {
+            String txtVal = json.optString("text", "");
+            if (txtVal.contains("<|im_start|>")) {
+                String convoId = json.optString("conversationId", json.optString("id", sourceName));
+                NormalizedSample imSample = parseImStartConversation(txtVal, convoId, sourceName);
+                if (imSample != null) {
+                    return imSample;
+                }
+            }
+        }
+
         String typeStr = json.optString("type", "");
         TrainingSampleType type = TrainingSampleType.fromString(typeStr);
 
@@ -164,6 +175,59 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         }
 
         return null;
+    }
+
+    public static NormalizedSample parseImStartConversation(String text, String convoId, String sourceName) {
+        if (text == null || !text.contains("<|im_start|>")) {
+            return null;
+        }
+        List<NormalizedMessage> normMsgs = new ArrayList<>();
+        int pos = 0;
+        while (pos < text.length()) {
+            int startIdx = text.indexOf("<|im_start|>", pos);
+            if (startIdx == -1) {
+                break;
+            }
+            int roleStart = startIdx + "<|im_start|>".length();
+            int roleEnd = text.indexOf("\n", roleStart);
+            if (roleEnd == -1) {
+                return null;
+            }
+            String rawRole = text.substring(roleStart, roleEnd).trim();
+            String normalizedRole = NormalizedMessage.normalizeRole(rawRole);
+            if (normalizedRole == null) {
+                return null;
+            }
+
+            int endIdx = text.indexOf("<|im_end|>", roleEnd);
+            if (endIdx == -1) {
+                return null;
+            }
+
+            String msgText = text.substring(roleEnd + 1, endIdx);
+            normMsgs.add(new NormalizedMessage(normalizedRole, msgText.trim()));
+            pos = endIdx + "<|im_end|>".length();
+        }
+
+        if (normMsgs.isEmpty()) {
+            return null;
+        }
+
+        boolean hasUser = false;
+        boolean hasAssistant = false;
+        for (NormalizedMessage msg : normMsgs) {
+            if ("user".equals(msg.getRole())) {
+                hasUser = true;
+            } else if ("assistant".equals(msg.getRole())) {
+                hasAssistant = true;
+            }
+        }
+
+        if (!hasUser || !hasAssistant) {
+            return null;
+        }
+
+        return NormalizedSample.createConversationSample(convoId, normMsgs, sourceName);
     }
 
     private static boolean isMetadataKey(String key) {
