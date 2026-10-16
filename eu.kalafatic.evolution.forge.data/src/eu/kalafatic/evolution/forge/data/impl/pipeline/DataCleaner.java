@@ -31,6 +31,24 @@ public class DataCleaner implements DataNormalizer {
         if (sample == null) return null;
 
         boolean isCode = sample.getType() == eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CODE;
+        if (!isCode && sample.getCategory() != null) {
+            String cat = sample.getCategory().toLowerCase();
+            if (cat.contains("code") || cat.contains("java") || cat.contains("prog") || cat.contains("repo") || cat.contains("source")) {
+                isCode = true;
+            }
+        }
+        if (!isCode && sample.getSource() != null) {
+            String src = sample.getSource().toLowerCase();
+            if (src.contains("code") || src.contains("java") || src.endsWith(".java") || src.endsWith(".py") || src.endsWith(".cpp") || src.endsWith(".cs") || src.endsWith(".js") || src.endsWith(".ts")) {
+                isCode = true;
+            }
+        }
+        if (!isCode && sample.getLanguage() != null) {
+            String lang = sample.getLanguage().toLowerCase();
+            if (lang.equals("java") || lang.equals("python") || lang.equals("cpp") || lang.equals("c") || lang.equals("cs") || lang.equals("js") || lang.equals("ts") || lang.equals("go") || lang.equals("rust") || lang.equals("sql")) {
+                isCode = true;
+            }
+        }
 
         if (sample.getInstruction() != null) {
             sample.setInstruction(cleanString(sample.getInstruction(), false));

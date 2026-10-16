@@ -545,7 +545,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         String sizeMbStr = maxSizeMbText.getText().trim();
         long targetBytes = 50 * 1024 * 1024L;
         try {
-            targetBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
+            targetBytes = (long) (Double.parseDouble(sizeMbStr) * 1024.0 * 1024.0);
         } catch (Exception ignored) {}
 
         String task = switch (domainCombo.getSelectionIndex()) {
@@ -876,7 +876,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         String sizeMbStr = maxSizeMbText.getText().trim();
         long maxBytes = 0;
         try {
-            maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
+            maxBytes = (long) (Double.parseDouble(sizeMbStr) * 1024.0 * 1024.0);
         } catch (Exception ignored) {}
 
         String sourceType = switch (sourceTypeCombo.getSelectionIndex()) {
@@ -933,9 +933,6 @@ public class DatasetEditorGroup extends AEvoGroup {
                             // Use actual properties in UI
                             repoText.setText(repo);
                             outputDirText.setText(downloadedDir.getAbsolutePath());
-                            if (actualMbOnDisk > 0.0) {
-                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
-                            }
 
                             StringBuilder reportSb = new StringBuilder();
                             reportSb.append("ACTUAL DATASET PROPERTIES (DOWNLOADED):\n");
@@ -1058,7 +1055,6 @@ public class DatasetEditorGroup extends AEvoGroup {
                                 // Update UI fields with actual properties of exported dataset
                                 repoText.setText(repoOrPath);
                                 outputDirText.setText(evodataFile.getParentFile().getAbsolutePath());
-                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", sizeMb));
 
                                 String reportText = String.format(Locale.US,
                                     "EXPORT TO .EVODATA SUCCESSFUL:\n" +
@@ -1198,17 +1194,24 @@ public class DatasetEditorGroup extends AEvoGroup {
         try {
             org.json.JSONArray array = new org.json.JSONArray(jsonStr);
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%-5s | %-12s | %-50s | %-10s\n", "#", "TYPE", "PROMPT / CONTENT", "QUALITY"));
-            sb.append("----------------------------------------------------------------------------------\n");
+            sb.append("========================================================================================================\n");
+            sb.append("REPRESENTATIVE SAMPLE PREVIEW & QUALITY ASSESSMENT\n");
+            sb.append("========================================================================================================\n");
+            sb.append(String.format(Locale.US, "%-4s | %-12s | %-8s | %-10s | %-45s\n", "#", "TYPE", "SCORE", "DECISION", "EXPLANATION / PROMPT CONTENT"));
+            sb.append("--------------------------------------------------------------------------------------------------------\n");
             for (int i = 0; i < array.length(); i++) {
                 org.json.JSONObject obj = array.getJSONObject(i);
                 String type = obj.optString("sampleType", obj.optString("type", "TEXT"));
                 String content = obj.optString("content", obj.optString("text", obj.optString("prompt", "")));
                 content = content.replaceAll("\r?\n", " ");
-                if (content.length() > 47) content = content.substring(0, 44) + "...";
+                if (content.length() > 42) content = content.substring(0, 39) + "...";
                 double quality = obj.optDouble("qualityScore", 1.0);
-                sb.append(String.format("%-5d | %-12s | %-50s | %-10.1f%%\n", (i + 1), type, content, quality * 100.0));
+                boolean accepted = obj.optBoolean("accepted", quality >= 0.5);
+                String decision = accepted ? "ACCEPTED" : "REJECTED";
+                String explanation = accepted ? "Passed quality, structure & diversity criteria" : "Low quality score / excessive noise or malformed QA";
+                sb.append(String.format(Locale.US, "#%-3d | %-12s | %5.1f%%  | %-10s | %s - \"%s\"\n", (i + 1), type, quality * 100.0, decision, explanation, content));
             }
+            sb.append("========================================================================================================\n");
             return sb.toString();
         } catch (Exception e) {
             return jsonStr;
@@ -1288,9 +1291,6 @@ public class DatasetEditorGroup extends AEvoGroup {
                             // Update actual properties in UI
                             repoText.setText(repo);
                             outputDirText.setText(preparedDir.getAbsolutePath());
-                            if (actualMbOnDisk > 0.0) {
-                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
-                            }
 
                             StringBuilder reportSb = new StringBuilder();
                             reportSb.append("ACTUAL PREPARED DATASET PROPERTIES:\n");
@@ -1378,9 +1378,7 @@ public class DatasetEditorGroup extends AEvoGroup {
 
                                 // Use actual properties of first discovered local dataset if available
                                 File first = localArtifacts.get(0);
-                                double firstMb = first.length() / (1024.0 * 1024.0);
                                 outputDirText.setText(first.getParentFile().getAbsolutePath());
-                                maxSizeMbText.setText(String.format(Locale.US, "%.2f", firstMb));
                                 String nameWithoutExt = first.getName().replaceAll("\\.(evodata|jsonl|parquet|txt)$", "");
                                 repoText.setText(nameWithoutExt);
                             }
