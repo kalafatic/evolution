@@ -125,8 +125,15 @@ public class OASST1Adapter implements DatasetSourceAdapter {
                         JSONObject obj = new JSONObject(trimmed);
                         if (obj.has("replies") || obj.has("prompt")) {
                             rawTrees.add(obj);
-                        } else if (obj.has("role") || obj.has("text") || obj.has("message_id")) {
+                        } else if (obj.has("role") || obj.has("message_id")) {
                             rawFlatMessages.add(obj);
+                        } else if (obj.has("text")) {
+                            NormalizedSample sample = JSONLAdapter.parseJsonObject(obj, targetFile.getName());
+                            if (sample != null) {
+                                samples.add(sample);
+                            } else {
+                                malformedLines++;
+                            }
                         }
                     } catch (Exception ex) {
                         malformedLines++;
