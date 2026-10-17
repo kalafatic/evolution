@@ -61,7 +61,7 @@ public class ContextualHelpGroup extends AEvoGroup {
 
         autoHelpToggle = new Button(ctrlComp, SWT.CHECK);
         autoHelpToggle.setText("Enable Automatic Contextual Help");
-        autoHelpToggle.setSelection(false);
+        autoHelpToggle.setSelection(true);
 
         refreshBtn = new Button(ctrlComp, SWT.PUSH);
         refreshBtn.setText("Refresh Assistance");

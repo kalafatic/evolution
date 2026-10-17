@@ -22,9 +22,7 @@ public class EvoUiActionLogger {
     public void logStart(EvoUiActionDescriptor action) {
         if (action == null) return;
         action.setStatus(EvoUiActionDescriptor.ActionStatus.ACTION_START);
-        if (action.getStartTimeMs() <= 0) {
-            action.setStartTimeMs(System.currentTimeMillis());
-        }
+        action.setStartTimeMs(System.currentTimeMillis());
 
         StringBuilder sb = new StringBuilder();
         sb.append("\n[UI][INFO][ACTION_START]\n");
@@ -60,8 +58,7 @@ public class EvoUiActionLogger {
         if (action == null) return;
         action.setStatus(EvoUiActionDescriptor.ActionStatus.ACTION_SUCCESS);
         long now = System.currentTimeMillis();
-        long start = action.getStartTimeMs();
-        long duration = (start > 0 && now >= start) ? (now - start) : 0;
+        long duration = now - action.getStartTimeMs();
         action.setDurationMs(duration);
         action.setResultSummary(resultSummary);
 
@@ -85,8 +82,7 @@ public class EvoUiActionLogger {
         if (action == null) return;
         action.setStatus(EvoUiActionDescriptor.ActionStatus.ACTION_FAILED);
         long now = System.currentTimeMillis();
-        long start = action.getStartTimeMs();
-        long duration = (start > 0 && now >= start) ? (now - start) : 0;
+        long duration = now - action.getStartTimeMs();
         action.setDurationMs(duration);
         action.setException(exception);
 
@@ -100,12 +96,10 @@ public class EvoUiActionLogger {
         }
         sb.append("durationMs=").append(duration).append("\n");
         if (customMessage != null && !customMessage.isBlank()) {
-            sb.append("message=").append(EvoUiActionDescriptor.sanitizeValue("message", customMessage)).append("\n");
+            sb.append("message=").append(customMessage).append("\n");
         }
         if (exception != null) {
-            String excMsg = exception.getMessage() != null ? exception.getMessage() : "";
-            sb.append("exception=").append(exception.getClass().getName()).append(": ")
-              .append(EvoUiActionDescriptor.sanitizeValue("exception", excMsg));
+            sb.append("exception=").append(exception.getClass().getName()).append(": ").append(exception.getMessage());
         }
 
         Log.log(action.getSessionId(), Level.SEVERE, sb.toString(), exception);
@@ -129,7 +123,7 @@ public class EvoUiActionLogger {
             sb.append("newValue=").append(action.getNewValue() != null ? action.getNewValue() : "").append("\n");
         }
         if (outcome != null && !outcome.isBlank()) {
-            sb.append("result=").append(EvoUiActionDescriptor.sanitizeValue("result", outcome)).append("\n");
+            sb.append("result=").append(outcome).append("\n");
         }
         sb.append("trigger=").append(action.getTrigger());
 
@@ -141,7 +135,7 @@ public class EvoUiActionLogger {
         boolean first = true;
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             if (!first) sb.append(", ");
-            sb.append(entry.getKey()).append("=").append(EvoUiActionDescriptor.sanitizeValue(entry.getKey(), entry.getValue()));
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
             first = false;
         }
         sb.append("}");

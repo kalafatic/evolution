@@ -198,6 +198,7 @@ public abstract class AEvoGroup {
         String safeToolTip = toolTip != null ? toolTip : "";
         eu.kalafatic.evolution.controller.ui.EvoUiActionDescriptor desc = eu.kalafatic.evolution.view.util.EvoUiListenerHelper.getActionDescriptor(control);
         if (desc != null) {
+            desc.setLabel(safeToolTip);
             eu.kalafatic.evolution.view.util.EvoUiListenerHelper.updateControlTooltip(control, desc);
         } else if (!safeToolTip.equals(control.getToolTipText())) {
             control.setToolTipText(safeToolTip);
