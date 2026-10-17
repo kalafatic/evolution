@@ -45,7 +45,7 @@ public class EvoUiActionDescriptor {
     private ActionStatus status = ActionStatus.NOT_STARTED;
     private String sessionId;
     private String processId = UUID.randomUUID().toString();
-    private long startTimeMs = -1;
+    private long startTimeMs = System.currentTimeMillis();
     private long durationMs = -1;
     private String resultSummary;
     private Throwable exception;
@@ -148,7 +148,7 @@ public class EvoUiActionDescriptor {
     }
 
     public EvoUiActionDescriptor setOldValue(String oldValue) {
-        this.oldValue = sanitizeValue("oldValue", oldValue);
+        this.oldValue = oldValue;
         return this;
     }
 
@@ -157,7 +157,7 @@ public class EvoUiActionDescriptor {
     }
 
     public EvoUiActionDescriptor setNewValue(String newValue) {
-        this.newValue = sanitizeValue("newValue", newValue);
+        this.newValue = newValue;
         return this;
     }
 
@@ -224,7 +224,7 @@ public class EvoUiActionDescriptor {
     }
 
     public EvoUiActionDescriptor setResultSummary(String resultSummary) {
-        this.resultSummary = sanitizeValue("resultSummary", resultSummary);
+        this.resultSummary = resultSummary;
         return this;
     }
 
@@ -261,17 +261,16 @@ public class EvoUiActionDescriptor {
     }
 
     public static String sanitizeValue(String key, String value) {
-        if (value == null) return "";
+        if (value == null) return null;
         if (key != null) {
             String lowerKey = key.toLowerCase();
-            if (lowerKey.contains("pass") || lowerKey.contains("password") || lowerKey.contains("token") || lowerKey.contains("secret") || lowerKey.contains("private_key") || lowerKey.contains("apikey") || lowerKey.contains("api_key") || lowerKey.contains("auth")) {
+            if (lowerKey.contains("pass") || lowerKey.contains("token") || lowerKey.contains("secret") || lowerKey.contains("key")) {
                 return "******";
             }
         }
-        String cleanValue = value.replace("\r\n", "\\n").replace("\n", "\\n").replace("\r", "\\n");
-        if (cleanValue.length() > 200) {
-            return cleanValue.substring(0, 197) + "...";
+        if (value.length() > 200) {
+            return value.substring(0, 197) + "...";
         }
-        return cleanValue;
+        return value;
     }
 }
