@@ -117,9 +117,9 @@ public class ForgeSettingsDialogHardwareEstimationTest {
     @Test
     public void testMultiModelCapacityAndBudgetFeasibility() {
         ForgeTrainingEstimationAgent agent = ForgeTrainingEstimationAgent.getInstance();
-        long datasetBytes = 50 * 1024 * 1024L; // 50 MB
+        long datasetBytes = 5 * 1024 * 1024L; // 5 MB
         int epochs = 16;
-        double budgetHours = 2.0;
+        double budgetHours = 12.0;
 
         double nanoSec = agent.calculateEstimatedForgingSeconds("NANO", epochs, datasetBytes);
         double smallSec = agent.calculateEstimatedForgingSeconds("SMALL", epochs, datasetBytes);
@@ -131,7 +131,8 @@ public class ForgeSettingsDialogHardwareEstimationTest {
         boolean nanoFits = (nanoSec / 3600.0) <= budgetHours;
         boolean xlargeFits = (xlargeSec / 3600.0) <= budgetHours;
 
-        assertTrue("NANO model with 50MB should fit 2.0 hr budget", nanoFits);
+        assertTrue("NANO model with 5MB should fit 12.0 hr budget", nanoFits);
+        assertTrue("XLARGE model with 5MB should exceed 12.0 hr budget", !xlargeFits);
     }
 
     @Test
@@ -246,5 +247,32 @@ public class ForgeSettingsDialogHardwareEstimationTest {
 
         long scaledBytes = dialog.calculateTotalDatasetBytes();
         assertTrue("Scaled total bytes must be <= original total bytes", scaledBytes <= originalBytes);
+    }
+
+    @Test
+    public void testGenerateGraphHtmlWithoutFormatException() {
+        DatasetItem d1 = new DatasetItem(true, "/path/to/data1.jsonl", "FILE", 1000, 1.0, 524288000L, 1024);
+        List<DatasetItem> items = new ArrayList<>();
+        items.add(d1);
+
+        String[] modelSizes = new String[] { "NANO", "MICRO", "MINI", "SMALL", "MEDIUM", "LARGE", "XLARGE" };
+        double[][] histories = new double[][] {
+            null,
+            new double[] { 9.5, 7.8, 5.2, 3.1 },
+            new double[] { 8.0, 5.0, 2.0, 0.8 }
+        };
+
+        for (String size : modelSizes) {
+            for (double[] history : histories) {
+                ForgeSettingsDialog dialog = new ForgeSettingsDialog(null, size, 32, "Stage 1", 1.0, history, items);
+                String html = dialog.generateGraphHtml(32, 1.0, history);
+                assertNotNull("Generated graph HTML must not be null for size " + size, html);
+                assertTrue("HTML must contain summary bar", html.contains("summary-bar"));
+                assertTrue("HTML must contain Model Size", html.contains("Model Size:"));
+                assertTrue("HTML must contain Budget:", html.contains("Budget:"));
+                assertTrue("HTML must contain GRAPH 1 header", html.contains("GRAPH 1: LOSS TRAJECTORY"));
+                assertTrue("HTML must contain GRAPH 2 header", html.contains("GRAPH 2: CAPACITY BUDGET"));
+            }
+        }
     }
 }
