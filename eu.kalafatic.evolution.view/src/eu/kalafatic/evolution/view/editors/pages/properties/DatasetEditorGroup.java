@@ -1502,6 +1502,7 @@ public class DatasetEditorGroup extends AEvoGroup {
 
     private void handleListDatasets() {
         int port = getServerPort();
+        String customOutputDir = outputDirText.getText().trim();
         Job job = new Job("List Dataset Artifacts") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
@@ -1512,7 +1513,6 @@ public class DatasetEditorGroup extends AEvoGroup {
                     String serverRes = getHttp("http://localhost:" + port + "/forge/dataset/artifacts");
 
                     // Scan local dataset output directories as well
-                    String customOutputDir = outputDirText.getText().trim();
                     File targetDir = new File(customOutputDir);
                     List<File> localArtifacts = scanLocalDatasetFiles(targetDir);
 
