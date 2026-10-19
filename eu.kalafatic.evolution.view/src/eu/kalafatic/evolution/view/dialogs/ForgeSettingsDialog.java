@@ -984,7 +984,7 @@ public class ForgeSettingsDialog extends Dialog {
         }
     }
 
-    private String generateGraphHtml(int maxEpochs, double targetFinishLoss, double[] history) {
+    public String generateGraphHtml(int maxEpochs, double targetFinishLoss, double[] history) {
         long totalDataBytes = calculateTotalDatasetBytes();
         double estSec = getEstimatedForgingSeconds();
         double params = getModelParameterCount(selectedModelSize);
@@ -1001,7 +1001,7 @@ public class ForgeSettingsDialog extends Dialog {
             "  <div class=\"summary-item\"><span class=\"summary-label\">Batch Size:</span> <span class=\"summary-value\">%d</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Data Size:</span> <span class=\"summary-value\">%.2f MB</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Est. Time:</span> <span class=\"summary-value\">%s</span></div>" +
-            "  <div class=\"summary-item\"><span class=\"summary-label\">Budget:</span> <span class=\"summary-value %.0f\">%.1f hrs (%s)</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Budget:</span> <span class=\"summary-value\">%.1f hrs (%s)</span></div>" +
             "</div>",
             selectedModelSize, params / 1_000_000.0,
             selectedEpochs, selectedBatchSize,
@@ -1284,7 +1284,7 @@ public class ForgeSettingsDialog extends Dialog {
             svg2Builder.append(String.format(
                 "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" class=\"dot\" data-tooltip=\"Model: %s | Est. Duration: %s | Params: %.1fM\" />",
                 barX, barY, barWidth, Math.max(2, barHeight), fillColor, strokeColor, isSelected ? "2" : "1",
-                sz.getDisplayName(), formatDuration(hrs * 3600.0), sz.getParameterCount() / 1.0
+                sz.getDisplayName(), formatDuration(hrs * 3600.0), sz.getParameterCount() / 1_000_000.0
             ));
 
             // Highlight Marker for Selected Model Size
