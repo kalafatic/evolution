@@ -27,11 +27,11 @@ public class SourceAdapterRegistry {
     public static SourceAdapterRegistry createDefaultRegistry() {
         SourceAdapterRegistry registry = new SourceAdapterRegistry();
         registry.registerAdapter(new EVODataAdapter());
-        registry.registerAdapter(new OASST1Adapter());
+        registry.registerAdapter(new ParquetAdapter());
+        registry.registerAdapter(new CSVAdapter());
         registry.registerAdapter(new JSONLAdapter());
         registry.registerAdapter(new JSONAdapter());
-        registry.registerAdapter(new CSVAdapter());
-        registry.registerAdapter(new ParquetAdapter());
+        registry.registerAdapter(new OASST1Adapter());
         registry.registerAdapter(new HuggingFaceAdapter());
         registry.registerAdapter(new GitAdapter(registry));
         registry.registerAdapter(new TextAdapter());

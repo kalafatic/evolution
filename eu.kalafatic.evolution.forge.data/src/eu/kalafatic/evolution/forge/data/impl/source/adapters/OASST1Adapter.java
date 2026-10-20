@@ -35,11 +35,16 @@ public class OASST1Adapter implements DatasetSourceAdapter {
     public boolean supports(DatasetItem item) {
         if (item == null || item.getPath() == null) return false;
         String pathLower = item.getPath().trim().toLowerCase();
-        if (pathLower.contains("oasst") || pathLower.contains("openassistant")) {
-            return true;
+        if (pathLower.endsWith(".parquet") || pathLower.endsWith(".csv") || pathLower.endsWith(".evodata")) {
+            return false;
         }
         if ("OASST1".equalsIgnoreCase(item.getType())) {
             return true;
+        }
+        if (pathLower.contains("oasst") || pathLower.contains("openassistant")) {
+            if (pathLower.endsWith(".jsonl") || pathLower.endsWith(".jsonl.gz") || pathLower.endsWith(".json") || new File(item.getPath()).isDirectory()) {
+                return true;
+            }
         }
         // Inspect content header if JSONL file
         if (pathLower.endsWith(".jsonl") || pathLower.endsWith(".jsonl.gz") || pathLower.endsWith(".json")) {
