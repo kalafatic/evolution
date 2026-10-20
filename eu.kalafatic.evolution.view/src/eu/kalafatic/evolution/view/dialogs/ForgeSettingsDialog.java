@@ -324,7 +324,7 @@ public class ForgeSettingsDialog extends Dialog {
 
     @Override
     protected Point getInitialSize() {
-        return new Point(1080, 760);
+        return new Point(1280, 780);
     }
 
     @Override
@@ -351,13 +351,12 @@ public class ForgeSettingsDialog extends Dialog {
             updateGraphHtml();
         };
 
-        // Left Scrolled Composite for Settings Panel
+        // Panel 1 (Left): Model & Hardware Settings Panel
         ScrolledComposite leftScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
         leftScrolled.setExpandHorizontal(true);
         leftScrolled.setExpandVertical(true);
         leftScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        // Panel 1: Settings Panel
         Composite settingsPanel = new Composite(leftScrolled, SWT.NONE);
         settingsPanel.setLayout(new GridLayout(2, false));
         leftScrolled.setContent(settingsPanel);
@@ -608,10 +607,51 @@ public class ForgeSettingsDialog extends Dialog {
 
         updateHardwareAndTimeInfo();
 
+        // Panel 2 (Middle): Training Performance & Capacity Visualizations Diagrams Panel
+        ScrolledComposite middleScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        middleScrolled.setExpandHorizontal(true);
+        middleScrolled.setExpandVertical(true);
+        middleScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        Composite middlePanel = new Composite(middleScrolled, SWT.NONE);
+        middlePanel.setLayout(new GridLayout(1, true));
+        middleScrolled.setContent(middlePanel);
+
+        middlePanel.addListener(SWT.Resize, event -> {
+            Point size = middlePanel.computeSize(middleScrolled.getClientArea().width, SWT.DEFAULT, true);
+            middleScrolled.setMinSize(size);
+        });
+
+        Group graphGroup = new Group(middlePanel, SWT.NONE);
+        graphGroup.setText("Training Performance & Capacity Visualizations");
+        graphGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        graphGroup.setLayout(new GridLayout(1, true));
+
+        graphBrowser = new Browser(graphGroup, SWT.NONE);
+        GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        browserData.minimumHeight = 820;
+        browserData.heightHint = 820;
+        graphBrowser.setLayoutData(browserData);
+
+        // Panel 3 (Right): Training Datasets & Dataset Input Limits Panel
+        ScrolledComposite rightScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        rightScrolled.setExpandHorizontal(true);
+        rightScrolled.setExpandVertical(true);
+        rightScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        Composite rightPanel = new Composite(rightScrolled, SWT.NONE);
+        rightPanel.setLayout(new GridLayout(1, true));
+        rightScrolled.setContent(rightPanel);
+
+        rightPanel.addListener(SWT.Resize, event -> {
+            Point size = rightPanel.computeSize(rightScrolled.getClientArea().width, SWT.DEFAULT, true);
+            rightScrolled.setMinSize(size);
+        });
+
         // Group 3: Training Datasets (Ordered Target Data)
-        Group datasetsGroup = new Group(settingsPanel, SWT.NONE);
+        Group datasetsGroup = new Group(rightPanel, SWT.NONE);
         datasetsGroup.setText("Training Datasets & Dataset Input Limits");
-        datasetsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        datasetsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         datasetsGroup.setLayout(new GridLayout(2, false));
 
         // Limits composite inside datasets group
@@ -822,34 +862,7 @@ public class ForgeSettingsDialog extends Dialog {
 
         refreshDatasetsTable();
 
-        // Right Scrolled Composite for Graphs Panel
-        ScrolledComposite rightScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
-        rightScrolled.setExpandHorizontal(true);
-        rightScrolled.setExpandVertical(true);
-        rightScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        // Panel 2: Progress Graph Panel (HTML Browser Container)
-        Composite graphPanel = new Composite(rightScrolled, SWT.NONE);
-        graphPanel.setLayout(new GridLayout(1, true));
-        rightScrolled.setContent(graphPanel);
-
-        graphPanel.addListener(SWT.Resize, event -> {
-            Point size = graphPanel.computeSize(rightScrolled.getClientArea().width, SWT.DEFAULT, true);
-            rightScrolled.setMinSize(size);
-        });
-
-        Group graphGroup = new Group(graphPanel, SWT.NONE);
-        graphGroup.setText("Training Performance & Capacity Visualizations");
-        graphGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        graphGroup.setLayout(new GridLayout(1, true));
-
-        graphBrowser = new Browser(graphGroup, SWT.NONE);
-        GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        browserData.minimumHeight = 820;
-        browserData.heightHint = 820;
-        graphBrowser.setLayoutData(browserData);
-
-        sashForm.setWeights(new int[] { 45, 55 });
+        sashForm.setWeights(new int[] { 32, 36, 32 });
 
         // Initial HTML render
         updateGraphHtml();
