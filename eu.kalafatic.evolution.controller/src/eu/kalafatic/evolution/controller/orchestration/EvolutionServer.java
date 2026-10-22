@@ -2232,16 +2232,27 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private Response handleGetTrainingMetrics(String sessionId) {
-        if (trainingController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "TrainingController not available");
+        ForgeSessionManager.TrainingTelemetry telemetry = ForgeSessionManager.getInstance().getTelemetry(sessionId);
+        if (telemetry != null) {
+            return newFixedLengthResponse(Response.Status.OK, "application/json", telemetry.toJsonObject().toString());
+        }
+
         JSONObject metrics = new JSONObject();
-        Map<String, Object> data = trainingController.getTrainingMetrics(sessionId);
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
-            metrics.put(entry.getKey(), entry.getValue());
+        if (trainingController != null) {
+            Map<String, Object> data = trainingController.getTrainingMetrics(sessionId);
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                metrics.put(entry.getKey(), entry.getValue());
+            }
         }
         return newFixedLengthResponse(Response.Status.OK, "application/json", metrics.toString());
     }
 
     private Response handleGetTrainingEvents(String sessionId) {
+        ForgeSessionManager.TrainingTelemetry telemetry = ForgeSessionManager.getInstance().getTelemetry(sessionId);
+        if (telemetry != null) {
+            return newFixedLengthResponse(Response.Status.OK, "application/json", telemetry.toJsonObject().optJSONArray("logStream").toString());
+        }
+
         if (trainingController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "TrainingController not available");
         JSONArray array = new JSONArray(trainingController.getRecentEvents(sessionId));
         return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
