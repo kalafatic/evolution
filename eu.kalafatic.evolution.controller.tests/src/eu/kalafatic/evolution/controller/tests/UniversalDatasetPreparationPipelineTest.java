@@ -207,7 +207,7 @@ public class UniversalDatasetPreparationPipelineTest {
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
 
-        assertEquals(DatasetPreparationResult.Status.SUCCESS, result.getStatus());
+        assertEquals(DatasetPreparationResult.Status.INSUFFICIENT_DATA, result.getStatus());
         assertNotNull(result.getArtifact());
         assertEquals("Artifact status must indicate INSUFFICIENT_SOURCE_DATA when under target bytes",
                 EvoDatasetArtifact.Status.INSUFFICIENT_SOURCE_DATA, result.getArtifact().getStatus());
@@ -326,5 +326,101 @@ public class UniversalDatasetPreparationPipelineTest {
         DatasetPreparationResult result2 = service.prepareDatasets(items, context, outDir);
         assertEquals(DatasetPreparationResult.Status.SUCCESS, result2.getStatus());
         assertEquals("Cache must be invalidated when child file in folder is modified", 2, result2.getSamples().size());
+    }
+
+    @Test
+    public void test10_FixesVerification_RoundtripPromptResponse() throws Exception {
+        File artifactFile = tempFolder.newFile("test_roundtrip.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
+
+        NormalizedSample sample = new NormalizedSample();
+        sample.setId("chat_1");
+        sample.setType(eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CHAT);
+        sample.setPrompt("How to declare a variable in Java?");
+        sample.setResponse("int x = 10;");
+        sample.setQualityScore(0.95);
+
+        artifact.save(List.of(sample), null, null, 0.0);
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(artifactFile);
+        assertEquals(1, loaded.getTrainSamples().size());
+
+        NormalizedSample loadedSample = loaded.getTrainSamples().get(0);
+        assertEquals("chat_1", loadedSample.getId());
+        assertEquals(eu.kalafatic.evolution.forge.data.api.TrainingSampleType.CHAT, loadedSample.getType());
+        assertEquals("How to declare a variable in Java?", loadedSample.getPrompt());
+        assertEquals("How to declare a variable in Java?", loadedSample.getInstruction());
+        assertEquals("int x = 10;", loadedSample.getResponse());
+        assertEquals(0.95, loadedSample.getQualityScore(), 0.001);
+    }
+
+    @Test
+    public void test11_FixesVerification_SmallDatasetValSplit() throws Exception {
+        List<NormalizedSample> samples = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            samples.add(NormalizedSample.createTextSample("Sample text " + i, "src"));
+        }
+
+        File artifactFile = tempFolder.newFile("test_val_split.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
+        artifact.save(samples, null, null, 0.02);
+
+        assertEquals(6, artifact.getTrainSamples().size());
+        assertEquals(1, artifact.getValSamples().size());
+        assertEquals(7, artifact.getSamples().size());
+    }
+
+    @Test
+    public void test12_FixesVerification_NormalizedDeduplication() throws Exception {
+        File txtFile = tempFolder.newFile("norm_dedupe.txt");
+        String content = "Hello, World!\nhello world\nHELLO WORLD!!!\nAnother distinct sample.\n";
+        Files.writeString(txtFile.toPath(), content, StandardCharsets.UTF_8);
+
+        List<DatasetItem> items = List.of(new DatasetItem(true, txtFile.getAbsolutePath(), "FILE"));
+
+        DatasetPreparationService service = new DatasetPreparationService();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
+        File outDir = tempFolder.newFolder("out_norm_dedupe");
+
+        DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
+
+        assertEquals(DatasetPreparationResult.Status.SUCCESS, result.getStatus());
+        assertEquals(2, result.getRecordsAccepted());
+        assertEquals(2, result.getDuplicateCount());
+    }
+
+    @Test
+    public void test13_FixesVerification_MetadataTopLevelTokensEquality() throws Exception {
+        File txtFile = tempFolder.newFile("tokens_test.txt");
+        Files.writeString(txtFile.toPath(), "Sample content for testing metadata tokens equality.", StandardCharsets.UTF_8);
+
+        List<DatasetItem> items = List.of(new DatasetItem(true, txtFile.getAbsolutePath(), "FILE"));
+
+        DatasetPreparationService service = new DatasetPreparationService();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
+        File outDir = tempFolder.newFolder("out_tokens_test");
+
+        DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
+
+        File evodataFile = new File(result.getOutputPath());
+        String metaJsonStr = null;
+
+        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(new java.io.FileInputStream(evodataFile), StandardCharsets.UTF_8)) {
+            java.util.zip.ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                if ("metadata.json".equals(ze.getName())) {
+                    metaJsonStr = new String(zis.readAllBytes(), StandardCharsets.UTF_8);
+                    break;
+                }
+            }
+        }
+
+        assertNotNull(metaJsonStr);
+        JSONObject metaJson = new JSONObject(metaJsonStr);
+        long topLevelTokens = metaJson.optLong("estimatedTokens", -1);
+        long statsTokens = metaJson.getJSONObject("statistics").optLong("estimatedTokens", -2);
+
+        assertTrue(topLevelTokens > 0);
+        assertEquals(statsTokens, topLevelTokens);
     }
 }

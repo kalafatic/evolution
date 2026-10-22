@@ -73,14 +73,23 @@ public class EvoDatasetArtifact {
         totalTrainTokens = 0;
         totalValTokens = 0;
 
-        int valCount = (int) (allSamples.size() * valSplit);
-        int trainCount = allSamples.size() - valCount;
+        List<NormalizedSample> samplesToSplit = new ArrayList<>(allSamples);
+        java.util.Collections.shuffle(samplesToSplit, new java.util.Random(42));
+
+        int valCount = (int) Math.round(samplesToSplit.size() * valSplit);
+        if (samplesToSplit.size() >= 2 && valSplit > 0.0 && valCount == 0) {
+            valCount = 1;
+        }
+        if (valCount >= samplesToSplit.size()) {
+            valCount = Math.max(0, samplesToSplit.size() - 1);
+        }
+        int trainCount = samplesToSplit.size() - valCount;
 
         java.util.Set<String> trainHashes = new java.util.HashSet<>();
         java.util.Set<String> trainNormHashes = new java.util.HashSet<>();
 
-        for (int i = 0; i < allSamples.size(); i++) {
-            NormalizedSample sample = allSamples.get(i);
+        for (int i = 0; i < samplesToSplit.size(); i++) {
+            NormalizedSample sample = samplesToSplit.get(i);
             if (i < trainCount) {
                 trainSamples.add(sample);
                 if (sample.getHash() != null) {
@@ -272,7 +281,12 @@ public class EvoDatasetArtifact {
                                 }
                                 String typeStr = json.optString("type", json.optString("sampleType", "TEXT"));
                                 sample.setType(TrainingSampleType.fromString(typeStr));
-                                String inst = json.has("instruction") && !json.isNull("instruction") ? json.optString("instruction") : null;
+                                String inst = null;
+                                if (json.has("instruction") && !json.isNull("instruction")) {
+                                    inst = json.optString("instruction");
+                                } else if (json.has("prompt") && !json.isNull("prompt")) {
+                                    inst = json.optString("prompt");
+                                }
                                 String resp = json.has("response") && !json.isNull("response") ? json.optString("response") : null;
                                 if (inst != null || resp != null) {
                                     sample.setInstruction(inst);
@@ -383,6 +397,7 @@ public class EvoDatasetArtifact {
         sb.append("    \"totalTrainingBytes\": ").append(stats != null ? stats.getTrainingBytes() + stats.getValidationBytes() : acceptedB).append(",\n");
         sb.append("    \"estimatedTokens\": ").append(estTokens).append("\n");
         sb.append("  },\n");
+        sb.append("  \"estimatedTokens\": ").append(estTokens).append(",\n");
         sb.append("  \"schema\": {\n");
         sb.append("    \"sampleTypes\": [\"TEXT\", \"INSTRUCTION\", \"CODE\", \"CHAT\", \"CONVERSATION\"],\n");
         sb.append("    \"columns\": [\"id\", \"type\", \"prompt\", \"response\", \"qualityScore\"]\n");
@@ -401,7 +416,6 @@ public class EvoDatasetArtifact {
             sb.append("  \"acceptedRecords\": ").append(stats.getAcceptedRecords()).append(",\n");
             sb.append("  \"rejectedRecords\": ").append(stats.getRejectedRecords()).append(",\n");
             sb.append("  \"duplicateRecords\": ").append(stats.getDuplicateRecords()).append(",\n");
-            sb.append("  \"estimatedTokens\": ").append(stats.getEstimatedTokens()).append(",\n");
         }
         sb.append("  \"trainSamples\": ").append(trainSamples.size()).append(",\n");
         sb.append("  \"valSamples\": ").append(valSamples.size()).append(",\n");

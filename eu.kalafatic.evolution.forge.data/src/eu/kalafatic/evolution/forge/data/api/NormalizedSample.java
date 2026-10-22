@@ -219,6 +219,7 @@ public class NormalizedSample {
                 sb.append("{");
                 sb.append("\"role\":\"").append(escapeJson(m.getRole() != null ? m.getRole() : "")).append("\",");
                 sb.append("\"text\":\"").append(escapeJson(m.getText() != null ? m.getText() : "")).append("\",");
+                sb.append("\"content\":\"").append(escapeJson(m.getText() != null ? m.getText() : "")).append("\",");
                 if (m.getMessageId() != null) {
                     sb.append("\"messageId\":\"").append(escapeJson(m.getMessageId())).append("\",");
                 } else {
@@ -232,9 +233,22 @@ public class NormalizedSample {
                 sb.append("}");
             }
             sb.append("],");
+        } else if (messages != null && !messages.isEmpty()) {
+            sb.append("\"messages\":[");
+            for (int i = 0; i < messages.size(); i++) {
+                Message m = messages.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{");
+                sb.append("\"role\":\"").append(escapeJson(m.getRole() != null ? m.getRole() : "")).append("\",");
+                sb.append("\"text\":\"").append(escapeJson(m.getContent() != null ? m.getContent() : "")).append("\",");
+                sb.append("\"content\":\"").append(escapeJson(m.getContent() != null ? m.getContent() : "")).append("\"");
+                sb.append("}");
+            }
+            sb.append("],");
         }
         if (instruction != null) {
             sb.append("\"instruction\":\"").append(escapeJson(instruction)).append("\",");
+            sb.append("\"prompt\":\"").append(escapeJson(instruction)).append("\",");
         }
         if (response != null) {
             sb.append("\"response\":\"").append(escapeJson(response)).append("\",");
@@ -318,6 +332,9 @@ public class NormalizedSample {
     public String getText() { return text; }
 
     public String getInstruction() { return instruction; }
+
+    public String getPrompt() { return instruction; }
+    public void setPrompt(String prompt) { setInstruction(prompt); }
 
     public String getResponse() { return response; }
 
