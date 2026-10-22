@@ -90,7 +90,7 @@ public class DatasetPreparationService {
             evodataFile = new File(outputDir, timestampStr + ".evodata");
         }
 
-        String cacheKey = computeCacheKey(checkedItems, context.getTargetUsableBytes());
+        String cacheKey = computeCacheKey(checkedItems, context.getTargetUsableBytes(), context.getValidationSplitRatio(), context.getMinQualityScore());
         File cacheFile = new File(outputDir, "prepared_" + cacheKey + ".evodata");
 
         // Re-use cached evodata artifact if exact sources & configuration match
@@ -174,12 +174,15 @@ public class DatasetPreparationService {
 
         // 4. MERGE, CLEAN, FILTER, DEDUPLICATE Quality Pipeline
         Set<String> seenHashes = new HashSet<>();
+        Set<String> seenNormalizedTextHashes = new HashSet<>();
         List<NormalizedSample> deduplicatedSamples = new ArrayList<>();
         long totalRecordsRejected = 0;
         long duplicateCount = 0;
+        long normalizedDuplicateCount = 0;
         long duplicateBytes = 0;
         long currentUsableBytes = 0;
         long targetBytes = context.getTargetUsableBytes();
+        double minQualityScore = context.getMinQualityScore();
 
         for (NormalizedSample sample : allRawSamples) {
             if (context.isCancelled()) break;
@@ -189,20 +192,38 @@ public class DatasetPreparationService {
                 continue;
             }
 
-            String h = sample.getHash();
-            if (h != null && !h.isEmpty() && seenHashes.contains(h)) {
-                duplicateBytes += sample.toFullText().getBytes(StandardCharsets.UTF_8).length;
-                duplicateCount++;
+            if (minQualityScore > 0.0 && sample.getQualityScore() < minQualityScore) {
+                totalRecordsRejected++;
                 continue;
-            }
-            if (h != null && !h.isEmpty()) {
-                seenHashes.add(h);
             }
 
             byte[] sampleBytes = sample.toFullText().getBytes(StandardCharsets.UTF_8);
 
+            // Exact hash deduplication
+            String h = sample.getHash();
+            if (h != null && !h.isEmpty() && seenHashes.contains(h)) {
+                duplicateBytes += sampleBytes.length;
+                duplicateCount++;
+                continue;
+            }
+
+            // Normalized text deduplication (lowercase + alphanumeric stripping)
+            String normText = sample.toFullText().toLowerCase().replaceAll("[^a-z0-9]", "");
+            if (!normText.isEmpty() && seenNormalizedTextHashes.contains(normText)) {
+                duplicateBytes += sampleBytes.length;
+                normalizedDuplicateCount++;
+                continue;
+            }
+
+            if (h != null && !h.isEmpty()) {
+                seenHashes.add(h);
+            }
+            if (!normText.isEmpty()) {
+                seenNormalizedTextHashes.add(normText);
+            }
+
             // Deterministic target limit truncation
-            if (targetBytes > 0 && currentUsableBytes >= targetBytes) {
+            if (targetBytes > 0 && currentUsableBytes + sampleBytes.length > targetBytes && !deduplicatedSamples.isEmpty()) {
                 break;
             }
 
@@ -210,10 +231,12 @@ public class DatasetPreparationService {
             currentUsableBytes += sampleBytes.length;
         }
 
+        long totalDuplicateCount = duplicateCount + normalizedDuplicateCount;
+
         result.setRecordsRead(totalRecordsRead);
         result.setRecordsAccepted(deduplicatedSamples.size());
         result.setRecordsRejected(totalRecordsRejected);
-        result.setDuplicateCount(duplicateCount);
+        result.setDuplicateCount(totalDuplicateCount);
         result.setDuplicateBytes(duplicateBytes);
 
         context.log(String.format("[FORGE-DEDUPE] inputRecords=%d duplicates=%d rejected=%d uniqueRecords=%d",
@@ -229,6 +252,13 @@ public class DatasetPreparationService {
             return result;
         }
 
+        // Compute total estimated tokens for stats before saving artifact
+        long totalTokens = 0;
+        for (NormalizedSample s : deduplicatedSamples) {
+            byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
+            totalTokens += s.getTokenCount() > 0 ? s.getTokenCount() : (b.length / 4);
+        }
+
         // 5. EVO NATIVE DATASET COMPILATION -> timestamp.evodata
         DatasetSourceConfig sourceConfig = new DatasetSourceConfig("MULTI_SOURCE", "checked_sources_" + checkedItems.size());
         DatasetSourceStats stats = context.getStats();
@@ -239,21 +269,25 @@ public class DatasetPreparationService {
         stats.setAcceptedSamples(deduplicatedSamples.size());
         stats.setRejectedSamples(totalRecordsRejected);
         stats.setExactDuplicates(duplicateCount);
+        stats.setNormalizedDuplicates(normalizedDuplicateCount);
+        stats.setEstimatedTokens(totalTokens);
 
         EvoDatasetArtifact artifact = new EvoDatasetArtifact(evodataFile);
-        artifact.save(deduplicatedSamples, sourceConfig, stats, 0.02);
+        artifact.save(deduplicatedSamples, sourceConfig, stats, context.getValidationSplitRatio());
 
         // Also update cache file for fast re-use
         EvoDatasetArtifact cacheArtifact = new EvoDatasetArtifact(cacheFile);
-        cacheArtifact.save(deduplicatedSamples, sourceConfig, stats, 0.02);
+        cacheArtifact.save(deduplicatedSamples, sourceConfig, stats, context.getValidationSplitRatio());
 
         result.setArtifact(artifact);
         result.setSamples(artifact.getSamples());
         result.setOutputPath(evodataFile.getAbsolutePath());
 
-        // Process status: PARTIAL if some sources failed, SUCCESS if all non-skipped sources succeeded
+        // Process status: PARTIAL if some sources failed; INSUFFICIENT_DATA if artifact status is INSUFFICIENT_SOURCE_DATA; SUCCESS if all non-skipped sources succeeded and target reached
         if (!result.getFailedSources().isEmpty() && !result.getSuccessfulSources().isEmpty()) {
             result.setStatus(DatasetPreparationResult.Status.PARTIAL);
+        } else if (artifact.getStatus() == EvoDatasetArtifact.Status.INSUFFICIENT_SOURCE_DATA) {
+            result.setStatus(DatasetPreparationResult.Status.INSUFFICIENT_DATA);
         } else {
             result.setStatus(DatasetPreparationResult.Status.SUCCESS);
         }
@@ -326,9 +360,11 @@ public class DatasetPreparationService {
         context.log("Status: " + result.getStatus().name());
     }
 
-    private String computeCacheKey(List<DatasetItem> items, long targetBytes) {
+    private String computeCacheKey(List<DatasetItem> items, long targetBytes, double valSplitRatio, double minQualityScore) {
         StringBuilder sb = new StringBuilder();
         sb.append(targetBytes).append(";");
+        sb.append(valSplitRatio).append(";");
+        sb.append(minQualityScore).append(";");
         for (DatasetItem item : items) {
             sb.append(item.getPath()).append(":");
             File f = new File(item.getPath());

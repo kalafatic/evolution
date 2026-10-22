@@ -10,6 +10,8 @@ import java.util.function.Consumer;
 public class DatasetPreparationContext {
 
     private long targetUsableBytes = 524_288_000L; // Default 500 MB
+    private double validationSplitRatio = 0.02;
+    private double minQualityScore = 0.0;
     private String language = "en";
     private BooleanSupplier cancellationSupplier = () -> false;
     private Consumer<String> logger = System.out::println;
@@ -94,5 +96,21 @@ public class DatasetPreparationContext {
 
     public void setTargetOutputFile(File targetOutputFile) {
         this.targetOutputFile = targetOutputFile;
+    }
+
+    public double getValidationSplitRatio() {
+        return validationSplitRatio;
+    }
+
+    public void setValidationSplitRatio(double validationSplitRatio) {
+        this.validationSplitRatio = validationSplitRatio;
+    }
+
+    public double getMinQualityScore() {
+        return minQualityScore;
+    }
+
+    public void setMinQualityScore(double minQualityScore) {
+        this.minQualityScore = minQualityScore;
     }
 }
