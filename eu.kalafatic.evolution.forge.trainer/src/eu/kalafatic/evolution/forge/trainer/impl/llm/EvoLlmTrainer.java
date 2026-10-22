@@ -56,7 +56,7 @@ public class EvoLlmTrainer {
     private long baseSeed = 42L;
 
     private LossReduction lossReduction = LossReduction.MEAN_PER_TOKEN;
-    private ProgressListener progressListener;
+    private final List<ProgressListener> progressListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final List<Double> lossHistory = new ArrayList<>();
     private volatile boolean stopRequested = false;
     private TrainingResult lastResult;
@@ -81,7 +81,15 @@ public class EvoLlmTrainer {
     public void setMicroBatchSize(int microBatchSize) { this.microBatchSize = microBatchSize; }
     public void setAccumulationSteps(int steps) { this.accumulationSteps = Math.max(1, steps); }
     public void setBaseSeed(long seed) { this.baseSeed = seed; }
-    public void setProgressListener(ProgressListener listener) { this.progressListener = listener; }
+    public void setProgressListener(ProgressListener listener) {
+        this.progressListeners.clear();
+        if (listener != null) this.progressListeners.add(listener);
+    }
+    public void addProgressListener(ProgressListener listener) {
+        if (listener != null && !this.progressListeners.contains(listener)) {
+            this.progressListeners.add(listener);
+        }
+    }
     public List<Double> getLossHistory() { return lossHistory; }
     public void requestStop() { this.stopRequested = true; }
     public void finishTraining() { this.stopRequested = true; }
@@ -305,12 +313,14 @@ public class EvoLlmTrainer {
                     long remainingTokens = Math.max(0, totalTokensToTrain - totalProcessedTokens);
                     double remainingSec = movingAvgTokPerSec > 0.0 ? (remainingTokens / movingAvgTokPerSec) : 0.0;
 
-                    if (progressListener != null) {
+                    if (!progressListeners.isEmpty()) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
-                        progressListener.onProgressMetrics(epoch, epochs, optStep, totalOptimizationSteps,
-                                totalProcessedTokens, totalTokensToTrain,
-                                movingAvgTokPerSec, movingAvgStepsPerSec,
-                                remainingSec, currentLoss);
+                        for (ProgressListener listener : progressListeners) {
+                            listener.onProgressMetrics(epoch, epochs, optStep, totalOptimizationSteps,
+                                    totalProcessedTokens, totalTokensToTrain,
+                                    movingAvgTokPerSec, movingAvgStepsPerSec,
+                                    remainingSec, currentLoss);
+                        }
                     } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
                         int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());

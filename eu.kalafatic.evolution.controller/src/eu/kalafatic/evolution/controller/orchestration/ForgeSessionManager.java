@@ -21,10 +21,153 @@ import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
 
 public class ForgeSessionManager {
+    public static class MetricSample {
+        public long timestamp;
+        public int epoch;
+        public int step;
+        public double loss;
+        public double valLoss;
+        public double tokensPerSec;
+        public double stepsPerSec;
+        public double ramMb;
+        public double cpuPct;
+
+        public JSONObject toJsonObject() {
+            JSONObject json = new JSONObject();
+            json.put("timestamp", timestamp);
+            json.put("epoch", epoch);
+            json.put("step", step);
+            json.put("loss", Math.round(loss * 10000.0) / 10000.0);
+            json.put("valLoss", Math.round(valLoss * 10000.0) / 10000.0);
+            json.put("tokensPerSec", Math.round(tokensPerSec * 10.0) / 10.0);
+            json.put("stepsPerSec", Math.round(stepsPerSec * 100.0) / 100.0);
+            json.put("ramMb", Math.round(ramMb));
+            json.put("cpuPct", Math.round(cpuPct * 10.0) / 10.0);
+            return json;
+        }
+    }
+
+    public static class DiagnosticEvent {
+        public long timestamp;
+        public String level;
+        public String message;
+
+        public DiagnosticEvent(long timestamp, String level, String message) {
+            this.timestamp = timestamp;
+            this.level = level;
+            this.message = message;
+        }
+
+        public JSONObject toJsonObject() {
+            JSONObject json = new JSONObject();
+            json.put("timestamp", timestamp);
+            json.put("level", level);
+            json.put("message", message);
+            return json;
+        }
+    }
+
+    public static class TrainingTelemetry {
+        public String sessionId;
+        public String status = "IDLE";
+        public long startTimeMs = 0;
+        public long durationMs = 0;
+        public int currentEpoch = 0;
+        public int totalEpochs = 0;
+        public int currentStep = 0;
+        public int totalSteps = 0;
+        public long processedTokens = 0;
+        public long totalTokens = 0;
+        public double currentLoss = 0.0;
+        public double valLoss = 0.0;
+        public double bestValLoss = Double.MAX_VALUE;
+        public double tokensPerSec = 0.0;
+        public double stepsPerSec = 0.0;
+        public double estimatedRemainingSeconds = 0.0;
+        public double ramUsedMb = 0.0;
+        public double ramTotalMb = 0.0;
+        public double cpuPercent = 0.0;
+        public String gpuStatus = "N/A (CPU Mode)";
+        public String lastEventMessage = "Ready";
+
+        public final List<MetricSample> history = Collections.synchronizedList(new ArrayList<>());
+        public final List<DiagnosticEvent> logStream = Collections.synchronizedList(new ArrayList<>());
+
+        public TrainingTelemetry(String sessionId) {
+            this.sessionId = sessionId;
+            Runtime runtime = Runtime.getRuntime();
+            this.ramTotalMb = runtime.totalMemory() / (1024.0 * 1024.0);
+            this.ramUsedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0);
+        }
+
+        public void addSample(MetricSample sample) {
+            synchronized (history) {
+                history.add(sample);
+                if (history.size() > 1000) {
+                    history.remove(0);
+                }
+            }
+        }
+
+        public void addLog(String level, String msg) {
+            synchronized (logStream) {
+                logStream.add(new DiagnosticEvent(System.currentTimeMillis(), level, msg));
+                if (logStream.size() > 200) {
+                    logStream.remove(0);
+                }
+            }
+            this.lastEventMessage = msg;
+        }
+
+        public JSONObject toJsonObject() {
+            JSONObject json = new JSONObject();
+            json.put("sessionId", sessionId);
+            json.put("status", status);
+            json.put("startTimeMs", startTimeMs);
+            json.put("durationMs", durationMs > 0 ? durationMs : (startTimeMs > 0 ? System.currentTimeMillis() - startTimeMs : 0));
+            json.put("currentEpoch", currentEpoch);
+            json.put("totalEpochs", totalEpochs);
+            json.put("currentStep", currentStep);
+            json.put("totalSteps", totalSteps);
+            json.put("processedTokens", processedTokens);
+            json.put("totalTokens", totalTokens);
+            json.put("currentLoss", Math.round(currentLoss * 10000.0) / 10000.0);
+            json.put("valLoss", Math.round(valLoss * 10000.0) / 10000.0);
+            json.put("bestValLoss", bestValLoss == Double.MAX_VALUE ? 0.0 : Math.round(bestValLoss * 10000.0) / 10000.0);
+            json.put("tokensPerSec", Math.round(tokensPerSec * 10.0) / 10.0);
+            json.put("stepsPerSec", Math.round(stepsPerSec * 100.0) / 100.0);
+            json.put("estimatedRemainingSeconds", Math.round(estimatedRemainingSeconds));
+            json.put("ramUsedMb", Math.round(ramUsedMb));
+            json.put("ramTotalMb", Math.round(ramTotalMb));
+            json.put("cpuPercent", Math.round(cpuPercent * 10.0) / 10.0);
+            json.put("gpuStatus", gpuStatus);
+            json.put("lastEventMessage", lastEventMessage);
+
+            org.json.JSONArray histArr = new org.json.JSONArray();
+            synchronized (history) {
+                for (MetricSample s : history) {
+                    histArr.put(s.toJsonObject());
+                }
+            }
+            json.put("history", histArr);
+
+            org.json.JSONArray logArr = new org.json.JSONArray();
+            synchronized (logStream) {
+                for (DiagnosticEvent e : logStream) {
+                    logArr.put(e.toJsonObject());
+                }
+            }
+            json.put("logStream", logArr);
+
+            return json;
+        }
+    }
+
     private static ForgeSessionManager instance;
     private Orchestrator orchestrator;
     private final java.util.Map<String, List<RuntimeEvent>> eventBuffer = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer> activeTrainers = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, TrainingTelemetry> telemetryMap = new java.util.concurrent.ConcurrentHashMap<>();
     private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
 
     private ForgeSessionManager() {}
@@ -332,15 +475,95 @@ public class ForgeSessionManager {
         return "{\"type\": \"" + type + "\", \"samples\": 1000, \"status\": \"generated\"}";
     }
 
+    public TrainingTelemetry getTelemetry(String sessionId) {
+        if (sessionId == null) return null;
+        ForgeSession s = findSessionById(sessionId);
+        if (s == null) s = findSession(sessionId);
+        String key = s != null ? s.getSessionId() : sessionId;
+        return telemetryMap.computeIfAbsent(key, TrainingTelemetry::new);
+    }
+
     public void registerActiveTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer) {
-        if (sessionId != null && trainer != null) {
-            activeTrainers.put(sessionId, trainer);
-        }
+        if (sessionId == null || trainer == null) return;
+
+        ForgeSession s = findSessionById(sessionId);
+        if (s == null) s = findSession(sessionId);
+        String key = s != null ? s.getSessionId() : sessionId;
+
+        activeTrainers.put(key, trainer);
+        if (!key.equals(sessionId)) activeTrainers.put(sessionId, trainer);
+
+        TrainingTelemetry telemetry = getTelemetry(key);
+        telemetry.status = "RUNNING";
+        telemetry.startTimeMs = System.currentTimeMillis();
+        telemetry.durationMs = 0;
+        telemetry.addLog("INFO", "Training session attached to EvoLlmTrainer.");
+
+        trainer.addProgressListener(new eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener() {
+            private long lastSampleTime = 0;
+
+            @Override
+            public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {
+                onProgressMetrics(epoch, totalEpochs, sampleIndex, totalSamplesCount, 0, 0, 0, 0, 0, currentLoss);
+            }
+
+            @Override
+            public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                           long processedTokens, long totalTokens,
+                                           double tokensPerSec, double stepsPerSec,
+                                           double estimatedRemainingSeconds, double currentLoss) {
+                telemetry.currentEpoch = epoch + 1;
+                telemetry.totalEpochs = totalEpochs;
+                telemetry.currentStep = currentStep;
+                telemetry.totalSteps = totalSteps;
+                telemetry.processedTokens = processedTokens;
+                telemetry.totalTokens = totalTokens;
+                telemetry.tokensPerSec = tokensPerSec;
+                telemetry.stepsPerSec = stepsPerSec;
+                telemetry.estimatedRemainingSeconds = estimatedRemainingSeconds;
+                telemetry.currentLoss = currentLoss;
+
+                Runtime runtime = Runtime.getRuntime();
+                telemetry.ramUsedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0);
+                telemetry.ramTotalMb = runtime.totalMemory() / (1024.0 * 1024.0);
+
+                long now = System.currentTimeMillis();
+                if (now - lastSampleTime >= 800 || currentStep == totalSteps) {
+                    lastSampleTime = now;
+                    MetricSample sample = new MetricSample();
+                    sample.timestamp = now;
+                    sample.epoch = epoch + 1;
+                    sample.step = currentStep;
+                    sample.loss = currentLoss;
+                    sample.valLoss = telemetry.valLoss;
+                    sample.tokensPerSec = tokensPerSec;
+                    sample.stepsPerSec = stepsPerSec;
+                    sample.ramMb = telemetry.ramUsedMb;
+                    sample.cpuPct = telemetry.cpuPercent;
+                    telemetry.addSample(sample);
+
+                    if (currentStep % Math.max(1, totalSteps / 10) == 0 || currentStep == totalSteps) {
+                        telemetry.addLog("INFO", String.format("Epoch %d/%d | Step %d/%d | Loss: %.4f | Speed: %.1f tok/s",
+                                epoch + 1, totalEpochs, currentStep, totalSteps, currentLoss, tokensPerSec));
+                    }
+                }
+            }
+        });
     }
 
     public void unregisterActiveTrainer(String sessionId) {
-        if (sessionId != null) {
-            activeTrainers.remove(sessionId);
+        if (sessionId == null) return;
+        activeTrainers.remove(sessionId);
+        ForgeSession s = findSessionById(sessionId);
+        if (s == null) s = findSession(sessionId);
+        String key = s != null ? s.getSessionId() : sessionId;
+        if (!key.equals(sessionId)) activeTrainers.remove(key);
+
+        TrainingTelemetry telemetry = telemetryMap.get(key);
+        if (telemetry != null) {
+            telemetry.status = "COMPLETED";
+            telemetry.durationMs = System.currentTimeMillis() - telemetry.startTimeMs;
+            telemetry.addLog("INFO", "Training session completed.");
         }
     }
 
