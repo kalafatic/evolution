@@ -603,11 +603,41 @@ public class EvolutionServer extends NanoHTTPD {
 
     private Response handleCreateProject(IHTTPSession session) throws IOException, ResponseException {
         Map<String, String> files = new HashMap<>();
-        session.parseBody(files);
-        String postData = files.get("postData");
-        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+        try {
+            session.parseBody(files);
+        } catch (Exception ignored) {}
 
-        String name = json.optString("name", "SelfDevProject");
+        String postData = files.get("postData");
+        if (postData == null || postData.trim().isEmpty()) {
+            postData = session.getQueryParameterString();
+        }
+
+        JSONObject json = new JSONObject();
+        if (postData != null && !postData.trim().isEmpty()) {
+            try {
+                json = new JSONObject(postData);
+            } catch (Exception e) {
+                // Not a direct JSON string, check query / body params
+            }
+        }
+
+        String name = json.optString("name", null);
+        if (name == null || name.isEmpty()) {
+            name = json.optString("projectName", null);
+        }
+        if (name == null || name.isEmpty()) {
+            Map<String, String> parms = session.getParms();
+            if (parms != null) {
+                name = parms.get("name");
+                if (name == null || name.isEmpty()) {
+                    name = parms.get("projectName");
+                }
+            }
+        }
+        if (name == null || name.trim().isEmpty()) {
+            name = "SelfDevProject";
+        }
+
         try {
             eu.kalafatic.evolution.model.orchestration.EvoProject project = ProjectModelManager.getInstance().createProject(name);
             Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
@@ -618,9 +648,7 @@ public class EvolutionServer extends NanoHTTPD {
             JSONObject res = new JSONObject();
             res.put("status", "OK");
             res.put("project", name);
-            if (project != null) {
-                res.put("projectName", project.getName() != null ? project.getName() : name);
-            }
+            res.put("projectName", project != null && project.getName() != null ? project.getName() : name);
             return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",

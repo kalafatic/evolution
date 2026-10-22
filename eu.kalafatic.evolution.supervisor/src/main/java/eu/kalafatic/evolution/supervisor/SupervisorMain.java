@@ -249,10 +249,31 @@ public class SupervisorMain {
         
         private Response handleCreateProject(IHTTPSession session, Map<String, String> params) {
             try {
-                String name = params.getOrDefault("name", "SelfDevProject");
+                Map<String, String> files = new HashMap<>();
+                try {
+                    session.parseBody(files);
+                } catch (Exception ignored) {}
+
+                String postData = files.get("postData");
+                String name = params.get("name");
+                if (name == null || name.trim().isEmpty()) {
+                    name = params.get("projectName");
+                }
+
+                if ((name == null || name.trim().isEmpty()) && postData != null && !postData.trim().isEmpty()) {
+                    try {
+                        org.json.JSONObject json = new org.json.JSONObject(postData);
+                        name = json.optString("name", json.optString("projectName", null));
+                    } catch (Exception ignored) {}
+                }
+
+                if (name == null || name.trim().isEmpty()) {
+                    name = "SelfDevProject";
+                }
+
                 System.out.println("[HTTP] Create project requested: " + name);
                 return newFixedLengthResponse(Response.Status.OK, "application/json",
-                    "{\"status\":\"OK\",\"project\":\"" + name + "\"}");
+                    "{\"status\":\"OK\",\"project\":\"" + name + "\",\"projectName\":\"" + name + "\"}");
             } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");

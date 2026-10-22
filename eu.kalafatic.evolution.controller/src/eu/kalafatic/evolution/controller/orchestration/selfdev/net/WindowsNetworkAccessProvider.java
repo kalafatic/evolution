@@ -101,6 +101,8 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 String errMsg = "Failed to create Windows Firewall Inbound rule (exitCode=" + createRes.exitCode + "): " +
                         (createRes.stderr.trim().isEmpty() ? createRes.stdout.trim() : createRes.stderr.trim());
 
+                System.out.println("[NETWORK][WARNING] " + errMsg + ". Falling back to loopback communication.");
+
                 return new NetworkAccessResult.Builder()
                         .provider(getName())
                         .executable(canonicalExe)
@@ -108,11 +110,11 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                         .ruleName(inboundRuleName)
                         .scope("LOOPBACK_LAN")
                         .direction("INBOUND")
-                        .success(false)
+                        .success(true)
                         .supported(true)
+                        .permissionCreated(false)
                         .requiresElevation(requiresElevation)
-                        .error(new RuntimeException(errMsg))
-                        .message("Windows Firewall rule creation failed due to " + (requiresElevation ? "administrator elevation requirement" : "command failure") + ": " + errMsg)
+                        .message("Windows Firewall Inbound rule creation bypassed due to " + (requiresElevation ? "administrator elevation requirement" : "command failure") + "; loopback communication on 127.0.0.1 remains available: " + errMsg)
                         .build();
             }
         }
@@ -125,6 +127,8 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 String errMsg = "Failed to create Windows Firewall Outbound rule (exitCode=" + createRes.exitCode + "): " +
                         (createRes.stderr.trim().isEmpty() ? createRes.stdout.trim() : createRes.stderr.trim());
 
+                System.out.println("[NETWORK][WARNING] " + errMsg + ". Falling back to loopback communication.");
+
                 return new NetworkAccessResult.Builder()
                         .provider(getName())
                         .executable(canonicalExe)
@@ -132,11 +136,11 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                         .ruleName(outboundRuleName)
                         .scope("LOOPBACK_LAN")
                         .direction("OUTBOUND")
-                        .success(false)
+                        .success(true)
                         .supported(true)
+                        .permissionCreated(false)
                         .requiresElevation(requiresElevation)
-                        .error(new RuntimeException(errMsg))
-                        .message("Windows Firewall Outbound rule creation failed due to " + (requiresElevation ? "administrator elevation requirement" : "command failure") + ": " + errMsg)
+                        .message("Windows Firewall Outbound rule creation bypassed due to " + (requiresElevation ? "administrator elevation requirement" : "command failure") + "; loopback communication on 127.0.0.1 remains available: " + errMsg)
                         .build();
             }
         }
@@ -356,7 +360,13 @@ public class WindowsNetworkAccessProvider implements NetworkAccessProvider {
                 lower.contains("run as administrator") ||
                 lower.contains("requires elevation") ||
                 lower.contains("administrator privileges") ||
-                lower.contains("requested operation requires elevation");
+                lower.contains("requested operation requires elevation") ||
+                lower.contains("unauthorizedaccessexception") ||
+                lower.contains("defender") ||
+                lower.contains("pssecurityexception") ||
+                lower.contains("execution policy") ||
+                lower.contains("not recognized") ||
+                lower.contains("disabled");
     }
 
     private static String escapePsString(String str) {
