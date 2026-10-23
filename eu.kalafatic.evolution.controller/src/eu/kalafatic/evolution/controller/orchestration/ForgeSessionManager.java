@@ -385,8 +385,12 @@ public class ForgeSessionManager {
         }
 
         if (fallback == null) {
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found and no sessions exist. Creating 'Active Forge Session'.");
-            fallback = createSession("Active Forge Session", "SELF_EVO");
+            String name = (requestedId != null && !requestedId.trim().isEmpty()) ? requestedId : "Active Forge Session";
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found and no sessions exist. Creating '" + name + "'.");
+            fallback = createSession(name, "SELF_EVO");
+        } else if (requestedId != null && !requestedId.trim().isEmpty()) {
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session '" + requestedId + "' not found in Forge sessions. Creating dedicated session.");
+            fallback = createSession(requestedId, "SELF_EVO");
         } else {
             System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found. Falling back to default session '" + fallback.getName() + "' (" + fallback.getSessionId() + ").");
         }
