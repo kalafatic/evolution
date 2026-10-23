@@ -28,6 +28,7 @@ import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager;
 import eu.kalafatic.evolution.forge.data.api.discovery.DatasetCandidate;
 import eu.kalafatic.evolution.forge.data.api.discovery.DatasetSearchRequest;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.impl.discovery.HuggingFaceDatasetProvider;
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -565,7 +566,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         setProgressBarVisible(true);
         updateProgress(10);
         updateStatusText("Status: Discovering remote datasets...");
-        String repo = repoText.getText().trim();
+        String repo = DatasetSourceConfig.sanitizeRepositoryName(repoText.getText());
         String domain = domainCombo != null ? domainCombo.getText().trim() : "General Text";
         String split = splitText.getText().trim();
         String sizeMbStr = maxSizeMbText.getText().trim();
@@ -1042,7 +1043,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         setProgressBarVisible(true);
         updateProgress(10);
         updateStatusText("Status: Initiating dataset download...");
-        String repo = repoText.getText().trim();
+        String repo = DatasetSourceConfig.sanitizeRepositoryName(repoText.getText());
         String split = splitText.getText().trim();
         String samples = maxSamplesText.getText().trim();
         String sizeMbStr = maxSizeMbText.getText().trim();
@@ -1166,7 +1167,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         setProgressBarVisible(true);
         updateProgress(10);
         updateStatusText("Status: Preparing .evodata export...");
-        String repoOrPath = repoText.getText().trim();
+        String repoOrPath = DatasetSourceConfig.sanitizeRepositoryName(repoText.getText());
 
         List<DatasetItem> apiItems = new ArrayList<>();
         for (DatasetItem item : sourceItemList) {
@@ -1272,7 +1273,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handleAddTaskToStack() {
-        String repo = repoText.getText().trim();
+        String repo = DatasetSourceConfig.sanitizeRepositoryName(repoText.getText());
         String split = splitText.getText().trim();
         String sizeMbStr = maxSizeMbText.getText().trim();
 
@@ -1321,7 +1322,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handlePreview() {
-        String repo = repoText.getText().trim();
+        String repo = DatasetSourceConfig.sanitizeRepositoryName(repoText.getText());
         String split = splitText.getText().trim();
         reportArea.setText("Fetching sample preview for " + repo + " (" + split + ")...\n");
 
@@ -1391,7 +1392,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handlePrepareDataset() {
-        String repo = repoText.getText().trim();
+        String repo = DatasetSourceConfig.sanitizeRepositoryName(repoText.getText());
         String split = splitText.getText().trim();
         String samples = maxSamplesText.getText().trim();
         String sizeMbStr = maxSizeMbText.getText().trim();
@@ -1671,7 +1672,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handleAddRepoSource() {
-        String repo = repoText != null ? repoText.getText().trim() : "";
+        String repo = repoText != null ? DatasetSourceConfig.sanitizeRepositoryName(repoText.getText()) : "";
         if (repo.isEmpty()) repo = "wikitext";
         boolean exists = false;
         for (DatasetItem item : sourceItemList) {

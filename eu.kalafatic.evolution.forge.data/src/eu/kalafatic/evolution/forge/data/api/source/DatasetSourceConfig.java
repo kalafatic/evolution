@@ -16,16 +16,33 @@ public class DatasetSourceConfig {
 
     public DatasetSourceConfig() {}
 
+    public static String sanitizeRepositoryName(String repo) {
+        if (repo == null) return "";
+        String clean = repo.trim();
+        if (new java.io.File(clean).exists()) {
+            return clean;
+        }
+        while (clean.startsWith("/")) {
+            clean = clean.substring(1).trim();
+        }
+        while (clean.endsWith("/")) {
+            clean = clean.substring(0, clean.length() - 1).trim();
+        }
+        return clean;
+    }
+
     public DatasetSourceConfig(String sourceType, String repository) {
         this.sourceType = sourceType;
-        this.repository = repository;
+        this.repository = "HUGGING_FACE".equalsIgnoreCase(sourceType) ? sanitizeRepositoryName(repository) : (repository != null ? repository.trim() : "");
     }
 
     public String getSourceType() { return sourceType; }
     public void setSourceType(String sourceType) { this.sourceType = sourceType; }
 
     public String getRepository() { return repository; }
-    public void setRepository(String repository) { this.repository = repository; }
+    public void setRepository(String repository) {
+        this.repository = "HUGGING_FACE".equalsIgnoreCase(this.sourceType) ? sanitizeRepositoryName(repository) : (repository != null ? repository.trim() : "");
+    }
 
     public String getConfiguration() { return configuration; }
     public void setConfiguration(String configuration) { this.configuration = configuration; }

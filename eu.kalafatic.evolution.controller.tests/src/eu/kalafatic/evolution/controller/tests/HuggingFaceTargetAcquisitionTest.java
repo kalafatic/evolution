@@ -370,6 +370,20 @@ public class HuggingFaceTargetAcquisitionTest {
     }
 
     @Test
+    public void testSanitizeRepositoryNameWithLeadingAndTrailingSlashes() {
+        assertEquals("HuggingFaceH4/no_robots", DatasetSourceConfig.sanitizeRepositoryName("/HuggingFaceH4/no_robots"));
+        assertEquals("HuggingFaceH4/no_robots", DatasetSourceConfig.sanitizeRepositoryName("HuggingFaceH4/no_robots/"));
+        assertEquals("HuggingFaceH4/no_robots", DatasetSourceConfig.sanitizeRepositoryName(" ///HuggingFaceH4/no_robots// "));
+
+        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", "/HuggingFaceH4/no_robots/");
+        assertEquals("HuggingFaceH4/no_robots", config.getRepository());
+
+        try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config)) {
+            assertEquals("HuggingFaceH4/no_robots", source.preflight().getRepository());
+        }
+    }
+
+    @Test
     public void testRealHuggingFaceDiscoveryPaginationAndMultiResult() {
         HuggingFaceSourceDiscovery discovery = new HuggingFaceSourceDiscovery();
 
