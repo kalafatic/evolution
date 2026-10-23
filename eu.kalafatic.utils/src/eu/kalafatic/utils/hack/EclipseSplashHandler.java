@@ -23,6 +23,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.branding.IProductConstants;
 import org.eclipse.ui.internal.util.PrefUtil;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * The Class class EclipseSplashHandler.
@@ -50,7 +52,67 @@ public class EclipseSplashHandler extends BasicSplashHandler {
 	 * Instantiates a new eclipse splash handler.
 	 */
 	public EclipseSplashHandler() {
-		version = Platform.getProduct().getProperty("version");
+		version = resolveVersion();
+	}
+
+	/**
+	 * Resolves the application version from product properties, defining bundle manifest,
+	 * or framework bundle headers to prevent null version on splash screen.
+	 *
+	 * @return non-null version string
+	 */
+	public static String resolveVersion() {
+		String ver = null;
+		try {
+			IProduct product = Platform.getProduct();
+			if (product != null) {
+				ver = product.getProperty("version");
+				if (ver == null || ver.trim().isEmpty()) {
+					Bundle bundle = product.getDefiningBundle();
+					if (bundle != null) {
+						if (bundle.getHeaders() != null && bundle.getHeaders().get("Bundle-Version") != null) {
+							ver = bundle.getHeaders().get("Bundle-Version");
+						} else if (bundle.getVersion() != null) {
+							ver = bundle.getVersion().toString();
+						}
+					}
+				}
+			}
+		} catch (Throwable e) {
+			// Ignore platform lookup exceptions in non-OSGi test environments
+		}
+
+		if (ver == null || ver.trim().isEmpty()) {
+			try {
+				Bundle bundle = FrameworkUtil.getBundle(EclipseSplashHandler.class);
+				if (bundle != null) {
+					if (bundle.getHeaders() != null && bundle.getHeaders().get("Bundle-Version") != null) {
+						ver = bundle.getHeaders().get("Bundle-Version");
+					} else if (bundle.getVersion() != null) {
+						ver = bundle.getVersion().toString();
+					}
+				}
+			} catch (Throwable e) {
+				// Ignore framework lookup exceptions
+			}
+		}
+
+		if (ver == null || ver.trim().isEmpty()) {
+			try {
+				Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+				if (bundle != null) {
+					ver = bundle.getVersion().toString();
+				}
+			} catch (Throwable e) {
+				// Ignore
+			}
+		}
+
+		if (ver == null || ver.trim().isEmpty()) {
+			ver = "2.6.5.qualifier";
+		}
+
+		return ver;
 	}
 
 	// ---------------------------------------------------------------
@@ -156,6 +218,9 @@ public class EclipseSplashHandler extends BasicSplashHandler {
 					String displayVersion = version;
 					if (displayVersion != null && displayVersion.endsWith(".qualifier")) {
 						displayVersion = displayVersion.substring(0, displayVersion.length() - ".qualifier".length());
+					}
+					if (displayVersion == null) {
+						displayVersion = "";
 					}
 					e.gc.setForeground(foreground);
 					e.gc.drawText("v " + displayVersion, x, y, true);
