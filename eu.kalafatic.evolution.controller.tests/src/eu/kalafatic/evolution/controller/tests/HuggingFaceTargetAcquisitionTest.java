@@ -25,6 +25,7 @@ import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResu
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
+import eu.kalafatic.evolution.forge.data.api.source.ResolvedSource;
 import eu.kalafatic.evolution.forge.data.impl.discovery.HuggingFaceSourceDiscovery;
 import eu.kalafatic.evolution.forge.data.impl.evaluation.DefaultPreferenceEvaluator;
 import eu.kalafatic.evolution.forge.data.impl.pipeline.DataCleaner;
@@ -310,6 +311,62 @@ public class HuggingFaceTargetAcquisitionTest {
                 result.getUsableContentBytes() >= targetBytes);
         assertTrue("Duplicate bytes count must be recorded", result.getDuplicateBytes() > 0);
         assertTrue("Target reached must be true", result.isTargetReached());
+    }
+
+    @Test
+    public void testHuggingFaceSourceSplitResolutionFallback() throws Exception {
+        DataDownloader fakeDownloader = new DataDownloader() {
+            @Override
+            public DownloadResult download(DownloadRequest request) throws IOException {
+                String url = request.getUrl();
+                if (url.contains("/splits")) {
+                    JSONObject root = new JSONObject();
+                    JSONArray splits = new JSONArray();
+                    splits.put(new JSONObject().put("config", "default").put("split", "train_sft").put("num_bytes", 50000));
+                    splits.put(new JSONObject().put("config", "default").put("split", "test_sft").put("num_bytes", 10000));
+                    root.put("splits", splits);
+                    String json = root.toString();
+                    return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                } else if (url.contains("split=train_sft")) {
+                    JSONObject root = new JSONObject();
+                    JSONArray rows = new JSONArray();
+                    for (int i = 0; i < 3; i++) {
+                        rows.put(new JSONObject().put("row", new JSONObject().put("text", "Sample train_sft text content record #" + i)));
+                    }
+                    root.put("rows", rows);
+                    String json = root.toString();
+                    return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                }
+                return new DownloadResult(404, "Not Found", "{}", null, 2, "application/json");
+            }
+        };
+
+        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", "HuggingFaceH4/ultrachat_200k");
+        config.setSplit("train");
+        try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config, fakeDownloader)) {
+            ResolvedSource preflight = source.preflight();
+            assertTrue("Preflight must succeed via fallback split resolution when exact 'train' split is missing", preflight.isAccessible());
+            assertEquals("train_sft", preflight.getResolvedSplit());
+
+            source.initialize();
+            assertTrue(source.hasNext());
+            NormalizedSample sample = source.next();
+            assertNotNull(sample);
+            assertTrue(sample.toFullText().contains("Sample train_sft text content"));
+        }
+    }
+
+    @Test
+    public void testHuggingFaceSourceRepoNormalization() {
+        DatasetSourceConfig configWikitext = new DatasetSourceConfig("HUGGING_FACE", "wikitext");
+        try (HuggingFaceDatasetSource sourceWikitext = new HuggingFaceDatasetSource(configWikitext)) {
+            assertEquals("Salesforce/wikitext", sourceWikitext.preflight().getRepository());
+        }
+
+        DatasetSourceConfig configGsm = new DatasetSourceConfig("HUGGING_FACE", "gsm8k");
+        try (HuggingFaceDatasetSource sourceGsm = new HuggingFaceDatasetSource(configGsm)) {
+            assertEquals("openai/gsm8k", sourceGsm.preflight().getRepository());
+        }
     }
 
     @Test

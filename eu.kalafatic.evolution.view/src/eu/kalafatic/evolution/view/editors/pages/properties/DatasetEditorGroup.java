@@ -122,12 +122,30 @@ public class DatasetEditorGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 int idx = presetCombo.getSelectionIndex();
                 switch (idx) {
-                    case 0 -> repoText.setText("wikitext");
-                    case 1 -> repoText.setText("tatsu-lab/alpaca");
-                    case 2 -> repoText.setText("HuggingFaceFW/fineweb");
-                    case 3 -> repoText.setText("HuggingFaceH4/ultrachat_200k");
-                    case 4 -> repoText.setText("bigcode/the-stack");
-                    case 5 -> repoText.setText("gsm8k");
+                    case 0 -> {
+                        repoText.setText("wikitext");
+                        splitText.setText("train");
+                    }
+                    case 1 -> {
+                        repoText.setText("tatsu-lab/alpaca");
+                        splitText.setText("train");
+                    }
+                    case 2 -> {
+                        repoText.setText("HuggingFaceFW/fineweb");
+                        splitText.setText("train");
+                    }
+                    case 3 -> {
+                        repoText.setText("HuggingFaceH4/ultrachat_200k");
+                        splitText.setText("train_sft");
+                    }
+                    case 4 -> {
+                        repoText.setText("bigcode/the-stack");
+                        splitText.setText("train");
+                    }
+                    case 5 -> {
+                        repoText.setText("openai/gsm8k");
+                        splitText.setText("train");
+                    }
                     default -> {}
                 }
             }
