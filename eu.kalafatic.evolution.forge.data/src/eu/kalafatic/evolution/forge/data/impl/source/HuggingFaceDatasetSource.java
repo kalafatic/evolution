@@ -76,7 +76,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
     @Override
     public String getSourceName() {
-        return "Hugging Face: " + config.getRepository() + " (" + config.getSplit() + ")";
+        return "Hugging Face: " + normalizeRepo(config.getRepository()) + " (" + (resolvedSplit != null ? resolvedSplit : config.getSplit()) + ")";
     }
 
     @Override
@@ -86,14 +86,15 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
     private static String normalizeRepo(String rawRepo) {
         if (rawRepo == null) return "Salesforce/wikitext";
-        if ("wikitext".equalsIgnoreCase(rawRepo)) {
+        String repo = DatasetSourceConfig.sanitizeRepositoryName(rawRepo);
+        if ("wikitext".equalsIgnoreCase(repo)) {
             return "Salesforce/wikitext";
-        } else if ("fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineWeb".equalsIgnoreCase(rawRepo)) {
+        } else if ("fineweb".equalsIgnoreCase(repo) || "huggingfacefw/fineweb".equalsIgnoreCase(repo) || "huggingfacefw/fineWeb".equalsIgnoreCase(repo)) {
             return "HuggingFaceFW/fineweb";
-        } else if ("gsm8k".equalsIgnoreCase(rawRepo)) {
+        } else if ("gsm8k".equalsIgnoreCase(repo)) {
             return "openai/gsm8k";
         }
-        return rawRepo;
+        return repo;
     }
 
     @Override

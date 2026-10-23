@@ -119,6 +119,10 @@ public class DatasetAcquisitionTool implements ITool {
             }
         }
 
+        if (repo != null && !repo.trim().isEmpty()) {
+            repo = DatasetSourceConfig.sanitizeRepositoryName(repo);
+        }
+
         if (repo == null || repo.trim().isEmpty()) {
             JSONObject errObj = new JSONObject();
             errObj.put("status", "FAILED");
