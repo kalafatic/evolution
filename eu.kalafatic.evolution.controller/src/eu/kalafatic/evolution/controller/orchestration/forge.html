@@ -133,8 +133,18 @@
             align-items: center;
             padding: 0 15px;
             border-bottom: 1px solid var(--border);
+            gap: 10px;
         }
-        #active-session-name { font-weight: bold; color: var(--accent); margin-right: 20px; }
+        #session-select-combo {
+            font-weight: bold;
+            color: var(--accent);
+            background: #ffffff;
+            border: 1px solid var(--border);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            max-width: 220px;
+        }
 
         /* Canvas */
         #canvas-container {
@@ -724,8 +734,13 @@
         <!-- MAIN CANVAS -->
         <div id="main-content">
             <div id="top-toolbar">
-                <span id="active-session-name">No Session Selected</span>
-                <div id="session-status-indicator" style="margin-left: 10px;">
+                <span style="font-size:0.8em; font-weight:bold; color:var(--text-dim);">SESSION:</span>
+                <select id="session-select-combo" onchange="selectSession(this.value)">
+                    <option value="">No Session Selected</option>
+                </select>
+                <button class="btn btn-sm btn-primary" onclick="createNewSession()" title="Create New Session">+ New</button>
+
+                <div id="session-status-indicator">
                     <span id="lifecycle-badge" style="background: #444; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; color: #aaa;">OFFLINE</span>
                 </div>
 
@@ -1054,6 +1069,8 @@
         }
 
         let serverPort = 48080;
+        let activeAiSession = "";
+        let aiSessionList = [];
         let activeSessionId = null;
         let sessions = [];
         let model = { nodes: [], links: [] };
@@ -1088,9 +1105,12 @@
             logView.scrollTop = logView.scrollHeight;
         }
 
-        window.initializeForge = function(port) {
+        window.initializeForge = function(port, activeAi, aiList) {
             serverPort = port;
-            log(`Connecting to Forge Server on port ${port}...`);
+            if (activeAi) activeAiSession = activeAi;
+            if (aiList && Array.isArray(aiList)) aiSessionList = aiList;
+
+            log(`Connecting to Forge Server on port ${port}... (AI Session: ${activeAiSession})`);
 
             loadSessions();
             updateButtonState();
@@ -1221,15 +1241,69 @@
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 sessions = await res.json();
+
+                // Merge AI Commander session into sessions list if missing
+                if (activeAiSession) {
+                    let found = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
+                    if (!found) {
+                        sessions.unshift({
+                            id: activeAiSession,
+                            name: activeAiSession,
+                            modelType: 'SELF_EVO',
+                            status: 'TRAINING',
+                            lifecycleState: 'TRAINING'
+                        });
+                    }
+                }
+                if (aiSessionList && aiSessionList.length > 0) {
+                    aiSessionList.forEach(sName => {
+                        let found = sessions.find(s => s.id === sName || s.name === sName);
+                        if (!found) {
+                            sessions.push({
+                                id: sName,
+                                name: sName,
+                                modelType: 'SELF_EVO',
+                                status: 'IDLE',
+                                lifecycleState: 'CREATED'
+                            });
+                        }
+                    });
+                }
+
                 renderSessionList();
-                if (sessions.length > 0 && !activeSessionId) {
-                    selectSession(sessions[0].id);
-                } else if (sessions.length === 0 && !isAutoCreating) {
-                    autoCreateSession();
+                renderTopCombo();
+
+                if (!activeSessionId) {
+                    if (activeAiSession) {
+                        selectSession(activeAiSession);
+                    } else if (sessions.length > 0) {
+                        selectSession(sessions[0].id);
+                    } else if (!isAutoCreating) {
+                        autoCreateSession();
+                    }
                 }
             } catch (e) {
                 log(`Error loading sessions from ${url}: ${e.message}`);
             }
+        }
+
+        function renderTopCombo() {
+            const combo = document.getElementById('session-select-combo');
+            if (!combo) return;
+            combo.innerHTML = '';
+
+            if (sessions.length === 0) {
+                combo.innerHTML = '<option value="">No Sessions Available</option>';
+                return;
+            }
+
+            sessions.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.name} (${s.modelType})`;
+                if (s.id === activeSessionId) opt.selected = true;
+                combo.appendChild(opt);
+            });
         }
 
         async function autoCreateSession() {
@@ -1290,10 +1364,12 @@
         }
 
         async function selectSession(id) {
+            if (!id) return;
             activeSessionId = id;
             const session = sessions.find(s => s.id === id);
 
-            document.getElementById('active-session-name').textContent = session ? session.name : "Unknown";
+            const combo = document.getElementById('session-select-combo');
+            if (combo && combo.value !== id) combo.value = id;
 
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
             updateLifecycleUI(state);
@@ -1303,6 +1379,9 @@
             await fetchModel(id);
             await updateModelPropertiesUI();
             log(`Switched to session: ${session ? session.name : id}`);
+            if (currentViz === 'TRAINING') {
+                refreshViz();
+            }
 
             if (window.forgeAction) forgeAction("SESSION_SWITCHED", id);
 

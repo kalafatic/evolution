@@ -192,9 +192,32 @@ public class ForgePage extends AEvoPage {
     protected void refreshUI() {
         if (!isJsReady || browser.isDisposed()) return;
 
-        // Pass port to JS
         int port = 48080;
-        if (orchestrator.getServerSettings() != null) port = orchestrator.getServerSettings().getPort();
-        browser.execute("if(window.initializeForge) { window.initializeForge(" + port + "); }");
+        if (orchestrator != null && orchestrator.getServerSettings() != null) {
+            port = orchestrator.getServerSettings().getPort();
+        }
+
+        String activeAiSession = "";
+        org.json.JSONArray aiSessionArray = new org.json.JSONArray();
+
+        if (editor != null && editor.getAiChatPage() != null) {
+            AiCommanderPage aiPage = editor.getAiChatPage();
+            activeAiSession = aiPage.getCurrentSessionName();
+            if (activeAiSession == null) activeAiSession = "";
+
+            if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getSessions() != null) {
+                for (eu.kalafatic.evolution.model.orchestration.ChatSession cs : orchestrator.getAiChat().getSessions()) {
+                    if (cs != null && cs.getId() != null) {
+                        aiSessionArray.put(cs.getId());
+                    }
+                }
+            }
+        }
+
+        String jsCall = String.format("if(window.initializeForge) { window.initializeForge(%d, '%s', %s); }",
+                port,
+                activeAiSession.replace("'", "\\'"),
+                aiSessionArray.toString());
+        browser.execute(jsCall);
     }
 }
