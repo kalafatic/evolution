@@ -2118,9 +2118,7 @@ public class EvolutionServer extends NanoHTTPD {
         result.put("failureReason", failureReason);
         result.put("summary", cognitiveResult.getSummary());
 
-        if (acqResult != null && acqResult.getStatus() == eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult.Status.READY) {
-            return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
-        } else if (usableBytes > 0) {
+        if (acqResult != null || usableBytes > 0) {
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
         } else {
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", result.toString());
