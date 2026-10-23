@@ -146,6 +146,42 @@
             max-width: 220px;
         }
 
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+            color: var(--evo-text-secondary);
+            background: var(--evo-surface);
+            padding: 3px 10px;
+            border-radius: var(--evo-radius);
+            border: 1px solid var(--evo-border);
+            white-space: nowrap;
+            overflow-x: auto;
+            max-width: 380px;
+        }
+        .breadcrumb-item {
+            cursor: pointer;
+            color: var(--evo-text);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.15s;
+        }
+        .breadcrumb-item:hover {
+            color: var(--evo-primary);
+            text-decoration: underline;
+        }
+        .breadcrumb-item.active {
+            color: var(--evo-primary);
+            font-weight: 700;
+        }
+        .breadcrumb-separator {
+            color: var(--evo-text-muted);
+            font-size: 0.85em;
+        }
+
         /* Canvas */
         #canvas-container {
             flex-grow: 1;
@@ -743,6 +779,8 @@
                 <div id="session-status-indicator">
                     <span id="lifecycle-badge" style="background: #444; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; color: #aaa;">OFFLINE</span>
                 </div>
+
+                <div id="breadcrumbs" class="breadcrumbs"></div>
 
                 <div style="margin-left: auto; display: flex; gap: 10px;">
                     <button class="btn btn-sm" id="json-editor-btn" onclick="toggleJsonEditor()" data-guidance="Switch to manual JSON editing mode for direct structural modifications.">JSON Editor</button>
@@ -1363,6 +1401,32 @@
             }
         }
 
+        function updateBreadcrumbs() {
+            const container = document.getElementById("breadcrumbs");
+            if (!container) return;
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            const sessionName = session ? session.name : (activeSessionId || "No Session");
+
+            const vizLabels = {
+                'ARCHITECTURE': '📊 Architecture',
+                'SELF_EVO': '🧪 Self-Evo',
+                'DATASET': '📂 Dataset Explorer',
+                'TRAINING': '🎛️ Training Monitor',
+                'EVOLUTION': '🧬 Evolution Timeline',
+                'WALKTHROUGH': '📖 Study Walkthrough'
+            };
+            const vizName = vizLabels[currentViz] || currentViz;
+
+            container.innerHTML = `
+                <span class="breadcrumb-item" onclick="onVizChange()">🔨 Forge</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item" onclick="refreshViz()">${sessionName}</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item active">${vizName}</span>
+            `;
+        }
+
         async function selectSession(id) {
             if (!id) return;
             activeSessionId = id;
@@ -1957,6 +2021,7 @@
         function onVizChange() {
             currentViz = document.getElementById('viz-selector').value;
             updateVizControls();
+            updateBreadcrumbs();
             refreshViz();
             persistUiState('selectedVisualization', currentViz);
         }
