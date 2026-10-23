@@ -1620,6 +1620,9 @@ public class DatasetEditorGroup extends AEvoGroup {
             if (code >= 300) {
                 try {
                     org.json.JSONObject errJson = new org.json.JSONObject(result);
+                    if (errJson.has("status") || errJson.has("actualUsableBytes") || errJson.has("failureReason")) {
+                        return result;
+                    }
                     if (errJson.has("error")) throw new Exception(errJson.getString("error"));
                 } catch (org.json.JSONException ignored) {}
                 throw new Exception("HTTP " + code + ": " + result);
