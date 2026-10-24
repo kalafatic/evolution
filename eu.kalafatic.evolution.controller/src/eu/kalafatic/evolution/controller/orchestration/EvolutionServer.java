@@ -151,6 +151,9 @@ public class EvolutionServer extends NanoHTTPD {
         if (uri.startsWith("/api/admin")) {
             return adminApiController.handle(session);
         }
+        if (Method.GET.equals(method) && ("/admin".equals(uri) || "/admin.html".equals(uri))) {
+            return handleGetAdminPage();
+        }
 
         // 2. Static Resources (Bypass authorization)
         if ("/login.html".equals(uri) || uri.startsWith("/css/") || uri.startsWith("/js/")) {
@@ -877,6 +880,21 @@ public class EvolutionServer extends NanoHTTPD {
 
             return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"started\"}");
         } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
+    }
+
+    private Response handleGetAdminPage() {
+        try (InputStream is = getClass().getResourceAsStream("admin.html")) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "admin.html not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
+                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+            }
+        } catch (IOException e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
         }
     }
