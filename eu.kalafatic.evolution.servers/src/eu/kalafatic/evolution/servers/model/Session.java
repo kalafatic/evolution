@@ -11,6 +11,9 @@ public class Session {
     private String clientIp;
     private String workflowType;
     private String metadata;
+    private String status;      // ACTIVE, TERMINATED, EXPIRED
+    private String sessionType; // USER, SYSTEM, ANONYMOUS
+    private LocalDateTime endedAt;
 
     public Session() {}
 
@@ -21,6 +24,8 @@ public class Session {
         this.createdAt = createdAt;
         this.lastAccess = lastAccess;
         this.clientIp = clientIp;
+        this.status = "ACTIVE";
+        this.sessionType = "SYSTEM";
     }
 
     public Session(Long id, String sessionId, Long userId, LocalDateTime createdAt, LocalDateTime lastAccess, String clientIp, String workflowType, String metadata) {
@@ -32,6 +37,8 @@ public class Session {
         this.clientIp = clientIp;
         this.workflowType = workflowType;
         this.metadata = metadata;
+        this.status = "ACTIVE";
+        this.sessionType = "SYSTEM";
     }
 
     public Long getId() { return id; }
@@ -57,4 +64,13 @@ public class Session {
 
     public String getMetadata() { return metadata; }
     public void setMetadata(String metadata) { this.metadata = metadata; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getSessionType() { return sessionType; }
+    public void setSessionType(String sessionType) { this.sessionType = sessionType; }
+
+    public LocalDateTime getEndedAt() { return endedAt; }
+    public void setEndedAt(LocalDateTime endedAt) { this.endedAt = endedAt; }
 }

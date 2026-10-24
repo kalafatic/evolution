@@ -70,6 +70,7 @@ public class EvolutionServer extends NanoHTTPD {
     private final java.util.Set<String> completedForgingRefreshes = ConcurrentHashMap.newKeySet();
     private final AuthService authService;
     private final AuthController authController;
+    private final eu.kalafatic.evolution.servers.controller.AdminApiController adminApiController;
     private final ArchitectureController architectureController;
     private final EvolutionDashboardController evolutionDashboardController;
 
@@ -91,6 +92,7 @@ public class EvolutionServer extends NanoHTTPD {
             Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
             return orch != null && orch.getServerSettings() != null && orch.getServerSettings().isAuthenticate();
         });
+        this.adminApiController = new eu.kalafatic.evolution.servers.controller.AdminApiController(dbManager);
         this.architectureController = new ArchitectureController();
         this.evolutionDashboardController = new EvolutionDashboardController();
     }
@@ -142,9 +144,12 @@ public class EvolutionServer extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\":\"SHUTTING_DOWN\"}");
         }
 
-        // 1. Authentication Routing
+        // 1. Authentication & Admin Routing
         if (uri.startsWith("/api/auth")) {
             return authController.handle(session);
+        }
+        if (uri.startsWith("/api/admin")) {
+            return adminApiController.handle(session);
         }
 
         // 2. Static Resources (Bypass authorization)
