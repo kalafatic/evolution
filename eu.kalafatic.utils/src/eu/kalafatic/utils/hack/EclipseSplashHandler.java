@@ -160,7 +160,7 @@ public class EclipseSplashHandler extends BasicSplashHandler {
 			foregroundColorInteger = Integer
 					.parseInt(foregroundColorString, 16);
 		} catch (Exception ex) {
-			foregroundColorInteger = 0xD2D7FF; // off white
+			foregroundColorInteger = 0x70B0FF; // light blue
 		}
 		RGB rgb = new RGB((foregroundColorInteger & 0xFF0000) >> 16,
 				(foregroundColorInteger & 0xFF00) >> 8,
@@ -168,7 +168,7 @@ public class EclipseSplashHandler extends BasicSplashHandler {
 
 		setForeground(rgb);
 
-		foreground = new Color(splash.getDisplay(), rgb);
+		foreground = new Color(splash.getDisplay(), new RGB(112, 176, 255)); // light blue
 
 		Composite content = getContent(); // ensure creation of the progress
 
