@@ -17,14 +17,19 @@ public class UserRepository {
     }
 
     public void save(User user) throws SQLException {
-        String sql = "INSERT INTO users (username, password_hash, role, enabled, created_at) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, display_name, password_hash, role, enabled, created_at, updated_at, last_login_at, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getPasswordHash());
-            pstmt.setString(3, user.getRole());
-            pstmt.setBoolean(4, user.isEnabled());
-            pstmt.setString(5, user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            pstmt.setString(2, user.getDisplayName() != null ? user.getDisplayName() : user.getUsername());
+            pstmt.setString(3, user.getPasswordHash() != null ? user.getPasswordHash() : "");
+            pstmt.setString(4, user.getRole() != null ? user.getRole() : "USER");
+            pstmt.setBoolean(5, user.isEnabled());
+            String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            pstmt.setString(6, user.getCreatedAt() != null ? user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : now);
+            pstmt.setString(7, user.getUpdatedAt() != null ? user.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : now);
+            pstmt.setString(8, user.getLastLoginAt() != null ? user.getLastLoginAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+            pstmt.setString(9, user.getDescription());
             pstmt.executeUpdate();
 
             try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
@@ -77,14 +82,18 @@ public class UserRepository {
     }
 
     public void update(User user) throws SQLException {
-        String sql = "UPDATE users SET username = ?, password_hash = ?, role = ?, enabled = ? WHERE id = ?";
+        String sql = "UPDATE users SET username = ?, display_name = ?, password_hash = ?, role = ?, enabled = ?, updated_at = ?, last_login_at = ?, description = ? WHERE id = ?";
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getPasswordHash());
-            pstmt.setString(3, user.getRole());
-            pstmt.setBoolean(4, user.isEnabled());
-            pstmt.setLong(5, user.getId());
+            pstmt.setString(2, user.getDisplayName());
+            pstmt.setString(3, user.getPasswordHash());
+            pstmt.setString(4, user.getRole());
+            pstmt.setBoolean(5, user.isEnabled());
+            pstmt.setString(6, LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            pstmt.setString(7, user.getLastLoginAt() != null ? user.getLastLoginAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+            pstmt.setString(8, user.getDescription());
+            pstmt.setLong(9, user.getId());
             pstmt.executeUpdate();
         }
     }
@@ -98,14 +107,61 @@ public class UserRepository {
         }
     }
 
+    // Role mapping helpers
+    public List<Long> getUserRoleIds(Long userId) throws SQLException {
+        List<Long> roleIds = new ArrayList<>();
+        String sql = "SELECT role_id FROM user_roles WHERE user_id = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    roleIds.add(rs.getLong("role_id"));
+                }
+            }
+        }
+        return roleIds;
+    }
+
+    public void assignUserRole(Long userId, Long roleId, Long assignedBy) throws SQLException {
+        String sql = "INSERT OR IGNORE INTO user_roles (user_id, role_id, assigned_at, assigned_by) VALUES (?, ?, ?, ?)";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            pstmt.setLong(2, roleId);
+            pstmt.setString(3, LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            if (assignedBy != null) pstmt.setLong(4, assignedBy); else pstmt.setNull(4, Types.BIGINT);
+            pstmt.executeUpdate();
+        }
+    }
+
+    public void removeUserRole(Long userId, Long roleId) throws SQLException {
+        String sql = "DELETE FROM user_roles WHERE user_id = ? AND role_id = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            pstmt.setLong(2, roleId);
+            pstmt.executeUpdate();
+        }
+    }
+
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getLong("id"));
         user.setUsername(rs.getString("username"));
+        try { user.setDisplayName(rs.getString("display_name")); } catch (SQLException e) {}
         user.setPasswordHash(rs.getString("password_hash"));
         user.setRole(rs.getString("role"));
         user.setEnabled(rs.getBoolean("enabled"));
-        user.setCreatedAt(LocalDateTime.parse(rs.getString("created_at"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        String createdAt = rs.getString("created_at");
+        if (createdAt != null) user.setCreatedAt(LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        try {
+            String updatedAt = rs.getString("updated_at");
+            if (updatedAt != null) user.setUpdatedAt(LocalDateTime.parse(updatedAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            String lastLogin = rs.getString("last_login_at");
+            if (lastLogin != null) user.setLastLoginAt(LocalDateTime.parse(lastLogin, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            user.setDescription(rs.getString("description"));
+        } catch (SQLException e) {}
         return user;
     }
 }

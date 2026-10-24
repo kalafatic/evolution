@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVO Administration Console</title>
+    <link rel="stylesheet" href="evo-style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--evo-bg, #e8ecef);
+            color: var(--evo-text, #1a202c);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header.admin-header {
+            background-color: var(--evo-surface, #ffffff);
+            border-bottom: 1px solid var(--evo-border, #b8c0c8);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1d5296;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background-color: var(--evo-surface-alt, #f1f3f6);
+            border-bottom: 1px solid var(--evo-border, #b8c0c8);
+            padding: 0 15px;
+            gap: 4px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            border: none;
+            background: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #4a5568;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: #1d5296;
+            background-color: rgba(29, 82, 150, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #1d5296;
+            border-bottom-color: #1d5296;
+            font-weight: 600;
+            background-color: #ffffff;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background-color: var(--evo-surface, #ffffff);
+            border: 1px solid var(--evo-border, #b8c0c8);
+            border-radius: 6px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #718096;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .card-panel {
+            background-color: var(--evo-surface, #ffffff);
+            border: 1px solid var(--evo-border, #b8c0c8);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--evo-border, #e2e8f0);
+        }
+
+        .admin-table th {
+            background-color: var(--evo-surface-alt, #f7fafc);
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-success { background-color: #c6f6d5; color: #22543d; }
+        .badge-danger { background-color: #fed7d7; color: #742a2a; }
+        .badge-info { background-color: #e2e8f0; color: #2d3748; }
+        .badge-warning { background-color: #feebc8; color: #744210; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--evo-border, #cbd5e0);
+            border-radius: 4px;
+            font-size: 0.88rem;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background-color: #1d5296; color: #ffffff; }
+        .btn-primary:hover { background-color: #153e72; }
+
+        .btn-danger { background-color: #e53e3e; color: #ffffff; }
+        .btn-danger:hover { background-color: #c53030; }
+
+        .btn-secondary { background-color: #e2e8f0; color: #2d3748; }
+        .btn-secondary:hover { background-color: #cbd5e0; }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <div class="header-title">
+            <span>⚙️</span>
+            <span>EVO Administration & Security Console</span>
+        </div>
+        <div id="server-status" class="badge badge-success">Online</div>
+    </header>
+
+    <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+        <button class="tab-btn" onclick="switchTab('users')">Users</button>
+        <button class="tab-btn" onclick="switchTab('sessions')">Sessions</button>
+        <button class="tab-btn" onclick="switchTab('roles')">Roles & Permissions</button>
+        <button class="tab-btn" onclick="switchTab('resource-access')">Resource Access</button>
+        <button class="tab-btn" onclick="switchTab('mcp-tools')">MCP Tools</button>
+        <button class="tab-btn" onclick="switchTab('agents')">Agents & Darwin</button>
+        <button class="tab-btn" onclick="switchTab('processes')">Processes</button>
+        <button class="tab-btn" onclick="switchTab('audit-log')">Audit Log</button>
+        <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+    </nav>
+
+    <main class="admin-content">
+
+        <!-- 1. OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-panel active">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Users</div>
+                    <div id="kpi-users" class="kpi-value">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Active Sessions</div>
+                    <div id="kpi-sessions" class="kpi-value">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Configured Roles</div>
+                    <div id="kpi-roles" class="kpi-value">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Managed Resources</div>
+                    <div id="kpi-resources" class="kpi-value">0</div>
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">System Health & Security Overview</h3>
+                </div>
+                <p style="font-size:0.9rem; color:#4a5568;">
+                    EVO Administration Module is operational. Multi-principal role-based authorization and explicit DENY access policies are active.
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. USERS TAB -->
+        <div id="tab-users" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Create / Edit User</h3>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="user-username" placeholder="username">
+                    </div>
+                    <div class="form-group">
+                        <label>Display Name</label>
+                        <input type="text" id="user-display" placeholder="Display Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="user-password" placeholder="Password">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="user-role">
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="OPERATOR">OPERATOR</option>
+                            <option value="DEVELOPER">DEVELOPER</option>
+                            <option value="USER" selected>USER</option>
+                            <option value="READ_ONLY">READ_ONLY</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="handleCreateUser()">Create User</button>
+            </div>
+
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Users List</h3>
+                    <button class="btn btn-secondary" onclick="loadUsers()">Refresh</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Display Name</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. SESSIONS TAB -->
+        <div id="tab-sessions" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Active & Historical Sessions</h3>
+                    <button class="btn btn-secondary" onclick="loadSessions()">Refresh</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Session ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Last Access</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. ROLES & PERMISSIONS TAB -->
+        <div id="tab-roles" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Configured System Roles</h3>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Role Name</th>
+                            <th>Description</th>
+                            <th>System Role</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roles-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Registered System Permissions</h3>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Name</th>
+                            <th>Resource Type</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="permissions-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. RESOURCE ACCESS TAB -->
+        <div id="tab-resource-access" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Resource Access Policies</h3>
+                    <button class="btn btn-secondary" onclick="loadPolicies()">Refresh</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Principal Type</th>
+                            <th>Principal ID</th>
+                            <th>Resource ID</th>
+                            <th>Action</th>
+                            <th>Effect</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="policies-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 6. MCP TOOLS TAB -->
+        <div id="tab-mcp-tools" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Discovered MCP Tools</h3>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Tool Key</th>
+                            <th>Display Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mcp-tools-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 7. AGENTS & DARWIN TAB -->
+        <div id="tab-agents" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">AI Agents & Darwin Modes</h3>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Key</th>
+                            <th>Display Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agents-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 8. PROCESSES TAB -->
+        <div id="tab-processes" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">EVO Processes & Services</h3>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Process Key</th>
+                            <th>Display Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="processes-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 9. AUDIT LOG TAB -->
+        <div id="tab-audit-log" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Administrative Audit Logs</h3>
+                    <button class="btn btn-secondary" onclick="loadAuditLogs()">Refresh</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Actor</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>Outcome</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 10. SETTINGS TAB -->
+        <div id="tab-settings" class="tab-panel">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Administrative Settings</h3>
+                </div>
+                <p style="font-size:0.88rem; color:#4a5568;">
+                    Database Driver: SQLite (Embedded WAL Mode)<br>
+                    Database Location: <code>data/evolution.db</code><br>
+                    Security Model: Multi-principal RBAC + Explicit DENY override
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (targetBtn) targetBtn.classList.add('active');
+
+            const targetPanel = document.getElementById('tab-' + tabId);
+            if (targetPanel) targetPanel.classList.add('active');
+
+            loadTabData(tabId);
+        }
+
+        function loadTabData(tabId) {
+            if (tabId === 'overview') loadOverview();
+            else if (tabId === 'users') loadUsers();
+            else if (tabId === 'sessions') loadSessions();
+            else if (tabId === 'roles') { loadRoles(); loadPermissions(); }
+            else if (tabId === 'resource-access') loadPolicies();
+            else if (tabId === 'mcp-tools') loadResources();
+            else if (tabId === 'agents') loadResources();
+            else if (tabId === 'processes') loadResources();
+            else if (tabId === 'audit-log') loadAuditLogs();
+        }
+
+        async function apiRequest(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-evo-user': 'admin'
+                }
+            };
+            if (body) options.body = JSON.stringify(body);
+            const res = await fetch('/api/admin' + endpoint, options);
+            return res.json();
+        }
+
+        async function loadOverview() {
+            try {
+                const data = await apiRequest('/overview');
+                document.getElementById('kpi-users').innerText = data.totalUsers || 0;
+                document.getElementById('kpi-sessions').innerText = data.activeSessions || 0;
+                document.getElementById('kpi-roles').innerText = data.totalRoles || 0;
+                document.getElementById('kpi-resources').innerText = data.totalResources || 0;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const data = await apiRequest('/users');
+                const tbody = document.getElementById('users-tbody');
+                tbody.innerHTML = '';
+                (data.users || []).forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.id}</td>
+                        <td>${u.username}</td>
+                        <td>${u.displayName || u.username}</td>
+                        <td><span class="badge badge-info">${u.role}</span></td>
+                        <td><span class="badge ${u.enabled ? 'badge-success' : 'badge-danger'}">${u.enabled ? 'Enabled' : 'Disabled'}</span></td>
+                        <td>${u.createdAt}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="handleDeleteUser(${u.id})">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleCreateUser() {
+            const username = document.getElementById('user-username').value;
+            const displayName = document.getElementById('user-display').value;
+            const password = document.getElementById('user-password').value;
+            const role = document.getElementById('user-role').value;
+
+            if (!username) return alert('Username required');
+
+            await apiRequest('/users', 'POST', { username, displayName, password, role, enabled: true });
+            document.getElementById('user-username').value = '';
+            document.getElementById('user-display').value = '';
+            document.getElementById('user-password').value = '';
+            loadUsers();
+        }
+
+        async function handleDeleteUser(id) {
+            if (!confirm('Are you sure you want to delete this user?')) return;
+            await apiRequest('/users/' + id, 'DELETE');
+            loadUsers();
+        }
+
+        async function loadSessions() {
+            try {
+                const data = await apiRequest('/sessions');
+                const tbody = document.getElementById('sessions-tbody');
+                tbody.innerHTML = '';
+                (data.sessions || []).forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${s.id}</td>
+                        <td>${s.sessionId}</td>
+                        <td>${s.sessionType}</td>
+                        <td><span class="badge ${s.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">${s.status}</span></td>
+                        <td>${s.createdAt}</td>
+                        <td>${s.lastAccess}</td>
+                        <td>
+                            ${s.status === 'ACTIVE' ? `<button class="btn btn-danger" onclick="handleTerminateSession('${s.sessionId}')">Terminate</button>` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleTerminateSession(sid) {
+            if (!confirm('Terminate session ' + sid + '?')) return;
+            await apiRequest('/sessions/terminate/' + sid, 'POST');
+            loadSessions();
+        }
+
+        async function loadRoles() {
+            try {
+                const data = await apiRequest('/roles');
+                const tbody = document.getElementById('roles-tbody');
+                tbody.innerHTML = '';
+                (data.roles || []).forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${r.id}</td>
+                        <td><strong>${r.name}</strong></td>
+                        <td>${r.description}</td>
+                        <td>${r.systemRole ? 'Yes' : 'No'}</td>
+                        <td><span class="badge badge-success">Enabled</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPermissions() {
+            try {
+                const data = await apiRequest('/permissions');
+                const tbody = document.getElementById('permissions-tbody');
+                tbody.innerHTML = '';
+                (data.permissions || []).forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><code>${p.permissionKey}</code></td>
+                        <td>${p.name}</td>
+                        <td>${p.resourceType}</td>
+                        <td>${p.action}</td>
+                        <td>${p.description}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadResources() {
+            try {
+                const data = await apiRequest('/resources');
+                const resList = data.resources || [];
+
+                // MCP Tools
+                const toolsBody = document.getElementById('mcp-tools-tbody');
+                toolsBody.innerHTML = '';
+                resList.filter(r => r.resourceType === 'MCP_TOOL').forEach(r => {
+                    toolsBody.innerHTML += `<tr><td><code>${r.resourceKey}</code></td><td>${r.displayName}</td><td>${r.description}</td><td><span class="badge badge-success">Active</span></td></tr>`;
+                });
+
+                // Agents & Darwin
+                const agentsBody = document.getElementById('agents-tbody');
+                agentsBody.innerHTML = '';
+                resList.filter(r => r.resourceType === 'AGENT' || r.resourceType === 'DARWIN_MODE').forEach(r => {
+                    agentsBody.innerHTML += `<tr><td>${r.resourceType}</td><td><code>${r.resourceKey}</code></td><td>${r.displayName}</td><td>${r.description}</td><td><span class="badge badge-success">Active</span></td></tr>`;
+                });
+
+                // Processes
+                const procBody = document.getElementById('processes-tbody');
+                procBody.innerHTML = '';
+                resList.filter(r => r.resourceType === 'PROCESS').forEach(r => {
+                    procBody.innerHTML += `<tr><td><code>${r.resourceKey}</code></td><td>${r.displayName}</td><td>${r.description}</td><td><span class="badge badge-success">Registered</span></td></tr>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPolicies() {
+            try {
+                const data = await apiRequest('/policies');
+                const tbody = document.getElementById('policies-tbody');
+                tbody.innerHTML = '';
+                (data.policies || []).forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${p.id}</td>
+                        <td>${p.principalType}</td>
+                        <td>${p.principalId}</td>
+                        <td>${p.resourceId}</td>
+                        <td>${p.action}</td>
+                        <td><span class="badge ${p.effect === 'ALLOW' ? 'badge-success' : 'badge-danger'}">${p.effect}</span></td>
+                        <td><button class="btn btn-danger" onclick="handleDeletePolicy(${p.id})">Delete</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleDeletePolicy(id) {
+            await apiRequest('/policies/' + id, 'DELETE');
+            loadPolicies();
+        }
+
+        async function loadAuditLogs() {
+            try {
+                const data = await apiRequest('/audit-logs');
+                const tbody = document.getElementById('audit-tbody');
+                tbody.innerHTML = '';
+                (data.auditLogs || []).forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${l.timestamp}</td>
+                        <td><strong>${l.actorUsername}</strong></td>
+                        <td>${l.action}</td>
+                        <td>${l.resourceType} / ${l.resourceId}</td>
+                        <td><span class="badge ${l.outcome === 'ALLOWED' || l.outcome === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">${l.outcome}</span></td>
+                        <td>${l.details}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // Initialize view
+        loadOverview();
+    </script>
+</body>
+</html>

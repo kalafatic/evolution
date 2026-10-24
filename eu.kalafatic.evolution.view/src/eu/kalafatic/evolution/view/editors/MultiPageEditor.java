@@ -88,6 +88,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	private ArchitecturePage architecturePage;
 	private PropertiesPage propertiesPage;
 	private McpSettingsPage mcpSettingsPage;
+	private eu.kalafatic.evolution.view.editors.pages.AdminPage adminPage;
 	private GraphPage graphPage;
 	private BrowserPage browserPage;
 	private ApprovalPage approvalPage;
@@ -233,6 +234,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
 				propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
 				settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
+
+				adminPage = eu.kalafatic.evolution.view.editors.pages.AdminPageFactory.createAdminPage(getContainer(), this, orchestrator);
+				int adminIdx = addPage(adminPage);
+				setPageText(adminIdx, "Administration");
 
 				comparePage = ComparePageFactory.createComparePage(this, orchestrator);
 				textEditor = new NestedTextEditor();

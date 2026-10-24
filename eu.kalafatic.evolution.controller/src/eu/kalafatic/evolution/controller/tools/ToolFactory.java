@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.tools;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
@@ -46,5 +47,12 @@ public class ToolFactory {
      */
     public static ITool getTool(String name) {
         return tools.get(name);
+    }
+
+    /**
+     * Returns the set of registered tool names.
+     */
+    public static Set<String> getRegisteredTools() {
+        return tools.keySet();
     }
 }
