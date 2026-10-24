@@ -153,6 +153,68 @@ public class SelfDevHttpUtils {
         }
     }
 
+    public static HttpResponse executeGet(String spec, int connectTimeoutMs, int readTimeoutMs) {
+        long startTime = System.currentTimeMillis();
+        HttpURLConnection conn = null;
+
+        if (Thread.currentThread().isInterrupted()) {
+            return new HttpResponse(-1, "", "", System.currentTimeMillis() - startTime, new InterruptedException("Thread interrupted before HTTP GET"), true);
+        }
+
+        try {
+            URL url = new URL(spec);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(connectTimeoutMs);
+            conn.setReadTimeout(readTimeoutMs);
+            conn.setRequestProperty("Accept", "application/json");
+
+            int code = conn.getResponseCode();
+            String contentType = conn.getContentType();
+            InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+
+            StringBuilder sb = new StringBuilder();
+            if (is != null) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    char[] buffer = new char[1024];
+                    int read;
+                    while ((read = br.read(buffer, 0, buffer.length)) != -1) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            return new HttpResponse(code, sb.toString().trim(), contentType, System.currentTimeMillis() - startTime, new InterruptedException("Thread interrupted during body read"), true);
+                        }
+                        if (sb.length() + read > MAX_BODY_CHARS) {
+                            int allowed = MAX_BODY_CHARS - sb.length();
+                            if (allowed > 0) {
+                                sb.append(buffer, 0, allowed);
+                            }
+                            sb.append("\n...[truncated]");
+                            break;
+                        }
+                        sb.append(buffer, 0, read);
+                    }
+                }
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            return new HttpResponse(code, sb.toString().trim(), contentType, duration, null, false);
+
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            boolean wasInterrupted = Thread.currentThread().isInterrupted() || e instanceof InterruptedException;
+            if (wasInterrupted) {
+                Thread.currentThread().interrupt();
+            }
+            return new HttpResponse(-1, "", "", duration, e, wasInterrupted);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.disconnect();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
     public static boolean isProjectCreationSuccessful(HttpResponse response, String requestedProjectName) {
         if (!response.isHttpSuccess()) {
             return false;
