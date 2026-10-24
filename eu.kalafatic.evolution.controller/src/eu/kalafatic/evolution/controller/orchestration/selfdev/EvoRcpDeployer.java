@@ -73,20 +73,43 @@ public class EvoRcpDeployer extends AbstractDeployer<BuildArtifact> {
             return TaskResult.failure("deploy_evo_rcp_validation", "Deployed location does not exist: " + (deployedLocation != null ? deployedLocation.getAbsolutePath() : "null"), null);
         }
 
-        File pluginsDir = findFileRecursively(deployedLocation, "plugins");
-        if (pluginsDir == null || !pluginsDir.isDirectory()) {
-            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: 'plugins' directory not found in " + deployedLocation.getAbsolutePath(), null);
-        }
-
         File executable = findExecutable(deployedLocation);
         if (executable == null) {
-            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: product executable not found in " + deployedLocation.getAbsolutePath(), null);
+            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: product executable (evo.exe / evo) not found in " + deployedLocation.getAbsolutePath(), null);
+        }
+
+        File productRoot = executable.getParentFile();
+
+        File pluginsDir = new File(productRoot, "plugins");
+        if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
+            pluginsDir = findFileRecursively(deployedLocation, "plugins");
+        }
+        if (pluginsDir == null || !pluginsDir.isDirectory()) {
+            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: 'plugins' directory not found in " + productRoot.getAbsolutePath(), null);
+        }
+
+        File[] pluginEntries = pluginsDir.listFiles((dir, name) -> name.endsWith(".jar") || new File(dir, name).isDirectory());
+        if (pluginEntries == null || pluginEntries.length == 0) {
+            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: 'plugins' directory contains no bundle JARs in " + pluginsDir.getAbsolutePath(), null);
+        }
+
+        File configDir = new File(productRoot, "configuration");
+        if (!configDir.exists() || !configDir.isDirectory()) {
+            configDir = findFileRecursively(deployedLocation, "configuration");
+        }
+        if (configDir == null || !configDir.isDirectory()) {
+            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: 'configuration' directory not found in " + productRoot.getAbsolutePath(), null);
+        }
+
+        File configIni = new File(configDir, "config.ini");
+        if (!configIni.exists()) {
+            return TaskResult.failure("deploy_evo_rcp_validation", "Deployment validation failed: 'configuration/config.ini' not found in " + configDir.getAbsolutePath(), null);
         }
 
         return new TaskResult.Builder("deploy_evo_rcp_validation")
                 .status(TaskStatus.SUCCESS)
-                .message("EVO RCP deployment validated. Executable: " + executable.getName())
-                .workingDirectory(deployedLocation)
+                .message("EVO RCP deployment validated successfully. Executable: " + executable.getAbsolutePath())
+                .workingDirectory(productRoot)
                 .build();
     }
 

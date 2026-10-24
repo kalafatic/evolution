@@ -25,23 +25,37 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         }
 
         File evoRuntimeDir = new File(context.getRuntimeDirectory(), "evo");
-        File executable = findExecutable(evoRuntimeDir);
+        BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
 
-        if (executable == null) {
-            BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
-            if (artifact == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-                File[] zips = context.getExportDirectory().listFiles((dir, name) -> name.endsWith(".zip") || name.startsWith("evolution"));
-                if (zips != null && zips.length > 0) {
-                    artifact = new BuildArtifact(ArtifactType.EVO_RCP, zips[0], context.getSourceRevision(), null, null);
-                }
+        if (artifact == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
+            String reqProductId = "evolution";
+            if (context.getResourceManager() != null && context.getResourceManager().getProductDefinition() != null) {
+                reqProductId = context.getResourceManager().getProductDefinition().getProductId().toLowerCase();
             }
-            if (artifact != null) {
-                EvoRcpDeployer deployer = new EvoRcpDeployer();
-                TaskResult deployResult = deployer.deploy(context, artifact);
-                if (deployResult.isSuccess()) {
-                    executable = findExecutable(evoRuntimeDir);
-                }
+            final String filterProductId = reqProductId;
+            File[] zips = context.getExportDirectory().listFiles((dir, name) -> {
+                String lname = name.toLowerCase();
+                return (lname.endsWith(".zip") || lname.endsWith(".tar.gz")) &&
+                       (lname.startsWith(filterProductId + "-") || lname.startsWith(filterProductId + "_") || lname.equals(filterProductId + ".zip"));
+            });
+            if (zips != null && zips.length > 0) {
+                artifact = new BuildArtifact(ArtifactType.EVO_RCP, zips[0], context.getSourceRevision(), null, null);
+                context.recordArtifact(artifact);
             }
+        }
+
+        File executable = null;
+        if (artifact != null && artifact.getPath() != null && artifact.getPath().exists()) {
+            // Guarantee artifact lineage: deploy exact exported artifact produced by EXPORT_EVO
+            EvoRcpDeployer deployer = new EvoRcpDeployer();
+            TaskResult deployResult = deployer.deploy(context, artifact);
+            if (!deployResult.isSuccess()) {
+                return TaskResult.failure("start_evo_rcp", "Failed to deploy exported EVO RCP product artifact: " + deployResult.getMessage(), deployResult.getError());
+            }
+            executable = findExecutable(evoRuntimeDir);
+        } else {
+            // Fallback to pre-existing runtime executable if no artifact was recorded
+            executable = findExecutable(evoRuntimeDir);
         }
 
         if (executable == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
@@ -50,6 +64,12 @@ public class EvoRcpRuntime implements ProcessLifecycle {
 
         if (executable == null) {
             return TaskResult.failure("start_evo_rcp", "Could not locate EVO RCP executable in " + evoRuntimeDir.getAbsolutePath(), null);
+        }
+
+        EvoRcpDeployer deployer = new EvoRcpDeployer();
+        TaskResult layoutVal = deployer.validateDeployment(context, executable.getParentFile());
+        if (!layoutVal.isSuccess()) {
+            return TaskResult.failure("start_evo_rcp", "Invalid or incomplete exported product layout at " + executable.getParentFile().getAbsolutePath() + ": " + layoutVal.getMessage(), layoutVal.getError());
         }
 
         if (!System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -159,6 +179,10 @@ public class EvoRcpRuntime implements ProcessLifecycle {
             Thread.sleep(1500);
             if (!evoProcess.isAlive()) {
                 int exitCode = evoProcess.exitValue();
+                if (isSecurityBlockExitCode(exitCode)) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    return buildSecurityBlockResult("start_evo_rcp", executable, "Process terminated immediately with exit code " + exitCode, null, exitCode, duration, logFile);
+                }
                 return TaskResult.failure("start_evo_rcp", "EVO RCP process exited immediately with exit code " + exitCode, null);
             }
 
@@ -174,7 +198,84 @@ public class EvoRcpRuntime implements ProcessLifecycle {
 
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
+            if (isSecurityBlockException(e)) {
+                return buildSecurityBlockResult("start_evo_rcp", executable, "Process creation failed", e, -1, duration, null);
+            }
             return TaskResult.failure("start_evo_rcp", "Failed to launch EVO RCP process: " + e.getMessage(), e);
+        }
+    }
+
+    private boolean isSecurityBlockException(Throwable t) {
+        if (t == null) return false;
+        String msg = (t.getMessage() != null ? t.getMessage() : "").toLowerCase();
+        Throwable cause = t.getCause();
+        String causeMsg = (cause != null && cause.getMessage() != null ? cause.getMessage() : "").toLowerCase();
+        String combined = msg + " " + causeMsg;
+
+        return combined.contains("contains a virus") ||
+               combined.contains("potentially unwanted software") ||
+               combined.contains("0x800700e5") ||
+               combined.contains("800700e5") ||
+               combined.contains("225") ||
+               combined.contains("operation did not complete successfully") ||
+               combined.contains("blocked by security policy") ||
+               combined.contains("antivirus") ||
+               combined.contains("defender") ||
+               (combined.contains("access is denied") && System.getProperty("os.name").toLowerCase().contains("win"));
+    }
+
+    private boolean isSecurityBlockExitCode(int exitCode) {
+        return exitCode == 225 || exitCode == 0x800700e5 || exitCode == 5 || exitCode == -1073741819 || exitCode == 0xC0000005;
+    }
+
+    private TaskResult buildSecurityBlockResult(String taskId, File executable, String detail, Throwable cause, int exitCode, long duration, File logFile) {
+        String exePath = executable != null ? executable.getAbsolutePath() : "unknown";
+        long size = executable != null && executable.exists() ? executable.length() : -1;
+        String hash = computeFileHash(executable);
+
+        String message = "SECURITY BLOCK: Launch of executable '" + exePath + "' was blocked or terminated by Windows Defender or security software (" + detail + "). " +
+                "Do not disable security software or bypass system controls. " +
+                "To inspect this security event, check Windows Security -> Protection History ('start windowsdefender://threathistory') or administrative security event logs. " +
+                "Permit execution only through normal authorized workflows after verification.";
+
+        System.err.println("[SECURITY][BLOCK] " + message);
+
+        TaskResult.Builder builder = new TaskResult.Builder(taskId)
+                .status(TaskStatus.FAILED)
+                .message(message)
+                .duration(duration)
+                .error(cause)
+                .diagnostic("securityBlocked", "true")
+                .diagnostic("executablePath", exePath)
+                .diagnostic("fileSizeBytes", String.valueOf(size))
+                .diagnostic("fileSha256", hash)
+                .diagnostic("exitCode", String.valueOf(exitCode))
+                .diagnostic("protectionHistoryUri", "windowsdefender://threathistory");
+
+        if (logFile != null) {
+            builder.logFile(logFile);
+        }
+
+        return builder.build();
+    }
+
+    private String computeFileHash(File file) {
+        if (file == null || !file.exists()) return "N/A";
+        try (java.io.InputStream is = new java.io.FileInputStream(file)) {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = is.read(buf)) != -1) {
+                md.update(buf, 0, n);
+            }
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
         }
     }
 
