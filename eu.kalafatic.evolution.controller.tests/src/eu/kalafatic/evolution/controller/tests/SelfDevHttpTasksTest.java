@@ -21,6 +21,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AnalyticChatValidationTask;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.CreateEvoProjectTask;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.CreateInferenceTask;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext;
@@ -317,5 +318,60 @@ public class SelfDevHttpTasksTest {
         CreateInferenceTask createInference = new CreateInferenceTask("CREATE_INFERENCE_TASK");
         createInference.addDependency("CREATE_EVO_PROJECT");
         assertTrue(createInference.getDependencies().contains("CREATE_EVO_PROJECT"));
+
+        AnalyticChatValidationTask analyticChat = new AnalyticChatValidationTask("ANALYTIC_CHAT_VALIDATION");
+        analyticChat.addDependency("CREATE_INFERENCE_TASK");
+        assertTrue(analyticChat.getDependencies().contains("CREATE_INFERENCE_TASK"));
+    }
+
+    @Test
+    public void testAnalyticChatValidationSuccess() throws Exception {
+        server.createContext("/server/conversation/SelfDevProject", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) {
+                try {
+                    byte[] resp = "[{\"sender\":\"User\",\"text\":\"hi\",\"agentType\":\"user\"},{\"sender\":\"Final Response\",\"text\":\"Hello! How can I help you?\",\"agentType\":\"final-response\"}]".getBytes();
+                    exchange.getResponseHeaders().set("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(200, resp.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(resp);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        });
+
+        AnalyticChatValidationTask task = new AnalyticChatValidationTask("ANALYTIC_CHAT_VALIDATION");
+        TaskResult result = task.execute(context);
+
+        assertNotNull(result);
+        assertEquals(TaskStatus.SUCCESS, result.getStatus());
+        assertEquals("SelfDevProject", result.getDiagnostics().get("sessionId"));
+        assertTrue(result.getDiagnostics().get("response").toString().contains("Hello!"));
+    }
+
+    @Test
+    public void testAnalyticChatValidationThreadInterrupted() {
+        Thread.currentThread().interrupt();
+
+        AnalyticChatValidationTask task = new AnalyticChatValidationTask("ANALYTIC_CHAT_VALIDATION");
+        TaskResult result = task.execute(context);
+
+        assertTrue("Thread interrupt flag must be restored", Thread.interrupted());
+        assertNotNull(result);
+        assertEquals(TaskStatus.SKIPPED, result.getStatus());
+    }
+
+    @Test
+    public void testAnalyticChatValidationConnectionFailure() {
+        ResourceManager.getInstance().setServerPort(59999);
+        ResourceManager.getInstance().setSupervisorPort(59999);
+
+        AnalyticChatValidationTask task = new AnalyticChatValidationTask("ANALYTIC_CHAT_VALIDATION");
+        TaskResult result = task.execute(context);
+
+        assertNotNull(result);
+        assertEquals(TaskStatus.FAILED, result.getStatus());
+        assertTrue(result.getMessage().contains("Did not receive valid final response"));
     }
 }

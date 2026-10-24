@@ -362,6 +362,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         final String turnId = sessionId + "__" + System.currentTimeMillis();
 
         bus.publish(new RuntimeEvent(RuntimeEventType.USER_INTERACTION_RECEIVED, sessionId, "UI", request.getPrompt()));
+        if (request.getPrompt() != null && !request.getPrompt().trim().isEmpty()) {
+            processLogEntry("User: " + request.getPrompt().trim(), sessionId, turnId);
+        }
 
         // CONTINUATION HANDLING: If the session is waiting for input/approval, treat the prompt as a response
         if (session instanceof SessionContext) {
@@ -770,20 +773,22 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     private Orchestrator ensureOrchestratorModel(Orchestrator model, String sessionId) {
-        if (model != null) return model;
-
-        Orchestrator newModel = OrchestrationFactory.eINSTANCE.createOrchestrator();
-        newModel.setId(sessionId);
-        if (newModel.getAiChat() == null) newModel.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-        if (newModel.getAiChat().getPromptInstructions() == null) {
-            newModel.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        if (model == null) {
+            model = OrchestrationFactory.eINSTANCE.createOrchestrator();
+            model.setId(sessionId);
         }
-        if (newModel.getOllama() == null) {
-            newModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
-            newModel.getOllama().setUrl("http://localhost:11434");
-            newModel.getOllama().setModel("llama3.2:3b");
+        if (model.getAiChat() == null) {
+            model.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
         }
-        return newModel;
+        if (model.getAiChat().getPromptInstructions() == null) {
+            model.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        }
+        if (model.getOllama() == null) {
+            model.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
+            model.getOllama().setUrl("http://localhost:11434");
+            model.getOllama().setModel("llama3.2:3b");
+        }
+        return model;
     }
 
     private static OrchestratorServiceImpl instance;
