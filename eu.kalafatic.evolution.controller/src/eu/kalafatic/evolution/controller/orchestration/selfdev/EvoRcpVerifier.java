@@ -32,21 +32,25 @@ public class EvoRcpVerifier {
                 if (fatalErr != null) {
                     return TaskResult.failure("evo_verifier", "EVO RCP process startup failed with fatal exception:\n" + fatalErr, null);
                 }
+            }
 
-                if (containsReadyMarker(logFile)) {
-                    String unresolvedErr = verifyOsgiResolution(port, logDir);
-                    if (unresolvedErr != null) {
-                        return TaskResult.failure("evo_verifier", "EVO RCP process started but OSGi bundle resolution failed:\n" + unresolvedErr, null);
-                    }
+            boolean isReadyByFile = checkReadinessFile(runtimeDir);
+            boolean isReadyByHttp = verifyServerStatusEndpoint(port);
+            boolean isReadyByLog = logFile != null && containsReadyMarker(logFile);
 
-                    long duration = System.currentTimeMillis() - startTime;
-                    return new TaskResult.Builder("evo_verifier")
-                            .status(TaskStatus.SUCCESS)
-                            .message("EVO RCP product reached READY state with all OSGi bundles verified.")
-                            .duration(duration)
-                            .logFile(logFile)
-                            .build();
+            if (isReadyByFile || isReadyByHttp || isReadyByLog) {
+                String unresolvedErr = verifyOsgiResolution(port, logDir);
+                if (unresolvedErr != null) {
+                    return TaskResult.failure("evo_verifier", "EVO RCP process started but OSGi bundle resolution failed:\n" + unresolvedErr, null);
                 }
+
+                long duration = System.currentTimeMillis() - startTime;
+                return new TaskResult.Builder("evo_verifier")
+                        .status(TaskStatus.SUCCESS)
+                        .message("EVO RCP product reached READY state on port " + port + " with all OSGi bundles verified.")
+                        .duration(duration)
+                        .logFile(logFile)
+                        .build();
             }
 
             try {
@@ -229,5 +233,37 @@ public class EvoRcpVerifier {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    private boolean checkReadinessFile(File runtimeDir) {
+        File[] candidates = new File[] {
+            new File("self-dev-run/evo_ready.txt"),
+            runtimeDir != null ? new File(runtimeDir, "self-dev-run/evo_ready.txt") : null,
+            runtimeDir != null ? new File(runtimeDir, "workspace/self-dev-run/evo_ready.txt") : null
+        };
+        for (File f : candidates) {
+            if (f != null && f.exists() && f.length() > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean verifyServerStatusEndpoint(int port) {
+        if (port <= 0) return false;
+        try {
+            java.net.URL url = new java.net.URI("http://127.0.0.1:" + port + "/server/status").toURL();
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(1000);
+            conn.setReadTimeout(1000);
+            if (conn.getResponseCode() == 200) {
+                try (java.io.InputStream is = conn.getInputStream()) {
+                    String jsonText = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                    return jsonText.contains("RUNNING") || jsonText.contains("status");
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 }

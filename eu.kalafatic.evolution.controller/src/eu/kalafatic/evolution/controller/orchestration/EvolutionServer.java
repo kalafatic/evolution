@@ -641,8 +641,20 @@ public class EvolutionServer extends NanoHTTPD {
         try {
             eu.kalafatic.evolution.model.orchestration.EvoProject project = ProjectModelManager.getInstance().createProject(name);
             Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
-            if (orch != null && orch.eResource() != null) {
-                ProjectModelManager.getInstance().saveResource(orch.eResource());
+            if (orch != null) {
+                if (!project.getOrchestrations().contains(orch)) {
+                    project.getOrchestrations().add(orch);
+                }
+                if (orch.eResource() != null) {
+                    ProjectModelManager.getInstance().saveResource(orch.eResource());
+                }
+            }
+
+            // Establish required session context for inference
+            try {
+                eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance().createSession(null, "main", name);
+            } catch (Exception ignored) {
+                eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(name);
             }
 
             JSONObject res = new JSONObject();
