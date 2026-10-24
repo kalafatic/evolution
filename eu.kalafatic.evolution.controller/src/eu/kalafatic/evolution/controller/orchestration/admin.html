@@ -518,8 +518,19 @@
     </main>
 
     <script>
+        let effectivePort = 48081;
+
+        function windowInitializeAdmin(port) {
+            if (port) effectivePort = port;
+            loadOverview();
+        }
+        window.initializeAdmin = windowInitializeAdmin;
+
         function getBaseUrl() {
-            return (window.location.protocol === 'file:') ? 'http://localhost:48080' : '';
+            if (window.location.protocol === 'file:') {
+                return 'http://localhost:' + effectivePort;
+            }
+            return '';
         }
 
         function switchTab(tabId) {
@@ -757,8 +768,12 @@
             } catch (e) { console.error(e); }
         }
 
-        // Initialize view
-        loadOverview();
+        // Notify Java that JS bridge is ready
+        if (typeof logFunction === 'function') {
+            logFunction('ready');
+        } else {
+            loadOverview();
+        }
     </script>
 </body>
 </html>
