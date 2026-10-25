@@ -140,4 +140,38 @@ public class ForgeSessionManagerIncrementalTest {
         assertTrue(json.has("selectedModelType"));
         assertEquals("LLM", json.getString("selectedModelType"));
     }
+
+    @Test
+    public void testTrainerRegistrationUpdatesStatusAndTelemetryMapping() {
+        ForgeSession s = manager.createSession("Active Training Session", "SELF_EVO");
+        String sid = s.getSessionId();
+        String sessionName = s.getName();
+
+        assertEquals(eu.kalafatic.evolution.model.orchestration.ForgeStatus.IDLE, s.getStatus());
+
+        EvoLlmModel dummyModel = new EvoLlmModel(100, 32, 2, 1, 64, 2);
+        EvoLlmTrainer trainer = new EvoLlmTrainer(dummyModel);
+
+        // Register active trainer using session name
+        manager.registerActiveTrainer(sessionName, trainer);
+
+        // Status should be set to TRAINING on ForgeSession
+        assertEquals(eu.kalafatic.evolution.model.orchestration.ForgeStatus.TRAINING, s.getStatus());
+
+        // Telemetry must be accessible by both session ID and session name
+        ForgeSessionManager.TrainingTelemetry telemetryById = manager.getTelemetry(sid);
+        ForgeSessionManager.TrainingTelemetry telemetryByName = manager.getTelemetry(sessionName);
+
+        assertNotNull(telemetryById);
+        assertNotNull(telemetryByName);
+        assertSame("Telemetry instances for ID and name must be the same object", telemetryById, telemetryByName);
+        assertEquals("RUNNING", telemetryById.status);
+
+        // Unregister trainer
+        manager.unregisterActiveTrainer(sessionName);
+
+        // Status should return to IDLE
+        assertEquals(eu.kalafatic.evolution.model.orchestration.ForgeStatus.IDLE, s.getStatus());
+        assertEquals("COMPLETED", telemetryById.status);
+    }
 }
