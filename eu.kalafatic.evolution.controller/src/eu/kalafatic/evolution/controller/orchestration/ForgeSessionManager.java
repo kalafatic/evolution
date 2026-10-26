@@ -484,7 +484,11 @@ public class ForgeSessionManager {
         ForgeSession s = findSessionById(sessionId);
         if (s == null) s = findSession(sessionId);
         String key = s != null ? s.getSessionId() : sessionId;
-        return telemetryMap.computeIfAbsent(key, TrainingTelemetry::new);
+        TrainingTelemetry telemetry = telemetryMap.computeIfAbsent(key, TrainingTelemetry::new);
+        if (!key.equals(sessionId)) {
+            telemetryMap.put(sessionId, telemetry);
+        }
+        return telemetry;
     }
 
     public void registerActiveTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer) {
@@ -502,6 +506,12 @@ public class ForgeSessionManager {
         telemetry.startTimeMs = System.currentTimeMillis();
         telemetry.durationMs = 0;
         telemetry.addLog("INFO", "Training session attached to EvoLlmTrainer.");
+
+        if (s != null) {
+            s.setStatus(ForgeStatus.TRAINING);
+            updateWorkflowStatus(s.getSessionId(), "TRAINING_ACTIVE");
+            publishEvent(s, RuntimeEventType.FORGE_TRAINING_STARTED, "TRAINING_STARTED");
+        }
 
         trainer.addProgressListener(new eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener() {
             private long lastSampleTime = 0;
@@ -564,10 +574,19 @@ public class ForgeSessionManager {
         if (!key.equals(sessionId)) activeTrainers.remove(key);
 
         TrainingTelemetry telemetry = telemetryMap.get(key);
+        if (telemetry == null && !key.equals(sessionId)) {
+            telemetry = telemetryMap.get(sessionId);
+        }
         if (telemetry != null) {
             telemetry.status = "COMPLETED";
             telemetry.durationMs = System.currentTimeMillis() - telemetry.startTimeMs;
             telemetry.addLog("INFO", "Training session completed.");
+        }
+
+        if (s != null) {
+            s.setStatus(ForgeStatus.IDLE);
+            updateWorkflowStatus(s.getSessionId(), "TRAINING_COMPLETED");
+            publishEvent(s, RuntimeEventType.FORGE_TRAINING_STOPPED, "TRAINING_STOPPED");
         }
     }
 

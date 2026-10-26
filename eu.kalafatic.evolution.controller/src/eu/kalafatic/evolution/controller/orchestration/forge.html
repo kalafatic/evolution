@@ -1313,11 +1313,17 @@
 
                 if (!activeSessionId) {
                     if (activeAiSession) {
-                        selectSession(activeAiSession);
+                        let activeObj = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
+                        selectSession(activeObj ? activeObj.id : activeAiSession);
                     } else if (sessions.length > 0) {
                         selectSession(sessions[0].id);
                     } else if (!isAutoCreating) {
                         autoCreateSession();
+                    }
+                } else {
+                    let activeObj = sessions.find(s => s.id === activeSessionId || s.name === activeSessionId);
+                    if (activeObj && activeObj.id !== activeSessionId) {
+                        activeSessionId = activeObj.id;
                     }
                 }
             } catch (e) {
@@ -1429,42 +1435,55 @@
 
         async function selectSession(id) {
             if (!id) return;
+            let session = sessions.find(s => s.id === id || s.name === id);
+            if (session) {
+                id = session.id;
+            }
             activeSessionId = id;
-            const session = sessions.find(s => s.id === id);
 
             const combo = document.getElementById('session-select-combo');
             if (combo && combo.value !== id) combo.value = id;
 
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
             updateLifecycleUI(state);
+
+            if (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING')) {
+                isTraining = true;
+            } else if (session && session.status === 'IDLE') {
+                isTraining = false;
+            }
             updateButtonState();
 
             renderSessionList();
             await fetchModel(id);
             await updateModelPropertiesUI();
             log(`Switched to session: ${session ? session.name : id}`);
-            if (currentViz === 'TRAINING') {
-                refreshViz();
-            }
 
-            if (window.forgeAction) forgeAction("SESSION_SWITCHED", id);
-
-            // Restore Viz State
+            // Restore or default Viz State
             if (session && session.uiState) {
                 if (session.uiState.selectedVisualization) {
                     currentViz = session.uiState.selectedVisualization;
+                } else if (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING') {
+                    currentViz = 'TRAINING';
                 } else if (session.modelType === 'SELF_EVO') {
                     currentViz = 'SELF_EVO';
                 }
                 document.getElementById('viz-selector').value = currentViz;
-                vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
+                vizAutoRefresh = (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING') || !!session.uiState.autoRefreshEnabled;
+            } else if (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING')) {
+                currentViz = 'TRAINING';
+                document.getElementById('viz-selector').value = currentViz;
+                vizAutoRefresh = true;
             } else if (session && session.modelType === 'SELF_EVO') {
                 currentViz = 'SELF_EVO';
                 document.getElementById('viz-selector').value = currentViz;
             }
 
+            setupAutoRefresh();
             onVizChange();
             updateGuidance();
+
+            if (window.forgeAction) forgeAction("SESSION_SWITCHED", id);
         }
 
         function updateLifecycleUI(state) {
