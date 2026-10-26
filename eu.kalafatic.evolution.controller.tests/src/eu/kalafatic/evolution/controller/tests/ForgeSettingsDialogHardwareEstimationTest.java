@@ -272,6 +272,9 @@ public class ForgeSettingsDialogHardwareEstimationTest {
                 assertTrue("HTML must contain Budget:", html.contains("Budget:"));
                 assertTrue("HTML must contain GRAPH 1 header", html.contains("GRAPH 1: LOSS TRAJECTORY"));
                 assertTrue("HTML must contain GRAPH 2 header", html.contains("GRAPH 2: CAPACITY BUDGET"));
+                assertTrue("HTML must contain GRAPH 3 header", html.contains("GRAPH 3: PROGRESS & RESOURCE MONITOR"));
+                assertTrue("HTML must contain Progress / Time metric", html.contains("Calculation Progress / Time"));
+                assertTrue("HTML must contain System RAM metric", html.contains("Allocated System RAM / Memory Usage"));
             }
         }
     }
