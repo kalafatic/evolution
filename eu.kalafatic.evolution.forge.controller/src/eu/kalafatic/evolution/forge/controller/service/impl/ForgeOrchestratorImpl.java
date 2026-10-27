@@ -205,6 +205,33 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             if (job.getTrainingConfig().getBatchSize() > 0) {
                 trainer.setMicroBatchSize(job.getTrainingConfig().getBatchSize());
             }
+
+            if (job.getTrainingConfig().isSaveEpochCheckpoints()) {
+                final Path chkRunFolder = runFolder;
+                final String chkJobId = job.getJobId();
+                final SimpleBPETokenizer chkTokenizer = tokenizer;
+                trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
+                    @Override
+                    public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
+
+                    @Override
+                    public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss) {
+                        try {
+                            String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+                            String chkName = String.format("model_%s_epoch_%d_%s", chkJobId, epoch, ts);
+                            EvoModelArtifact chkArtifact = new EvoModelArtifact();
+                            chkArtifact.initializeFromModel(chkName, model, chkTokenizer.getVocab());
+                            chkArtifact.getMetadata().put("epoch", String.valueOf(epoch));
+                            chkArtifact.getMetadata().put("trainLoss", String.valueOf(trainLoss));
+                            chkArtifact.getMetadata().put("valLoss", String.valueOf(valLoss));
+                            chkArtifact.save(chkRunFolder.resolve(chkName + ".evo"));
+                            logToFile(logFile, String.format("[FORGE][CHECKPOINT] Saved epoch %d model artifact: %s.evo", epoch, chkName));
+                        } catch (Exception ex) {
+                            logToFile(logFile, String.format("[FORGE][CHECKPOINT][WARN] Failed to save epoch %d model checkpoint: %s", epoch, ex.getMessage()));
+                        }
+                    }
+                });
+            }
             try {
                 Class<?> fsmClass = null;
                 try {

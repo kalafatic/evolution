@@ -159,6 +159,7 @@ public class ForgeJob {
         private boolean earlyStoppingEnabled = true;
         private double targetLossThreshold = 1.0;
         private boolean filterQuality = true;
+        private boolean saveEpochCheckpoints = true;
 
         public double getLearningRate() { return learningRate; }
         public void setLearningRate(double learningRate) { this.learningRate = learningRate; }
@@ -192,6 +193,9 @@ public class ForgeJob {
 
         public boolean isFilterQuality() { return filterQuality; }
         public void setFilterQuality(boolean filterQuality) { this.filterQuality = filterQuality; }
+
+        public boolean isSaveEpochCheckpoints() { return saveEpochCheckpoints; }
+        public void setSaveEpochCheckpoints(boolean saveEpochCheckpoints) { this.saveEpochCheckpoints = saveEpochCheckpoints; }
     }
 
     public static class EvolutionConfig {

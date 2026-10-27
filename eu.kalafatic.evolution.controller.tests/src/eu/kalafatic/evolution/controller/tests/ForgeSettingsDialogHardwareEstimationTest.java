@@ -151,11 +151,14 @@ public class ForgeSettingsDialogHardwareEstimationTest {
         assertEquals(0.5, dialog.getDesiredLossThreshold(), 0.001);
         assertEquals(2, dialog.getDatasets().size());
 
+        assertTrue("Default saveEpochCheckpoints must be true", dialog.isSaveEpochCheckpoints());
+
         JSONObject uiJson = dialog.getUiStateJson();
         assertNotNull(uiJson);
         assertEquals("MEDIUM", uiJson.optString("modelSize"));
         assertEquals(64, uiJson.optInt("epochs"));
         assertEquals(0.5, uiJson.optDouble("desiredLossThreshold"), 0.001);
+        assertTrue("JSON state must serialize saveEpochCheckpoints as true", uiJson.optBoolean("saveEpochCheckpoints", false));
     }
 
     @Test

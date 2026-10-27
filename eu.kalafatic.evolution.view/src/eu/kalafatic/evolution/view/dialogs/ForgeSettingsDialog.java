@@ -221,6 +221,7 @@ public class ForgeSettingsDialog extends Dialog {
     private org.eclipse.swt.widgets.Text valRatioText;
     private org.eclipse.swt.widgets.Text outputModelNameText;
     private Button qualityFilterCheck;
+    private Button saveEpochCheckpointsCheck;
     private Label estTimeLabel;
     private Label hwProfileLabel;
     private Browser graphBrowser;
@@ -238,6 +239,7 @@ public class ForgeSettingsDialog extends Dialog {
     private int selectedMaxSeqLen = 1024;
     private double selectedValRatio = 0.15;
     private boolean selectedQualityFilter = true;
+    private boolean selectedSaveEpochCheckpoints = true;
     private String selectedOutputModelName = "";
     private String selectedLossThreshold = "Epoch 16-30: Loss 2-5 → Learning phrases";
     private double selectedDesiredLoss = 1.0;
@@ -697,6 +699,13 @@ public class ForgeSettingsDialog extends Dialog {
         GridData qfData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
         qualityFilterCheck.setLayoutData(qfData);
 
+        saveEpochCheckpointsCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Save Model Checkpoint After Each Epoch (.evo format with timestamp)");
+        saveEpochCheckpointsCheck.setSelection(selectedSaveEpochCheckpoints);
+        saveEpochCheckpointsCheck.setToolTipText("Automatically save a timestamped .evo model checkpoint after each epoch for debugging training & forging progress.");
+        saveEpochCheckpointsCheck.addSelectionListener(autoRefreshSelectionAdapter);
+        GridData scData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
+        saveEpochCheckpointsCheck.setLayoutData(scData);
+
         datasetsTable = new Table(datasetsGroup, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
         datasetsTable.setHeaderVisible(true);
         datasetsTable.setLinesVisible(true);
@@ -1033,6 +1042,10 @@ public class ForgeSettingsDialog extends Dialog {
 
         if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
             selectedQualityFilter = qualityFilterCheck.getSelection();
+        }
+
+        if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
+            selectedSaveEpochCheckpoints = saveEpochCheckpointsCheck.getSelection();
         }
 
         if (datasetsTable != null && !datasetsTable.isDisposed()) {
@@ -1880,6 +1893,9 @@ public class ForgeSettingsDialog extends Dialog {
         if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
             qualityFilterCheck.setSelection(selectedQualityFilter);
         }
+        if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
+            saveEpochCheckpointsCheck.setSelection(selectedSaveEpochCheckpoints);
+        }
     }
 
     private void updateHardwareAndTimeInfo() {
@@ -1958,6 +1974,10 @@ public class ForgeSettingsDialog extends Dialog {
             selectedQualityFilter = qualityFilterCheck.getSelection();
         }
 
+        if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
+            selectedSaveEpochCheckpoints = saveEpochCheckpointsCheck.getSelection();
+        }
+
         if (lossThresholdCombo != null && !lossThresholdCombo.isDisposed()) {
             selectedLossThreshold = lossThresholdCombo.getText();
         }
@@ -2034,6 +2054,10 @@ public class ForgeSettingsDialog extends Dialog {
         return selectedQualityFilter;
     }
 
+    public boolean isSaveEpochCheckpoints() {
+        return selectedSaveEpochCheckpoints;
+    }
+
     public String getLossThreshold() {
         return selectedLossThreshold;
     }
@@ -2068,6 +2092,7 @@ public class ForgeSettingsDialog extends Dialog {
         json.put("maxSeqLen", selectedMaxSeqLen);
         json.put("validationRatio", selectedValRatio);
         json.put("filterQuality", selectedQualityFilter);
+        json.put("saveEpochCheckpoints", selectedSaveEpochCheckpoints);
         json.put("outputModelName", selectedOutputModelName);
         json.put("lossThreshold", selectedLossThreshold);
         json.put("desiredLossThreshold", selectedDesiredLoss);
