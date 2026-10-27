@@ -138,6 +138,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 job.getTrainingConfig().setValidationRatio(uiState.optDouble("validationRatio", 0.15));
                 job.getTrainingConfig().setTargetLossThreshold(uiState.optDouble("desiredLossThreshold", uiState.optDouble("targetLossThreshold", 1.0)));
                 job.getTrainingConfig().setFilterQuality(uiState.optBoolean("filterQuality", true));
+                job.getTrainingConfig().setSaveEpochCheckpoints(uiState.optBoolean("saveEpochCheckpoints", true));
 
                 job.getEvolutionConfig().setGenerations(uiState.optInt("generations", 1));
                 job.getEvolutionConfig().setCandidatesPerGeneration(uiState.optInt("candidatesPerGeneration", 1));

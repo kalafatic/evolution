@@ -24,6 +24,8 @@ public class EvoLlmTrainer {
                                        double estimatedRemainingSeconds, double currentLoss) {
             onProgress(epoch, totalEpochs, currentStep, totalSteps, currentLoss);
         }
+
+        default void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss) {}
     }
 
     public enum TrainingProfile {
@@ -344,6 +346,10 @@ public class EvoLlmTrainer {
 
                 System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %d ms%n",
                         epoch + 1, epochs, avgTrainLoss, avgValLoss, epochDuration);
+
+                for (ProgressListener listener : progressListeners) {
+                    listener.onEpochCompleted(epoch + 1, epochs, avgTrainLoss, avgValLoss);
+                }
 
                 if (epochStoppedEarly) {
                     break;
