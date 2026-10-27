@@ -352,7 +352,9 @@ public class ForgeSettingsDialog extends Dialog {
         };
 
         // Panel 1 (Left): Model & Hardware Settings Panel
-        ScrolledComposite leftScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        Composite leftContainer = createPanelContainer(sashForm, "Model & Hardware Settings");
+
+        ScrolledComposite leftScrolled = new ScrolledComposite(leftContainer, SWT.V_SCROLL | SWT.H_SCROLL);
         leftScrolled.setExpandHorizontal(true);
         leftScrolled.setExpandVertical(true);
         leftScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -608,7 +610,9 @@ public class ForgeSettingsDialog extends Dialog {
         updateHardwareAndTimeInfo();
 
         // Panel 2 (Middle): Training Performance & Capacity Visualizations Diagrams Panel
-        ScrolledComposite middleScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        Composite middleContainer = createPanelContainer(sashForm, "Performance & Progress Visualizations");
+
+        ScrolledComposite middleScrolled = new ScrolledComposite(middleContainer, SWT.V_SCROLL | SWT.H_SCROLL);
         middleScrolled.setExpandHorizontal(true);
         middleScrolled.setExpandVertical(true);
         middleScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -629,12 +633,14 @@ public class ForgeSettingsDialog extends Dialog {
 
         graphBrowser = new Browser(graphGroup, SWT.NONE);
         GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        browserData.minimumHeight = 820;
-        browserData.heightHint = 820;
+        browserData.minimumHeight = 1200;
+        browserData.heightHint = 1200;
         graphBrowser.setLayoutData(browserData);
 
         // Panel 3 (Right): Training Datasets & Dataset Input Limits Panel
-        ScrolledComposite rightScrolled = new ScrolledComposite(sashForm, SWT.V_SCROLL | SWT.H_SCROLL);
+        Composite rightContainer = createPanelContainer(sashForm, "Datasets & Input Limits");
+
+        ScrolledComposite rightScrolled = new ScrolledComposite(rightContainer, SWT.V_SCROLL | SWT.H_SCROLL);
         rightScrolled.setExpandHorizontal(true);
         rightScrolled.setExpandVertical(true);
         rightScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -868,6 +874,60 @@ public class ForgeSettingsDialog extends Dialog {
         updateGraphHtml();
 
         return container;
+    }
+
+    private Composite createPanelContainer(SashForm sashForm, String titleText) {
+        Composite panelContainer = new Composite(sashForm, SWT.NONE);
+        GridLayout layout = new GridLayout(1, false);
+        layout.marginWidth = 2;
+        layout.marginHeight = 2;
+        layout.verticalSpacing = 4;
+        panelContainer.setLayout(layout);
+        panelContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        Composite headerComp = new Composite(panelContainer, SWT.NONE);
+        GridLayout headerLayout = new GridLayout(2, false);
+        headerLayout.marginWidth = 4;
+        headerLayout.marginHeight = 2;
+        headerComp.setLayout(headerLayout);
+        headerComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        Label titleLabel = new Label(headerComp, SWT.NONE);
+        titleLabel.setText(titleText);
+        titleLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        Button maxBtn = new Button(headerComp, SWT.PUSH | SWT.FLAT);
+        GridData btnData = new GridData(SWT.END, SWT.CENTER, false, false);
+        btnData.widthHint = 24;
+        btnData.heightHint = 20;
+        maxBtn.setLayoutData(btnData);
+        maxBtn.setText("\uD83D\uDDD6"); // 🗖 maximize symbol
+        maxBtn.setToolTipText("Maximize Panel");
+
+        maxBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (sashForm.getMaximizedControl() == panelContainer) {
+                    sashForm.setMaximizedControl(null);
+                    int[] lastWeights = (int[]) sashForm.getData("lastPanelWeights");
+                    if (lastWeights != null && lastWeights.length == 3) {
+                        sashForm.setWeights(lastWeights);
+                    } else {
+                        sashForm.setWeights(new int[] { 32, 36, 32 });
+                    }
+                    maxBtn.setText("\uD83D\uDDD6"); // 🗖
+                    maxBtn.setToolTipText("Maximize Panel");
+                } else {
+                    sashForm.setData("lastPanelWeights", sashForm.getWeights());
+                    sashForm.setMaximizedControl(panelContainer);
+                    maxBtn.setText("\uD83D\uDDD7"); // 🗗 restore symbol
+                    maxBtn.setToolTipText("Restore Panel Layout");
+                }
+                sashForm.layout(true, true);
+            }
+        });
+
+        return panelContainer;
     }
 
     private void readEffectiveSettingsFromUi() {
@@ -1328,6 +1388,127 @@ public class ForgeSettingsDialog extends Dialog {
         String statusTitle2 = fitsBudget ? "Selected Configuration Fits Duration Budget" : "Selected Configuration Exceeds Duration Budget";
         String badgeClass2 = fitsBudget ? "badge-success" : "badge-danger";
 
+        // --- GRAPH 3: PROGRESS & RESOURCE MONITOR DIAGRAM ---
+        int width3 = 720;
+        int height3 = 340;
+        int paddingLeft3 = 60;
+        int paddingRight3 = 35;
+        int paddingTop3 = 40;
+        int paddingBottom3 = 50;
+
+        int plotWidth3 = width3 - paddingLeft3 - paddingRight3;
+        int plotHeight3 = height3 - paddingTop3 - paddingBottom3;
+
+        StringBuilder svg3Builder = new StringBuilder();
+
+        // 1. Memory Metrics
+        long maxRamMb = getMaxMemoryMb();
+        if (maxRamMb <= 0) maxRamMb = 8192;
+        // Estimated memory usage based on model size parameter count and data batch size
+        long estimatedMemMb = Math.min(maxRamMb, (long) (params / 1_000_000.0 * 12.0 + selectedBatchSize * 16.0 + 512.0));
+        double memUsagePct = Math.min(100.0, Math.max(5.0, ((double) estimatedMemMb / maxRamMb) * 100.0));
+
+        // 2. Quality & Convergence Metrics
+        double baselineTps = getBaselineTokensPerSecond(selectedModelSize);
+        double estTps = Math.max(10.0, baselineTps);
+        double filterQualityPct = selectedQualityFilter ? 94.5 : 100.0;
+        double overallHealthIdx = Math.min(100.0, Math.max(10.0, (fitsBudget ? 50.0 : 30.0) + (memUsagePct < 85.0 ? 30.0 : 10.0) + (selectedQualityFilter ? 20.0 : 10.0)));
+
+        // Time calculations: Est vs Target Budget vs Calculated Calculation Time
+        double currentProgressPct = 0.0;
+        if (history != null && history.length > 0) {
+            currentProgressPct = Math.min(100.0, ((double) history.length / maxEpochs) * 100.0);
+        }
+
+        // Draw Progress & Metric Gauge Bars inside Graph 3 SVG
+        int barY1 = paddingTop3 + 20;
+        int barY2 = paddingTop3 + 70;
+        int barY3 = paddingTop3 + 120;
+        int barY4 = paddingTop3 + 170;
+        int barHeight3 = 22;
+
+        // Metric 1: Time Calculation & Progress
+        int timeFillW = (int) ((currentProgressPct / 100.0) * plotWidth3);
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Calculation Progress / Time</text>",
+            paddingLeft3, barY1 - 6
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
+            paddingLeft3, barY1, plotWidth3, barHeight3
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1d5296\" class=\"dot\" data-tooltip=\"Progress: %.1f%% | Est: %s | Budget: %.1fh\" />",
+            paddingLeft3, barY1, Math.max(currentProgressPct > 0 ? 6 : 0, timeFillW), barHeight3, currentProgressPct, formatDuration(estSec), budgetHours
+        ));
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%.1f%% (%s / %s budget)</text>",
+            paddingLeft3 + 10, barY1 + 15, currentProgressPct > 35 ? "#ffffff" : "#0f172a", currentProgressPct, formatDuration(estSec), String.format("%.1fh", budgetHours)
+        ));
+
+        // Metric 2: Memory Utilization Gauge
+        int memFillW = (int) ((memUsagePct / 100.0) * plotWidth3);
+        String memBarColor = memUsagePct > 85.0 ? "#ef4444" : (memUsagePct > 65.0 ? "#f59e0b" : "#10b981");
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Allocated System RAM / Memory Usage</text>",
+            paddingLeft3, barY2 - 6
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
+            paddingLeft3, barY2, plotWidth3, barHeight3
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" class=\"dot\" data-tooltip=\"Est. RAM: %d MB / %d MB Max (%.1f%%)\" />",
+            paddingLeft3, barY2, Math.max(6, memFillW), barHeight3, memBarColor, estimatedMemMb, maxRamMb, memUsagePct
+        ));
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%d MB / %d MB RAM (%.1f%%)</text>",
+            paddingLeft3 + 10, barY2 + 15, memUsagePct > 35 ? "#ffffff" : "#0f172a", estimatedMemMb, maxRamMb, memUsagePct
+        ));
+
+        // Metric 3: Token Throughput Rate (Tokens / sec)
+        double tpsPct = Math.min(100.0, (estTps / 2000.0) * 100.0);
+        int tpsFillW = (int) ((tpsPct / 100.0) * plotWidth3);
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Estimated Token Throughput (Tokens / sec)</text>",
+            paddingLeft3, barY3 - 6
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
+            paddingLeft3, barY3, plotWidth3, barHeight3
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#8b5cf6\" class=\"dot\" data-tooltip=\"Throughput Rate: %.1f tokens/sec | Total: %.2fM tokens\" />",
+            paddingLeft3, barY3, Math.max(6, tpsFillW), barHeight3, estTps, totalTokens / 1_000_000.0
+        ));
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%.0f Tokens/sec (%.2f M Total Tokens)</text>",
+            paddingLeft3 + 10, barY3 + 15, tpsPct > 35 ? "#ffffff" : "#0f172a", estTps, totalTokens / 1_000_000.0
+        ));
+
+        // Metric 4: Forging Quality & Health Index
+        int healthFillW = (int) ((overallHealthIdx / 100.0) * plotWidth3);
+        String healthBarColor = overallHealthIdx > 75.0 ? "#10b981" : (overallHealthIdx > 50.0 ? "#f59e0b" : "#ef4444");
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Overall Forging Quality & Health Index</text>",
+            paddingLeft3, barY4 - 6
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
+            paddingLeft3, barY4, plotWidth3, barHeight3
+        ));
+        svg3Builder.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" class=\"dot\" data-tooltip=\"Health Index: %.0f/100 | Quality Acceptance: %.1f%%\" />",
+            paddingLeft3, barY4, Math.max(6, healthFillW), barHeight3, healthBarColor, overallHealthIdx, filterQualityPct
+        ));
+        svg3Builder.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">Health Rating: %.0f / 100 (Quality Filter: %.1f%% Accepted)</text>",
+            paddingLeft3 + 10, barY4 + 15, overallHealthIdx > 35 ? "#ffffff" : "#0f172a", overallHealthIdx, filterQualityPct
+        ));
+
+        String statusTitle3 = String.format("Resource Monitor | Health: %.0f/100", overallHealthIdx);
+        String badgeClass3 = overallHealthIdx >= 70.0 ? "badge-success" : (overallHealthIdx >= 40.0 ? "badge-primary" : "badge-danger");
+
         return "<!DOCTYPE html>\n" +
             "<html>\n" +
             "<head>\n" +
@@ -1488,6 +1669,28 @@ public class ForgeSettingsDialog extends Dialog {
             "  </div>\n" +
             "</div>\n" +
 
+            "<!-- CARD 3: PROGRESS & RESOURCE MONITOR DIAGRAM -->\n" +
+            "<div class=\"card\">\n" +
+            "  <div class=\"header\">\n" +
+            "    <div class=\"title-group\">\n" +
+            "      <div class=\"title\">" + statusTitle3 + "</div>\n" +
+            "      <div class=\"subtitle\">Time Expectation, Memory Utilization, Throughput & Forging Health</div>\n" +
+            "    </div>\n" +
+            "    <div class=\"badge " + badgeClass3 + "\">GRAPH 3: PROGRESS & RESOURCE MONITOR</div>\n" +
+            "  </div>\n" +
+            "  <div class=\"graph-container\" id=\"graphContainer3\">\n" +
+            "    <div class=\"tooltip\" id=\"tooltip3\"></div>\n" +
+            "    <svg viewBox=\"0 0 " + width3 + " " + height3 + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
+            "      " + svg3Builder.toString() + "\n" +
+            "    </svg>\n" +
+            "  </div>\n" +
+            "  <div class=\"legend\">\n" +
+            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #1d5296;\"></div>Time Progress</div>\n" +
+            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #10b981;\"></div>RAM Memory</div>\n" +
+            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #8b5cf6;\"></div>Tokens/sec Throughput</div>\n" +
+            "  </div>\n" +
+            "</div>\n" +
+
             "<script>\n" +
             "  function setupTooltips(containerId, tooltipId) {\n" +
             "    const container = document.getElementById(containerId);\n" +
@@ -1508,6 +1711,7 @@ public class ForgeSettingsDialog extends Dialog {
             "  }\n" +
             "  setupTooltips('graphContainer1', 'tooltip1');\n" +
             "  setupTooltips('graphContainer2', 'tooltip2');\n" +
+            "  setupTooltips('graphContainer3', 'tooltip3');\n" +
             "</script>\n" +
             "</body>\n" +
             "</html>";
