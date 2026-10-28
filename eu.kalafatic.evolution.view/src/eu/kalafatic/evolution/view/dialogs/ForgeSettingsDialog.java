@@ -1160,6 +1160,29 @@ public class ForgeSettingsDialog extends Dialog {
             paddingLeft1 + plotWidth1 - 208, Math.max(paddingTop1 + 16, targetY1 - 11), targetFinishLoss
         ));
 
+        // Always generate full reference Projected Loss Trajectory curve (Epoch 1 -> maxEpochs)
+        double ep1 = 1.0;
+        double initialProjectedLoss = 8.87;
+        StringBuilder fullProjPoints = new StringBuilder();
+        int projSteps = 40;
+        for (int i = 0; i <= projSteps; i++) {
+            double t = (double) i / projSteps;
+            double cEp = ep1 + t * (maxEpochs - ep1);
+            double cLoss = targetFinishLoss + (initialProjectedLoss - targetFinishLoss) * Math.exp(-3.5 * t);
+
+            int cx = paddingLeft1 + (int) (((cEp - 1.0) / denom1) * plotWidth1);
+            int cy = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight1);
+
+            if (i > 0) fullProjPoints.append(" ");
+            fullProjPoints.append(cx).append(",").append(cy);
+        }
+
+        // Draw full reference projected trajectory curve as dashed blue baseline
+        svg1Builder.append(String.format(
+            "<polyline points=\"%s\" fill=\"none\" stroke=\"#1d5296\" stroke-width=\"2.5\" stroke-dasharray=\"6,4\" opacity=\"0.85\" />",
+            fullProjPoints.toString()
+        ));
+
         String statusTitle1;
         String statusSub1;
         String badgeClass1;
@@ -1203,72 +1226,28 @@ public class ForgeSettingsDialog extends Dialog {
                 lastY = py;
             }
 
+            // Draw actual measured loss trajectory polyline over projected baseline
             svg1Builder.append(String.format(
                 "<polyline points=\"%s\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />",
                 polylinePoints.toString()
             ));
 
+            // Pulsing highlight marker on current actual state position on trajectory
             svg1Builder.append(String.format(
                 "<circle cx=\"%d\" cy=\"%d\" r=\"10\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"2\" opacity=\"0.6\"><animate attributeName=\"r\" values=\"8;14;8\" dur=\"2s\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.8;0.2;0.8\" dur=\"2s\" repeatCount=\"indefinite\"/></circle>",
                 lastX, lastY
             ));
             svg1Builder.append(String.format(
-                "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"2\" />",
-                lastX, lastY
+                "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"2\" class=\"dot\" data-tooltip=\"Actual State: Epoch %d/%d (Loss %.2f)\" />",
+                lastX, lastY, currentEpoch, maxEpochs, currentLoss
             ));
-
-            if (history.length < maxEpochs) {
-                StringBuilder projPoints = new StringBuilder();
-                int steps = 25;
-                double startEp = history.length;
-                double startLoss = currentLoss;
-
-                for (int i = 0; i <= steps; i++) {
-                    double t = (double) i / steps;
-                    double cEp = startEp + t * (maxEpochs - startEp);
-                    double cLoss = targetFinishLoss + (startLoss - targetFinishLoss) * Math.exp(-3.0 * t);
-
-                    int cx = paddingLeft1 + (int) (((cEp - 1.0) / denom1) * plotWidth1);
-                    int cy = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight1);
-
-                    if (i > 0) projPoints.append(" ");
-                    projPoints.append(cx).append(",").append(cy);
-                }
-
-                svg1Builder.append(String.format(
-                    "<polyline points=\"%s\" fill=\"none\" stroke=\"#1d5296\" stroke-width=\"2.5\" stroke-dasharray=\"6,4\" />",
-                    projPoints.toString()
-                ));
-            }
         } else {
             statusTitle1 = "Projected Loss Trajectory";
             statusSub1 = String.format("Estimated trajectory for %d Epochs | Target Finish Loss &lt; %.2f", maxEpochs, targetFinishLoss);
             badgeClass1 = "badge-neutral";
 
-            double ep1 = 1.0;
-            double loss1 = 8.87;
             int x1 = paddingLeft1 + (int) (((ep1 - 1.0) / denom1) * plotWidth1);
-            int y1 = paddingTop1 + plotHeight1 - (int) ((loss1 / 10.0) * plotHeight1);
-
-            StringBuilder projPoints = new StringBuilder();
-            int steps = 40;
-
-            for (int i = 0; i <= steps; i++) {
-                double t = (double) i / steps;
-                double cEp = ep1 + t * (maxEpochs - ep1);
-                double cLoss = targetFinishLoss + (loss1 - targetFinishLoss) * Math.exp(-3.5 * t);
-
-                int cx = paddingLeft1 + (int) (((cEp - 1.0) / denom1) * plotWidth1);
-                int cy = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight1);
-
-                if (i > 0) projPoints.append(" ");
-                projPoints.append(cx).append(",").append(cy);
-            }
-
-            svg1Builder.append(String.format(
-                "<polyline points=\"%s\" fill=\"none\" stroke=\"#1d5296\" stroke-width=\"2.5\" stroke-dasharray=\"6,4\" />",
-                projPoints.toString()
-            ));
+            int y1 = paddingTop1 + plotHeight1 - (int) ((initialProjectedLoss / 10.0) * plotHeight1);
 
             svg1Builder.append(String.format(
                 "<circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#1d5296\" stroke=\"#ffffff\" stroke-width=\"2\" />",
