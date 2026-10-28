@@ -1284,15 +1284,29 @@
                 if (activeAiSession) {
                     let found = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
                     if (!found) {
-                        sessions.unshift({
+                        found = {
                             id: activeAiSession,
                             name: activeAiSession,
                             modelType: 'SELF_EVO',
-                            status: 'TRAINING',
-                            lifecycleState: 'TRAINING'
-                        });
+                            status: 'IDLE',
+                            lifecycleState: 'CREATED'
+                        };
+                        sessions.unshift(found);
                     }
+
+                    // Check live training metrics for AI Commander session
+                    try {
+                        const mRes = await fetch(getBaseUrl() + `/forge/session/${activeAiSession}/training/metrics?runtime=SWT`);
+                        if (mRes.ok) {
+                            const metrics = await mRes.json();
+                            if (metrics && (metrics.status === 'RUNNING' || metrics.status === 'TRAINING' || metrics.currentLoss > 0 || (metrics.history && metrics.history.length > 0))) {
+                                found.status = 'TRAINING';
+                                found.lifecycleState = 'TRAINING';
+                            }
+                        }
+                    } catch (me) {}
                 }
+
                 if (aiSessionList && aiSessionList.length > 0) {
                     aiSessionList.forEach(sName => {
                         let found = sessions.find(s => s.id === sName || s.name === sName);
@@ -1311,20 +1325,34 @@
                 renderSessionList();
                 renderTopCombo();
 
-                if (!activeSessionId) {
-                    if (activeAiSession) {
-                        let activeObj = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
-                        selectSession(activeObj ? activeObj.id : activeAiSession);
-                    } else if (sessions.length > 0) {
-                        selectSession(sessions[0].id);
-                    } else if (!isAutoCreating) {
-                        autoCreateSession();
+                // Determine default active session
+                let targetSession = null;
+                if (activeAiSession) {
+                    let activeObj = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
+                    if (activeObj) {
+                        // Default to activeAiSession if no activeSessionId, or if activeAiSession is training,
+                        // or if current activeSessionId is not found in sessions
+                        if (!activeSessionId || activeObj.status === 'TRAINING' || activeObj.lifecycleState === 'TRAINING' || !sessions.some(s => s.id === activeSessionId)) {
+                            targetSession = activeObj.id;
+                        }
                     }
-                } else {
+                }
+
+                if (!targetSession && activeSessionId) {
                     let activeObj = sessions.find(s => s.id === activeSessionId || s.name === activeSessionId);
-                    if (activeObj && activeObj.id !== activeSessionId) {
-                        activeSessionId = activeObj.id;
+                    if (activeObj) {
+                        targetSession = activeObj.id;
                     }
+                }
+
+                if (!targetSession && sessions.length > 0) {
+                    targetSession = sessions[0].id;
+                }
+
+                if (targetSession) {
+                    selectSession(targetSession);
+                } else if (!isAutoCreating) {
+                    autoCreateSession();
                 }
             } catch (e) {
                 log(`Error loading sessions from ${url}: ${e.message}`);
@@ -2232,30 +2260,6 @@
             }
         }
 
-        function renderArchitectureViz(data) {
-            // Moved to /forge-viz/viz-architecture.js
-            if (window.renderArchitectureViz) window.renderArchitectureViz(data);
-        }
-
-        function renderDatasetViz(stats, sample) {
-            // Moved to /forge-viz/viz-dataset.js
-            if (window.renderDatasetViz) window.renderDatasetViz(stats, sample);
-        }
-
-        function renderTrainingViz(metrics, events) {
-            // Moved to /forge-viz/viz-training.js
-            if (window.renderTrainingViz) window.renderTrainingViz(metrics, events);
-        }
-
-        function renderWalkthroughViz() {
-            // Moved to /forge-viz/viz-walkthrough.js
-            if (window.renderWalkthroughViz) window.renderWalkthroughViz();
-        }
-
-        function renderEvolutionViz(snapshots) {
-            // Moved to /forge-viz/viz-evolution.js
-            if (window.renderEvolutionViz) window.renderEvolutionViz(snapshots);
-        }
 
         async function setInteractiveDemo(type) {
             currentViz = 'INTERACTIVE_' + type;

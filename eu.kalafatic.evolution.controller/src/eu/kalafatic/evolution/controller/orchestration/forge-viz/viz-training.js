@@ -228,4 +228,24 @@ window.renderTrainingViz = function(data, events) {
             </div>
         `;
     }
+
+    // Update side panel Observability elements
+    const metricLossEl = document.getElementById('metric-loss');
+    if (metricLossEl) {
+        metricLossEl.textContent = currentLoss > 0 ? currentLoss.toFixed(4) : '--';
+    }
+    const metricAccEl = document.getElementById('metric-acc');
+    if (metricAccEl) {
+        metricAccEl.textContent = valLoss > 0 ? (1.0 - valLoss).toFixed(4) : (currentLoss > 0 ? (1.0 - Math.min(1.0, currentLoss)).toFixed(4) : '--');
+    }
+    const progContainer = document.getElementById('training-progress-container');
+    const progBar = document.getElementById('training-progress-bar');
+    const progText = document.getElementById('training-progress-text');
+    if (progContainer && progBar && progText) {
+        if (status === 'RUNNING' || status === 'TRAINING' || progressPct > 0) {
+            progContainer.style.display = 'block';
+            progBar.style.width = progressPct + '%';
+            progText.textContent = progressPct + '%';
+        }
+    }
 };

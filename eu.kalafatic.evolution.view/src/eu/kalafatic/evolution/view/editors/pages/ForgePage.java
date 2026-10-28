@@ -189,7 +189,7 @@ public class ForgePage extends AEvoPage {
     }
 
     @Override
-    protected void refreshUI() {
+    public void refreshUI() {
         if (!isJsReady || browser.isDisposed()) return;
 
         int port = 48080;

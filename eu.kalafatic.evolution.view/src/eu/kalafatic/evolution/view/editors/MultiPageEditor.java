@@ -714,6 +714,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			refreshComparePage();
 		} else if (control == architecturePage && architecturePage != null) {
 			architecturePage.scheduleRefresh();
+		} else if (control == forgePage && forgePage != null) {
+			forgePage.refreshUI();
 		}
 	}
 
