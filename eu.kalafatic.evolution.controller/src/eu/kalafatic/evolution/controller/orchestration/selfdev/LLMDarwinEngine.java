@@ -1323,11 +1323,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			long tTokDuration = System.currentTimeMillis() - tTokStart;
 
 			DatasetBuilder datasetBuilder = new DatasetBuilder();
-			int seqLen = config.maxSeqLen;
+			// Cap sequence length and sample count during candidate screening for ultra-fast architectural evaluation
+			int seqLen = Math.min(256, config.maxSeqLen);
+			int maxScreeningSamples = 500;
 
 			long tDataStart = System.currentTimeMillis();
 			if (normSamples != null && !normSamples.isEmpty()) {
-				samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen, MAX_TRAINING_SAMPLES);
+				samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen, maxScreeningSamples);
 			} else {
 				List<Integer> allTokens = tokenizer.encode(cleanCorpus);
 				if (allTokens.size() > MAX_TOKENS_LIMIT) {
@@ -1349,6 +1351,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 						attMask[i] = 1.0f;
 					}
 					samples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));
+					if (samples.size() >= maxScreeningSamples) {
+						break;
+					}
 				}
 			}
 
