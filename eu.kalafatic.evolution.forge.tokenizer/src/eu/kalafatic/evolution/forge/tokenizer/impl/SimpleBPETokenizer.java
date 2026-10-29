@@ -35,25 +35,46 @@ public class SimpleBPETokenizer implements Tokenizer {
                 }
             }
 
-            // 2. Extract words from corpus and perform iterative BPE merges
+            // 2. Extract words and count frequencies (sampling to cap memory and time)
             String[] rawWords = corpus.split("\\s+");
-            List<List<String>> wordSymbols = new ArrayList<>();
+            Map<String, Integer> wordCounts = new HashMap<>();
+            int sampledChars = 0;
+            int maxSampledChars = 100_000; // Cap training sample size for fast BPE vocabulary discovery
             for (String w : rawWords) {
                 if (w.isEmpty()) continue;
-                List<String> syms = new ArrayList<>();
-                for (char c : w.toCharArray()) {
-                    syms.add(String.valueOf(c));
+                wordCounts.put(w, wordCounts.getOrDefault(w, 0) + 1);
+                sampledChars += w.length();
+                if (sampledChars >= maxSampledChars && wordCounts.size() >= 1000) {
+                    break;
                 }
-                wordSymbols.add(syms);
             }
 
-            // Perform iterative BPE pair merges
+            class WordSpec {
+                List<String> syms;
+                int count;
+                WordSpec(String word, int count) {
+                    this.count = count;
+                    this.syms = new ArrayList<>(word.length());
+                    for (char c : word.toCharArray()) {
+                        this.syms.add(String.valueOf(c));
+                    }
+                }
+            }
+
+            List<WordSpec> wordSpecs = new ArrayList<>(wordCounts.size());
+            for (Map.Entry<String, Integer> entry : wordCounts.entrySet()) {
+                wordSpecs.add(new WordSpec(entry.getKey(), entry.getValue()));
+            }
+
+            // Perform iterative BPE pair merges over unique word specifications
             while (vocab.size() < targetVocabSize) {
                 Map<String, Integer> pairFreqs = new HashMap<>();
-                for (List<String> syms : wordSymbols) {
+                for (WordSpec ws : wordSpecs) {
+                    List<String> syms = ws.syms;
+                    int count = ws.count;
                     for (int i = 0; i < syms.size() - 1; i++) {
                         String pair = syms.get(i) + syms.get(i + 1);
-                        pairFreqs.put(pair, pairFreqs.getOrDefault(pair, 0) + 1);
+                        pairFreqs.put(pair, pairFreqs.getOrDefault(pair, 0) + count);
                     }
                 }
 
@@ -68,11 +89,12 @@ public class SimpleBPETokenizer implements Tokenizer {
                     }
                 }
 
-                if (bestPair == null || maxFreq < 1) break;
+                if (bestPair == null || maxFreq < 2) break;
 
                 vocab.put(bestPair, id++);
 
-                for (List<String> syms : wordSymbols) {
+                for (WordSpec ws : wordSpecs) {
+                    List<String> syms = ws.syms;
                     int i = 0;
                     while (i < syms.size() - 1) {
                         if ((syms.get(i) + syms.get(i + 1)).equals(bestPair)) {
