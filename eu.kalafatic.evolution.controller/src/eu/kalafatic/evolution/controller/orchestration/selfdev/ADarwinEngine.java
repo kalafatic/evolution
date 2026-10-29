@@ -670,8 +670,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			summary = "⏸️ Waiting for user to select a variant...";
 			response.setResultType(ResultType.CHAT);
 			// DO NOT transition to DONE - keep waiting state
-		} else if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
-				|| state.getCurrentPhase().contains("DESIGN_SATISFIED") || ModeRecognizer.isMediatedMode(context))
+		} else if ((state.getCurrentPhase() != null && (state.getCurrentPhase().contains("TERMINAL")
+				|| state.getCurrentPhase().contains("SYNTHESIS")
+				|| state.getCurrentPhase().contains("DESIGN_SATISFIED")) || ModeRecognizer.isMediatedMode(context))
 				&& response.getResultType() != ResultType.ERROR) {
 			if (ModeRecognizer.isMediatedMode(context)
 					|| context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {

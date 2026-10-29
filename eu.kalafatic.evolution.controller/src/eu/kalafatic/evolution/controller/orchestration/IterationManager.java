@@ -1227,10 +1227,11 @@ public class IterationManager {
 		if (snapshot == null || existingModel == null)
 			return;
 
-		// In Mediated Mode, initial discovery already populated TargetRealityModel and snapshot.
+		// In Mediated Mode or Intent Reconstruction Mode, initial discovery already populated TargetRealityModel and snapshot.
 		// Avoid re-running heavy multi-pass discovery loops.
-		if (eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer.isMediatedMode(context)) {
-			context.log("[KERNEL] Mediated Mode: Target Reality Model already established. Skipping redundant discovery refinement.");
+		if (eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer.isMediatedMode(context)
+				|| (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.INTENT_RECONSTRUCTION)) {
+			context.log("[KERNEL] Target Reality Model already established for platform mode. Skipping redundant discovery refinement.");
 			return;
 		}
 

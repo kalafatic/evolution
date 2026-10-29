@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -62,6 +64,7 @@ public class IntentReconstructionEngine extends ADarwinEngine {
 
         if (batch.isEmpty()) {
             context.log("[INTENT_RECONSTRUCTION] No more files to explore or termination reached.");
+            context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
             EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
             res.setSuccess(true);
             res.setDecision(SelfDevDecision.STOP);
@@ -75,13 +78,17 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         context.getOrchestrationState().getMetadata().put("reconstructedDesignModel", designModel);
         context.getOrchestrationState().getMetadata().put("intentTargetSummary", targetSummary);
 
+        boolean converged = checkTermination();
+        if (converged) {
+            context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+            context.log("[INTENT_RECONSTRUCTION] Termination condition met. Reconstruction converged.");
+        } else {
+            context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.INTENT_EXPANSION));
+        }
+
         EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         res.setSuccess(true);
-        res.setDecision(checkTermination() ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
-
-        if (res.getDecision() == SelfDevDecision.STOP) {
-            context.log("[INTENT_RECONSTRUCTION] Termination condition met. Reconstruction converged.");
-        }
+        res.setDecision(converged ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
 
         return res;
     }
