@@ -161,6 +161,35 @@ public class IntentReconstructionEngineTest {
     }
 
     @Test
+    public void testNullPhaseAndSynthesisPhaseHandling() throws Exception {
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.setSessionId("test-session-null-phase");
+        context.getOrchestrationState().setRawInput("# Intent Discovery\n\nDiscover target project purpose");
+        context.getOrchestrationState().setCurrentPhase(null);
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-null-phase");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.INTENT_RECONSTRUCTION);
+
+        PlatformMode platformMode = new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, null, 1, false);
+        context.setPlatformMode(platformMode);
+
+        IterationMemoryService memoryService = new IterationMemoryService(tempDir);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(tempDir, context);
+
+        IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
+        IterationManager manager = KernelFactory.create(context.getOrchestrationState().getRawInput(), context, session, null);
+
+        // Verify runDarwinIteration runs with null phase safely and sets synthesis phase on completion
+        EvaluationResult evalResult = engine.runDarwinIteration(context, manager);
+        assertNotNull(evalResult);
+        assertTrue(evalResult.isSuccess());
+
+        String phaseAfterIteration = context.getOrchestrationState().getCurrentPhase();
+        assertNotNull("Current phase should be non-null after iteration", phaseAfterIteration);
+        assertTrue(phaseAfterIteration.contains("SYNTHESIS") || phaseAfterIteration.contains("EXPANSION"));
+    }
+
+    @Test
     public void testBatchQueueNoSilentOmission() throws Exception {
         File multiDir = File.createTempFile("evo-test-multi", "");
         multiDir.delete();
