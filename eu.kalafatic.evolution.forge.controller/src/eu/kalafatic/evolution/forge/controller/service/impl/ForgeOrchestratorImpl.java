@@ -393,9 +393,24 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             artifact.save(exportPath.resolve("evo.evo"));
             logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] EVO_EXPORT_SUCCESS", job.getJobId()));
 
+            // QUANTIZATION STAGE
+            if (job.getQuantizationConfig() != null && job.getQuantizationConfig().isEnabled()) {
+                logToFile(logFile, String.format("[FORGE][QUANT][RUN=%s] QUANTIZATION_START scheme=%s", job.getJobId(), job.getQuantizationConfig().getScheme().name()));
+                eu.kalafatic.evolution.forge.model.llm.EvoModelQuantizer quantizer = new eu.kalafatic.evolution.forge.model.llm.EvoModelQuantizer();
+                eu.kalafatic.evolution.forge.model.llm.EvoModelQuantizer.QuantizationResult qRes = quantizer.quantizeArtifact(artifact, job.getQuantizationConfig());
+                EvoModelArtifact quantArtifact = qRes.getQuantizedArtifact();
+
+                logToFile(logFile, String.format("[FORGE][QUANT][RUN=%s] QUANTIZATION_COMPLETE originalBytes=%d quantizedBytes=%d ratio=%.4f",
+                        job.getJobId(), qRes.getOriginalSize(), qRes.getQuantizedSize(), qRes.getCompressionRatio()));
+
+                String quantModelName = modelName + "-quant-" + job.getQuantizationConfig().getScheme().name().toLowerCase();
+                quantArtifact.save(runFolder.resolve(quantModelName + ".evo"));
+                quantArtifact.save(exportPath.resolve(quantModelName + ".evo"));
+            }
+
             logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] GGUF_EXPORT_START", job.getJobId()));
             OllamaExporter exporter = new OllamaExporter();
-            exporter.export(modelName, exportPath, model, tokenizer.getInvVocab());
+            exporter.exportSnapshot(artifact.toSnapshot(), exportPath, job.getQuantizationConfig());
             logToFile(logFile, String.format("[FORGE][EXPORT][RUN=%s] GGUF_EXPORT_SUCCESS", job.getJobId()));
 
             // Mirror artifacts to controller models directory

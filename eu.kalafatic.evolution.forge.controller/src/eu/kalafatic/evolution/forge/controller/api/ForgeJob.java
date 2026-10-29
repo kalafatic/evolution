@@ -280,6 +280,7 @@ public class ForgeJob {
     private ModelConfig modelConfig = new ModelConfig();
     private TrainingConfig trainingConfig = new TrainingConfig();
     private EvolutionConfig evolutionConfig = new EvolutionConfig();
+    private eu.kalafatic.evolution.forge.model.llm.QuantizationConfig quantizationConfig = new eu.kalafatic.evolution.forge.model.llm.QuantizationConfig();
     private PreflightResult preflightResult = new PreflightResult();
     private EvaluationResult evaluationResult = new EvaluationResult();
     private SmokeTestResult smokeTestResult = new SmokeTestResult();
@@ -361,6 +362,9 @@ public class ForgeJob {
 
     public EvolutionConfig getEvolutionConfig() { return evolutionConfig; }
     public void setEvolutionConfig(EvolutionConfig evolutionConfig) { this.evolutionConfig = evolutionConfig; }
+
+    public eu.kalafatic.evolution.forge.model.llm.QuantizationConfig getQuantizationConfig() { return quantizationConfig; }
+    public void setQuantizationConfig(eu.kalafatic.evolution.forge.model.llm.QuantizationConfig quantizationConfig) { this.quantizationConfig = quantizationConfig; }
 
     public PreflightResult getPreflightResult() { return preflightResult; }
     public void setPreflightResult(PreflightResult preflightResult) { this.preflightResult = preflightResult; }

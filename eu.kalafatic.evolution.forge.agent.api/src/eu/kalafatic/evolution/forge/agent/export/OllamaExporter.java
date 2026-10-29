@@ -6,8 +6,10 @@ import eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelExporter;
+import eu.kalafatic.evolution.forge.model.llm.EvoModelQuantizer;
 import eu.kalafatic.evolution.forge.model.llm.ModelParameters;
 import eu.kalafatic.evolution.forge.model.llm.ModelSnapshot;
+import eu.kalafatic.evolution.forge.model.llm.QuantizationConfig;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 
@@ -17,11 +19,6 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.*;
 
 /**
@@ -67,8 +64,13 @@ public class OllamaExporter implements EvoModelExporter {
 
     @Override
     public void exportSnapshot(ModelSnapshot snapshot, Path outputPath) throws Exception {
+        exportSnapshot(snapshot, outputPath, new QuantizationConfig(QuantizationConfig.QuantizationScheme.F32));
+    }
+
+    public void exportSnapshot(ModelSnapshot snapshot, Path outputPath, QuantizationConfig quantConfig) throws Exception {
         if (snapshot == null) throw new IllegalArgumentException("ModelSnapshot cannot be null");
         if (outputPath == null) throw new IllegalArgumentException("Output path cannot be null");
+        if (quantConfig == null) quantConfig = new QuantizationConfig(QuantizationConfig.QuantizationScheme.F32);
 
         String modelName = snapshot.getMetadata() != null ? snapshot.getMetadata().getName() : "evo";
         Map<Integer, String> vocab = snapshot.getVocabulary();
@@ -76,8 +78,32 @@ public class OllamaExporter implements EvoModelExporter {
             vocab = buildDefaultVocabulary(snapshot.getArchitecture().getVocabSize());
         }
 
-        System.out.println("[Export] Starting GGUF export from canonical ModelSnapshot: " + modelName);
+        System.out.println("[Export] Starting GGUF export (" + quantConfig.getScheme().name() + ") from canonical ModelSnapshot: " + modelName);
         EvoLlmArchitecture arch = snapshot.getArchitecture();
+
+        // Apply quantization if enabled
+        if (quantConfig.isEnabled() && quantConfig.getScheme() != QuantizationConfig.QuantizationScheme.F32) {
+            EvoModelArtifact sourceArtifact = new EvoModelArtifact();
+            EvoLlmModel trainedModel = new EvoLlmModel(arch);
+            ModelParameters snapParams = snapshot.getParameters();
+            ModelParameters modelParams = trainedModel.getModelParameters();
+            if (snapParams != null && snapParams.names() != null) {
+                for (String paramName : snapParams.names()) {
+                    if (modelParams.contains(paramName)) {
+                        Tensor src = snapParams.get(paramName);
+                        Tensor dst = modelParams.get(paramName);
+                        if (src != null && dst != null && src.getData() != null && dst.getData() != null) {
+                            System.arraycopy(src.getData(), 0, dst.getData(), 0, Math.min(src.getData().length, dst.getData().length));
+                        }
+                    }
+                }
+            }
+            sourceArtifact.initializeFromModel(modelName, trainedModel, buildReverseVocab(vocab));
+            EvoModelQuantizer quantizer = new EvoModelQuantizer();
+            EvoModelQuantizer.QuantizationResult qRes = quantizer.quantizeArtifact(sourceArtifact, quantConfig);
+            snapshot = qRes.getQuantizedArtifact().toSnapshot();
+        }
+
         ModelParameters params = snapshot.getParameters();
 
         List<NamedTensor> serializedTensors = new ArrayList<>();
@@ -104,7 +130,8 @@ public class OllamaExporter implements EvoModelExporter {
         Files.createDirectories(exportsOllamaDir);
 
         Path ggufPath = exportsOllamaDir.resolve("evo.gguf");
-        writeGGUF(ggufPath, arch, serializedTensors, vocab);
+        int fileType = resolveGgufFileType(quantConfig.getScheme());
+        writeGGUF(ggufPath, arch, serializedTensors, vocab, fileType);
 
         EvoLlmModel tempModel = new EvoLlmModel(arch);
         ModelParameters tempParams = tempModel.getModelParameters();
@@ -153,6 +180,21 @@ public class OllamaExporter implements EvoModelExporter {
         } catch (Exception ignored) {}
     }
 
+    private int resolveGgufFileType(QuantizationConfig.QuantizationScheme scheme) {
+        // Return 0 (ALL_F32) when tensors are stored as float32 dequantized representations
+        return 0;
+    }
+
+    private Map<String, Integer> buildReverseVocab(Map<Integer, String> vocab) {
+        Map<String, Integer> rev = new LinkedHashMap<>();
+        if (vocab != null) {
+            for (Map.Entry<Integer, String> entry : vocab.entrySet()) {
+                rev.put(entry.getValue(), entry.getKey());
+            }
+        }
+        return rev;
+    }
+
     @Override
     public void export(EvoModelArtifact artifact, Path outputPath) throws Exception {
         if (artifact == null) throw new IllegalArgumentException("Artifact cannot be null");
@@ -180,11 +222,11 @@ public class OllamaExporter implements EvoModelExporter {
         }
     }
 
-    private int writeGGUF(Path path, EvoLlmArchitecture arch, List<NamedTensor> tensors, Map<Integer, String> customVocab) throws IOException {
+    private int writeGGUF(Path path, EvoLlmArchitecture arch, List<NamedTensor> tensors, Map<Integer, String> customVocab, int fileType) throws IOException {
         List<MetadataEntry> metadataList = new ArrayList<>();
         metadataList.add(new MetadataEntry("general.architecture", 8, "llama"));
         metadataList.add(new MetadataEntry("general.name", 8, "EVO LLM"));
-        metadataList.add(new MetadataEntry("general.file_type", 4, 0));
+        metadataList.add(new MetadataEntry("general.file_type", 4, fileType));
         metadataList.add(new MetadataEntry("general.alignment", 4, 32));
         metadataList.add(new MetadataEntry("llama.context_length", 4, arch.getMaxSeqLen()));
         metadataList.add(new MetadataEntry("llama.embedding_length", 4, arch.getDModel()));

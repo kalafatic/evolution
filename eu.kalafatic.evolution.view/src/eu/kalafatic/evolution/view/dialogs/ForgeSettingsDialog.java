@@ -222,6 +222,8 @@ public class ForgeSettingsDialog extends Dialog {
     private org.eclipse.swt.widgets.Text outputModelNameText;
     private Button qualityFilterCheck;
     private Button saveEpochCheckpointsCheck;
+    private Button quantizationCheck;
+    private Combo quantizationSchemeCombo;
     private Label estTimeLabel;
     private Label hwProfileLabel;
     private Browser graphBrowser;
@@ -240,6 +242,8 @@ public class ForgeSettingsDialog extends Dialog {
     private double selectedValRatio = 0.15;
     private boolean selectedQualityFilter = true;
     private boolean selectedSaveEpochCheckpoints = true;
+    private boolean selectedQuantizationEnabled = true;
+    private String selectedQuantizationScheme = "F16";
     private String selectedOutputModelName = "";
     private String selectedLossThreshold = "Epoch 16-30: Loss 2-5 → Learning phrases";
     private double selectedDesiredLoss = 1.0;
@@ -706,6 +710,22 @@ public class ForgeSettingsDialog extends Dialog {
         GridData scData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
         saveEpochCheckpointsCheck.setLayoutData(scData);
 
+        quantizationCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Enable Model Quantization (.evo & GGUF export)");
+        quantizationCheck.setSelection(selectedQuantizationEnabled);
+        quantizationCheck.setToolTipText("Produce quantized model variants (F16, INT8, INT4, Q8_0, Q4_K_M) after forging completes.");
+        quantizationCheck.addSelectionListener(autoRefreshSelectionAdapter);
+        GridData qcData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
+        quantizationCheck.setLayoutData(qcData);
+
+        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Quantization Scheme:");
+        quantizationSchemeCombo = new Combo(datasetLimitsComp, SWT.DROP_DOWN | SWT.READ_ONLY);
+        for (String qOpt : new String[] { "F16", "INT8", "INT4", "Q8_0", "Q4_0", "Q4_K_M" }) {
+            quantizationSchemeCombo.add(qOpt);
+        }
+        quantizationSchemeCombo.setText(selectedQuantizationScheme);
+        quantizationSchemeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        quantizationSchemeCombo.addSelectionListener(autoRefreshSelectionAdapter);
+
         datasetsTable = new Table(datasetsGroup, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
         datasetsTable.setHeaderVisible(true);
         datasetsTable.setLinesVisible(true);
@@ -1046,6 +1066,14 @@ public class ForgeSettingsDialog extends Dialog {
 
         if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
             selectedSaveEpochCheckpoints = saveEpochCheckpointsCheck.getSelection();
+        }
+
+        if (quantizationCheck != null && !quantizationCheck.isDisposed()) {
+            selectedQuantizationEnabled = quantizationCheck.getSelection();
+        }
+
+        if (quantizationSchemeCombo != null && !quantizationSchemeCombo.isDisposed()) {
+            selectedQuantizationScheme = quantizationSchemeCombo.getText().trim();
         }
 
         if (datasetsTable != null && !datasetsTable.isDisposed()) {
@@ -2072,6 +2100,8 @@ public class ForgeSettingsDialog extends Dialog {
         json.put("validationRatio", selectedValRatio);
         json.put("filterQuality", selectedQualityFilter);
         json.put("saveEpochCheckpoints", selectedSaveEpochCheckpoints);
+        json.put("quantizationEnabled", selectedQuantizationEnabled);
+        json.put("quantizationScheme", selectedQuantizationScheme);
         json.put("outputModelName", selectedOutputModelName);
         json.put("lossThreshold", selectedLossThreshold);
         json.put("desiredLossThreshold", selectedDesiredLoss);

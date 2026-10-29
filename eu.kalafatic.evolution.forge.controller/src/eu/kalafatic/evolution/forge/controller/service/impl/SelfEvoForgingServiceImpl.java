@@ -143,6 +143,22 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 job.getEvolutionConfig().setGenerations(uiState.optInt("generations", 1));
                 job.getEvolutionConfig().setCandidatesPerGeneration(uiState.optInt("candidatesPerGeneration", 1));
 
+                // Extract Quantization Settings
+                boolean quantEnabled = uiState.optBoolean("quantizationEnabled", uiState.optBoolean("quantEnabled", false));
+                String quantSchemeStr = uiState.optString("quantizationScheme", uiState.optString("quantScheme", "F16")).toUpperCase();
+                String quantPresetStr = uiState.optString("quantizationPreset", uiState.optString("quantPreset", "BALANCED")).toUpperCase();
+
+                eu.kalafatic.evolution.forge.model.llm.QuantizationConfig quantCfg = new eu.kalafatic.evolution.forge.model.llm.QuantizationConfig();
+                quantCfg.setEnabled(quantEnabled);
+                try {
+                    quantCfg.setScheme(eu.kalafatic.evolution.forge.model.llm.QuantizationConfig.QuantizationScheme.valueOf(quantSchemeStr));
+                } catch (Exception ignored) {}
+                try {
+                    quantCfg.setPreset(eu.kalafatic.evolution.forge.model.llm.QuantizationConfig.Preset.valueOf(quantPresetStr));
+                } catch (Exception ignored) {}
+
+                job.setQuantizationConfig(quantCfg);
+
                 if (uiState.has("outputModelName") && !uiState.getString("outputModelName").trim().isEmpty()) {
                     job.setOutputModelName(uiState.getString("outputModelName").trim());
                 }
