@@ -536,6 +536,12 @@ public class ForgeSessionManager {
             }
 
             @Override
+            public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+                telemetry.addLog("INFO", String.format("Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
+                        epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
+            }
+
+            @Override
             public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
                                            long processedTokens, long totalTokens,
                                            double tokensPerSec, double stepsPerSec,

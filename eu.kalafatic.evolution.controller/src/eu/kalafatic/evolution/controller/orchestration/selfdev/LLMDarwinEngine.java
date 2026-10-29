@@ -339,6 +339,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 	@Override
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
 			throws Exception {
+		long overallForgingStartTime = System.currentTimeMillis();
 		context.setStartTime(Instant.now());
 		OrchestrationState state = context.getOrchestrationState();
 		iterationManager.transition(SystemState.INIT, context);
@@ -587,6 +588,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 
 		for (int gen = startGen; gen <= generations; gen++) {
+			long genStartTime = System.currentTimeMillis();
 			context.log("[FORGE] --- GENERATION " + gen + " ---");
 			logs.add("Generation " + gen + "\n");
 			EvolutionProgressPublisher.startIteration(context, gen, gen, "forge-lineage", 1, generations, 1, 3);
@@ -857,8 +859,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				}
 			}
 
-			context.log("[FORGE] Generation " + gen + " Winner: " + genWinner.name + " (" + genWinner.config + ")");
-			logs.add("Winner:\n" + genWinner.name + "\n\n");
+			long genDurationMs = System.currentTimeMillis() - genStartTime;
+			context.log(String.format("[FORGE] Generation %d completed in %d ms (%.2f s). Winner: %s (%s)",
+					gen, genDurationMs, genDurationMs / 1000.0, genWinner.name, genWinner.config));
+			logs.add(String.format("Generation %d Duration: %d ms (%.2f s) | Winner: %s\n\n",
+					gen, genDurationMs, genDurationMs / 1000.0, genWinner.name));
 
 			// Save generation report
 			JSONObject genReport = new JSONObject();
@@ -1045,13 +1050,23 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
 		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
 		try {
-			trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
-				int logInterval = Math.max(1, Math.max(1, totalSamples / 10));
-				if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-					double pct = (double) sampleIndex / totalSamples * 100.0;
+			trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+				@Override
+				public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {
+					int logInterval = Math.max(1, Math.max(1, totalSamples / 10));
+					if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+						double pct = (double) sampleIndex / totalSamples * 100.0;
+						context.log(String.format(
+								"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+								epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+					}
+				}
+
+				@Override
+				public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
 					context.log(String.format(
-							"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-							epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+							"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
+							epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
 				}
 			});
 			int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
@@ -1158,6 +1173,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			context.log("[FORGE] Warning: Evolved Ollama model registration failed: " + ex.getMessage());
 		}
 
+		long totalForgingDurationMs = System.currentTimeMillis() - overallForgingStartTime;
+		context.log(String.format("[FORGE] Total sum time spent on forging: %d ms (%.2f s)",
+				totalForgingDurationMs, totalForgingDurationMs / 1000.0));
+
 		// Save training-report.json
 		JSONObject reportJson = new JSONObject();
 		reportJson.put("modelName", dynamicModelName);
@@ -1170,6 +1189,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		reportJson.put("finalLoss", overallWinner.loss);
 		reportJson.put("parameterCount", overallWinner.paramCount);
 		reportJson.put("durationMs", overallWinner.durationMs);
+		reportJson.put("totalForgingDurationMs", totalForgingDurationMs);
 		reportJson.put("fitnessScore", overallWinner.fitness);
 
 		JSONArray historyArr = new JSONArray();
@@ -1209,7 +1229,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		summaryBuilder.append("**Training Statistics:**\n");
 		summaryBuilder.append(String.format("- **Final Loss:** %.4f\n", overallWinner.loss));
 		summaryBuilder.append(String.format("- **Parameter Count:** %d\n", overallWinner.paramCount));
-		summaryBuilder.append(String.format("- **Training Duration:** %d ms\n", overallWinner.durationMs));
+		summaryBuilder.append(String.format("- **Winning Candidate Training Duration:** %d ms\n", overallWinner.durationMs));
+		summaryBuilder.append(String.format("- **Total Time Spent on Forging:** %d ms (%.2f s)\n", totalForgingDurationMs, totalForgingDurationMs / 1000.0));
 		summaryBuilder.append(String.format("- **Fitness Score:** %.4f\n\n", overallWinner.fitness));
 
 		summaryBuilder.append("### Generated Artifacts & Export Location:\n");
@@ -1385,13 +1406,23 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
 			double trainLoss = 2.5;
 			try {
-				trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
-					int logInterval = Math.max(1, totalSamples / 10);
-					if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-						double pct = (double) sampleIndex / totalSamples * 100.0;
+				trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+					@Override
+					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {
+						int logInterval = Math.max(1, totalSamples / 10);
+						if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+							double pct = (double) sampleIndex / totalSamples * 100.0;
+							context.log(String.format(
+									"[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+									epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+						}
+					}
+
+					@Override
+					public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
 						context.log(String.format(
-								"[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-								epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+								"[FORGE-EPOCH] Candidate Evaluation - Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
+								epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
 					}
 				});
 				if (!trainSamples.isEmpty()) {

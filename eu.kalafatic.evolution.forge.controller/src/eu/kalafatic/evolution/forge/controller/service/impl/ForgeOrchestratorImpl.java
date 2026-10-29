@@ -206,16 +206,20 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 trainer.setMicroBatchSize(job.getTrainingConfig().getBatchSize());
             }
 
-            if (job.getTrainingConfig().isSaveEpochCheckpoints()) {
-                final Path chkRunFolder = runFolder;
-                final String chkJobId = job.getJobId();
-                final SimpleBPETokenizer chkTokenizer = tokenizer;
-                trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
-                    @Override
-                    public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
+            final Path chkRunFolder = runFolder;
+            final String chkJobId = job.getJobId();
+            final SimpleBPETokenizer chkTokenizer = tokenizer;
+            final boolean saveCheckpoints = job.getTrainingConfig().isSaveEpochCheckpoints();
+            trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
+                @Override
+                public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
 
-                    @Override
-                    public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss) {
+                @Override
+                public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+                    logToFile(logFile, String.format("[FORGE][EPOCH] Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
+                            epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
+
+                    if (saveCheckpoints) {
                         try {
                             String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
                             String chkName = String.format("model_%s_epoch_%d_%s", chkJobId, epoch, ts);
@@ -224,14 +228,15 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                             chkArtifact.getMetadata().put("epoch", String.valueOf(epoch));
                             chkArtifact.getMetadata().put("trainLoss", String.valueOf(trainLoss));
                             chkArtifact.getMetadata().put("valLoss", String.valueOf(valLoss));
+                            chkArtifact.getMetadata().put("epochDurationMs", String.valueOf(durationMs));
                             chkArtifact.save(chkRunFolder.resolve(chkName + ".evo"));
                             logToFile(logFile, String.format("[FORGE][CHECKPOINT] Saved epoch %d model artifact: %s.evo", epoch, chkName));
                         } catch (Exception ex) {
                             logToFile(logFile, String.format("[FORGE][CHECKPOINT][WARN] Failed to save epoch %d model checkpoint: %s", epoch, ex.getMessage()));
                         }
                     }
-                });
-            }
+                }
+            });
             try {
                 Class<?> fsmClass = null;
                 try {
@@ -300,8 +305,10 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             List<Double> losses = trainer.getLossHistory();
             double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : (trainResult != null ? trainResult.getLastLoss() : 0.05);
 
-            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d",
-                    job.getJobId(), trainResult.getTerminationStatus(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+            long totalJobForgingDurationMs = System.currentTimeMillis() - timestamp;
+            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d totalForgingDuration=%d ms (%.2f s)",
+                    job.getJobId(), trainResult.getTerminationStatus(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs(),
+                    totalJobForgingDurationMs, totalJobForgingDurationMs / 1000.0));
 
             // STAGE 5: MODEL VALIDATION BEFORE EXPORT
             logToFile(logFile, String.format("[FORGE][MODEL][RUN=%s] FINALIZE_START", job.getJobId()));
