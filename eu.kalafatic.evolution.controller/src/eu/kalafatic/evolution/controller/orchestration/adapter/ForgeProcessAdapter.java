@@ -102,7 +102,7 @@ public class ForgeProcessAdapter implements IProcessAdapter {
             if (ep < currentEpoch) {
                 unit.setStatus("SUCCESS");
                 unit.setResult("SUCCESS");
-                unit.setScore(1.0 - (telem != null ? Math.min(1.0, telem.lastLoss) : 0.0));
+                unit.setScore(1.0 - (telem != null ? Math.min(1.0, telem.currentLoss) : 0.0));
                 unit.setActiveFlowStepIndex(5); // CHECKPOINT
             } else if (ep == currentEpoch) {
                 String status = getProcessStatus();
@@ -117,7 +117,7 @@ public class ForgeProcessAdapter implements IProcessAdapter {
 
             if (telem != null) {
                 unit.setMetricsSummary(String.format("Loss: %.4f | Val Loss: %.4f | Tokens/sec: %.1f",
-                        telem.lastLoss, telem.lastValLoss, telem.tokensPerSec));
+                        telem.currentLoss, telem.valLoss, telem.tokensPerSec));
             }
 
             // Create primary branch/variant record for training metrics
@@ -146,7 +146,7 @@ public class ForgeProcessAdapter implements IProcessAdapter {
         if (telem != null) {
             return String.format("Forge LLM Training - Epoch %d/%d, Step %d/%d (Loss: %.4f, Progress: %.0f%%)",
                     telem.currentEpoch, telem.totalEpochs, telem.currentStep, telem.totalSteps,
-                    telem.lastLoss, getProgressFraction() * 100);
+                    telem.currentLoss, getProgressFraction() * 100);
         }
         return String.format("Forge LLM Training - Status: %s", getProcessStatus());
     }

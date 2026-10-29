@@ -85,24 +85,21 @@ public class WorkflowProcessAdapter implements IProcessAdapter {
             for (int i = 0; i < steps.size(); i++) {
                 WorkflowStep step = steps.get(i);
                 int stepNum = i + 1;
+                String stepName = step.getDescription() != null ? step.getDescription() : step.getStepType();
 
-                ProcessUnitRecord unit = new ProcessUnitRecord(stepNum, "Step " + stepNum + ": " + step.getName());
+                ProcessUnitRecord unit = new ProcessUnitRecord(stepNum, "Step " + stepNum + ": " + stepName);
                 unit.setUnitType("WORKFLOW_STEP");
-                unit.setGoal(step.getCommand() != null ? step.getCommand() : step.getName());
+                unit.setGoal(step.getRelatedPrompt() != null ? step.getRelatedPrompt() : stepName);
                 unit.setStatus(step.getStatus() != null ? step.getStatus().name() : "READY");
                 unit.setResult(step.getStatus() != null ? step.getStatus().name() : "READY");
                 unit.setFlowSteps(getFlowStepLabels());
 
-                if (step.getFailureDetails() != null) {
-                    unit.setErrorMessage(step.getFailureDetails());
-                }
-
-                int flowIdx = determineFlowIndex(step.getName());
+                int flowIdx = determineFlowIndex(stepName);
                 unit.setActiveFlowStepIndex(flowIdx);
 
                 ProcessUnitRecord.BranchRecord branch = new ProcessUnitRecord.BranchRecord(
                         "step-" + stepNum,
-                        step.getName(),
+                        stepName,
                         unit.getResult(),
                         "COMPLETED".equals(unit.getResult()) ? 1.0 : 0.0
                 );
