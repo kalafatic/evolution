@@ -1277,10 +1277,12 @@
             const url = getBaseUrl() + `/forge/sessions?runtime=SWT`;
             try {
                 const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                sessions = await res.json();
-
-                // Merge AI Commander session into sessions list if missing
+                if (res.ok) {
+                    sessions = await res.json();
+                }
+            } catch (e) {
+                log(`Error loading sessions from ${url}: ${e.message}`);
+            } finally {
                 if (activeAiSession) {
                     let found = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
                     if (!found) {
@@ -1288,8 +1290,8 @@
                             id: activeAiSession,
                             name: activeAiSession,
                             modelType: 'SELF_EVO',
-                            status: 'IDLE',
-                            lifecycleState: 'CREATED'
+                            status: 'TRAINING',
+                            lifecycleState: 'TRAINING'
                         };
                         sessions.unshift(found);
                     }
@@ -1325,26 +1327,8 @@
                 renderSessionList();
                 renderTopCombo();
 
-                // Determine default active session
-                let targetSession = null;
-                if (activeAiSession) {
-                    let activeObj = sessions.find(s => s.id === activeAiSession || s.name === activeAiSession);
-                    if (activeObj) {
-                        // Default to activeAiSession if no activeSessionId, or if activeAiSession is training,
-                        // or if current activeSessionId is not found in sessions
-                        if (!activeSessionId || activeObj.status === 'TRAINING' || activeObj.lifecycleState === 'TRAINING' || !sessions.some(s => s.id === activeSessionId)) {
-                            targetSession = activeObj.id;
-                        }
-                    }
-                }
-
-                if (!targetSession && activeSessionId) {
-                    let activeObj = sessions.find(s => s.id === activeSessionId || s.name === activeSessionId);
-                    if (activeObj) {
-                        targetSession = activeObj.id;
-                    }
-                }
-
+                // Determine default active session (current AI Commander session takes priority)
+                let targetSession = activeAiSession || activeSessionId;
                 if (!targetSession && sessions.length > 0) {
                     targetSession = sessions[0].id;
                 }
@@ -1354,8 +1338,6 @@
                 } else if (!isAutoCreating) {
                     autoCreateSession();
                 }
-            } catch (e) {
-                log(`Error loading sessions from ${url}: ${e.message}`);
             }
         }
 
@@ -1475,7 +1457,7 @@
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
             updateLifecycleUI(state);
 
-            if (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING')) {
+            if (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING' || id === activeAiSession)) {
                 isTraining = true;
             } else if (session && session.status === 'IDLE') {
                 isTraining = false;
@@ -1487,25 +1469,17 @@
             await updateModelPropertiesUI();
             log(`Switched to session: ${session ? session.name : id}`);
 
-            // Restore or default Viz State
-            if (session && session.uiState) {
-                if (session.uiState.selectedVisualization) {
-                    currentViz = session.uiState.selectedVisualization;
-                } else if (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING') {
-                    currentViz = 'TRAINING';
-                } else if (session.modelType === 'SELF_EVO') {
-                    currentViz = 'SELF_EVO';
-                }
-                document.getElementById('viz-selector').value = currentViz;
-                vizAutoRefresh = (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING') || !!session.uiState.autoRefreshEnabled;
-            } else if (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING')) {
+            // Restore or default Viz State to TRAINING for active AI Commander / training session
+            if (id === activeAiSession || isTraining || (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING' || session.modelType === 'SELF_EVO'))) {
                 currentViz = 'TRAINING';
-                document.getElementById('viz-selector').value = currentViz;
                 vizAutoRefresh = true;
-            } else if (session && session.modelType === 'SELF_EVO') {
-                currentViz = 'SELF_EVO';
-                document.getElementById('viz-selector').value = currentViz;
+            } else if (session && session.uiState && session.uiState.selectedVisualization) {
+                currentViz = session.uiState.selectedVisualization;
+                vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
             }
+
+            const vizSel = document.getElementById('viz-selector');
+            if (vizSel) vizSel.value = currentViz;
 
             setupAutoRefresh();
             onVizChange();
@@ -2155,7 +2129,8 @@
         function setupAutoRefresh() {
             if (refreshTimer) clearInterval(refreshTimer);
             if (vizAutoRefresh) {
-                refreshTimer = setInterval(refreshViz, vizRefreshInterval);
+                const interval = (currentViz === 'TRAINING' || currentViz === 'SELF_EVO' || isTraining) ? 1000 : vizRefreshInterval;
+                refreshTimer = setInterval(refreshViz, interval);
             }
         }
 

@@ -200,18 +200,38 @@ public class ForgePage extends AEvoPage {
         String activeAiSession = "";
         org.json.JSONArray aiSessionArray = new org.json.JSONArray();
 
-        if (editor != null && editor.getAiChatPage() != null) {
+        String activeTrainingSession = ForgeSessionManager.getInstance().getActiveTrainingSessionId();
+        if (activeTrainingSession != null && !activeTrainingSession.trim().isEmpty()) {
+            activeAiSession = activeTrainingSession;
+        } else if (editor != null && editor.getAiChatPage() != null) {
             AiCommanderPage aiPage = editor.getAiChatPage();
             activeAiSession = aiPage.getCurrentSessionName();
-            if (activeAiSession == null) activeAiSession = "";
+        }
+        if (activeAiSession == null || activeAiSession.trim().isEmpty()) {
+            if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+                activeAiSession = orchestrator.getSelfDevSession().getId();
+            }
+        }
+        if (activeAiSession == null || activeAiSession.trim().isEmpty()) {
+            activeAiSession = "Default";
+        }
 
-            if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getSessions() != null) {
-                for (eu.kalafatic.evolution.model.orchestration.ChatSession cs : orchestrator.getAiChat().getSessions()) {
-                    if (cs != null && cs.getId() != null) {
-                        aiSessionArray.put(cs.getId());
-                    }
+        if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getSessions() != null) {
+            for (eu.kalafatic.evolution.model.orchestration.ChatSession cs : orchestrator.getAiChat().getSessions()) {
+                if (cs != null && cs.getId() != null) {
+                    aiSessionArray.put(cs.getId());
                 }
             }
+        }
+        boolean hasActiveInList = false;
+        for (int i = 0; i < aiSessionArray.length(); i++) {
+            if (activeAiSession.equals(aiSessionArray.optString(i))) {
+                hasActiveInList = true;
+                break;
+            }
+        }
+        if (!hasActiveInList) {
+            aiSessionArray.put(activeAiSession);
         }
 
         String jsCall = String.format("if(window.initializeForge) { window.initializeForge(%d, '%s', %s); }",

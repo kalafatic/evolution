@@ -179,6 +179,20 @@ public class ForgeSessionManager {
         return instance;
     }
 
+    public String getActiveTrainingSessionId() {
+        for (java.util.Map.Entry<String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer> entry : activeTrainers.entrySet()) {
+            if (entry.getValue() != null) {
+                return entry.getKey();
+            }
+        }
+        for (java.util.Map.Entry<String, TrainingTelemetry> entry : telemetryMap.entrySet()) {
+            if (entry.getValue() != null && ("RUNNING".equals(entry.getValue().status) || "TRAINING".equals(entry.getValue().status))) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     public void initialize(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
         if (orchestrator != null && orchestrator.getForgeSessions().isEmpty()) {
