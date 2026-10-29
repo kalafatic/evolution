@@ -716,6 +716,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			architecturePage.scheduleRefresh();
 		} else if (control == forgePage && forgePage != null) {
 			forgePage.refreshUI();
+		} else if (control == iterationPage && iterationPage != null) {
+			iterationPage.scheduleRefresh();
+		} else if (control == developmentPage && developmentPage != null) {
+			developmentPage.scheduleRefresh();
+		} else if (control == taskStackPage && taskStackPage != null) {
+			taskStackPage.scheduleRefresh();
+		} else if (control == aiChatPage && aiChatPage != null) {
+			aiChatPage.scheduleRefresh();
 		}
 	}
 

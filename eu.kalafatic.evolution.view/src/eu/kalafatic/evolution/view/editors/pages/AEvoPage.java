@@ -53,8 +53,11 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     };
 
     private final Consumer<RuntimeProjection> projectionObserver = projection -> {
-        if (!isDisposed() && projection.getSessionId().equals(getCurrentSessionName())) {
-            scheduleRefresh();
+        if (!isDisposed()) {
+            String activeSid = getCurrentSessionName();
+            if (projection.getSessionId().equals(activeSid) || "GLOBAL".equals(projection.getSessionId())) {
+                scheduleRefresh();
+            }
         }
     };
 
@@ -107,12 +110,23 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
 	}
 
     protected String getCurrentSessionName() {
+        if (editor != null && editor.getAiChatPage() != null) {
+            String activeSid = editor.getAiChatPage().getCurrentSessionName();
+            if (activeSid != null && !activeSid.isEmpty()) {
+                return activeSid;
+            }
+        }
         return (orchestrator != null && orchestrator.getId() != null) ? orchestrator.getId() : "Default";
     }
 
     @Override
     public void onEvent(RuntimeEvent event) {
-        scheduleRefresh();
+        if (event == null || isDisposed()) return;
+        String sid = event.getSessionId();
+        String activeSid = getCurrentSessionName();
+        if (sid == null || sid.isEmpty() || "GLOBAL".equals(sid) || sid.equals(activeSid)) {
+            scheduleRefresh();
+        }
     }
 
     private long lastRefreshTime = 0;

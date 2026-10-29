@@ -37,6 +37,10 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
 
 import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.controller.orchestration.adapter.IProcessAdapter;
+import eu.kalafatic.evolution.controller.orchestration.adapter.ProcessAdapterFactory;
+import eu.kalafatic.evolution.controller.orchestration.adapter.ProcessUnitRecord;
+import eu.kalafatic.evolution.controller.orchestration.adapter.ProcessUnitRecord.BranchRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -55,8 +59,10 @@ public class IterationPage extends AEvoPage {
 	private Map<Integer, List<IterationRecord>> iterationsMap = new TreeMap<>();
 	private List<Integer> iterationNumbers = new ArrayList<>();
 	private int currentIterationIndex = -1;
+	private IProcessAdapter currentAdapter;
 
 	private Combo iterationCombo;
+	private Label selectUnitLabel;
 	private Label goalLabel;
 	private Label resultLabel;
 	private Label sessionStatusLabel;
@@ -150,7 +156,7 @@ public class IterationPage extends AEvoPage {
 		Composite iterComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Iterations", 1, true);
 		Composite iterHeader = GUIFactory.INSTANCE.createComposite(iterComp, 2);
 		iterHeader.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		GUIFactory.INSTANCE.createLabel(iterHeader, "Select Iteration:");
+		selectUnitLabel = GUIFactory.INSTANCE.createLabel(iterHeader, "Select Iteration:");
 		iterationCombo = new Combo(iterHeader, SWT.READ_ONLY | SWT.DROP_DOWN);
 		iterationCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		iterationCombo.addSelectionListener(new SelectionAdapter() {
@@ -303,31 +309,44 @@ public class IterationPage extends AEvoPage {
 	}
 
 	public synchronized void refreshData() {
-		if (memoryService != null) {
-			memoryService.refresh();
+		String activeSid = getCurrentSessionName();
+		currentAdapter = ProcessAdapterFactory.getInstance().getAdapter(activeSid, orchestrator, projectRoot);
+
+		if (selectUnitLabel != null && !selectUnitLabel.isDisposed()) {
+			selectUnitLabel.setText(currentAdapter.getUnitSelectorLabel());
 		}
 
-		List<IterationRecord> records = (memoryService != null) ? new ArrayList<>(memoryService.getRecords())
-				: new ArrayList<>();
+		List<ProcessUnitRecord> units = currentAdapter.getUnits();
+		iterationsMap.clear();
+		List<IterationRecord> records = new ArrayList<>();
 
-		// Merge with active session iterations
-		if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-			List<eu.kalafatic.evolution.model.orchestration.Iteration> sessionIters = orchestrator.getSelfDevSession()
-					.getIterations();
-			for (int i = 0; i < sessionIters.size(); i++) {
-				eu.kalafatic.evolution.model.orchestration.Iteration iter = sessionIters.get(i);
-				final int itNum = i + 1;
-				boolean exists = records.stream().anyMatch(r -> r.getIteration() == itNum);
-				if (!exists) {
+		for (ProcessUnitRecord unit : units) {
+			int unitNum = unit.getUnitNumber();
+			if (unit.getBranches() != null && !unit.getBranches().isEmpty()) {
+				for (BranchRecord br : unit.getBranches()) {
 					IterationRecord r = new IterationRecord();
-					r.setIteration(itNum);
-					r.setGoal(orchestrator.getSelfDevSession().getInitialRequest());
-					r.setBranch(iter.getBranchName() != null ? iter.getBranchName() : "it-" + itNum);
-					r.setStatus(iter.getStatus() != null ? iter.getStatus().getName() : "RUNNING");
-					r.setResult("RUNNING");
-					r.setStrategy(iter.getPhase() != null ? iter.getPhase() : "EVOLVING");
+					r.setIteration(unitNum);
+					r.setGoal(unit.getGoal());
+					r.setBranch(br.getBranch());
+					r.setStatus(unit.getStatus());
+					r.setResult(br.getResult());
+					r.setStrategy(br.getStrategy());
+					r.setScore(br.getScore());
+					r.setErrorMessage(br.getErrorMessage());
+					r.setChangedFiles(br.getChangedFiles());
 					records.add(r);
 				}
+			} else {
+				IterationRecord r = new IterationRecord();
+				r.setIteration(unitNum);
+				r.setGoal(unit.getGoal());
+				r.setBranch("unit-" + unitNum);
+				r.setStatus(unit.getStatus());
+				r.setResult(unit.getResult());
+				r.setStrategy(unit.getUnitName());
+				r.setScore(unit.getScore());
+				r.setErrorMessage(unit.getErrorMessage());
+				records.add(r);
 			}
 		}
 
@@ -343,7 +362,7 @@ public class IterationPage extends AEvoPage {
 
 		// Update Iteration Combo
 		if (iterationCombo != null && !iterationCombo.isDisposed()) {
-			String[] items = iterationNumbers.stream().map(n -> "Iteration " + n).toArray(String[]::new);
+			String[] items = units.stream().map(ProcessUnitRecord::getUnitName).toArray(String[]::new);
 			iterationCombo.setItems(items);
 			if (currentIterationIndex >= 0 && currentIterationIndex < items.length) {
 				iterationCombo.select(currentIterationIndex);
@@ -671,7 +690,10 @@ public class IterationPage extends AEvoPage {
 	}
 
 	private void updateSessionStatus() {
-		if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+		if (currentAdapter != null) {
+			sessionStatusLabel.setText("Session (" + currentAdapter.getProcessName() + "): " + currentAdapter.getProcessStatus());
+			sessionProgressLabel.setText(String.format("Progress: %.0f%%", currentAdapter.getProgressFraction() * 100));
+		} else if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
 			eu.kalafatic.evolution.model.orchestration.SelfDevSession session = orchestrator.getSelfDevSession();
 			sessionStatusLabel.setText("Session: " + session.getStatus().getName());
 
