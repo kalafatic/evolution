@@ -38,6 +38,7 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     protected FormToolkit toolkit;
     protected AtomicBoolean refreshPending = new AtomicBoolean(false);
     protected boolean needsRefresh = false;
+    private final java.util.Map<String, Long> sessionLastTimestamp = new java.util.concurrent.ConcurrentHashMap<>();
     
     protected Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
     protected Font chatFont, bannerFont;
@@ -119,12 +120,29 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
         return (orchestrator != null && orchestrator.getId() != null) ? orchestrator.getId() : "Default";
     }
 
+    public void updateStateTimestamp(String sessionId, long timestamp) {
+        if (sessionId != null && timestamp > 0) {
+            sessionLastTimestamp.compute(sessionId, (k, current) -> (current == null || timestamp > current) ? timestamp : current);
+        }
+    }
+
+    public boolean isStateStale(String sessionId, long timestamp) {
+        if (sessionId == null || timestamp <= 0) return false;
+        Long last = sessionLastTimestamp.get(sessionId);
+        return last != null && timestamp < last;
+    }
+
     @Override
     public void onEvent(RuntimeEvent event) {
         if (event == null || isDisposed()) return;
         String sid = event.getSessionId();
         String activeSid = getCurrentSessionName();
         if (sid == null || sid.isEmpty() || "GLOBAL".equals(sid) || sid.equals(activeSid)) {
+            String key = (sid != null && !sid.isEmpty() && !"GLOBAL".equals(sid)) ? sid : activeSid;
+            if (event.getTimestamp() > 0 && isStateStale(key, event.getTimestamp())) return;
+            if (event.getTimestamp() > 0) {
+                updateStateTimestamp(key, event.getTimestamp());
+            }
             scheduleRefresh();
         }
     }
