@@ -346,6 +346,22 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		context.log("[FORGE] Darwin LLM Evolution Instance Started.");
 
+		String sid = context.getSessionId();
+		eu.kalafatic.evolution.model.orchestration.ForgeSession forgeSession =
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().findSession(sid);
+		if (forgeSession != null) {
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateStatus(sid,
+					eu.kalafatic.evolution.model.orchestration.ForgeStatus.TRAINING);
+		}
+		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.TrainingTelemetry mainTelemetry =
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().getTelemetry(sid);
+		if (mainTelemetry != null) {
+			mainTelemetry.status = "RUNNING";
+			mainTelemetry.startTimeMs = overallForgingStartTime;
+			mainTelemetry.addLog("INFO", "Darwin LLM Evolution Pipeline Started.");
+		}
+
+		try {
 		// Load target path files or fallback to docs/
 		String targetPath = getTargetPath();
 		context.log("[FORGE] Selected Training Target Folder: " + targetPath);
@@ -590,6 +606,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		for (int gen = startGen; gen <= generations; gen++) {
 			long genStartTime = System.currentTimeMillis();
 			context.log("[FORGE] --- GENERATION " + gen + " ---");
+			if (mainTelemetry != null) {
+				mainTelemetry.currentEpoch = gen;
+				mainTelemetry.totalEpochs = generations;
+				mainTelemetry.addLog("INFO", String.format("Generation %d/%d search initiated.", gen, generations));
+			}
 			logs.add("Generation " + gen + "\n");
 			EvolutionProgressPublisher.startIteration(context, gen, gen, "forge-lineage", 1, generations, 1, 3);
 			EvolutionProgressPublisher.updateStage(context, EvolutionStage.GENERATE_BRANCH);
@@ -864,6 +885,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					gen, genDurationMs, genDurationMs / 1000.0, genWinner.name, genWinner.config));
 			logs.add(String.format("Generation %d Duration: %d ms (%.2f s) | Winner: %s\n\n",
 					gen, genDurationMs, genDurationMs / 1000.0, genWinner.name));
+
+			if (mainTelemetry != null && genWinner != null) {
+				mainTelemetry.currentLoss = genWinner.loss;
+				if (genWinner.loss > 0 && (mainTelemetry.bestValLoss == 0 || genWinner.loss < mainTelemetry.bestValLoss)) {
+					mainTelemetry.bestValLoss = genWinner.loss;
+				}
+				mainTelemetry.addLog("INFO", String.format("Generation %d/%d winner: %s | Loss: %.4f | Fitness: %.4f",
+						gen, generations, genWinner.name, genWinner.loss, genWinner.fitness));
+			}
 
 			// Save generation report
 			JSONObject genReport = new JSONObject();
@@ -1261,7 +1291,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		iterationManager.transition(SystemState.DONE, context);
 		EvolutionProgressPublisher.completeIteration(context);
 
+		if (mainTelemetry != null && overallWinner != null) {
+			mainTelemetry.currentLoss = overallWinner.loss;
+			mainTelemetry.addLog("INFO", String.format("Evolution pipeline complete. Overall winner loss: %.4f", overallWinner.loss));
+		}
+
 		return response;
+		} finally {
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(sid, true);
+		}
 	}
 
 	private SimpleBPETokenizer cachedTokenizer = null;

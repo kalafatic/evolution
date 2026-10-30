@@ -190,6 +190,11 @@ public class ForgeSessionManager {
                 return entry.getKey();
             }
         }
+        for (ForgeSession s : getSessions()) {
+            if (s != null && s.getStatus() == ForgeStatus.TRAINING) {
+                return s.getSessionId();
+            }
+        }
         return null;
     }
 
@@ -586,6 +591,10 @@ public class ForgeSessionManager {
     }
 
     public void unregisterActiveTrainer(String sessionId) {
+        unregisterActiveTrainer(sessionId, false);
+    }
+
+    public void unregisterActiveTrainer(String sessionId, boolean sessionComplete) {
         if (sessionId == null) return;
         activeTrainers.remove(sessionId);
         ForgeSession s = findSessionById(sessionId);
@@ -597,16 +606,23 @@ public class ForgeSessionManager {
         if (telemetry == null && !key.equals(sessionId)) {
             telemetry = telemetryMap.get(sessionId);
         }
-        if (telemetry != null) {
-            telemetry.status = "COMPLETED";
-            telemetry.durationMs = System.currentTimeMillis() - telemetry.startTimeMs;
-            telemetry.addLog("INFO", "Training session completed.");
-        }
 
-        if (s != null) {
-            s.setStatus(ForgeStatus.IDLE);
-            updateWorkflowStatus(s.getSessionId(), "TRAINING_COMPLETED");
-            publishEvent(s, RuntimeEventType.FORGE_TRAINING_STOPPED, "TRAINING_STOPPED");
+        if (sessionComplete) {
+            if (telemetry != null) {
+                telemetry.status = "COMPLETED";
+                telemetry.durationMs = System.currentTimeMillis() - telemetry.startTimeMs;
+                telemetry.addLog("INFO", "Training session completed.");
+            }
+
+            if (s != null) {
+                s.setStatus(ForgeStatus.IDLE);
+                updateWorkflowStatus(s.getSessionId(), "TRAINING_COMPLETED");
+                publishEvent(s, RuntimeEventType.FORGE_TRAINING_STOPPED, "TRAINING_STOPPED");
+            }
+        } else {
+            if (telemetry != null) {
+                telemetry.addLog("INFO", "Active trainer detached.");
+            }
         }
     }
 
