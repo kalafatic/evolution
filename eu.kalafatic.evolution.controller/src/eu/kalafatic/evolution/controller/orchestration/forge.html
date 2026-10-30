@@ -1457,9 +1457,9 @@
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
             updateLifecycleUI(state);
 
-            if (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING' || id === activeAiSession)) {
+            if ((session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING')) || id === activeAiSession) {
                 isTraining = true;
-            } else if (session && session.status === 'IDLE') {
+            } else {
                 isTraining = false;
             }
             updateButtonState();
