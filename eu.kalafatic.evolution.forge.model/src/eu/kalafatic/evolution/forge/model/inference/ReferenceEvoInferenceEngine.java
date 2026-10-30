@@ -251,10 +251,14 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                         nextToken, piece.replace("\n", "\\n"), decodedChunk.replace("\n", "\\n"), cumulativeDecoded.replace("\n", "\\n"), step + 1, maxTokensToGenerate, tokPerSec);
             }
 
-            if ((eosTokenId != -1 && nextToken == eosTokenId) || (stopTokens != null && stopTokens.contains(nextToken))) {
+            boolean isEos = (eosTokenId != -1 && nextToken == eosTokenId)
+                    || (stopTokens != null && stopTokens.contains(nextToken))
+                    || eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer.isSpecialToken(piece);
+
+            if (isEos) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
-                System.out.printf("[EvoInferenceEngine] Generation stopped. Reason: EOS_REACHED (tokenId=%d, eosTokenId=%d, step=%d)%n",
-                        nextToken, eosTokenId, step + 1);
+                System.out.printf("[EvoInferenceEngine] Generation stopped. Reason: EOS_REACHED (tokenId=%d, eosTokenId=%d, piece='%s', step=%d)%n",
+                        nextToken, eosTokenId, piece, step + 1);
                 break;
             }
 

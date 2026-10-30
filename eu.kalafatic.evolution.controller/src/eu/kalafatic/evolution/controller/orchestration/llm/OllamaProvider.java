@@ -461,10 +461,36 @@ public class OllamaProvider implements ILlmProvider {
                         context.log("[EVO-NATIVE] Trained weights restored: true");
                     }
 
+                    int maxTokens = 512;
+                    float topP = 0.9f;
+                    int topK = 40;
+                    float repeatPenalty = 1.1f;
+                    if (context != null && context.getMetadata() != null) {
+                        Object mt = context.getMetadata().get("maxTokens");
+                        if (mt instanceof Number) {
+                            maxTokens = ((Number) mt).intValue();
+                        }
+                        Object tp = context.getMetadata().get("topP");
+                        if (tp instanceof Number) {
+                            topP = ((Number) tp).floatValue();
+                        }
+                        Object tk = context.getMetadata().get("topK");
+                        if (tk instanceof Number) {
+                            topK = ((Number) tk).intValue();
+                        }
+                        Object rp = context.getMetadata().get("repeatPenalty");
+                        if (rp instanceof Number) {
+                            repeatPenalty = ((Number) rp).floatValue();
+                        }
+                    }
+
                     eu.kalafatic.evolution.forge.model.inference.InferenceRequest request = eu.kalafatic.evolution.forge.model.inference.InferenceRequest.builder()
                             .prompt(prompt)
-                            .maxTokens(512)
+                            .maxTokens(maxTokens)
                             .temperature(temperature)
+                            .topP(topP)
+                            .topK(topK)
+                            .repeatPenalty(repeatPenalty)
                             .build();
 
                     eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine nativeEngine = new eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine();

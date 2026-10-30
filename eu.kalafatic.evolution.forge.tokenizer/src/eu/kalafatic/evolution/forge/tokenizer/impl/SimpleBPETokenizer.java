@@ -331,18 +331,22 @@ public class SimpleBPETokenizer implements Tokenizer {
     public static boolean isSpecialToken(String tokStr) {
         if (tokStr == null || tokStr.isEmpty()) return false;
         return tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")
-                || tokStr.equals("<pad>") || tokStr.equals("<eos>") || tokStr.equals("<bos>");
+                || tokStr.equals("<pad>") || tokStr.equals("<eos>") || tokStr.equals("<bos>")
+                || tokStr.equals("<|im_end|>") || tokStr.equals("<|im_start|>") || tokStr.equals("<|endoftext|>");
     }
 
     public int getBosTokenId() {
         if (vocab.containsKey("<s>")) return vocab.get("<s>");
         if (vocab.containsKey("<bos>")) return vocab.get("<bos>");
+        if (vocab.containsKey("<|im_start|>")) return vocab.get("<|im_start|>");
         return -1;
     }
 
     public int getEosTokenId() {
         if (vocab.containsKey("</s>")) return vocab.get("</s>");
         if (vocab.containsKey("<eos>")) return vocab.get("<eos>");
+        if (vocab.containsKey("<|im_end|>")) return vocab.get("<|im_end|>");
+        if (vocab.containsKey("<|endoftext|>")) return vocab.get("<|endoftext|>");
         return -1;
     }
 
