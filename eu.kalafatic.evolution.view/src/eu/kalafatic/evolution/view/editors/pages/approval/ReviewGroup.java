@@ -88,17 +88,24 @@ public class ReviewGroup extends AEvoGroup {
         });
     }
 
+    private File getProjectRoot() {
+        if (editor.getActivePageInstance() instanceof eu.kalafatic.evolution.view.editors.pages.AEvoPage) {
+            return ((eu.kalafatic.evolution.view.editors.pages.AEvoPage) editor.getActivePageInstance()).getProjectRoot();
+        }
+        return null;
+    }
+
     private void openFile(String path) {
         Display.getDefault().asyncExec(() -> {
             try {
-                IProject project = null;
-                if (editor.getEditorInput() instanceof IFileEditorInput) {
-                    project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
-                }
-                if (project != null) {
-                    IFile file = project.getFile(new Path(path));
-                    if (file.exists()) {
-                        IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), file);
+                File projectRoot = getProjectRoot();
+                if (projectRoot != null) {
+                    File fileOnDisk = new File(projectRoot, path);
+                    if (fileOnDisk.exists()) {
+                        IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(fileOnDisk.toURI());
+                        if (files.length > 0 && files[0].exists()) {
+                            IDE.openEditor(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), files[0]);
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -124,13 +131,9 @@ public class ReviewGroup extends AEvoGroup {
             try {
                 lastUpdate = System.currentTimeMillis();
                 String diffResult = null;
-                IProject project = null;
-                if (editor.getEditorInput() instanceof IFileEditorInput) {
-                    project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
-                }
+                File projectRoot = getProjectRoot();
 
-                if (project != null) {
-                    File projectRoot = project.getLocation().toFile();
+                if (projectRoot != null) {
                     ShellTool shell = new ShellTool();
                     TaskContext context = editor.getCurrentContext();
                     if (context == null) {

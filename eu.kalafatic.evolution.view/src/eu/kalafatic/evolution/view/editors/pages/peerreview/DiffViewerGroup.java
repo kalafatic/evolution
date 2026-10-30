@@ -32,7 +32,7 @@ public class DiffViewerGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Diff Viewer", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Diff Viewer", 1, true, true);
         group.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
@@ -61,36 +61,36 @@ public class DiffViewerGroup extends AEvoGroup {
     }
 
     public void setFilePath(String path) {
+        if (path == null) return;
         // Strip status prefix if present
-        if (path != null && path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
-            path = path.substring(2);
+        if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D ") || path.startsWith("? "))) {
+            path = path.substring(2).trim();
         }
 
-        IProject project = null;
-        if (editor.getEditorInput() instanceof IFileEditorInput) {
-            project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
+        File projectRoot = null;
+        if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+            projectRoot = ((PeerReviewPage) editor.getActivePageInstance()).getProjectRoot();
         }
-        if (project != null) {
-            this.currentFile = project.getFile(path).getLocation().toFile();
+        if (projectRoot != null) {
             this.relativeFilePath = path;
+            this.currentFile = new File(projectRoot, path);
             updateUI();
         }
     }
 
     @Override
     public void refreshUI() {
-        if (browser == null || browser.isDisposed() || currentFile == null) return;
+        if (browser == null || browser.isDisposed() || relativeFilePath == null) return;
 
         Job job = new Job("Loading Diff") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 try {
-                    IProject project = null;
-                    if (editor.getEditorInput() instanceof IFileEditorInput) {
-                        project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
+                    File projectRoot = null;
+                    if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+                        projectRoot = ((PeerReviewPage) editor.getActivePageInstance()).getProjectRoot();
                     }
-                    if (project != null) {
-                        File projectRoot = project.getLocation().toFile();
+                    if (projectRoot != null) {
                         String diff = PeerReviewService.getInstance().getFileDiff(projectRoot, "HEAD", relativeFilePath);
                         final String html = getDiffHtml(diff);
                         Display.getDefault().asyncExec(() -> {
@@ -112,29 +112,38 @@ public class DiffViewerGroup extends AEvoGroup {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><style>");
         html.append(eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getEvoStyleCss());
-        html.append("body { font-family: var(--evo-font-mono); font-size: 11px; margin: 0; padding: 10px; background: var(--evo-surface); }");
-        html.append(".line { display: block; padding: 0 5px; min-height: 1.2em; border-bottom: 1px solid var(--evo-border); }");
+        html.append("body { font-family: var(--evo-font-mono); font-size: 11px; margin: 0; padding: 10px; background: var(--evo-surface); color: var(--evo-text); }");
+        html.append(".diff-table { width: 100%; border-collapse: collapse; font-family: var(--evo-font-mono); font-size: 11px; }");
+        html.append(".diff-row { display: table-row; min-height: 1.3em; }");
+        html.append(".diff-row:hover { background-color: var(--evo-surface-hover); cursor: pointer; }");
+        html.append(".line-num { display: table-cell; width: 40px; padding: 0 5px; text-align: right; color: var(--evo-text-secondary); user-select: none; border-right: 1px solid var(--evo-border); font-size: 10px; }");
+        html.append(".line-text { display: table-cell; padding: 0 8px; white-space: pre-wrap; word-break: break-all; }");
         html.append(".added { background-color: var(--evo-success-light); color: var(--evo-success); }");
         html.append(".deleted { background-color: var(--evo-danger-light); color: var(--evo-danger); }");
-        html.append(".header { background-color: var(--evo-primary-light); color: var(--evo-primary); font-weight: bold; border-top: 1px solid var(--evo-border); border-bottom: 1px solid var(--evo-border); }");
-        html.append(".info { color: var(--evo-text-secondary); }");
-        html.append(".line:hover { background-color: var(--evo-surface-hover); cursor: pointer; }");
+        html.append(".header { background-color: var(--evo-primary-light); color: var(--evo-primary); font-weight: bold; }");
+        html.append(".info { color: var(--evo-text-secondary); background-color: var(--evo-surface-alt); }");
+        html.append(".empty-msg { padding: 15px; color: var(--evo-text-secondary); font-style: italic; }");
         html.append("</style></head><body>");
 
-        if (diff == null || diff.isEmpty()) {
-            html.append("<div class='info'>No changes detected in this file.</div>");
+        if (diff == null || diff.trim().isEmpty()) {
+            html.append("<div class='empty-msg'>No changes detected in this file (or file matches HEAD).</div>");
         } else {
+            html.append("<div class='diff-table'>");
             int lineNum = 0;
             for (String line : diff.split("\n")) {
                 lineNum++;
-                String cls = "line";
+                String cls = "line-text";
                 if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("diff ") || line.startsWith("index ")) cls += " header";
                 else if (line.startsWith("+")) cls += " added";
                 else if (line.startsWith("-")) cls += " deleted";
                 else if (line.startsWith("@@")) cls += " info";
 
-                html.append("<div class='").append(cls).append("' onclick='addLineComment(").append(lineNum).append(")'>").append(escapeHtml(line)).append("</div>");
+                html.append("<div class='diff-row' onclick='addLineComment(").append(lineNum).append(")'>")
+                    .append("<div class='line-num'>").append(lineNum).append("</div>")
+                    .append("<div class='").append(cls).append("'>").append(escapeHtml(line)).append("</div>")
+                    .append("</div>");
             }
+            html.append("</div>");
         }
 
         html.append("</body></html>");

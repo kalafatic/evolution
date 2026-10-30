@@ -26,10 +26,8 @@ public class FileTreeGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Changed Files", 1, true);
-        GridData gd = new GridData(GridData.FILL_VERTICAL);
-        gd.widthHint = 200;
-        group.setLayoutData(gd);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Changed Files", 1, true, true);
+        group.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         treeViewer = new TreeViewer(group, SWT.BORDER | SWT.SINGLE | SWT.V_SCROLL | SWT.H_SCROLL);
         treeViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
