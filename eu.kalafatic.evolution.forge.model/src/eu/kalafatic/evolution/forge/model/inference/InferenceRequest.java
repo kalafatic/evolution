@@ -78,9 +78,9 @@ public class InferenceRequest {
         private int[] inputIds = new int[0];
         private int maxTokens = 64;
         private float temperature = 0.0f; // Deterministic default
-        private float topP = 1.0f;
-        private int topK = 0;
-        private float repeatPenalty = 1.0f;
+        private float topP = 0.9f;
+        private int topK = 40;
+        private float repeatPenalty = 1.1f;
         private float frequencyPenalty = 0.0f;
         private float presencePenalty = 0.0f;
         private Set<Integer> stopTokenIds = new HashSet<>();
