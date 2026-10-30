@@ -581,7 +581,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			// ADAPTIVE KERNEL: Only refine reality in subsequent iterations if intensity is
 			// high
 			int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
-			if (safetyCounter > 0 && intensity >= 3) {
+			if (safetyCounter > 0 && intensity >= 3 && !ModeRecognizer.isIntentMode(context) && platformType != PlatformType.INTENT_RECONSTRUCTION) {
 				iterationManager.refineTargetReality(request, context);
 			}
 
@@ -614,7 +614,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			iterationManager.saveFullCheckpoint();
 
 			if (result.getDecision() != SelfDevDecision.CONTINUE) {
-				if (safetyCounter < minIterations) {
+				if (safetyCounter < minIterations && !ModeRecognizer.isIntentMode(context) && !ModeRecognizer.isMediatedMode(context) && platformType != PlatformType.INTENT_RECONSTRUCTION) {
 					context.log("[DARWIN] Evolution reached decision (" + result.getDecision()
 							+ "), but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
 					// RESET PHASE to force continued evolution instead of spinning

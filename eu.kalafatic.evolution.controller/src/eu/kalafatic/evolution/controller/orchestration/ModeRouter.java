@@ -130,7 +130,8 @@ public class ModeRouter {
 			return createIntentReconstructionMode();
 		if (lower.contains("mode: mediated"))
 			return createHybridManualExportMode();
-		if (lower.contains("reconstruct intent") || lower.contains("intent discovery"))
+		if (lower.contains("reconstruct intent") || lower.contains("intent discovery")
+				|| lower.contains("discover intent") || lower.contains("reverse engineering"))
 			return createIntentReconstructionMode();
 		if (lower.contains("analyze target"))
 			return createHybridManualExportMode();

@@ -1230,7 +1230,9 @@ public class IterationManager {
 		// In Mediated Mode or Intent Reconstruction Mode, initial discovery already populated TargetRealityModel and snapshot.
 		// Avoid re-running heavy multi-pass discovery loops.
 		if (eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer.isMediatedMode(context)
-				|| (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.INTENT_RECONSTRUCTION)) {
+				|| eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer.isIntentMode(context)
+				|| (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.INTENT_RECONSTRUCTION)
+				|| (darwinEngine != null && darwinEngine.getPlatformType() == PlatformType.INTENT_RECONSTRUCTION)) {
 			context.log("[KERNEL] Target Reality Model already established for platform mode. Skipping redundant discovery refinement.");
 			return;
 		}
