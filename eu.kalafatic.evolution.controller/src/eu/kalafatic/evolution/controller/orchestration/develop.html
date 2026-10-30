@@ -184,6 +184,23 @@
     </style>
 </head>
 <body>
+    <div id="evo-global-nav" style="background: var(--evo-surface-alt, #f1f3f6); border-bottom: 1px solid var(--evo-border, #b8c0c8); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; flex-shrink: 0; font-family: 'Segoe UI', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 16px;">🧬</span>
+            <a href="/index.html" style="color: var(--evo-primary, #1d5296); text-decoration: none; font-weight: 700;">EVOLUTION AI PLATFORM</a>
+            <span style="color: #98a2ac;">|</span>
+            <a href="/experimental/chat" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">💬 Chat</a>
+            <a href="/experimental/architecture" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">📐 Architecture</a>
+            <a href="/experimental/forge" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🛠️ Forge Lab</a>
+            <a href="/mcp" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🔌 MCP Tools</a>
+            <a href="/develop" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px; background: rgba(29,82,150,0.15);">🤖 Develop Agent</a>
+            <a href="/admin" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">⚙️ Admin</a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+            <span id="global-session-badge" style="background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 12px; font-family: monospace;">Session: Active</span>
+            <a href="/server/status" style="color: var(--evo-text-secondary, #4a5568); text-decoration: none;">Analytics</a>
+        </div>
+    </div>
     <div id="app-container">
         <!-- HEADER -->
         <div id="top-header">
@@ -258,6 +275,7 @@
         </div>
     </div>
 
+    <script src="/auth-integration.js"></script>
     <script>
         let currentTaskId = '';
         let currentSessionId = '';
