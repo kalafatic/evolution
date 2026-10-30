@@ -66,9 +66,13 @@ public class ModeRecognizer {
 		if (isIntentMode(context)) {
 			return PlatformType.INTENT_RECONSTRUCTION;
 		}
-		if (intentResult != null && (intentResult.getReasoning().toLowerCase().contains("reconstruct intent") ||
-		    intentResult.getReasoning().toLowerCase().contains("analyze architecture"))) {
-			return PlatformType.INTENT_RECONSTRUCTION;
+		if (intentResult != null && intentResult.getReasoning() != null) {
+			String reasoning = intentResult.getReasoning().toLowerCase();
+			if (reasoning.contains("reconstruct intent") || reasoning.contains("discover intent")
+					|| reasoning.contains("intent discovery") || reasoning.contains("reverse engineering")
+					|| reasoning.contains("analyze architecture") || reasoning.contains("discover the project")) {
+				return PlatformType.INTENT_RECONSTRUCTION;
+			}
 		}
 		if (intentResult == null || intentResult.isChat()) {
 			return PlatformType.SIMPLE_CHAT;
@@ -139,7 +143,8 @@ public class ModeRecognizer {
 	}
 
 	public static boolean isIntentMode(TaskContext context) {
-		return (context.getOrchestrator() != null) && (AiMode.INTENT.equals(context.getOrchestrator().getAiMode()));
+		return (context != null && context.getOrchestrator() != null && AiMode.INTENT.equals(context.getOrchestrator().getAiMode()))
+				|| (context != null && context.getPlatformMode() != null && PlatformType.INTENT_RECONSTRUCTION.equals(context.getPlatformMode().getType()));
 	}
 
 	public static boolean isForcedTechnicalMode(TaskContext context) {
