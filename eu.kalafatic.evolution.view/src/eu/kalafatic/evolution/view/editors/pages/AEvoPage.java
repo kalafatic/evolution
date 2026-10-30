@@ -321,4 +321,42 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
             editor.setDirty(dirty);
         }
     }
+
+    public java.io.File getProjectRoot() {
+        if (editor != null && editor.getAiChatPage() != null) {
+            java.io.File chatRoot = editor.getAiChatPage().getProjectRoot();
+            if (chatRoot != null && chatRoot.exists()) {
+                return chatRoot;
+            }
+        }
+
+        java.io.File projectRoot = null;
+        if (editor != null && editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
+            projectRoot = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
+        } else if (orchestrator != null && orchestrator.eResource() != null) {
+            org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
+            if (uri.isPlatformResource()) {
+                String path = uri.toPlatformString(true);
+                org.eclipse.core.resources.IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+                if (res != null) {
+                    projectRoot = res.getProject().getLocation().toFile();
+                }
+            } else if (uri.isFile()) {
+                projectRoot = new java.io.File(uri.toFileString()).getParentFile();
+            }
+        }
+
+        if (projectRoot == null) {
+            try {
+                org.eclipse.core.resources.IProject[] projects = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().getProjects();
+                for (org.eclipse.core.resources.IProject p : projects) {
+                    if (p.isOpen()) {
+                        projectRoot = p.getLocation().toFile();
+                        break;
+                    }
+                }
+            } catch (Exception e) {}
+        }
+        return projectRoot;
+    }
 }

@@ -18,6 +18,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class CommentsGroup extends AEvoGroup {
@@ -33,10 +34,8 @@ public class CommentsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Review Actions", 1, true);
-        GridData gd = new GridData(GridData.FILL_VERTICAL);
-        gd.widthHint = 250;
-        group.setLayoutData(gd);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Review Actions", 1, true, true);
+        group.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         statusLabel = toolkit.createLabel(group, "Status: OPEN");
         statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -89,14 +88,16 @@ public class CommentsGroup extends AEvoGroup {
         });
     }
 
+    private File getProjectRoot() {
+        if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+            return ((PeerReviewPage) editor.getActivePageInstance()).getProjectRoot();
+        }
+        return null;
+    }
+
     private void handleApprove() {
         try {
-            IProject project = null;
-            if (editor.getEditorInput() instanceof IFileEditorInput) {
-                project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
-            }
-            File projectRoot = project != null ? project.getLocation().toFile() : null;
-
+            File projectRoot = getProjectRoot();
             ReviewSession session = PeerReviewService.getInstance().getActiveSession();
             if (session == null && projectRoot != null) {
                 session = PeerReviewService.getInstance().createSession(projectRoot, "HEAD");
@@ -109,7 +110,9 @@ public class CommentsGroup extends AEvoGroup {
 
             PeerReviewService.getInstance().approve(session, projectRoot, commentsText.getText());
             MessageDialog.openInformation(group.getShell(), "Approved", "Review approved and changes committed.");
-            updateUI();
+            if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+                ((PeerReviewPage) editor.getActivePageInstance()).updateUI();
+            }
         } catch (Exception e) {
             MessageDialog.openError(group.getShell(), "Error", "Failed to approve: " + e.getMessage());
         }
@@ -119,7 +122,9 @@ public class CommentsGroup extends AEvoGroup {
         ReviewSession session = PeerReviewService.getInstance().getActiveSession();
         if (session != null) {
             PeerReviewService.getInstance().requestChanges(session);
-            updateUI();
+            if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+                ((PeerReviewPage) editor.getActivePageInstance()).updateUI();
+            }
         }
     }
 
@@ -127,11 +132,7 @@ public class CommentsGroup extends AEvoGroup {
         ReviewSession session = PeerReviewService.getInstance().getActiveSession();
         if (session == null) {
             try {
-                IProject project = null;
-                if (editor.getEditorInput() instanceof IFileEditorInput) {
-                    project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
-                }
-                File projectRoot = project != null ? project.getLocation().toFile() : null;
+                File projectRoot = getProjectRoot();
                 if (projectRoot != null) {
                     session = PeerReviewService.getInstance().createSession(projectRoot, "HEAD");
                 }
@@ -141,7 +142,9 @@ public class CommentsGroup extends AEvoGroup {
             PeerReviewService.getInstance().addComment(session, currentFile, currentLine, commentsText.getText());
             commentsText.setText("");
             MessageDialog.openInformation(group.getShell(), "Comment Added", "Line comment added to model.");
-            updateUI();
+            if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+                ((PeerReviewPage) editor.getActivePageInstance()).updateUI();
+            }
         } else {
             MessageDialog.openWarning(group.getShell(), "Warning", "Please select a line in the diff first.");
         }
@@ -151,7 +154,9 @@ public class CommentsGroup extends AEvoGroup {
         ReviewSession session = PeerReviewService.getInstance().getActiveSession();
         if (session != null) {
             PeerReviewService.getInstance().reject(session);
-            updateUI();
+            if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+                ((PeerReviewPage) editor.getActivePageInstance()).updateUI();
+            }
         }
     }
 

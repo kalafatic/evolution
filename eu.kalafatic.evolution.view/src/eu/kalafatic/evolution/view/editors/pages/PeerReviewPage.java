@@ -4,11 +4,13 @@ import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -19,6 +21,7 @@ public class PeerReviewPage extends AEvoPage {
     private FileTreeGroup fileTreeGroup;
     private DiffViewerGroup diffViewerGroup;
     private CommentsGroup commentsGroup;
+    private SashForm sashForm;
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -36,11 +39,15 @@ public class PeerReviewPage extends AEvoPage {
 
     private void createControl() {
         Composite comp = toolkit.createComposite(this);
-        comp.setLayout(new GridLayout(3, false)); // 3 panels: Left (Tree), Center (Diff), Right (Comments)
+        comp.setLayout(new FillLayout());
 
-        fileTreeGroup = new FileTreeGroup(toolkit, comp, editor, orchestrator);
-        diffViewerGroup = new DiffViewerGroup(toolkit, comp, editor, orchestrator);
-        commentsGroup = new CommentsGroup(toolkit, comp, editor, orchestrator);
+        sashForm = new SashForm(comp, SWT.HORIZONTAL | SWT.SMOOTH);
+
+        fileTreeGroup = new FileTreeGroup(toolkit, sashForm, editor, orchestrator);
+        diffViewerGroup = new DiffViewerGroup(toolkit, sashForm, editor, orchestrator);
+        commentsGroup = new CommentsGroup(toolkit, sashForm, editor, orchestrator);
+
+        sashForm.setWeights(new int[]{25, 50, 25});
 
         fileTreeGroup.getTreeViewer().addSelectionChangedListener(event -> {
             org.eclipse.jface.viewers.IStructuredSelection selection = (org.eclipse.jface.viewers.IStructuredSelection) event.getSelection();
@@ -58,12 +65,8 @@ public class PeerReviewPage extends AEvoPage {
 
     private void initializeData() {
         try {
-            org.eclipse.core.resources.IProject project = null;
-            if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
-                project = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject();
-            }
-            if (project != null) {
-                java.io.File projectRoot = project.getLocation().toFile();
+            java.io.File projectRoot = getProjectRoot();
+            if (projectRoot != null) {
                 java.util.List<String> changedFiles = eu.kalafatic.evolution.controller.review.service.PeerReviewService.getInstance().getChangedFiles(projectRoot);
                 fileTreeGroup.getTreeViewer().setInput(changedFiles);
             }
