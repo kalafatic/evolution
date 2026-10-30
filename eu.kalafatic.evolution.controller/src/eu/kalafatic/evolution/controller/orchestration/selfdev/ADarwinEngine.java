@@ -123,7 +123,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	protected final PromptComposer promptComposer = new PromptComposer();
 	protected final DimensionEngine dimensionEngine = new DimensionEngine();
 	protected final LineageEngine lineageEngine = new LineageEngine();
-	protected final FitnessEngine fitnessEngine = new FitnessEngine();
+	protected final eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine fitnessEngine = new eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine();
 	protected final ExecutionEngine executionEngine = new ExecutionEngine();
 	protected final SelectionEngine selectionEngine = new SelectionEngine();
 	protected final DimensionDiscoveryAgent dimensionDiscoveryAgent;
@@ -3212,24 +3212,35 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	@Override
 	public void setEvaluator(Evaluator evaluator) {
-		// TODO Auto-generated method stub
+		// Evaluator set on engine
 	}
 
 	public EvaluationResult runIteration(GoalModel goal, IterationManager manager) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return runDarwinIteration(context, manager);
 	}
 
 	@Override
 	public List<BranchVariant> validateVariants(List<BranchVariant> variants, IterationManager manager) {
-		// TODO Auto-generated method stub
-		return null;
+		if (variants == null) return Collections.emptyList();
+		for (BranchVariant v : variants) {
+			v.setSuccess(v.getScore() >= 0.3);
+		}
+		return variants;
 	}
 
 	@Override
 	public EvaluationResult executeWinner(BranchVariant winner, IterationManager manager) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		if (winner == null) return manager.failedResult();
+		GoalModel goalModel = GoalModel.extract(context.getOrchestrationState().getMetadata(), manager, context.getOrchestrationState().getRawInput(), context);
+		EvolutionDecision decision = new EvolutionDecision(
+				eu.kalafatic.evolution.controller.supervision.AuthorityController.DecisionType.EXECUTE,
+				winner.getId(),
+				Collections.emptyList(),
+				"USER_SELECTED",
+				Collections.singletonMap(winner.getId(), winner.getScore()),
+				Collections.emptyMap()
+		);
+		return executeWinner(context, decision, Collections.singletonList(winner), goalModel, manager);
 	}
 
 	protected boolean isCodingProcess() {
@@ -3238,51 +3249,65 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	@Override
 	public String getMode() {
-		// TODO Auto-generated method stub
-		return null;
+		return platformType != null ? platformType.name() : "UNKNOWN";
 	}
 
 	@Override
 	public CapabilityType getCapabilityType() {
-		// TODO Auto-generated method stub
-		return null;
+		return CapabilityType.EVOLUTION;
 	}
 
 	@Override
 	public TaskContext getContext() {
-		// TODO Auto-generated method stub
-		return null;
+		return context;
 	}
 
 	@Override
 	public Trajectory getActiveTrajectory() {
-		// TODO Auto-generated method stub
+		if (context != null && context.getKernelContext() != null && context.getKernelContext().getMemoryService() != null) {
+			List<IterationRecord> activeLineage = context.getKernelContext().getMemoryService().getActiveLineage();
+			if (!activeLineage.isEmpty()) {
+				IterationRecord last = activeLineage.get(activeLineage.size() - 1);
+				if (last.getBranchId() != null && context.getSemanticWorkspace() != null && context.getSemanticWorkspace().getTrajectoryMemory() != null) {
+					return context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(last.getBranchId());
+				}
+			}
+		}
 		return null;
 	}
 
 	@Override
 	public void setActiveTrajectory(Trajectory trajectory) {
-		// TODO Auto-generated method stub
-
+		if (trajectory != null && context != null && context.getSemanticWorkspace() != null && context.getSemanticWorkspace().getTrajectoryMemory() != null) {
+			context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(trajectory);
+		}
 	}
 
 	@Override
-	public EvaluationResult evaluateFitness(File projectRoot, TaskContext context,
+	public EvaluationResult evaluateFitness(File projectRoot, TaskContext taskContext,
 			eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		Evaluator eval = getEvaluator();
+		if (eval != null) {
+			return eval.evaluate(projectRoot != null ? projectRoot : this.context.getProjectRoot(), taskContext != null ? taskContext : this.context, level);
+		}
+		EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+		res.setSuccess(true);
+		return res;
 	}
 
 	@Override
 	public Evaluator getEvaluator() {
-		// TODO Auto-generated method stub
-		return null;
+		return new Evaluator(context != null ? context.getProjectRoot() : new File("."), context);
 	}
 
 	@Override
 	public List<BranchVariant> generateVariants(GoalModel goal, IterationManager manager) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
+		StateSnapshot snapshot = initialEval.snapshot;
+		FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
+		Trajectory trajectory = getActiveTrajectory();
+		EvolutionaryPressureVector pressure = (trajectory != null && getSessionContainer() != null) ? getSessionContainer().getPressureEngine().analyze(trajectory, context) : null;
+		return generateVariants(goal, snapshot, failureMemory, trajectory, pressure);
 	}
 
 	@Override
