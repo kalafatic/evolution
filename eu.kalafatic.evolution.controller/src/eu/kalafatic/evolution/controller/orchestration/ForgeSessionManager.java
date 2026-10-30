@@ -591,7 +591,7 @@ public class ForgeSessionManager {
     }
 
     public void unregisterActiveTrainer(String sessionId) {
-        unregisterActiveTrainer(sessionId, false);
+        unregisterActiveTrainer(sessionId, true);
     }
 
     public void unregisterActiveTrainer(String sessionId, boolean sessionComplete) {
