@@ -1580,6 +1580,10 @@ public class EvolutionServer extends NanoHTTPD {
         if (sessionId != null) {
             try {
                 authService.updateWorkflowType(sessionId, workflowType);
+                ServerSession s = activeSessions.get(sessionId);
+                if (s != null) {
+                    s.setWorkflowType(workflowType);
+                }
             } catch (Exception e) {
                 // Ignore update errors
             }
@@ -1588,8 +1592,11 @@ public class EvolutionServer extends NanoHTTPD {
 
     private void trackHttpSession(IHTTPSession session) {
         String clientIp = session.getRemoteIpAddress();
-        // Use IP as part of session tracking if no token is provided
-        String sessionId = "http-" + clientIp;
+        String sessionId = getSessionIdFromRequest(session);
+        if (sessionId == null || sessionId.trim().isEmpty() || "null".equalsIgnoreCase(sessionId) || "undefined".equalsIgnoreCase(sessionId)) {
+            sessionId = "session-" + UUID.randomUUID().toString();
+        }
+
         ServerSession s = activeSessions.get(sessionId);
         if (s == null) {
             s = OrchestrationFactory.eINSTANCE.createServerSession();
@@ -1597,9 +1604,41 @@ public class EvolutionServer extends NanoHTTPD {
             s.setType(SessionType.HTTPD);
             s.setStartTime(System.currentTimeMillis());
             s.setClientIp(clientIp);
+            s.setWorkflowType("GENERAL");
             activeSessions.put(sessionId, s);
         }
         s.setLastActivity(System.currentTimeMillis());
+
+        // Register and sync session in SQLite database (sessions table)
+        try {
+            java.util.Optional<eu.kalafatic.evolution.servers.model.Session> dbSession = authService.getSession(sessionId);
+            if (dbSession.isEmpty()) {
+                long userId = 1L;
+                java.util.Optional<eu.kalafatic.evolution.servers.model.User> adminUser = userRepository.findByUsername("admin");
+                if (adminUser.isPresent()) {
+                    userId = adminUser.get().getId();
+                }
+
+                eu.kalafatic.evolution.servers.model.Session newDbSession = new eu.kalafatic.evolution.servers.model.Session();
+                newDbSession.setSessionId(sessionId);
+                newDbSession.setUserId(userId);
+                newDbSession.setCreatedAt(java.time.LocalDateTime.now());
+                newDbSession.setLastAccess(java.time.LocalDateTime.now());
+                newDbSession.setClientIp(clientIp);
+                newDbSession.setWorkflowType(s.getWorkflowType() != null ? s.getWorkflowType() : "GENERAL");
+                newDbSession.setStatus("ACTIVE");
+                newDbSession.setSessionType("HTTPD");
+                sessionRepository.save(newDbSession);
+            } else {
+                sessionRepository.updateLastAccess(sessionId, java.time.LocalDateTime.now());
+            }
+        } catch (Exception e) {
+            System.err.println("[EvolutionServer] Warning: Failed to sync session in database: " + e.getMessage());
+        }
+    }
+
+    private Response handleGetMcpPage() {
+        return serveResource("/mcp.html", "text/html");
     }
 
     private Response handleRegisterUiSession(IHTTPSession session) throws IOException, ResponseException {

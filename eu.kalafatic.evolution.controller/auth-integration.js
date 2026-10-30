@@ -1,6 +1,6 @@
 /**
- * Authentication integration for Evolution Web UI.
- * Handles environment detection and session verification.
+ * Authentication & Session integration for Evolution Web UI.
+ * Handles environment detection, session persistence, and fetch authorization.
  */
 
 function isSWTBrowser() {
@@ -9,99 +9,83 @@ function isSWTBrowser() {
            typeof JavaBridgeReady !== 'undefined';
 }
 
+function getSessionId() {
+    let sid = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+    if (!sid || sid === 'null' || sid === 'undefined') {
+        sid = 'ui-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now();
+        sessionStorage.setItem('sessionId', sid);
+    }
+    return sid;
+}
+
 /**
- * Robust fetch interceptor to automatically add SWT runtime header for local API calls.
+ * Intercept fetch calls to inject Authorization header and runtime parameters.
  */
 (function() {
     const originalFetch = window.fetch;
     window.fetch = function(resource, config) {
-        if (isSWTBrowser() || window.location.search.includes('runtime=SWT')) {
-            let url = "";
-            if (typeof resource === 'string') {
-                url = resource;
-            } else if (resource instanceof URL) {
-                url = resource.href;
-            } else if (resource && typeof resource === 'object' && resource.url) {
-                url = resource.url;
-            }
+        config = config || {};
+        const sid = getSessionId();
 
-            const isLocal = url.startsWith('/') ||
-                          url.startsWith(window.location.origin) ||
-                          url.includes('localhost:') ||
-                          url.includes('127.0.0.1:');
-
-            if (isLocal) {
-                if (resource instanceof Request) {
-                    resource.headers.set('x-evo-runtime', 'SWT');
-                } else {
-                    config = config || {};
-                    config.headers = config.headers || {};
-                    if (config.headers instanceof Headers) {
-                        config.headers.set('x-evo-runtime', 'SWT');
-                    } else {
-                        config.headers['x-evo-runtime'] = 'SWT';
-                    }
-                }
+        if (typeof resource === 'string') {
+            if (resource.startsWith('/') && !resource.includes('sessionId=')) {
+                const sep = resource.includes('?') ? '&' : '?';
+                resource = resource + sep + 'sessionId=' + encodeURIComponent(sid);
             }
         }
+
+        let headers = config.headers || {};
+        if (headers instanceof Headers) {
+            if (!headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + sid);
+            if (isSWTBrowser() || window.location.search.includes('runtime=SWT')) {
+                headers.set('x-evo-runtime', 'SWT');
+            }
+        } else {
+            if (!headers['Authorization'] && !headers['authorization']) {
+                headers['Authorization'] = 'Bearer ' + sid;
+            }
+            if (isSWTBrowser() || window.location.search.includes('runtime=SWT')) {
+                headers['x-evo-runtime'] = 'SWT';
+            }
+            config.headers = headers;
+        }
+
         return originalFetch(resource, config);
     };
 })();
 
 async function checkAuthentication() {
+    const sid = getSessionId();
+    const badge = document.getElementById('global-session-badge');
+    if (badge) {
+        badge.innerText = 'Session: ' + sid.substring(0, 16) + '...';
+    }
+
     if (window.isEvoAuthChecking) return;
     if (isSWTBrowser() || window.location.protocol === 'file:' || window.location.search.includes('runtime=SWT')) {
-        console.log("SWT environment detected. Authentication check bypassed.");
         return;
     }
 
     const currentPath = window.location.pathname;
-    // Skip login and dashboard (dashboard handled by auth.js)
     if (currentPath.endsWith('login.html') || currentPath.endsWith('dashboard.html')) return;
 
     window.isEvoAuthChecking = true;
 
-    const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
-    const headers = {};
-    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
-        headers['Authorization'] = `Bearer ${sessionId}`;
-    }
-
     try {
         const response = await fetch('/api/auth/me', {
             method: 'GET',
-            headers: headers,
             credentials: 'include'
         });
 
         if (response.ok) {
             const data = await response.json();
-            // Sync storage if needed
-            if (!localStorage.getItem('sessionId') && !sessionStorage.getItem('sessionId')) {
+            if (data.sessionId) {
                 sessionStorage.setItem('sessionId', data.sessionId);
-            }
-        } else if (response.status === 401) {
-            // If we sent a sessionId and it failed, clear it and try one more time (maybe cookie works)
-            if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
-                console.log("Stored session ID invalid. Clearing and retrying with cookies...");
-                localStorage.removeItem('sessionId');
-                sessionStorage.removeItem('sessionId');
-                // Second attempt will rely only on cookies
-                const retryResponse = await fetch('/api/auth/me', { method: 'GET', credentials: 'include' });
-                if (retryResponse.ok) {
-                    const data = await retryResponse.json();
-                    sessionStorage.setItem('sessionId', data.sessionId);
-                    return;
-                }
-            }
-            console.warn('Unauthorized.');
-            if (!isSWTBrowser()) {
-                console.warn('Redirecting to login.');
-                window.location.href = '/login.html';
+                if (badge) badge.innerText = 'Session: ' + data.sessionId.substring(0, 16) + '...';
             }
         }
     } catch (error) {
-        console.error('Auth check failed:', error);
+        console.warn('Auth validation note:', error);
     } finally {
         window.isEvoAuthChecking = false;
     }

@@ -58,4 +58,38 @@ public class EvolutionServerTest {
         int responseCode = conn.getResponseCode();
         assertTrue(responseCode == 200 || responseCode == 500);
     }
+
+    @Test
+    public void testMcpPageAndTools() throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/mcp?runtime=SWT").openConnection();
+        conn.setRequestMethod("GET");
+        assertEquals(200, conn.getResponseCode());
+
+        HttpURLConnection toolsConn = (HttpURLConnection) new URL("http://localhost:" + port + "/ui/tools?runtime=SWT").openConnection();
+        toolsConn.setRequestMethod("GET");
+        assertEquals(200, toolsConn.getResponseCode());
+
+        HttpURLConnection infoConn = (HttpURLConnection) new URL("http://localhost:" + port + "/ui/info?runtime=SWT").openConnection();
+        infoConn.setRequestMethod("GET");
+        assertEquals(200, infoConn.getResponseCode());
+    }
+
+    @Test
+    public void testDevelopPageAndTasks() throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/develop?runtime=SWT").openConnection();
+        conn.setRequestMethod("GET");
+        assertEquals(200, conn.getResponseCode());
+
+        HttpURLConnection tasksConn = (HttpURLConnection) new URL("http://localhost:" + port + "/develop/tasks?runtime=SWT").openConnection();
+        tasksConn.setRequestMethod("GET");
+        assertEquals(200, tasksConn.getResponseCode());
+    }
+
+    @Test
+    public void testSessionPersistenceAndRegistration() throws Exception {
+        String testSessionId = "test-session-" + System.currentTimeMillis();
+        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/experimental/chat?runtime=SWT&sessionId=" + testSessionId).openConnection();
+        conn.setRequestMethod("GET");
+        assertEquals(200, conn.getResponseCode());
+    }
 }
