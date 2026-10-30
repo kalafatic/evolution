@@ -36,6 +36,7 @@ public class ForgePage extends AEvoPage {
             @Override
             public void completed(org.eclipse.swt.browser.ProgressEvent event) {
                 setupJavaScriptBridges();
+                isJsReady = true;
                 Display.getDefault().asyncExec(() -> {
                     refreshUI();
                 });
