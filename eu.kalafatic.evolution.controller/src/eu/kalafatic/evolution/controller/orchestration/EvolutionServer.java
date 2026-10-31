@@ -68,6 +68,8 @@ public class EvolutionServer extends NanoHTTPD {
 
     private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
     private final java.util.Set<String> completedForgingRefreshes = ConcurrentHashMap.newKeySet();
+    private final UserRepository userRepository;
+    private final SessionRepository sessionRepository;
     private final AuthService authService;
     private final AuthController authController;
     private final eu.kalafatic.evolution.servers.controller.AdminApiController adminApiController;
@@ -84,8 +86,8 @@ public class EvolutionServer extends NanoHTTPD {
     public EvolutionServer(int port) {
         super(port);
         DatabaseManager dbManager = new DatabaseManager();
-        UserRepository userRepository = new UserRepository(dbManager);
-        SessionRepository sessionRepository = new SessionRepository(dbManager);
+        this.userRepository = new UserRepository(dbManager);
+        this.sessionRepository = new SessionRepository(dbManager);
         this.authService = new AuthService(userRepository, sessionRepository);
         this.authController = new AuthController(authService);
         this.authController.setAuthEnabledProvider(() -> {
@@ -253,6 +255,9 @@ public class EvolutionServer extends NanoHTTPD {
             } else if (Method.GET.equals(method) && "/experimental/architecture".equals(uri)) {
                 updateSessionWorkflow(session, "ARCHITECTURE");
                 return handleGetArchitecture(session);
+            } else if (Method.GET.equals(method) && ("/mcp".equals(uri) || "/mcp.html".equals(uri) || "/experimental/mcp".equals(uri))) {
+                updateSessionWorkflow(session, "MCP");
+                return handleGetMcpPage();
             } else if (Method.GET.equals(method) && "/experimental/evolution/tree".equals(uri)) {
                 return handleGetEvolutionTreePage();
             } else if (Method.GET.equals(method) && "/evolution/tree".equals(uri)) {
@@ -1580,10 +1585,6 @@ public class EvolutionServer extends NanoHTTPD {
         if (sessionId != null) {
             try {
                 authService.updateWorkflowType(sessionId, workflowType);
-                ServerSession s = activeSessions.get(sessionId);
-                if (s != null) {
-                    s.setWorkflowType(workflowType);
-                }
             } catch (Exception e) {
                 // Ignore update errors
             }
@@ -1604,7 +1605,6 @@ public class EvolutionServer extends NanoHTTPD {
             s.setType(SessionType.HTTPD);
             s.setStartTime(System.currentTimeMillis());
             s.setClientIp(clientIp);
-            s.setWorkflowType("GENERAL");
             activeSessions.put(sessionId, s);
         }
         s.setLastActivity(System.currentTimeMillis());
@@ -1625,7 +1625,7 @@ public class EvolutionServer extends NanoHTTPD {
                 newDbSession.setCreatedAt(java.time.LocalDateTime.now());
                 newDbSession.setLastAccess(java.time.LocalDateTime.now());
                 newDbSession.setClientIp(clientIp);
-                newDbSession.setWorkflowType(s.getWorkflowType() != null ? s.getWorkflowType() : "GENERAL");
+                newDbSession.setWorkflowType("GENERAL");
                 newDbSession.setStatus("ACTIVE");
                 newDbSession.setSessionType("HTTPD");
                 sessionRepository.save(newDbSession);
@@ -1638,7 +1638,18 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private Response handleGetMcpPage() {
-        return serveResource("/mcp.html", "text/html");
+        try (InputStream is = getClass().getResourceAsStream("mcp.html")) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "mcp.html not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
+                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+            }
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
     }
 
     private Response handleRegisterUiSession(IHTTPSession session) throws IOException, ResponseException {
