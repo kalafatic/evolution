@@ -47,6 +47,7 @@ public class TaskContext {
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
+    private volatile boolean cancelled = false;
     private volatile Boolean localAutoApprove = null;
     private PlatformMode platformMode = null;
     private eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile behaviorProfile = null;
@@ -254,6 +255,23 @@ public class TaskContext {
         if (!paused) {
             synchronized (pauseLock) {
                 pauseLock.notifyAll();
+            }
+        }
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+        if (cancelled) {
+            setPaused(false);
+            if (approvalFuture != null && !approvalFuture.isDone()) {
+                approvalFuture.cancel(true);
+            }
+            if (inputFuture != null && !inputFuture.isDone()) {
+                inputFuture.cancel(true);
             }
         }
     }
