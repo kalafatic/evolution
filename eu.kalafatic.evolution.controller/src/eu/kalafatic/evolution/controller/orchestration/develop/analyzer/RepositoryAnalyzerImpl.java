@@ -24,7 +24,7 @@ public class RepositoryAnalyzerImpl implements RepositoryAnalyzer {
         File pom = new File(repositoryDir, "pom.xml");
         if (pom.exists()) {
             buildFiles.add("pom.xml");
-            languages.add("Java");
+            if (!languages.contains("Java")) languages.add("Java");
             boolean isTycho = new File(repositoryDir, "category.xml").exists()
                     || new File(repositoryDir, "META-INF/MANIFEST.MF").exists()
                     || containsText(pom, "tycho");
@@ -43,18 +43,31 @@ public class RepositoryAnalyzerImpl implements RepositoryAnalyzer {
         if (gradle.exists() || gradleKts.exists()) {
             if (gradle.exists()) buildFiles.add("build.gradle");
             if (gradleKts.exists()) buildFiles.add("build.gradle.kts");
-            languages.add("Java/Kotlin");
+            if (!languages.contains("Java/Kotlin")) languages.add("Java/Kotlin");
             analysis.setProjectType("Gradle Project");
             analysis.setBuildSystem("Gradle");
+        }
+
+        // Ant
+        File antBuild = new File(repositoryDir, "build.xml");
+        if (antBuild.exists()) {
+            buildFiles.add("build.xml");
+            if (!languages.contains("Java")) languages.add("Java");
+            if (analysis.getBuildSystem() == null || "None".equals(analysis.getBuildSystem())) {
+                analysis.setProjectType("Java Ant Project");
+                analysis.setBuildSystem("Ant");
+            }
         }
 
         // Node.js
         File packageJson = new File(repositoryDir, "package.json");
         if (packageJson.exists()) {
             buildFiles.add("package.json");
-            languages.add("JavaScript/TypeScript");
-            analysis.setProjectType("Node.js");
-            analysis.setBuildSystem("NPM/Yarn/PNPM");
+            if (!languages.contains("JavaScript/TypeScript")) languages.add("JavaScript/TypeScript");
+            if (analysis.getBuildSystem() == null || "None".equals(analysis.getBuildSystem())) {
+                analysis.setProjectType("Node.js");
+                analysis.setBuildSystem("NPM/Yarn/PNPM");
+            }
         }
 
         // Python
@@ -65,18 +78,37 @@ public class RepositoryAnalyzerImpl implements RepositoryAnalyzer {
             if (requirements.exists()) buildFiles.add("requirements.txt");
             if (setupPy.exists()) buildFiles.add("setup.py");
             if (pyproject.exists()) buildFiles.add("pyproject.toml");
-            languages.add("Python");
-            analysis.setProjectType("Python");
-            analysis.setBuildSystem("PyTest / Setuptools");
+            if (!languages.contains("Python")) languages.add("Python");
+            if (analysis.getBuildSystem() == null || "None".equals(analysis.getBuildSystem())) {
+                analysis.setProjectType("Python");
+                analysis.setBuildSystem("PyTest / Setuptools");
+            }
         }
 
         // C / C++ CMake
         File cmake = new File(repositoryDir, "CMakeLists.txt");
         if (cmake.exists()) {
             buildFiles.add("CMakeLists.txt");
-            languages.add("C/C++");
-            analysis.setProjectType("C/C++ CMake");
-            analysis.setBuildSystem("CMake");
+            if (!languages.contains("C/C++")) languages.add("C/C++");
+            if (analysis.getBuildSystem() == null || "None".equals(analysis.getBuildSystem())) {
+                analysis.setProjectType("C/C++ CMake");
+                analysis.setBuildSystem("CMake");
+            }
+        }
+
+        // Generic Makefile
+        File makefile = new File(repositoryDir, "Makefile");
+        if (makefile.exists()) {
+            buildFiles.add("Makefile");
+            if (analysis.getBuildSystem() == null || "None".equals(analysis.getBuildSystem())) {
+                analysis.setProjectType("Make Project");
+                analysis.setBuildSystem("Make");
+            }
+        }
+
+        if (analysis.getBuildSystem() == null) {
+            analysis.setBuildSystem("None");
+            analysis.setProjectType("Generic / Unconfigured Project");
         }
 
         boolean hasTests = new File(repositoryDir, "src/test").exists()

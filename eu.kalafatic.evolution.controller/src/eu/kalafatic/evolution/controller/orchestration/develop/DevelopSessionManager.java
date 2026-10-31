@@ -34,6 +34,110 @@ public class DevelopSessionManager {
         if (!baseWorkspacesDir.exists()) {
             baseWorkspacesDir.mkdirs();
         }
+        recoverSessions();
+    }
+
+    public synchronized void recoverSessions() {
+        if (!baseWorkspacesDir.exists() || !baseWorkspacesDir.isDirectory()) return;
+        File[] sessionDirs = baseWorkspacesDir.listFiles(File::isDirectory);
+        if (sessionDirs == null) return;
+
+        for (File sessionDir : sessionDirs) {
+            File stateFile = new File(sessionDir, "state.json");
+            if (stateFile.exists()) {
+                try {
+                    String jsonText = java.nio.file.Files.readString(stateFile.toPath());
+                    org.json.JSONObject obj = new org.json.JSONObject(jsonText);
+                    String sessionId = obj.optString("sessionId", sessionDir.getName());
+
+                    org.json.JSONObject taskObj = obj.optJSONObject("task");
+                    if (taskObj != null) {
+                        String title = taskObj.optString("title", "Autonomous Task");
+                        String desc = taskObj.optString("description", "");
+                        String repo = taskObj.optString("repository", "");
+                        String branch = taskObj.optString("branch", "main");
+
+                        DevelopPermissions perms = new DevelopPermissions();
+                        org.json.JSONObject permObj = taskObj.optJSONObject("permissions");
+                        if (permObj != null) {
+                            perms.setRead(permObj.optBoolean("read", true));
+                            perms.setWrite(permObj.optBoolean("write", true));
+                            perms.setExecute(permObj.optBoolean("execute", true));
+                            perms.setPush(permObj.optBoolean("push", false));
+                        }
+
+                        DevelopTask task = new DevelopTask(title, desc, repo, branch, perms);
+                        // preserve original ID if present
+                        String originalTaskId = taskObj.optString("id", null);
+                        if (originalTaskId != null) {
+                            try {
+                                java.lang.reflect.Field idField = DevelopTask.class.getDeclaredField("id");
+                                idField.setAccessible(true);
+                                idField.set(task, originalTaskId);
+                            } catch (Exception ignored) {}
+                        }
+
+                        String statusStr = taskObj.optString("status", "CREATED");
+                        try {
+                            task.setStatus(DevelopTaskStatus.valueOf(statusStr));
+                        } catch (Exception ignored) {}
+
+                        DevelopSession session = new DevelopSession(sessionId, task, sessionDir);
+                        org.json.JSONArray logsArr = obj.optJSONArray("logs");
+                        if (logsArr != null) {
+                            List<String> logsList = new ArrayList<>();
+                            for (int i = 0; i < logsArr.length(); i++) {
+                                logsList.add(logsArr.getString(i));
+                            }
+                            session.loadLogs(logsList);
+                        }
+
+                        sessions.put(sessionId, session);
+                        DevelopTaskManager.getInstance().registerTask(task);
+                        DevelopTaskManager.getInstance().registerSessionForTask(task.getId(), session);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    public void persistSessionState(DevelopSession session) {
+        if (session == null || session.getWorkspaceDir() == null) return;
+        try {
+            File stateFile = new File(session.getWorkspaceDir(), "state.json");
+            org.json.JSONObject obj = new org.json.JSONObject();
+            obj.put("sessionId", session.getSessionId());
+
+            DevelopTask task = session.getTask();
+            if (task != null) {
+                org.json.JSONObject taskObj = new org.json.JSONObject();
+                taskObj.put("id", task.getId());
+                taskObj.put("title", task.getTitle());
+                taskObj.put("description", task.getDescription());
+                taskObj.put("repository", task.getRepository());
+                taskObj.put("branch", task.getBranch());
+                taskObj.put("status", task.getStatus() != null ? task.getStatus().name() : "CREATED");
+                taskObj.put("createdAt", task.getCreatedAt());
+
+                DevelopPermissions perms = task.getPermissions();
+                if (perms != null) {
+                    org.json.JSONObject permObj = new org.json.JSONObject();
+                    permObj.put("read", perms.canRead());
+                    permObj.put("write", perms.canWrite());
+                    permObj.put("execute", perms.canExecute());
+                    permObj.put("push", perms.canPush());
+                    taskObj.put("permissions", permObj);
+                }
+                obj.put("task", taskObj);
+            }
+
+            org.json.JSONArray logsArr = new org.json.JSONArray(session.getLogs());
+            obj.put("logs", logsArr);
+
+            java.nio.file.Files.writeString(stateFile.toPath(), obj.toString(2));
+        } catch (Exception ignored) {
+        }
     }
 
     public static DevelopSessionManager getInstance() {
@@ -48,6 +152,15 @@ public class DevelopSessionManager {
         return createSession(task, null);
     }
 
+    public DevelopSession createSessionFromArchive(DevelopTask task, byte[] archiveBytes, String requestedModel) throws Exception {
+        DevelopSession session = createSession(task, requestedModel);
+        if (archiveBytes != null && archiveBytes.length > 0) {
+            SafeArchiveExtractor.extractArchive(archiveBytes, session.getRepositoryDir());
+            session.addLog("Extracted project archive into workspace repository directory.");
+        }
+        return session;
+    }
+
     public DevelopSession createSession(DevelopTask task, String requestedModel) throws Exception {
         String sessionId = "develop-" + UUID.randomUUID().toString().substring(0, 8);
         File sessionWorkspaceDir = new File(baseWorkspacesDir, sessionId);
@@ -58,6 +171,7 @@ public class DevelopSessionManager {
 
         DevelopSession session = new DevelopSession(sessionId, task, sessionWorkspaceDir);
         sessions.put(sessionId, session);
+        persistSessionState(session);
 
         // Synchronize with EVO core SessionManager and TaskContext
         SessionContainer container = SessionManager.getInstance().getOrCreateSession(sessionId);
@@ -146,6 +260,13 @@ public class DevelopSessionManager {
             try {
                 session.cancel();
                 SessionManager.getInstance().shutdownSession(sessionId);
+            } catch (Exception ignored) {
+            }
+            try {
+                File stateFile = new File(session.getWorkspaceDir(), "state.json");
+                if (stateFile.exists()) {
+                    stateFile.delete();
+                }
             } catch (Exception ignored) {
             }
         }

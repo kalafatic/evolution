@@ -89,4 +89,68 @@ public class GitServiceImpl implements GitService {
         GitManager gitManager = new GitManager(repoDir);
         gitManager.ensureInitialCommit();
     }
+
+    @Override
+    public String createPullRequest(File repoDir, String branch, String targetBranch, String title, String body, String gitHubToken) throws Exception {
+        if (repoDir == null || !repoDir.exists()) {
+            throw new IllegalArgumentException("Repository directory does not exist: " + repoDir);
+        }
+
+        String remoteUrl = "";
+        try {
+            ProcessExecutor.ProcessResult res = processExecutor.execute("git config --get remote.origin.url", repoDir, null, 10000);
+            if (res.isSuccess()) {
+                remoteUrl = res.getStdout().trim();
+            }
+        } catch (Exception ignored) {}
+
+        String repoSlug = "";
+        if (remoteUrl.contains("github.com")) {
+            int idx = remoteUrl.indexOf("github.com");
+            String pathPart = remoteUrl.substring(idx + 10);
+            if (pathPart.startsWith(":") || pathPart.startsWith("/")) {
+                pathPart = pathPart.substring(1);
+            }
+            if (pathPart.endsWith(".git")) {
+                pathPart = pathPart.substring(0, pathPart.length() - 4);
+            }
+            repoSlug = pathPart;
+        }
+
+        if (gitHubToken != null && !gitHubToken.trim().isEmpty() && !repoSlug.isEmpty()) {
+            // Attempt GitHub REST API PR creation
+            try {
+                java.net.URI uri = java.net.URI.create("https://api.github.com/repos/" + repoSlug + "/pulls");
+                org.json.JSONObject payload = new org.json.JSONObject();
+                payload.put("title", title != null ? title : "Develop Task PR");
+                payload.put("head", branch);
+                payload.put("base", targetBranch != null ? targetBranch : "main");
+                payload.put("body", body != null ? body : "Autonomous PR prepared by EVO Develop.");
+
+                java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                        .uri(uri)
+                        .header("Authorization", "Bearer " + gitHubToken.trim())
+                        .header("Accept", "application/vnd.github+json")
+                        .header("Content-Type", "application/json")
+                        .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload.toString()))
+                        .build();
+
+                java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+                if (resp.statusCode() == 201 || resp.statusCode() == 200) {
+                    org.json.JSONObject respObj = new org.json.JSONObject(resp.body());
+                    return respObj.optString("html_url", "");
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Fallback: GitHub web compare/PR URL
+        if (!repoSlug.isEmpty()) {
+            String base = (targetBranch != null && !targetBranch.trim().isEmpty()) ? targetBranch.trim() : "main";
+            return "https://github.com/" + repoSlug + "/compare/" + base + "..." + branch + "?expand=1";
+        }
+
+        return "pr-prepared://" + branch;
+    }
 }

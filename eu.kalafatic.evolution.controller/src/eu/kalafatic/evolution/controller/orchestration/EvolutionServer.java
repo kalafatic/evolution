@@ -227,6 +227,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetDevelopPage();
             } else if (Method.POST.equals(method) && ("/develop/task".equals(uri) || "/develop/tasks".equals(uri))) {
                 return handleCreateDevelopTask(session);
+            } else if (Method.POST.equals(method) && "/develop/upload".equals(uri)) {
+                return handleUploadDevelopArchive(session);
             } else if (Method.GET.equals(method) && "/develop/tasks".equals(uri)) {
                 return handleGetDevelopTasks();
             } else if (uri.startsWith("/develop/tasks/")) {
@@ -921,6 +923,55 @@ public class EvolutionServer extends NanoHTTPD {
         }
     }
 
+    private Response handleUploadDevelopArchive(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+
+        String title = json.optString("title", "Uploaded Project Task");
+        String description = json.optString("description", title);
+        String base64Archive = json.optString("archiveBase64", "");
+
+        byte[] archiveBytes = null;
+        if (!base64Archive.isEmpty()) {
+            try {
+                archiveBytes = java.util.Base64.getDecoder().decode(base64Archive);
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json",
+                        new JSONObject().put("error", "Invalid base64 archive payload").toString());
+            }
+        }
+
+        eu.kalafatic.evolution.controller.orchestration.develop.DevelopPermissions perms =
+            new eu.kalafatic.evolution.controller.orchestration.develop.DevelopPermissions(true, true, true, false);
+
+        try {
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask task =
+                eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance()
+                    .createTask(title, description, "", "main", perms);
+
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopSession devSession =
+                eu.kalafatic.evolution.controller.orchestration.develop.DevelopSessionManager.getInstance()
+                    .createSessionFromArchive(task, archiveBytes, json.optString("model", null));
+
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance()
+                .registerSessionForTask(task.getId(), devSession);
+
+            JSONObject res = new JSONObject();
+            res.put("id", task.getId());
+            res.put("title", task.getTitle());
+            res.put("status", task.getStatus().name());
+            res.put("sessionId", devSession.getSessionId());
+            res.put("workspaceDir", devSession.getWorkspaceDir().getAbsolutePath());
+
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                new JSONObject().put("error", e.getMessage()).toString());
+        }
+    }
+
     private Response handleCreateDevelopTask(IHTTPSession session) throws IOException, ResponseException {
         Map<String, String> files = new HashMap<>();
         session.parseBody(files);
@@ -1008,6 +1059,19 @@ public class EvolutionServer extends NanoHTTPD {
             res.put("title", task.getTitle());
             res.put("repository", task.getRepository());
             res.put("branch", task.getBranch());
+            res.put("deliveryStage", task.getDeliveryStage() != null ? task.getDeliveryStage().name() : "CREATED");
+            if (task.getResult() != null) {
+                res.put("pullRequestUrl", task.getResult().getPullRequestUrl());
+                res.put("commitResult", task.getResult().getCommitResult());
+                if (task.getResult().getBuildMetrics() != null) {
+                    res.put("buildStatus", task.getResult().getBuildMetrics().getStatus().name());
+                    res.put("buildDurationMs", task.getResult().getBuildMetrics().getDurationMs());
+                }
+                if (task.getResult().getTestMetrics() != null) {
+                    res.put("testStatus", task.getResult().getTestMetrics().getStatus().name());
+                    res.put("testDurationMs", task.getResult().getTestMetrics().getDurationMs());
+                }
+            }
             return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
         }
 

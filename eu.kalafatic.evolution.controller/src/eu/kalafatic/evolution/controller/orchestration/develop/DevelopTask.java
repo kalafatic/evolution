@@ -18,6 +18,7 @@ public class DevelopTask {
     private long completedAt;
     private String sessionId;
     private DevelopResult result;
+    private DeliveryStage deliveryStage = DeliveryStage.CREATED;
 
     public DevelopTask(String title, String description, String repository, String branch, DevelopPermissions permissions) {
         this.id = "task-" + UUID.randomUUID().toString().substring(0, 8);
@@ -115,5 +116,16 @@ public class DevelopTask {
 
     public void setResult(DevelopResult result) {
         this.result = result;
+    }
+
+    public DeliveryStage getDeliveryStage() {
+        return deliveryStage;
+    }
+
+    public void setDeliveryStage(DeliveryStage deliveryStage) {
+        this.deliveryStage = deliveryStage != null ? deliveryStage : DeliveryStage.CREATED;
+        if (this.result != null) {
+            this.result.setDeliveryStage(this.deliveryStage.name());
+        }
     }
 }
