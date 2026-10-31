@@ -238,6 +238,24 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         }
     }
 
+    public void cancelExecution(String sessionId) {
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
+        if (context != null) {
+            context.setCancelled(true);
+            eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine.handleUserDecision(context, "CANCEL", session);
+            RuntimeEventBus bus = session.getEventBus();
+            if (bus != null) {
+                bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_PAUSED, sessionId, "OrchestratorService", "CANCELLED"));
+            }
+        }
+        TaskResult result = tasks.get(sessionId);
+        if (result != null) {
+            result.setStatus(TaskResult.Status.FAILED);
+            result.setError("Operation cancelled by user");
+        }
+    }
+
     @Override
     public void updateConfiguration(String sessionId, java.util.Map<String, Object> settings) {
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);

@@ -567,7 +567,12 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			int minIterations = getMinIterationLimit(context);
 			int maxIterationsLimit = getMaxIterationLimit(context);
 
-			if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+			if (safetyCounter >= maxIterationsLimit || context.isPaused() || context.isCancelled()) {
+				if (context.isCancelled()) {
+					context.log("[DARWIN] Execution cancelled by user/client request. Exiting loop.");
+					iterationManager.transition(SystemState.FAILED, context);
+					break;
+				}
 				break;
 			}
 
