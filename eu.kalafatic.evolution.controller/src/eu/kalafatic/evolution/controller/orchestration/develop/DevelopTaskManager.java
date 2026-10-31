@@ -21,6 +21,12 @@ public class DevelopTaskManager {
     private DevelopTaskManager() {
     }
 
+    public void registerTask(DevelopTask task) {
+        if (task != null && task.getId() != null) {
+            tasks.put(task.getId(), task);
+        }
+    }
+
     public static DevelopTaskManager getInstance() {
         return INSTANCE;
     }

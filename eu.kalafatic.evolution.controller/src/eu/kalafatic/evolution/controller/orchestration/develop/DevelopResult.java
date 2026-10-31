@@ -15,9 +15,45 @@ public class DevelopResult {
     private String testResult = "";
     private String commitResult = "";
     private String error = "";
+    private ExecutionMetrics buildMetrics;
+    private ExecutionMetrics testMetrics;
+    private String pullRequestUrl = "";
+    private String deliveryStage = "CREATED";
 
     public DevelopResult() {
         this.status = DevelopTaskStatus.CREATED;
+    }
+
+    public ExecutionMetrics getBuildMetrics() {
+        return buildMetrics;
+    }
+
+    public void setBuildMetrics(ExecutionMetrics buildMetrics) {
+        this.buildMetrics = buildMetrics;
+    }
+
+    public ExecutionMetrics getTestMetrics() {
+        return testMetrics;
+    }
+
+    public void setTestMetrics(ExecutionMetrics testMetrics) {
+        this.testMetrics = testMetrics;
+    }
+
+    public String getPullRequestUrl() {
+        return pullRequestUrl;
+    }
+
+    public void setPullRequestUrl(String pullRequestUrl) {
+        this.pullRequestUrl = pullRequestUrl != null ? pullRequestUrl : "";
+    }
+
+    public String getDeliveryStage() {
+        return deliveryStage;
+    }
+
+    public void setDeliveryStage(String deliveryStage) {
+        this.deliveryStage = deliveryStage != null ? deliveryStage : "CREATED";
     }
 
     public DevelopTaskStatus getStatus() {

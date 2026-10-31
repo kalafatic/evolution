@@ -23,4 +23,6 @@ public interface GitService {
     boolean isGitRepository(File repoDir);
 
     void ensureInitialCommit(File repoDir) throws Exception;
+
+    String createPullRequest(File repoDir, String branch, String targetBranch, String title, String body, String gitHubToken) throws Exception;
 }

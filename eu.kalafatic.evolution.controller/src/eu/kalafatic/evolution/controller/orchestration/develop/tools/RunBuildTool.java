@@ -38,16 +38,37 @@ public class RunBuildTool implements DevelopTool {
         }
 
         String buildCmd = resolveBuildCommand(repoDir);
+        eu.kalafatic.evolution.controller.orchestration.develop.ExecutionMetrics metrics =
+            new eu.kalafatic.evolution.controller.orchestration.develop.ExecutionMetrics("BUILD");
+        metrics.setStartedAt(System.currentTimeMillis());
+        metrics.setCommand(buildCmd);
+
+        if (buildCmd == null || buildCmd.isEmpty()) {
+            metrics.setCompletedAt(System.currentTimeMillis());
+            metrics.setStatus(eu.kalafatic.evolution.controller.orchestration.develop.ExecutionStatus.NOT_AVAILABLE);
+            metrics.setStdout("No build system detected. Skipping build verification.");
+            session.getTask().getResult().setBuildMetrics(metrics);
+            return new ToolResult(true, metrics.getStdout(), "");
+        }
+
         ProcessExecutor.ProcessResult res = processExecutor.execute(buildCmd, repoDir, null, 300000);
+        metrics.setCompletedAt(System.currentTimeMillis());
+        metrics.setExitCode(res.getExitCode());
+        metrics.setStdout(res.getStdout());
+        metrics.setStderr(res.getStderr());
 
         if (res.isSuccess()) {
+            metrics.setStatus(eu.kalafatic.evolution.controller.orchestration.develop.ExecutionStatus.SUCCESS);
+            session.getTask().getResult().setBuildMetrics(metrics);
             return new ToolResult(true, res.getStdout(), "");
         } else {
+            metrics.setStatus(eu.kalafatic.evolution.controller.orchestration.develop.ExecutionStatus.FAILED);
+            session.getTask().getResult().setBuildMetrics(metrics);
             return new ToolResult(false, res.getStdout(), res.getStderr());
         }
     }
 
-    private String resolveBuildCommand(File repoDir) {
+    public String resolveBuildCommand(File repoDir) {
         boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
         if (new File(repoDir, "pom.xml").exists()) {
             File mvnw = new File(repoDir, isWin ? "mvnw.cmd" : "mvnw");
@@ -56,6 +77,9 @@ public class RunBuildTool implements DevelopTool {
         if (new File(repoDir, "build.gradle").exists() || new File(repoDir, "build.gradle.kts").exists()) {
             File gradlew = new File(repoDir, isWin ? "gradlew.bat" : "gradlew");
             return gradlew.exists() ? (gradlew.getAbsolutePath() + " assemble") : "gradle assemble";
+        }
+        if (new File(repoDir, "build.xml").exists()) {
+            return "ant compile";
         }
         if (new File(repoDir, "package.json").exists()) {
             return "npm run build --if-present";
@@ -66,6 +90,6 @@ public class RunBuildTool implements DevelopTool {
         if (new File(repoDir, "Makefile").exists()) {
             return "make";
         }
-        return "echo 'No explicit build tool detected'";
+        return "";
     }
 }

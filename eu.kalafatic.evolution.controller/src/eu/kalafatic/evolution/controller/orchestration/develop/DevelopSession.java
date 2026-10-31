@@ -77,6 +77,21 @@ public class DevelopSession {
         String timestamp = String.format("[%tF %<tT]", System.currentTimeMillis());
         String entry = timestamp + " " + message;
         logs.add(entry);
+        persistStateSilently();
+    }
+
+    public synchronized void loadLogs(List<String> loadedLogs) {
+        if (loadedLogs != null) {
+            logs.clear();
+            logs.addAll(loadedLogs);
+        }
+    }
+
+    public void persistStateSilently() {
+        try {
+            DevelopSessionManager.getInstance().persistSessionState(this);
+        } catch (Exception ignored) {
+        }
     }
 
     public synchronized List<String> getLogs() {

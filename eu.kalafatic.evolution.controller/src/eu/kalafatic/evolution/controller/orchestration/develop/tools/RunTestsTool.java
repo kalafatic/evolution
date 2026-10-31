@@ -38,16 +38,37 @@ public class RunTestsTool implements DevelopTool {
         }
 
         String testCmd = resolveTestCommand(repoDir);
+        eu.kalafatic.evolution.controller.orchestration.develop.ExecutionMetrics metrics =
+            new eu.kalafatic.evolution.controller.orchestration.develop.ExecutionMetrics("TEST");
+        metrics.setStartedAt(System.currentTimeMillis());
+        metrics.setCommand(testCmd);
+
+        if (testCmd == null || testCmd.isEmpty()) {
+            metrics.setCompletedAt(System.currentTimeMillis());
+            metrics.setStatus(eu.kalafatic.evolution.controller.orchestration.develop.ExecutionStatus.NOT_AVAILABLE);
+            metrics.setStdout("No test configuration detected. Skipping test execution.");
+            session.getTask().getResult().setTestMetrics(metrics);
+            return new ToolResult(true, metrics.getStdout(), "");
+        }
+
         ProcessExecutor.ProcessResult res = processExecutor.execute(testCmd, repoDir, null, 300000);
+        metrics.setCompletedAt(System.currentTimeMillis());
+        metrics.setExitCode(res.getExitCode());
+        metrics.setStdout(res.getStdout());
+        metrics.setStderr(res.getStderr());
 
         if (res.isSuccess()) {
+            metrics.setStatus(eu.kalafatic.evolution.controller.orchestration.develop.ExecutionStatus.SUCCESS);
+            session.getTask().getResult().setTestMetrics(metrics);
             return new ToolResult(true, res.getStdout(), "");
         } else {
+            metrics.setStatus(eu.kalafatic.evolution.controller.orchestration.develop.ExecutionStatus.FAILED);
+            session.getTask().getResult().setTestMetrics(metrics);
             return new ToolResult(false, res.getStdout(), res.getStderr());
         }
     }
 
-    private String resolveTestCommand(File repoDir) {
+    public String resolveTestCommand(File repoDir) {
         boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
         if (new File(repoDir, "pom.xml").exists()) {
             File mvnw = new File(repoDir, isWin ? "mvnw.cmd" : "mvnw");
@@ -56,6 +77,9 @@ public class RunTestsTool implements DevelopTool {
         if (new File(repoDir, "build.gradle").exists() || new File(repoDir, "build.gradle.kts").exists()) {
             File gradlew = new File(repoDir, isWin ? "gradlew.bat" : "gradlew");
             return gradlew.exists() ? (gradlew.getAbsolutePath() + " test") : "gradle test";
+        }
+        if (new File(repoDir, "build.xml").exists()) {
+            return "ant test";
         }
         if (new File(repoDir, "package.json").exists()) {
             if (new File(repoDir, "pnpm-lock.yaml").exists()) {
@@ -75,6 +99,6 @@ public class RunTestsTool implements DevelopTool {
         if (new File(repoDir, "Makefile").exists()) {
             return "make test";
         }
-        return "echo 'No explicit test framework detected'";
+        return "";
     }
 }
