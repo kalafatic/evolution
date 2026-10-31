@@ -634,8 +634,10 @@ public class AiCommanderPage extends AEvoPage {
 	public void handleStop() {
 		instructionsGroup.resetBackground();
 		isWaitingForModel = false;
-		// Shut down and cleanup the session resources - this will trigger KERNEL_SHUTDOWN event
-		OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
+		String sessionId = getCurrentSessionName();
+		if (sessionId != null) {
+			OrchestratorServiceImpl.getInstance().cancelExecution(sessionId);
+		}
 	}
 
 	private String requestToken(String provider) {
