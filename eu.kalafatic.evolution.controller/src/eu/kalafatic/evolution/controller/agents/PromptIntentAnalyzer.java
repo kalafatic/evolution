@@ -7,9 +7,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionMemoryGraph;
+import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.parsers.structured.StructuredResponsePipeline;
 
 /**
@@ -86,6 +88,13 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         if (isSimpleGreeting(prompt)) {
             context.log("[INTENT] Conversational greeting detected ('" + prompt + "'). Direct CHAT classification.");
             return new IntentResult(IntentCategory.CHAT, 1.0, "Conversational greeting", null, null);
+        }
+
+        // Early exit: Respect authoritative explicit execution mode and forced technical modes
+        if (context != null && ModeRecognizer.isForcedTechnicalMode(context)) {
+            PlatformType forcedType = ModeRecognizer.determineType(context);
+            context.log("[INTENT] Authoritative mode pre-established: " + forcedType + ". Bypassing LLM intent analysis.");
+            return new IntentResult(IntentCategory.TASK, 1.0, "Authoritative execution mode: " + forcedType, forcedType.name(), null);
         }
 
         // 1. Check cache

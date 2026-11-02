@@ -148,7 +148,7 @@ public class ModeRecognizer {
 	}
 
 	public static boolean isForcedTechnicalMode(TaskContext context) {
-		return isDreamMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context);
+		return isDreamMode(context) || isForgeMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {

@@ -29,11 +29,18 @@ public class KernelFactory {
 	public static IterationManager create(String prompt, TaskContext context, SessionContainer sessionContext,
 			AiService aiService) throws Exception {
 		
-		// 1. Determine intent and platform type first to resolve target repository
+		// 1. Resolve explicit execution mode from authoritative context first
+		PlatformType platformType;
 		PromptIntentAnalyzer intentAnalyzer = new PromptIntentAnalyzer(sessionContext, context.getProjectRoot());
 		intentAnalyzer.setAiService(aiService);
-		IntentResult intentResult = intentAnalyzer.analyze(prompt, context);
-		PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
+
+		if (ModeRecognizer.isForcedTechnicalMode(context)) {
+			platformType = ModeRecognizer.determineType(context);
+			context.log("[KERNEL] Explicit authoritative mode established: " + platformType + ". Bypassing intent analysis.");
+		} else {
+			IntentResult intentResult = intentAnalyzer.analyze(prompt, context);
+			platformType = ModeRecognizer.determineType(intentResult, context);
+		}
 
 		// 2. Resolve effective root for coding processes
 		java.io.File effectiveRoot = context.getProjectRoot();
