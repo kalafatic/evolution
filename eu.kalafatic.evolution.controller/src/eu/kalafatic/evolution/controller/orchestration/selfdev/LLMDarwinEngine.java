@@ -175,9 +175,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		public double fitness;
 		public boolean failed;
 		public String failureReason;
+		public List<float[]> trainedWeights;
 
 		public CandidateResult(String name, LlmConfig config, double loss, long paramCount, long durationMs,
-				double fitness, boolean failed, String failureReason) {
+				double fitness, boolean failed, String failureReason, List<float[]> trainedWeights) {
 			this.name = name;
 			this.config = copyConfig(config);
 			this.loss = loss;
@@ -186,12 +187,18 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			this.fitness = fitness;
 			this.failed = failed;
 			this.failureReason = failureReason;
+			this.trainedWeights = trainedWeights;
+		}
+
+		public CandidateResult(String name, LlmConfig config, double loss, long paramCount, long durationMs,
+				double fitness, boolean failed, String failureReason) {
+			this(name, config, loss, paramCount, durationMs, fitness, failed, failureReason, null);
 		}
 
 		// Keep old constructor for compatibility
 		public CandidateResult(String name, LlmConfig config, double loss, long paramCount, long durationMs,
 				double fitness) {
-			this(name, config, loss, paramCount, durationMs, fitness, false, null);
+			this(name, config, loss, paramCount, durationMs, fitness, false, null, null);
 		}
 	}
 
@@ -199,11 +206,17 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		public double loss;
 		public long paramCount;
 		public double fitness;
+		public List<float[]> trainedWeights;
 
 		public CandidateTrainingResult(double loss, long paramCount, double fitness) {
+			this(loss, paramCount, fitness, null);
+		}
+
+		public CandidateTrainingResult(double loss, long paramCount, double fitness, List<float[]> trainedWeights) {
 			this.loss = loss;
 			this.paramCount = paramCount;
 			this.fitness = fitness;
+			this.trainedWeights = trainedWeights;
 		}
 	}
 
@@ -548,7 +561,41 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		int pHeads = selectedPreset.getNumHeads() > 0 ? selectedPreset.getNumHeads() : 8;
 		int pDff = selectedPreset.getDff() > 0 ? selectedPreset.getDff() : 1024;
 		int pMaxSeqLen = selectedPreset.getMaxSeqLen() > 0 ? selectedPreset.getMaxSeqLen() : 128;
-		int pEpochs = uiState.optInt("epochs", 64);
+
+		// Deterministic epoch resolution:
+		// Default Profile.SMALL specifies 4 epochs. Do not silently inherit 64 from unconfigured uiState.
+		int defaultProfileEpochs;
+		if (selectedPreset == ModelSizePreset.Size.SMALL) {
+			defaultProfileEpochs = Profile.SMALL.epochs; // 4
+		} else if (selectedPreset == ModelSizePreset.Size.NANO || selectedPreset == ModelSizePreset.Size.MICRO) {
+			defaultProfileEpochs = 2;
+		} else if (selectedPreset == ModelSizePreset.Size.TINY) {
+			defaultProfileEpochs = Profile.DEFAULT.epochs; // 8
+		} else if (selectedPreset == ModelSizePreset.Size.MEDIUM) {
+			defaultProfileEpochs = Profile.LARGE.epochs; // 10
+		} else {
+			defaultProfileEpochs = 6;
+		}
+
+		int pEpochs = defaultProfileEpochs;
+		boolean userEpochOverride = false;
+		if (uiState.has("epochs") && uiState.optInt("epochs", -1) > 0) {
+			int configuredEpochs = uiState.optInt("epochs");
+			if (configuredEpochs != 64 || uiState.optBoolean("epochsExplicitlySet", false)) {
+				pEpochs = configuredEpochs;
+				userEpochOverride = true;
+			}
+		}
+
+		if (taskRequest != null && taskRequest.getPrompt() != null) {
+			java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(?:epochs?|iterations?)\\s*[:=]\\s*(\\d+)").matcher(taskRequest.getPrompt());
+			if (m.find()) {
+				try {
+					pEpochs = Integer.parseInt(m.group(1));
+					userEpochOverride = true;
+				} catch (Exception ignored) {}
+			}
+		}
 
 		if (modelSource.isPretrained() && modelSource.getForgeTarget().getArtifact() != null) {
 			EvoModelArtifact parentArtifact = modelSource.getForgeTarget().getArtifact();
@@ -563,9 +610,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 
 		context.log(String.format(
-				"[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, MaxSeqLen: %d",
+				"[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, MaxSeqLen: %d | Effective Epochs: %d (Override: %b)",
 				selectedPreset.name(), selectedPreset.getDisplayName(), pVocabSize, pEmbedSize, pLayers, pHeads, pDff,
-				pMaxSeqLen));
+				pMaxSeqLen, pEpochs, userEpochOverride));
 
 		// Initial Candidates based on selected preset
 		List<LlmConfig> candidates = new ArrayList<>();
@@ -712,11 +759,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					// Path A: EVERY candidate is trained and evaluated using its own native
 					// EvoLlmModel.
 					boolean nativeSuccess = false;
+					List<float[]> candTrainedWeights = null;
 					try {
 						CandidateTrainingResult trainingResult = runOfflineTraining(cleanCorpus, normSamples, config, modelSource);
 						nativeLoss = trainingResult.loss;
 						paramCount = trainingResult.paramCount;
 						nativeFitness = trainingResult.fitness;
+						candTrainedWeights = trainingResult.trainedWeights;
 						nativeSuccess = true;
 					} catch (Exception e) {
 						context.log("[FORGE] Pure-Java offline training failed for " + candidateName
@@ -730,44 +779,46 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 					long durationMs = System.currentTimeMillis() - startTime;
 
-					// Path B: Optional reference evaluation via Ollama is performed *in addition*
-					// to native training
-					boolean ollamaSuccess = false;
-					try {
-						String validationPrompt = "Based on this project documentation:\n\n"
-								+ safePreview(cleanCorpus, 1000)
-								+ "\n\nSummarize the core architecture in exactly two concise sentences.";
+					// Path B: Optional reference evaluation via Ollama is performed only if explicitly enabled
+					// and candidateFitness strictly relies on native fitness
+					boolean enableOllamaRef = uiState.optBoolean("enableOllamaRef", false) ||
+							Boolean.TRUE.equals(context.getMetadata().get("enable_ollama_ref"));
+					if (enableOllamaRef) {
+						try {
+							String validationPrompt = "Based on this project documentation:\n\n"
+									+ safePreview(cleanCorpus, 1000)
+									+ "\n\nSummarize the core architecture in exactly two concise sentences.";
 
-						String responseText = queryOllama(ollamaUrl, baseModel, validationPrompt, config);
-						ollamaSuccess = true;
+							String responseText = queryOllama(ollamaUrl, baseModel, validationPrompt, config);
 
-						// Calculate reference score purely for diagnostic logging and metadata reports
-						double keywordMatchCount = 0;
-						String[] keywords = { "evolution", "personal", "economical", "political", "orchestrator",
-								"darwin", "genome", "model", "forge", "java", "task" };
-						String lowerResponse = responseText.toLowerCase();
-						for (String kw : keywords) {
-							if (lowerResponse.contains(kw)) {
-								keywordMatchCount += 1.0;
+							// Calculate reference score purely for diagnostic logging and metadata reports
+							double keywordMatchCount = 0;
+							String[] keywords = { "evolution", "personal", "economical", "political", "orchestrator",
+									"darwin", "genome", "model", "forge", "java", "task" };
+							String lowerResponse = responseText.toLowerCase();
+							for (String kw : keywords) {
+								if (lowerResponse.contains(kw)) {
+									keywordMatchCount += 1.0;
+								}
 							}
+							double contentLoss = 5.0 / (1.0 + keywordMatchCount);
+							if (responseText.trim().isEmpty()) {
+								contentLoss = 10.0;
+							}
+							double lengthPenalty = 0.0;
+							int len = responseText.length();
+							if (len < 50) {
+								lengthPenalty = 3.0;
+							} else if (len > 800) {
+								lengthPenalty = (len - 800) * 0.01;
+							}
+							ollamaReferenceScore = contentLoss + lengthPenalty;
+						} catch (InterruptedException ex) {
+							context.log("[FORGE] Ollama protocol query was interrupted. Restoring interrupt status.");
+							Thread.currentThread().interrupt();
+						} catch (Exception ex) {
+							context.log("[FORGE] Optional Ollama reference query skipped: " + ex.getMessage());
 						}
-						double contentLoss = 5.0 / (1.0 + keywordMatchCount);
-						if (responseText.trim().isEmpty()) {
-							contentLoss = 10.0;
-						}
-						double lengthPenalty = 0.0;
-						int len = responseText.length();
-						if (len < 50) {
-							lengthPenalty = 3.0;
-						} else if (len > 800) {
-							lengthPenalty = (len - 800) * 0.01;
-						}
-						ollamaReferenceScore = contentLoss + lengthPenalty;
-					} catch (InterruptedException ex) {
-						context.log("[FORGE] Ollama protocol query was interrupted. Restoring interrupt status.");
-						Thread.currentThread().interrupt();
-					} catch (Exception ex) {
-						context.log("[FORGE] Optional Ollama reference query skipped: " + ex.getMessage());
 					}
 
 					// Candidate Selection / Fitness MUST strictly equal nativeFitness (which
@@ -815,7 +866,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					context.log("[DARWIN_BRANCHES] " + scoringBranchesJson.toString());
 
 					results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs,
-							candidateFitness, candFailed, candFailureReason));
+							candidateFitness, candFailed, candFailureReason, candTrainedWeights));
 					candIndex++;
 				}
 			}
@@ -881,10 +932,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			}
 
 			long genDurationMs = System.currentTimeMillis() - genStartTime;
-			context.log(String.format("[FORGE] Generation %d completed in %d ms (%.2f s). Winner: %s (%s)",
-					gen, genDurationMs, genDurationMs / 1000.0, genWinner.name, genWinner.config));
-			logs.add(String.format("Generation %d Duration: %d ms (%.2f s) | Winner: %s\n\n",
-					gen, genDurationMs, genDurationMs / 1000.0, genWinner.name));
+			context.log(String.format("[FORGE] Generation %d completed in %s. Winner: %s (%s)",
+					gen, eu.kalafatic.utils.time.DateUtils.formatDuration(genDurationMs), genWinner.name, genWinner.config));
+			logs.add(String.format("Generation %d Duration: %s | Winner: %s\n\n",
+					gen, eu.kalafatic.utils.time.DateUtils.formatDuration(genDurationMs), genWinner.name));
 
 			if (mainTelemetry != null && genWinner != null) {
 				mainTelemetry.currentLoss = genWinner.loss;
@@ -909,7 +960,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			if (overallWinner == null || compareCandidates(genWinner, overallWinner) < 0) {
 				overallWinner = new CandidateResult(genWinner.name, genWinner.config, genWinner.loss,
 						genWinner.paramCount, genWinner.durationMs, genWinner.fitness, genWinner.failed,
-						genWinner.failureReason);
+						genWinner.failureReason, genWinner.trainedWeights);
 			}
 
 			// Update the winner and rejected branch statuses for the UI
@@ -1015,8 +1066,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		long pipelineEndTime = System.currentTimeMillis();
 		long totalPipelineDurationMs = context.getStartTime() != null ?
 				java.time.Duration.between(context.getStartTime(), java.time.Instant.now()).toMillis() : 0;
-		context.log(String.format("[FORGE-METRICS] Complete Evolutionary Pipeline Search Executed in %d ms (%.2f s). Clean Corpus Chars: %d",
-				totalPipelineDurationMs, totalPipelineDurationMs / 1000.0, cleanCorpus.length()));
+		context.log(String.format("[FORGE-METRICS] Complete Evolutionary Pipeline Search Executed in %s. Clean Corpus Chars: %d",
+				eu.kalafatic.utils.time.DateUtils.formatDuration(totalPipelineDurationMs), cleanCorpus.length()));
 
 		// Create new workspace output folder for the winning model
 		File workspaceDir;
@@ -1037,11 +1088,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		context.log("[FORGE] Reconstructing selected global winner for final export.");
 		SimpleBPETokenizer finalTokenizer = modelSource.getTokenizer(cleanCorpus, overallWinner.config.vocabSize);
 		DatasetBuilder finalDatasetBuilder = new DatasetBuilder();
-		int finalSeqLen = overallWinner.config.maxSeqLen;
+
+		// CPU execution safeguards: prevent multi-day stalls on large Parquet files (e.g. 5,630 samples * 1,024 seqLen)
+		boolean hasGpu = eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent.getInstance().isGpuAvailable();
+		int finalSeqLen = hasGpu ? overallWinner.config.maxSeqLen : Math.min(512, overallWinner.config.maxSeqLen);
+		int maxRefineSamples = hasGpu ? MAX_TRAINING_SAMPLES : Math.min(800, MAX_TRAINING_SAMPLES);
 
 		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> samples;
 		if (normSamples != null && !normSamples.isEmpty()) {
-			samples = finalDatasetBuilder.buildTrainingSamples(normSamples, finalTokenizer, finalSeqLen);
+			samples = finalDatasetBuilder.buildTrainingSamples(normSamples, finalTokenizer, finalSeqLen, maxRefineSamples);
 		} else {
 			List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
 			if (allTokens.size() > MAX_TOKENS_LIMIT) {
@@ -1063,12 +1118,27 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					attMask[i] = 1.0f;
 				}
 				samples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));
+				if (samples.size() >= maxRefineSamples) {
+					break;
+				}
 			}
 		}
 
-		if (samples.size() > MAX_TRAINING_SAMPLES) {
-			samples = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
+		if (samples.size() > maxRefineSamples) {
+			samples = new ArrayList<>(samples.subList(0, maxRefineSamples));
 		}
+
+		int finalEpochs = forceSolution ? 1 : (hasGpu ? overallWinner.config.epochs : Math.min(3, Math.max(1, overallWinner.config.epochs)));
+		long finalEstimatedTokens = (long) samples.size() * finalSeqLen * finalEpochs;
+		int microBatchSize = 4;
+		int accumulationSteps = 4;
+		int effectiveBatch = microBatchSize * accumulationSteps;
+		int finalStepsPerEpoch = Math.max(1, (samples.size() + effectiveBatch - 1) / effectiveBatch);
+		int finalTotalSteps = finalStepsPerEpoch * finalEpochs;
+
+		context.log(String.format(
+				"[FORGE-WORKLOAD-REPORT] Final Refinement Phase -> Samples: %d | SeqLen: %d | Epochs: %d | BatchSize: %d | Steps/Epoch: %d | TotalSteps: %d | EstTokenPositions: %d",
+				samples.size(), finalSeqLen, finalEpochs, effectiveBatch, finalStepsPerEpoch, finalTotalSteps, finalEstimatedTokens));
 
 		// Build final model and save configuration & tokenizer
 		int dff = overallWinner.config.dff;
@@ -1076,6 +1146,26 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		overallWinner.config.vocabSize = actualVocabSize;
 		EvoLlmModel winningModel = modelSource.createOrRestoreModel(actualVocabSize, overallWinner.config.embeddingSize,
 				overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
+
+		// Restore winning candidate weights if available and compatible
+		if (overallWinner.trainedWeights != null && !overallWinner.trainedWeights.isEmpty()) {
+			List<Tensor> modelParams = winningModel.parameters();
+			if (modelParams.size() == overallWinner.trainedWeights.size()) {
+				for (int i = 0; i < modelParams.size(); i++) {
+					Tensor t = modelParams.get(i);
+					float[] wData = overallWinner.trainedWeights.get(i);
+					if (wData != null) {
+						int copyLen = Math.min(wData.length, t.getData().length);
+						System.arraycopy(wData, 0, t.getData(), 0, copyLen);
+					}
+				}
+				context.log(String.format("[FORGE] Successfully restored %d trained parameter tensors from winning candidate %s.",
+						modelParams.size(), overallWinner.name));
+			} else {
+				context.log(String.format("[FORGE] Architecture tensor count mismatch (model: %d, candidate weights: %d); initializing fresh parameters.",
+						modelParams.size(), overallWinner.trainedWeights.size()));
+			}
+		}
 
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
 		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
@@ -1095,11 +1185,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				@Override
 				public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
 					context.log(String.format(
-							"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
-							epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
+							"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+							epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
 				}
 			});
-			int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
 			trainer.train(samples, finalEpochs);
 		} finally {
 			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
@@ -1204,8 +1293,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 
 		long totalForgingDurationMs = System.currentTimeMillis() - overallForgingStartTime;
-		context.log(String.format("[FORGE] Total sum time spent on forging: %d ms (%.2f s)",
-				totalForgingDurationMs, totalForgingDurationMs / 1000.0));
+		context.log(String.format("[FORGE] Total sum time spent on forging: %s",
+				eu.kalafatic.utils.time.DateUtils.formatDuration(totalForgingDurationMs)));
 
 		// Save training-report.json
 		JSONObject reportJson = new JSONObject();
@@ -1260,7 +1349,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		summaryBuilder.append(String.format("- **Final Loss:** %.4f\n", overallWinner.loss));
 		summaryBuilder.append(String.format("- **Parameter Count:** %d\n", overallWinner.paramCount));
 		summaryBuilder.append(String.format("- **Winning Candidate Training Duration:** %d ms\n", overallWinner.durationMs));
-		summaryBuilder.append(String.format("- **Total Time Spent on Forging:** %d ms (%.2f s)\n", totalForgingDurationMs, totalForgingDurationMs / 1000.0));
+		summaryBuilder.append(String.format("- **Total Time Spent on Forging:** %s\n", eu.kalafatic.utils.time.DateUtils.formatDuration(totalForgingDurationMs)));
 		summaryBuilder.append(String.format("- **Fitness Score:** %.4f\n\n", overallWinner.fitness));
 
 		summaryBuilder.append("### Generated Artifacts & Export Location:\n");
@@ -1298,6 +1387,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		return response;
 		} finally {
+			clearEngineRunCaches();
 			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(sid, true);
 		}
 	}
@@ -1305,6 +1395,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 	private SimpleBPETokenizer cachedTokenizer = null;
 	private String cachedTokenizerCorpus = null;
 	private int cachedTokenizerVocabSize = -1;
+	private List<Integer> cachedEncodedCorpusTokens = null;
+	private final java.util.Map<String, List<eu.kalafatic.evolution.forge.data.api.TrainingSample>> cachedCandidateSamples = new java.util.HashMap<>();
 
 	private synchronized SimpleBPETokenizer getOrCreateCachedTokenizer(String corpus, int targetVocabSize, ForgeModelSource modelSource) {
 		if (cachedTokenizer != null && cachedTokenizerVocabSize == targetVocabSize && java.util.Objects.equals(cachedTokenizerCorpus, corpus)) {
@@ -1314,7 +1406,29 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		this.cachedTokenizer = tok;
 		this.cachedTokenizerCorpus = corpus;
 		this.cachedTokenizerVocabSize = targetVocabSize;
+		this.cachedEncodedCorpusTokens = null;
+		this.cachedCandidateSamples.clear();
 		return tok;
+	}
+
+	private synchronized List<Integer> getOrCreateEncodedCorpus(SimpleBPETokenizer tokenizer, String cleanCorpus) {
+		if (cachedEncodedCorpusTokens != null && cachedTokenizer == tokenizer) {
+			return cachedEncodedCorpusTokens;
+		}
+		List<Integer> encoded = tokenizer.encode(cleanCorpus);
+		if (encoded.size() > MAX_TOKENS_LIMIT) {
+			encoded = new ArrayList<>(encoded.subList(0, MAX_TOKENS_LIMIT));
+		}
+		this.cachedEncodedCorpusTokens = encoded;
+		return encoded;
+	}
+
+	private void clearEngineRunCaches() {
+		this.cachedTokenizer = null;
+		this.cachedTokenizerCorpus = null;
+		this.cachedTokenizerVocabSize = -1;
+		this.cachedEncodedCorpusTokens = null;
+		this.cachedCandidateSamples.clear();
 	}
 
 	private void recordCreatedFile(File file) {
@@ -1387,33 +1501,37 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			int maxScreeningSamples = 500;
 
 			long tDataStart = System.currentTimeMillis();
-			if (normSamples != null && !normSamples.isEmpty()) {
-				samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen, maxScreeningSamples);
+			String sampleCacheKey = config.vocabSize + "_" + seqLen + "_" + maxScreeningSamples;
+			List<eu.kalafatic.evolution.forge.data.api.TrainingSample> cached = cachedCandidateSamples.get(sampleCacheKey);
+			if (cached != null) {
+				samples = cached;
 			} else {
-				List<Integer> allTokens = tokenizer.encode(cleanCorpus);
-				if (allTokens.size() > MAX_TOKENS_LIMIT) {
-					allTokens = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
-				}
-				int stride = Math.max(1, seqLen / 2);
-				List<DatasetBuilder.Sample> slidingSamples = datasetBuilder.buildSlidingWindow(allTokens, seqLen, stride);
-				samples = new ArrayList<>();
-				for (DatasetBuilder.Sample s : slidingSamples) {
-					int len = s.input.size();
-					int[] inputIds = new int[len];
-					int[] labels = new int[len];
-					boolean[] lossMask = new boolean[len];
-					float[] attMask = new float[len];
-					for (int i = 0; i < len; i++) {
-						inputIds[i] = s.input.get(i);
-						labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
-						lossMask[i] = true;
-						attMask[i] = 1.0f;
+				if (normSamples != null && !normSamples.isEmpty()) {
+					samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen, maxScreeningSamples);
+				} else {
+					List<Integer> allTokens = getOrCreateEncodedCorpus(tokenizer, cleanCorpus);
+					int stride = Math.max(1, seqLen / 2);
+					List<DatasetBuilder.Sample> slidingSamples = datasetBuilder.buildSlidingWindow(allTokens, seqLen, stride, maxScreeningSamples);
+					samples = new ArrayList<>();
+					for (DatasetBuilder.Sample s : slidingSamples) {
+						int len = s.input.size();
+						int[] inputIds = new int[len];
+						int[] labels = new int[len];
+						boolean[] lossMask = new boolean[len];
+						float[] attMask = new float[len];
+						for (int i = 0; i < len; i++) {
+							inputIds[i] = s.input.get(i);
+							labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
+							lossMask[i] = true;
+							attMask[i] = 1.0f;
+						}
+						samples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));
+						if (samples.size() >= maxScreeningSamples) {
+							break;
+						}
 					}
-					samples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));
-					if (samples.size() >= maxScreeningSamples) {
-						break;
-					}
 				}
+				cachedCandidateSamples.put(sampleCacheKey, samples);
 			}
 
 			long tDataDuration = System.currentTimeMillis() - tDataStart;
@@ -1442,6 +1560,16 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				paramCount += p.getData().length;
 			}
 
+			int screeningEpochs = Math.min(2, Math.max(1, config.epochs));
+			int candBatch = 16;
+			int candStepsPerEpoch = Math.max(1, (trainSamples.size() + candBatch - 1) / candBatch);
+			int candTotalSteps = candStepsPerEpoch * screeningEpochs;
+			long candEstTokens = (long) trainSamples.size() * seqLen * screeningEpochs;
+
+			context.log(String.format(
+					"[FORGE-WORKLOAD-REPORT] Candidate Screening Phase -> Samples (Train/Val/Total): %d/%d/%d | SeqLen: %d | Epochs: %d | Steps/Epoch: %d | TotalSteps: %d | EstTokenPositions: %d",
+					trainSamples.size(), valSamples.size(), totalCount, seqLen, screeningEpochs, candStepsPerEpoch, candTotalSteps, candEstTokens));
+
 			context.log(String.format("[FORGE-CANDIDATE-METRICS] VocabSize: %d | Params: %d | Samples (Train/Val/Total): %d/%d/%d | Tokens (Train/Val): %d/%d | TokPrep: %d ms | DataPrep: %d ms",
 					actualVocabSize, paramCount, trainSamples.size(), valSamples.size(), totalCount, totalTrainTokens, totalValTokens, tTokDuration, tDataDuration));
 
@@ -1464,13 +1592,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					@Override
 					public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
 						context.log(String.format(
-								"[FORGE-EPOCH] Candidate Evaluation - Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
-								epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
+								"[FORGE-EPOCH] Candidate Evaluation - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+								epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
 					}
 				});
 				if (!trainSamples.isEmpty()) {
-					// Cap candidate architecture screening evaluation to 2 fast epochs
-					int screeningEpochs = Math.min(2, Math.max(1, config.epochs));
 					trainer.train(trainSamples, screeningEpochs);
 				}
 			} finally {
@@ -1503,7 +1629,16 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			double sizePenalty = paramCount * 0.00000001;
 			double fitness = (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty;
 
-			return new CandidateTrainingResult(valLoss, paramCount, fitness);
+			// Snapshot candidate-trained weights safely to preserve candidate independence and survive evaluation
+			List<float[]> weightSnapshot = new ArrayList<>();
+			for (Tensor p : model.parameters()) {
+				float[] pData = p.getData();
+				float[] copy = new float[pData.length];
+				System.arraycopy(pData, 0, copy, 0, pData.length);
+				weightSnapshot.add(copy);
+			}
+
+			return new CandidateTrainingResult(valLoss, paramCount, fitness, weightSnapshot);
 		} finally {
 			if (samples != null)
 				samples.clear();

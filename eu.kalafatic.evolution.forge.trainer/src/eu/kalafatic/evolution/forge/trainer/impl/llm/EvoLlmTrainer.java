@@ -102,6 +102,22 @@ public class EvoLlmTrainer {
     public boolean isStopRequested() { return stopRequested; }
     public TrainingResult getLastTrainingResult() { return lastResult; }
 
+    public static String formatDuration(long ms) {
+        if (ms < 0) return "0 ms";
+        if (ms < 1000) return ms + " ms";
+        long totalSec = ms / 1000;
+        if (totalSec < 60) return String.format("%.2f s (%d ms)", ms / 1000.0, ms);
+        long sec = totalSec % 60;
+        long totalMin = totalSec / 60;
+        if (totalMin < 60) return String.format("%d min %d sec (%d ms)", totalMin, sec, ms);
+        long min = totalMin % 60;
+        long totalHours = totalMin / 60;
+        if (totalHours < 24) return String.format("%d hr %d min %d sec (%d ms)", totalHours, min, sec, ms);
+        long hours = totalHours % 24;
+        long days = totalHours / 24;
+        return String.format("%d d %d hr %d min %d sec (%d ms)", days, hours, min, sec, ms);
+    }
+
     public TrainingResult train(List<?> rawSamples, int epochs) {
         long startTime = System.currentTimeMillis();
         this.stopRequested = false;
@@ -348,8 +364,8 @@ public class EvoLlmTrainer {
                 result.setLastLoss(avgTrainLoss);
                 result.setValLoss(avgValLoss);
 
-                System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %d ms (%.2f s)%n",
-                        epoch + 1, epochs, avgTrainLoss, avgValLoss, epochDuration, epochDuration / 1000.0);
+                System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %s%n",
+                        epoch + 1, epochs, formatDuration(epochDuration));
 
                 for (ProgressListener listener : progressListeners) {
                     listener.onEpochCompleted(epoch + 1, epochs, avgTrainLoss, avgValLoss, epochDuration);
