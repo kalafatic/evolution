@@ -33,9 +33,15 @@ public class KernelFacade implements IOrchestrator {
 				session.setIterationManager(kernel);
 
 			} else {
-				String request = taskRequest.getPrompt();
-				IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
-				PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
+				PlatformType platformType;
+				if (ModeRecognizer.isForcedTechnicalMode(context)) {
+					platformType = ModeRecognizer.determineType(context);
+					context.log("[KERNEL] Explicit authoritative mode established: " + platformType + ". Bypassing intent analysis.");
+				} else {
+					String request = taskRequest.getPrompt();
+					IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
+					platformType = ModeRecognizer.determineType(intentResult, context);
+				}
 
 				if (!kernel.getDarwinEngine().getPlatformType().equals(platformType)) {
 					createEngine(context, session, kernel, platformType);
@@ -140,9 +146,15 @@ public class KernelFacade implements IOrchestrator {
 				session.setIterationManager(kernel);
 
 			} else {
-				String request = task.getPrompt();
-				IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
-				PlatformType platformType = ModeRecognizer.determineType(intentResult, context);
+				PlatformType platformType;
+				if (ModeRecognizer.isForcedTechnicalMode(context)) {
+					platformType = ModeRecognizer.determineType(context);
+					context.log("[KERNEL] Explicit authoritative mode established: " + platformType + ". Bypassing intent analysis.");
+				} else {
+					String request = task.getPrompt();
+					IntentResult intentResult = kernel.getDarwinEngine().getIntentAnalyzer().analyze(request, context);
+					platformType = ModeRecognizer.determineType(intentResult, context);
+				}
 
 				if (!kernel.getDarwinEngine().getPlatformType().equals(platformType)) {
 					createEngine(context, session, kernel, platformType);
