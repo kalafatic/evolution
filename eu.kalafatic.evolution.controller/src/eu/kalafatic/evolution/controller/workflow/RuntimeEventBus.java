@@ -20,6 +20,7 @@ public class RuntimeEventBus {
     private final java.util.concurrent.BlockingQueue<RuntimeEvent> eventBuffer = new java.util.concurrent.LinkedBlockingQueue<>();
     private final ScheduledExecutorService scheduler;
     private static final int THROTTLE_MS = 100;
+    private volatile boolean disposed = false;
 
     public RuntimeEventBus(String sessionId) {
         this.sessionId = sessionId;
@@ -51,7 +52,16 @@ public class RuntimeEventBus {
         listeners.remove(listener);
     }
 
+    public boolean isDisposed() {
+        return disposed;
+    }
+
     public void publish(RuntimeEvent event) {
+        if (disposed) {
+            // Disposed bus rejects further event emission to eliminate post-disposal leaks
+            return;
+        }
+
         if (event == null) {
             throw new IllegalArgumentException("RuntimeEventBus [" + sessionId + "]: Cannot publish null event.");
         }
@@ -110,7 +120,10 @@ public class RuntimeEventBus {
     }
 
     public void shutdown() {
+        disposed = true;
         scheduler.shutdownNow();
+        eventBuffer.clear();
+        listeners.clear();
     }
 
     private void propagateToRegistry(RuntimeEvent event) {

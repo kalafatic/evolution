@@ -86,6 +86,15 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState);
 
         while (!budget.isExhausted(iteration, System.currentTimeMillis() - startTime, darwinInvocations, consecutiveNoProgress)) {
+            // Check for explicit cancellation
+            if (taskContext != null && taskContext.isCancelled()) {
+                currentState = CognitiveState.CANCELLED;
+                String msg = "Cognitive execution cancelled by user.";
+                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal CANCELLED: " + msg);
+                recordEpisodeMemory(taskContext, sessionId, goal, worldState, false);
+                return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, msg, System.currentTimeMillis() - startTime);
+            }
+
             iteration++;
 
             // Select next viable untried strategy from strategy pool or active strategy
@@ -232,10 +241,13 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Candidate strategies:\n    " + availableCandidates + " available\n[COGNITIVE] Transition: EVALUATING -> PLANNING");
         }
 
-        currentState = CognitiveState.FAILED;
-        logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Control Loop budget exhausted or no progress remaining.");
+        // Distinguish timeout from budget / lack of progress
+        boolean isTimeout = (System.currentTimeMillis() - startTime) >= budget.getMaxWallClockTimeMs();
+        currentState = isTimeout ? CognitiveState.TIMEOUT : CognitiveState.FAILED;
+        String finalMsg = isTimeout ? "Execution timed out: budget duration exceeded." : "Budget exhausted or lack of progress.";
+        logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Control Loop ended: " + finalMsg);
         recordEpisodeMemory(taskContext, sessionId, goal, worldState, false);
-        return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, "Budget exhausted or lack of progress.", System.currentTimeMillis() - startTime);
+        return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, finalMsg, System.currentTimeMillis() - startTime);
     }
 
     private List<CognitiveStrategy> initializeStrategyPool(CognitiveGoal goal, SessionContainer session, TaskContext context) {
@@ -596,6 +608,10 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                         : "Evolutionary iteration executed without promoting a winner.";
                 return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", "DARWIN_NO_WINNER: " + errorMsg, "NO_WINNER", duration);
             }
+        } catch (java.util.concurrent.TimeoutException e) {
+            return CognitiveObservation.ofFailure("DARWIN_SEARCH", 408, "", "Darwin search timed out: " + e.getMessage(), "TIMEOUT", System.currentTimeMillis() - start);
+        } catch (java.util.concurrent.CancellationException e) {
+            return CognitiveObservation.ofFailure("DARWIN_SEARCH", 499, "", "Darwin search cancelled: " + e.getMessage(), "CANCELLED", System.currentTimeMillis() - start);
         } catch (Exception e) {
             return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", e.getMessage(), "DARWIN_EXCEPTION", System.currentTimeMillis() - start);
         }

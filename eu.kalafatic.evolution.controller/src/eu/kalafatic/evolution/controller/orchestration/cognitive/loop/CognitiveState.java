@@ -15,5 +15,7 @@ public enum CognitiveState {
     WAITING,
     SUCCESS,
     FAILED,
-    ABORTED
+    ABORTED,
+    CANCELLED,
+    TIMEOUT
 }

@@ -41,5 +41,7 @@ public interface SessionContainer {
     eu.kalafatic.evolution.controller.workflow.RuntimeContextCollector getContextCollector();
     eu.kalafatic.evolution.controller.log.SessionLogger getSessionLogger();
 
+    boolean isDisposed();
+    void dispose();
     void shutdown();
 }
