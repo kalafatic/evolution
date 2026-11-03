@@ -49,6 +49,7 @@ public class SessionContext implements SessionContainer {
     private IterationMemoryService memoryService;
     private IterationManager iterationManager;
     private TaskContext taskContext;
+    private volatile boolean disposed = false;
 
     public SessionContext(String sessionId) {
         this.sessionId = sessionId;
@@ -240,7 +241,26 @@ public class SessionContext implements SessionContainer {
     }
 
     @Override
+    public boolean isDisposed() {
+        return disposed;
+    }
+
+    @Override
+    public void dispose() {
+        shutdown();
+    }
+
+    @Override
     public void shutdown() {
+        if (disposed) {
+            return;
+        }
+        disposed = true;
+
+        if (taskContext != null) {
+            taskContext.setCancelled(true);
+        }
+
         executorService.shutdownNow();
         eventBus.shutdown();
         capabilityRegistry.shutdown();

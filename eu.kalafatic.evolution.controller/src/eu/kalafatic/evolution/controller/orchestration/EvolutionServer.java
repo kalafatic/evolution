@@ -1673,6 +1673,21 @@ public class EvolutionServer extends NanoHTTPD {
         }
         s.setLastActivity(System.currentTimeMillis());
 
+        // Determine workflow type from request URI
+        String uri = session.getUri();
+        String inferredWorkflow = "GENERAL";
+        if (uri.startsWith("/develop") || uri.startsWith("/experimental/develop") || uri.startsWith("/mutation")) {
+            inferredWorkflow = "DEVELOP";
+        } else if (uri.startsWith("/experimental/chat") || uri.startsWith("/conversation") || uri.startsWith("/server/conversation")) {
+            inferredWorkflow = "CHAT";
+        } else if (uri.startsWith("/forge") || uri.startsWith("/experimental/forge")) {
+            inferredWorkflow = "FORGE";
+        } else if (uri.startsWith("/mcp") || uri.startsWith("/experimental/mcp")) {
+            inferredWorkflow = "MCP";
+        } else if (uri.startsWith("/api/admin") || uri.startsWith("/admin")) {
+            inferredWorkflow = "ADMIN";
+        }
+
         // Register and sync session in SQLite database (sessions table)
         try {
             java.util.Optional<eu.kalafatic.evolution.servers.model.Session> dbSession = authService.getSession(sessionId);
@@ -1689,12 +1704,15 @@ public class EvolutionServer extends NanoHTTPD {
                 newDbSession.setCreatedAt(java.time.LocalDateTime.now());
                 newDbSession.setLastAccess(java.time.LocalDateTime.now());
                 newDbSession.setClientIp(clientIp);
-                newDbSession.setWorkflowType("GENERAL");
+                newDbSession.setWorkflowType(inferredWorkflow);
                 newDbSession.setStatus("ACTIVE");
                 newDbSession.setSessionType("HTTPD");
                 sessionRepository.save(newDbSession);
             } else {
                 sessionRepository.updateLastAccess(sessionId, java.time.LocalDateTime.now());
+                if (!"GENERAL".equals(inferredWorkflow) && !inferredWorkflow.equals(dbSession.get().getWorkflowType())) {
+                    sessionRepository.updateWorkflowType(sessionId, inferredWorkflow);
+                }
             }
         } catch (Exception e) {
             System.err.println("[EvolutionServer] Warning: Failed to sync session in database: " + e.getMessage());

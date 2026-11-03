@@ -45,7 +45,8 @@ public class KernelFactory {
 		// 2. Resolve effective root for coding processes
 		java.io.File effectiveRoot = context.getProjectRoot();
 		if (platformType == PlatformType.ASSISTED_CODING || platformType == PlatformType.SELF_DEV_MODE) {
-			if (context.getOrchestrator().getSupervisorSettings() != null && 
+			if (context.getOrchestrator() != null &&
+				context.getOrchestrator().getSupervisorSettings() != null &&
 				context.getOrchestrator().getSupervisorSettings().getGit() != null) {
 				String supPath = context.getOrchestrator().getSupervisorSettings().getGit().getLocalPath();
 				if (supPath != null && !supPath.isEmpty()) {
