@@ -291,6 +291,5 @@ public class UserMemoryGroup extends AEvoGroup {
             setTextSafe(promptPreview, contextText);
         }
 
-        System.out.println("MEMORY_UI_REFRESH: Rendered " + entries.size() + " memory entries");
     }
 }

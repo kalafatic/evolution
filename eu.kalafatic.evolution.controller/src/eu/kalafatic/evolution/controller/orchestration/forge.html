@@ -1172,6 +1172,12 @@
             loadTargets();
         };
 
+        window.updateActiveSession = function(activeAi, aiList) {
+            if (activeAi) activeAiSession = activeAi;
+            if (aiList && Array.isArray(aiList)) aiSessionList = aiList;
+            loadSessions();
+        };
+
         async function loadTargets() {
             try {
                 const res = await fetch(getBaseUrl() + `/server/orchestrator/settings?runtime=SWT`);
@@ -1343,14 +1349,25 @@
                 renderSessionList();
                 renderTopCombo();
 
-                // Determine default active session (current AI Commander session takes priority)
-                let targetSession = activeAiSession || activeSessionId;
-                if (!targetSession && sessions.length > 0) {
-                    targetSession = sessions[0].id;
+                // Determine default active session (current AI Commander session or existing selected session takes priority)
+                let targetSession = activeSessionId;
+                let activeSessionObj = targetSession ? sessions.find(s => s.id === targetSession || s.name === targetSession) : null;
+                let activeAiSessionObj = activeAiSession ? sessions.find(s => s.id === activeAiSession || s.name === activeAiSession) : null;
+
+                if (activeAiSessionObj && (activeAiSessionObj.status === 'TRAINING' || activeAiSessionObj.lifecycleState === 'TRAINING')) {
+                    targetSession = activeAiSessionObj.id;
+                } else if (!targetSession || !activeSessionObj) {
+                    targetSession = activeAiSession || (sessions.length > 0 ? sessions[0].id : null);
                 }
 
                 if (targetSession) {
-                    selectSession(targetSession);
+                    if (targetSession !== activeSessionId) {
+                        selectSession(targetSession);
+                    } else {
+                        // Keep current view refreshed without resetting state
+                        renderTopCombo();
+                        renderSessionList();
+                    }
                 } else if (!isAutoCreating) {
                     autoCreateSession();
                 }
@@ -1465,6 +1482,7 @@
             if (session) {
                 id = session.id;
             }
+            const previousActiveId = activeSessionId;
             activeSessionId = id;
 
             const combo = document.getElementById('session-select-combo');
@@ -1483,7 +1501,9 @@
             renderSessionList();
             await fetchModel(id);
             await updateModelPropertiesUI();
-            log(`Switched to session: ${session ? session.name : id}`);
+            if (previousActiveId !== id) {
+                log(`Switched to session: ${session ? session.name : id}`);
+            }
 
             // Restore or default Viz State to TRAINING for active AI Commander / training session
             if (id === activeAiSession || isTraining || (session && (session.status === 'TRAINING' || session.lifecycleState === 'TRAINING' || session.modelType === 'SELF_EVO'))) {

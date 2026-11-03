@@ -17,6 +17,7 @@ public class ForgePage extends AEvoPage {
     private Browser browser;
     private boolean isJsReady = false;
     private boolean bridgesInstalled = false;
+    private boolean forgeInitialized = false;
 
     public ForgePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -235,10 +236,19 @@ public class ForgePage extends AEvoPage {
             aiSessionArray.put(activeAiSession);
         }
 
-        String jsCall = String.format("if(window.initializeForge) { window.initializeForge(%d, '%s', %s); }",
-                port,
-                activeAiSession.replace("'", "\\'"),
-                aiSessionArray.toString());
-        browser.execute(jsCall);
+        String escapedActiveSession = activeAiSession.replace("'", "\\'");
+        if (!forgeInitialized) {
+            forgeInitialized = true;
+            String jsCall = String.format("if(window.initializeForge) { window.initializeForge(%d, '%s', %s); }",
+                    port,
+                    escapedActiveSession,
+                    aiSessionArray.toString());
+            browser.execute(jsCall);
+        } else {
+            String jsCall = String.format("if(window.updateActiveSession) { window.updateActiveSession('%s', %s); }",
+                    escapedActiveSession,
+                    aiSessionArray.toString());
+            browser.execute(jsCall);
+        }
     }
 }

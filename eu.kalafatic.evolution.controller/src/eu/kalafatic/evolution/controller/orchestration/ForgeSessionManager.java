@@ -542,8 +542,8 @@ public class ForgeSessionManager {
 
             @Override
             public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
-                telemetry.addLog("INFO", String.format("Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
-                        epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
+                telemetry.addLog("INFO", String.format("Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+                        epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
             }
 
             @Override

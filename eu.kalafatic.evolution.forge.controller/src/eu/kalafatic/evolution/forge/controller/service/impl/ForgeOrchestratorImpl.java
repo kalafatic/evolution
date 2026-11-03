@@ -216,8 +216,8 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
 
                 @Override
                 public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
-                    logToFile(logFile, String.format("[FORGE][EPOCH] Epoch %d/%d completed in %d ms (%.2f s) | Train Loss: %.4f | Val Loss: %.4f",
-                            epoch, totalEpochs, durationMs, durationMs / 1000.0, trainLoss, valLoss));
+                    logToFile(logFile, String.format("[FORGE][EPOCH] Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+                            epoch, totalEpochs, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.formatDuration(durationMs), trainLoss, valLoss));
 
                     if (saveCheckpoints) {
                         try {
@@ -306,9 +306,9 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : (trainResult != null ? trainResult.getLastLoss() : 0.05);
 
             long totalJobForgingDurationMs = System.currentTimeMillis() - timestamp;
-            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d totalForgingDuration=%d ms (%.2f s)",
+            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d totalForgingDuration=%s",
                     job.getJobId(), trainResult.getTerminationStatus(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs(),
-                    totalJobForgingDurationMs, totalJobForgingDurationMs / 1000.0));
+                    eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.formatDuration(totalJobForgingDurationMs)));
 
             // STAGE 5: MODEL VALIDATION BEFORE EXPORT
             logToFile(logFile, String.format("[FORGE][MODEL][RUN=%s] FINALIZE_START", job.getJobId()));
