@@ -122,16 +122,27 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
             context
         );
 
-        // 4. Parse response
-        JSONObject json = pipeline.process(response, new java.util.HashMap<>(), context);
+        // 4. Parse response safely
+        JSONObject json = null;
+        try {
+            json = pipeline.process(response, new java.util.HashMap<>(), context);
+        } catch (Exception e) {
+            context.log("[INTENT] Pipeline processing failed for response: " + e.getMessage() + ". Safe fallback to UNKNOWN.");
+        }
+
+        if (json == null) {
+            context.log("[INTENT] Malformed or null model response. Safe fallback to UNKNOWN.");
+            return new IntentResult(IntentCategory.UNKNOWN, 0.0, "Malformed model response", null, null);
+        }
 
         // 5. Extract results
-        String categoryStr = json.optString("category", "CHAT").toUpperCase();
+        String categoryStr = json.optString("category", "UNKNOWN").toUpperCase();
         IntentCategory category;
         try {
             category = IntentCategory.valueOf(categoryStr);
         } catch (IllegalArgumentException e) {
-            category = IntentCategory.CHAT;
+            context.log("[INTENT] Unrecognized intent category '" + categoryStr + "'. Safe fallback to UNKNOWN.");
+            category = IntentCategory.UNKNOWN;
             isFallback = true;
         }
 
@@ -140,19 +151,19 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         String subIntent = json.optString("subIntent", null);
         String targetArtifact = json.optString("targetArtifact", null);
 
-        // 6. Validate confidence
+        // 6. Validate confidence - malformed or low confidence must never become a technical task
         if (confidence < 0.3) {
-            context.log("[INTENT] Low confidence (" + confidence + "). Defaulting to CHAT.");
+            context.log("[INTENT] Low confidence (" + confidence + "). Safe fallback to UNKNOWN.");
             confidence = 0.3;
-            reasoning = "Low confidence, safe fallback to CHAT: " + reasoning;
-            category = IntentCategory.CHAT;
+            reasoning = "Low confidence, safe fallback to UNKNOWN: " + reasoning;
+            category = IntentCategory.UNKNOWN;
             isFallback = true;
         }
 
         IntentResult result = new IntentResult(category, confidence, reasoning, subIntent, targetArtifact);
 
         // 8. Cache result only if validated and not a fallback
-        if (!isFallback && confidence >= 0.5) {
+        if (!isFallback && confidence >= 0.5 && category != IntentCategory.UNKNOWN) {
             cache.put(prompt, result);
         }
 
@@ -231,7 +242,7 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
     // ============================================================
 
     public enum IntentCategory {
-        CHAT, TASK, CONTROL
+        CHAT, TASK, CONTROL, UNKNOWN
     }
 
     public static final class IntentResult {
@@ -243,7 +254,7 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
 
         public IntentResult(IntentCategory category, double confidence, String reasoning, 
                            String subIntent, String targetArtifact) {
-            this.category = category;
+            this.category = category != null ? category : IntentCategory.UNKNOWN;
             this.confidence = Math.max(0.0, Math.min(1.0, confidence));
             this.reasoning = reasoning;
             this.subIntent = subIntent;
@@ -259,6 +270,7 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         public boolean isChat() { return category == IntentCategory.CHAT; }
         public boolean isTask() { return category == IntentCategory.TASK; }
         public boolean isControl() { return category == IntentCategory.CONTROL; }
+        public boolean isUnknown() { return category == IntentCategory.UNKNOWN; }
 
         @Override
         public String toString() {

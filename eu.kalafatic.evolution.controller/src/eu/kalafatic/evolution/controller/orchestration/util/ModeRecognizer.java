@@ -74,7 +74,7 @@ public class ModeRecognizer {
 				return PlatformType.INTENT_RECONSTRUCTION;
 			}
 		}
-		if (intentResult == null || intentResult.isChat()) {
+		if (intentResult == null || intentResult.isChat() || intentResult.isUnknown()) {
 			return PlatformType.SIMPLE_CHAT;
 		}
 		if (intentResult.isTask() && intentResult.getConfidence() >= 0.6) {
@@ -83,6 +83,7 @@ public class ModeRecognizer {
 		if (intentResult.isControl()) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
+		// Safe fallback: Any malformed or unverified category maps to SIMPLE_CHAT
 		return PlatformType.SIMPLE_CHAT;
 	}
 
