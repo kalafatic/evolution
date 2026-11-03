@@ -115,7 +115,12 @@ public class ModeRouter {
 			}
 		}
 
-		// 2. Try explicit prompt overrides (Manual Routing)
+		// 2. Pure Conversational Greeting Short-Circuit (Never escalate to coding or darwin)
+		if (eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer.isSimpleGreeting(prompt)) {
+			return createSimpleChatMode();
+		}
+
+		// 3. Try explicit prompt overrides (Manual Routing)
 		if (lower.contains("mode: dream") || lower.equals("dream"))
 			return createDreamMode();
 		if (lower.contains("mode: chat"))
@@ -130,13 +135,15 @@ public class ModeRouter {
 			return createIntentReconstructionMode();
 		if (lower.contains("mode: mediated"))
 			return createHybridManualExportMode();
+		if (lower.contains("mode: forge") || lower.startsWith("forge:"))
+			return createForgeMode();
 		if (lower.contains("reconstruct intent") || lower.contains("intent discovery")
 				|| lower.contains("discover intent") || lower.contains("reverse engineering"))
 			return createIntentReconstructionMode();
 		if (lower.contains("analyze target"))
 			return createHybridManualExportMode();
 
-		// 3. Use the cognitive pipeline for evidence-based detection
+		// 4. Use the cognitive pipeline for evidence-based detection
 		CognitiveAnalysisPipeline pipeline = new CognitiveAnalysisPipeline();
 		CapabilityAnalysis analysis = pipeline.analyze(prompt);
 
@@ -149,9 +156,12 @@ public class ModeRouter {
 
 	/**
 	 * Detects or assigns PlatformMode based on user input, orchestrator state, and
-	 * optional context assist result. Priority: 1. Explicit Prompt Overrides (e.g.
-	 * "mode: chat") 2. Explicit Orchestrator Model overrides (User UI selection) 3.
-	 * Session Cognitive State (grounded in history) 4. Pipeline Analysis Fallback
+	 * optional context assist result. Priority:
+	 * 1. Explicit Orchestrator Model overrides (User UI selection - NON-NEGOTIABLE)
+	 * 2. Pure conversational greetings ("hi", "hello", etc.) -> SIMPLE_CHAT
+	 * 3. Explicit Prompt Overrides (e.g. "mode: chat")
+	 * 4. Session Cognitive State (grounded in history)
+	 * 5. Pipeline Analysis Fallback
 	 */
 	public PlatformMode route(String prompt, Orchestrator orchestrator, ContextAssistResult assistResult) {
 		if (prompt == null)
@@ -200,7 +210,12 @@ public class ModeRouter {
 			}
 		}
 
-		// 2. Check explicit prompt overrides next (e.g. "mode: chat")
+		// 2. Pure Conversational Greeting Short-Circuit (Never escalate to coding or darwin)
+		if (eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer.isSimpleGreeting(prompt)) {
+			return createSimpleChatMode();
+		}
+
+		// 3. Check explicit prompt overrides next (e.g. "mode: chat")
 		if (lower.contains("mode: dream") || lower.equals("dream"))
 			return createDreamMode();
 		if (lower.contains("mode: chat"))
@@ -215,6 +230,8 @@ public class ModeRouter {
 			return createIntentReconstructionMode();
 		if (lower.contains("mode: mediated"))
 			return createHybridManualExportMode();
+		if (lower.contains("mode: forge") || lower.startsWith("forge:"))
+			return createForgeMode();
 
 		// 3. Process through Cognitive State Engine if session exists (Conversation
 		// Trajectory)
