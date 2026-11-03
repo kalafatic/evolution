@@ -663,11 +663,17 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		OrchestratorResponse response = new OrchestratorResponse();
 		response.setResultType(ResultType.CHAT);
 
-		// FAILURE PROPAGATION: If the loop exited without reaching a terminal phase, it
-		// might be a failure
+		// FAILURE PROPAGATION: If the loop exited without reaching a terminal phase, it is a failure
 		if (result != null && !result.isSuccess()) {
 			response.setResultType(ResultType.ERROR);
 			context.log("[DARWIN] Evolution loop terminated due to iteration failure.");
+			if (context.getStateHolder().getState() != SystemState.WAITING_FOR_USER_DECISION) {
+				iterationManager.transition(SystemState.FAILED, context);
+			}
+		} else if (result == null && !context.isCancelled() && context.getStateHolder().getState() != SystemState.WAITING_FOR_USER_DECISION) {
+			response.setResultType(ResultType.ERROR);
+			context.log("[DARWIN] Evolution loop terminated without any iteration result.");
+			iterationManager.transition(SystemState.FAILED, context);
 		}
 
 		String summary;
@@ -675,10 +681,15 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			summary = "⏸️ Waiting for user to select a variant...";
 			response.setResultType(ResultType.CHAT);
 			// DO NOT transition to DONE - keep waiting state
+		} else if (response.getResultType() == ResultType.ERROR) {
+			String errorDetails = (result != null && !result.getErrors().isEmpty())
+					? String.join("; ", result.getErrors())
+					: "Evolution failed during iteration execution.";
+			summary = "Evolution failed: " + errorDetails;
+			response.setContent(summary);
 		} else if ((state.getCurrentPhase() != null && (state.getCurrentPhase().contains("TERMINAL")
 				|| state.getCurrentPhase().contains("SYNTHESIS")
-				|| state.getCurrentPhase().contains("DESIGN_SATISFIED")) || ModeRecognizer.isMediatedMode(context))
-				&& response.getResultType() != ResultType.ERROR) {
+				|| state.getCurrentPhase().contains("DESIGN_SATISFIED")) || ModeRecognizer.isMediatedMode(context))) {
 			if (ModeRecognizer.isMediatedMode(context)
 					|| context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
 				summary = iterationManager.performMediatedExportConvergence(request, context);
@@ -1806,7 +1817,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 	}
 
-	private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
+	public VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
 			TaskContext context, String baseCommit, EvolutionaryPressureVector pressure, IterationManager manager) {
 		File tempDir = null;
 		AuthorityController authority = context.getKernelContext().getAuthority();

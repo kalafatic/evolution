@@ -29,9 +29,13 @@ public class SessionManager {
         if (session != null) {
             session.shutdown();
         }
+        eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineRegistry.unregister(sessionId);
     }
 
     public void shutdownAll() {
+        sessions.keySet().forEach(sid -> {
+            eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineRegistry.unregister(sid);
+        });
         sessions.values().forEach(SessionContainer::shutdown);
         sessions.clear();
     }

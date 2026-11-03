@@ -68,178 +68,18 @@ public class DarwinFlow implements IOrchestrationFlow {
 //    }
 
     public VariantExecutionContext evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
-        File tempDir = null;
-        AuthorityController authority = context.getKernelContext().getAuthority();
-        VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
-        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
-
-        try {
-            if (context.getMetadata().containsKey("testMode") || isMediated) {
-                tempDir = context.getProjectRoot();
-            } else {
-                tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
-                // Ensure worktree is clean before starting
-                try {
-                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
-                    manager.getGitManager().pruneWorktrees();
-                } catch (Exception e) {}
-
-                manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
-            }
-            TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
-            variantContext.setSessionId(context.getSessionId());
-            variantContext.setKernelContext(context.getKernelContext());
-            variantContext.getMetadata().put("variantId", variant.getId());
-            variantContext.getMetadata().put("variantExecContext", variantExecContext);
-            variantContext.setPlatformMode(context.getPlatformMode());
-            variantContext.setAutoApprove(true);
-            variantContext.setAiService(aiService);
-
-            // PROPAGATE LISTENERS: Ensure sub-task execution logs are visible in the UI
-            context.getLogListeners().forEach(variantContext::addLogListener);
-            context.getApprovalListeners().forEach(variantContext::addApprovalListener);
-            context.getInputListeners().forEach(variantContext::addInputListener);
-
-            List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
-            context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
-            IterationManager variantManager = KernelFactory.create(tasks.get(0).getPrompt(), variantContext, sessionContainer, aiService);
-
-            boolean success = true;
-            manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
-
-            if (context.getMetadata().containsKey("testMode") || isMediated) {
-                variant.setSuccess(true);
-                variant.setScore(0.95);
-
-                // Mediated mode does NOT execute tasks that modify source code
-                if (!isMediated) {
-                    for (Task task : tasks) {
-                        try {
-                            variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
-                        } catch (Exception e) {
-                            context.log("[KERNEL] [TEST_MODE] Execution failed but continuing: " + e.getMessage());
-                        }
-                    }
-                } else {
-                    context.log("[DARWIN] Mediated Mode: Skipping task execution to prevent source modification.");
-                }
-
-                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
-                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
-
-                variant.setMutationTrace(isMediated ? "Cognitive evolution in mediated mode" : "Mocked in test mode");
-                return variantExecContext;
-            }
-
-            for (Task task : tasks) {
-                boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
-                if (variantExecContext != null) {
-                    variantExecContext.getTasks().add(task);
-                }
-                if (!taskSuccess) {
-                    success = false;
-                    break;
-                }
-
-                manager.checkStep(task.getId(), "GIT_STAGING", "Staging changes for task: " + task.getName());
-
-                try {
-                    GitTool gitTool = new GitTool();
-                    String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
-
-                    RuntimeEvent event = new RuntimeEvent(
-                            eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
-                            "DarwinFlow", "GitTool", diff);
-                    variantExecContext.recordEvent(event);
-
-                    ActivationResolver resolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
-                    DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), sessionContainer.getSignalBus().getSignalsForVariant(variant.getId()), variantContext);
-
-                    Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(variant.getTrajectoryId());
-                    if (t != null) {
-                        double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(), 0.5);
-                        t.setFitnessScore(currentFitness);
-                        t.getFitnessHistory().add(currentFitness);
-                        t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
-                    }
-                } catch (Exception e) {
-                    context.log("[DARWIN] Error during dynamic re-evaluation for variant " + variant.getId() + ": " + e.getMessage());
-                }
-            }
-
-            if (success) {
-                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
-                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
-            } else {
-                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
-            }
-            variant.setSuccess(success);
-
-            EvaluationResult result = manager.getFitnessEngine().evaluate(tempDir, variantContext, pressure);
-
-            // FIX: If code was generated, deliver it even with build errors in the worktree
-            if (success && !result.isSuccess()) {
-                 context.log("[DARWIN] Delivering variant from DarwinFlow despite build errors because tasks succeeded.");
-                 variant.setSuccess(true);
-                 variant.setErrorMessage("Build error during parallel evaluation");
-            } else {
-                 variant.setSuccess(result.isSuccess());
-            }
-
-            if (result.isSuccess() || variant.isSuccess()) {
-                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
-
-                // CAPTURE IMPLEMENTATION: Update EvolutionNode with ACTUAL file contents after successful execution
-                EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-                EvolutionNode node = tree.getNode(variant.getId());
-                if (node != null) {
-                    for (BranchVariant.Action action : variant.getActions()) {
-                        if (("WRITE".equals(action.getOperation()) || "CREATE".equals(action.getOperation())) && action.getTarget() != null) {
-                            File file = new File(tempDir, action.getTarget());
-                            if (file.exists() && file.isFile()) {
-                                try {
-                                    String content = Files.readString(file.toPath());
-                                    node.getCodeSnapshots().put(action.getTarget(), content);
-                                    action.setImplementation(content); // Sync back to variant
-                                } catch (Exception e) {
-                                    context.log("[DARWIN] Failed to read implemented file: " + action.getTarget());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            GitTool deltaTool = new GitTool();
-            try {
-                variant.setMutationTrace(deltaTool.execute("diff " + baseCommit + " HEAD", tempDir, variantContext));
-            } catch (Exception e) {
-                context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
-            }
-            variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
-
-            return variantExecContext;
-        } catch (Exception e) {
-            context.log("[DARWIN] Parallel evaluation failed for variant " + variant.getId() + ": " + e.getMessage());
-            variant.setSuccess(false);
-            variant.setScore(0.0);
-            variant.setErrorMessage(e.getMessage());
-            manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
-            return variantExecContext;
-        } finally {
-            if (tempDir != null && !context.getMetadata().containsKey("testMode") && !isMediated) {
-                try {
-                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
-                } catch (Exception e) {
-                    context.log("[DARWIN] Worktree removal failed: " + e.getMessage());
-                }
-                try {
-                    deleteDirectory(tempDir);
-                } catch (Exception e) {
-                    context.log("[DARWIN] Temporary directory deletion failed: " + e.getMessage());
-                }
-            }
+        // Delegate to authoritative engine implementation in ADarwinEngine
+        eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine engine = manager.getDarwinEngine();
+        if (engine instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine) {
+            return ((eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine) engine)
+                    .evaluateVariantParallel(variant, planner, context, baseCommit, pressure, manager);
         }
+        VariantExecutionContext fallbackContext = new VariantExecutionContext(variant.getId());
+        variant.setSuccess(false);
+        variant.setScore(0.0);
+        variant.setErrorMessage("Authoritative ADarwinEngine unavailable for variant evaluation.");
+        manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
+        return fallbackContext;
     }
 
     private BranchVariant createUserVariant(String input, GoalModel goal, TaskContext context) {

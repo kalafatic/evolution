@@ -75,6 +75,8 @@ public class KernelFacade implements IOrchestrator {
 				if (session.getIterationManager() == null) {
 					kernel = KernelFactory.create(taskRequest.getPrompt(), context, session);
 					session.setIterationManager(kernel);
+				} else {
+					kernel = session.getIterationManager();
 				}
 
 				eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
@@ -86,7 +88,13 @@ public class KernelFacade implements IOrchestrator {
 				OrchestratorResponse response = new OrchestratorResponse();
 				response.setSummary(result.getSummary());
 				response.setContent("Cognitive Execution Result: " + result.getSummary());
-				response.setResultType(result.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS ? ResultType.CHAT : ResultType.ERROR);
+				boolean isSuccess = result.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS;
+				response.setResultType(isSuccess ? ResultType.CHAT : ResultType.ERROR);
+				if (!isSuccess && kernel != null) {
+					kernel.transition(SystemState.FAILED, context);
+				} else if (isSuccess && kernel != null) {
+					kernel.transition(SystemState.DONE, context);
+				}
 				return response;
 			}
 

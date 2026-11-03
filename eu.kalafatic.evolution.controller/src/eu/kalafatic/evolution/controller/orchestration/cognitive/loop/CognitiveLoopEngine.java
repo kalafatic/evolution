@@ -211,7 +211,8 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
 
             logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState + " Eval Status: " + eval.getStatus() + ", Progress: " + String.format("%.1f%%", currentProgress * 100) + " (delta: " + String.format("%.1f%%", progressDelta * 100) + ")");
 
-            if (eval.isAchieved()) {
+            boolean hasSuccessfulObservation = observations.stream().anyMatch(CognitiveObservation::isSuccess);
+            if (eval.isAchieved() && hasSuccessfulObservation && currentProgress > 0.0) {
                 currentState = CognitiveState.SUCCESS;
                 logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal SUCCESS verified by GoalEvaluator: " + eval.getEvidence());
                 recordEpisodeMemory(taskContext, sessionId, goal, worldState, true);
@@ -560,42 +561,44 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
     private CognitiveObservation executeRealDarwinSearch(SessionContainer session, TaskContext taskContext, CognitiveGoal goal, WorldState worldState, List<CognitiveObservation> observations) {
         long start = System.currentTimeMillis();
         try {
-            if (taskContext != null) {
-                IterationMemoryService memoryService = taskContext.getKernelContext() != null ? taskContext.getKernelContext().getMemoryService() : null;
-                File root = taskContext.getProjectRoot() != null ? taskContext.getProjectRoot() : new File(".");
-                SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(root, taskContext);
+            if (taskContext == null || session == null) {
+                long duration = System.currentTimeMillis() - start;
+                return CognitiveObservation.ofFailure("DARWIN_SEARCH", 500, "", "DARWIN_UNAVAILABLE: TaskContext or SessionContainer is null.", "CONTEXT_MISSING", duration);
+            }
 
-                IDarwinEngine darwin = DarwinEngineFactory.createEngine(PlatformType.ASSISTED_CODING, taskContext, memoryService, stateProvider);
-                if (darwin != null) {
-                    IterationManager manager = session != null ? session.getIterationManager() : null;
-                    if (manager == null && session != null) {
-                        try {
-                            manager = eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(
-                                goal != null ? goal.getDescription() : "Darwin Execution", taskContext, session);
-                            session.setIterationManager(manager);
-                        } catch (Exception e) {
-                            logTrace(taskContext, null, session.getSessionId(), "[COGNITIVE] Failed to initialize IterationManager for session: " + e.getMessage());
-                        }
-                    }
-                    if (manager != null) {
-                        EvaluationResult evalResult = darwin.runDarwinIteration(taskContext, manager);
-                        long duration = System.currentTimeMillis() - start;
-                        if (evalResult != null && evalResult.isSuccess()) {
-                            String decisionStr = evalResult.getDecision() != null ? evalResult.getDecision().name() : "APPROVED";
-                            return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "DARWIN_WINNER_FOUND: Selected superior candidate variant (" + decisionStr + ")", duration);
-                        } else {
-                            return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", "DARWIN_NO_WINNER: Evolutionary iteration executed without promoting a winner.", "NO_WINNER", duration);
-                        }
-                    } else {
-                        long duration = System.currentTimeMillis() - start;
-                        return CognitiveObservation.ofFailure("DARWIN_SEARCH", 500, "", "DARWIN_UNAVAILABLE: IterationManager unavailable in session context.", "DARWIN_UNAVAILABLE", duration);
-                    }
+            IterationManager manager = session.getIterationManager();
+            if (manager == null) {
+                try {
+                    String desc = (goal != null && goal.getDescription() != null) ? goal.getDescription() : "Darwin Execution";
+                    manager = eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(desc, taskContext, session);
+                    session.setIterationManager(manager);
+                } catch (Exception e) {
+                    logTrace(taskContext, null, session.getSessionId(), "[COGNITIVE] Failed to initialize IterationManager for session: " + e.getMessage());
+                    long duration = System.currentTimeMillis() - start;
+                    return CognitiveObservation.ofFailure("DARWIN_SEARCH", 500, "", "DARWIN_UNAVAILABLE: Could not initialize IterationManager: " + e.getMessage(), "INITIALIZATION_FAILED", duration);
                 }
+            }
+
+            IDarwinEngine darwin = manager.getDarwinEngine();
+            if (darwin == null) {
+                long duration = System.currentTimeMillis() - start;
+                return CognitiveObservation.ofFailure("DARWIN_SEARCH", 500, "", "DARWIN_UNAVAILABLE: Authoritative DarwinEngine not configured on IterationManager.", "ENGINE_MISSING", duration);
+            }
+
+            EvaluationResult evalResult = darwin.runDarwinIteration(taskContext, manager);
+            long duration = System.currentTimeMillis() - start;
+            if (evalResult != null && evalResult.isSuccess()) {
+                String decisionStr = evalResult.getDecision() != null ? evalResult.getDecision().name() : "APPROVED";
+                return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "DARWIN_WINNER_FOUND: Selected superior candidate variant (" + decisionStr + ")", duration);
+            } else {
+                String errorMsg = (evalResult != null && !evalResult.getErrors().isEmpty())
+                        ? String.join("; ", evalResult.getErrors())
+                        : "Evolutionary iteration executed without promoting a winner.";
+                return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", "DARWIN_NO_WINNER: " + errorMsg, "NO_WINNER", duration);
             }
         } catch (Exception e) {
             return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", e.getMessage(), "DARWIN_EXCEPTION", System.currentTimeMillis() - start);
         }
-        return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", "DARWIN_NO_WINNER: Evolutionary search completed without candidate promotion.", "NO_WINNER", System.currentTimeMillis() - start);
     }
 
     private void recordEpisodeMemory(TaskContext taskContext, String sessionId, CognitiveGoal goal, WorldState worldState, boolean success) {

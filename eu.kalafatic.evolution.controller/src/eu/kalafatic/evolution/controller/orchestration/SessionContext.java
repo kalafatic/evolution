@@ -247,5 +247,6 @@ public class SessionContext implements SessionContainer {
         if (sessionLogger != null) {
             sessionLogger.close();
         }
+        eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineRegistry.unregister(sessionId);
     }
 }
