@@ -25,7 +25,7 @@ public class AdminResourceDiscoveryManager {
     public void discoverAndSyncResources() {
         AuthorizationService authService = AuthorizationService.getInstance();
 
-        // 1. Discover MCP Tools from ToolFactory
+        // 1. Discover MCP Tools from ToolFactory and EVO Capability Registry
         try {
             for (String toolName : ToolFactory.getRegisteredTools()) {
                 authService.registerResource(
@@ -35,6 +35,21 @@ public class AdminResourceDiscoveryManager {
                     "Discovered system tool " + toolName,
                     true,
                     "{\"type\":\"tool\",\"source\":\"ToolFactory\"}"
+                );
+            }
+            String[] evoMcpTools = {
+                "evo_project_info", "evo_file_read", "evo_git_status",
+                "evo_build_test_status", "evo_darwin_status", "evo_forge_status",
+                "evo_genome_inventory", "evo_process_list", "evo_process_cancel"
+            };
+            for (String t : evoMcpTools) {
+                authService.registerResource(
+                    "MCP_TOOL",
+                    t,
+                    "EVO MCP: " + t,
+                    "Authoritative EVO MCP capability tool " + t,
+                    true,
+                    "{\"type\":\"tool\",\"source\":\"EvoMcpToolProvider\"}"
                 );
             }
         } catch (Exception e) {

@@ -101,12 +101,15 @@ public class EvolutionServer extends NanoHTTPD {
 
         eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry toolRegistry = new eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry();
         eu.kalafatic.evolution.servers.mcp.tools.DemoTools.registerAll(toolRegistry);
+        eu.kalafatic.evolution.controller.orchestration.mcp.EvoMcpToolProvider.registerAuthoritativeTools(toolRegistry);
+
         eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry resourceRegistry = new eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry();
         eu.kalafatic.evolution.servers.mcp.resources.DemoResources.registerAll(resourceRegistry);
         eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry promptRegistry = new eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry();
         eu.kalafatic.evolution.servers.mcp.prompts.DemoPrompts.registerAll(promptRegistry);
         eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher dispatcher =
             new eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher(toolRegistry, resourceRegistry, promptRegistry);
+        dispatcher.setAuthorizationService(eu.kalafatic.evolution.servers.service.AuthorizationService.getInstance(dbManager));
 
         this.demoDocumentController = new eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentController(
             new eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentService("docs")

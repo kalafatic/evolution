@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCP Demo Server</title>
+    <title>EVO MCP Platform Interface</title>
     <base href="/">
     <link rel="stylesheet" href="/evo-style.css">
     <style>
@@ -16,6 +16,7 @@
             --primary-hover: #0056b3;
             --success-color: #28a745;
             --error-color: #dc3545;
+            --warning-color: #d39e00;
             --secondary-color: #6c757d;
         }
 
@@ -42,13 +43,13 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
         }
 
         header {
             width: 100%;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 2px solid var(--border-color);
         }
@@ -63,8 +64,8 @@
         }
 
         aside {
-            width: 320px;
-            min-width: 200px;
+            width: 360px;
+            min-width: 250px;
             max-width: 600px;
             overflow-y: auto;
         }
@@ -76,7 +77,7 @@
         }
 
         @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
+            .grid { flex-direction: column; }
         }
 
         .card {
@@ -89,24 +90,28 @@
         }
 
         .card-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: bold;
             margin-bottom: 15px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .info-item {
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
+            font-size: 0.9rem;
         }
 
         .info-label { font-weight: bold; }
-        .status-running { color: var(--success-color); }
+        .status-running { color: var(--success-color); font-weight: bold; }
 
         .tool-list {
-            max-height: 400px;
+            max-height: 420px;
             overflow-y: auto;
         }
 
@@ -116,20 +121,21 @@
             border-radius: 4px;
             margin-bottom: 10px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, border-color 0.2s;
         }
 
         .tool-item:hover {
-            background-color: rgba(0, 123, 255, 0.1);
+            background-color: rgba(0, 123, 255, 0.08);
+            border-color: var(--primary-color);
         }
 
         .tool-item.selected {
             border-color: var(--primary-color);
-            background-color: rgba(0, 123, 255, 0.05);
+            background-color: rgba(0, 123, 255, 0.12);
         }
 
         .tool-name { font-weight: bold; color: var(--primary-color); }
-        .tool-desc { font-size: 0.9rem; margin-top: 5px; }
+        .tool-desc { font-size: 0.85rem; margin-top: 5px; color: var(--secondary-color); }
 
         label { display: block; margin-bottom: 5px; font-weight: bold; }
 
@@ -145,7 +151,7 @@
             margin-bottom: 15px;
         }
 
-        textarea { height: 150px; resize: vertical; }
+        textarea { height: 160px; resize: vertical; }
 
         .actions {
             display: flex;
@@ -162,19 +168,21 @@
             transition: opacity 0.2s;
         }
 
-        button:hover { opacity: 0.8; }
+        button:hover { opacity: 0.85; }
 
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-danger { background-color: var(--error-color); color: white; }
         .btn-success { background-color: var(--success-color); color: white; }
 
         .response-area {
-            background-color: #000;
-            color: #0f0;
+            background-color: #121212;
+            color: #4af626;
             padding: 15px;
             border-radius: 4px;
             font-family: monospace;
             min-height: 200px;
+            max-height: 450px;
             white-space: pre-wrap;
             overflow-x: auto;
             position: relative;
@@ -182,35 +190,66 @@
 
         .response-meta {
             margin-top: 10px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--secondary-color);
             display: flex;
             gap: 20px;
+            align-items: center;
         }
 
         .status-badge {
-            padding: 2px 6px;
-            border-radius: 3px;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 0.75rem;
         }
 
         .status-ok { background-color: var(--success-color); color: white; }
         .status-error { background-color: var(--error-color); color: white; }
+        .status-warn { background-color: var(--warning-color); color: white; }
 
+        .schema-badge {
+            font-size: 0.75rem;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 6px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="evo-global-nav" style="width: 100%; background: var(--evo-surface-alt, #f1f3f6); border-bottom: 1px solid var(--evo-border, #b8c0c8); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; box-sizing: border-box; font-family: 'Segoe UI', sans-serif;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 16px;">🧬</span>
+        <a href="/index.html" style="color: var(--evo-primary, #1d5296); text-decoration: none; font-weight: 700;">EVOLUTION AI PLATFORM</a>
+        <span style="color: #98a2ac;">|</span>
+        <a href="/experimental/chat" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">💬 Chat</a>
+        <a href="/experimental/architecture" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">📐 Architecture</a>
+        <a href="/experimental/forge" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🛠️ Forge Lab</a>
+        <a href="/mcp" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px; background: rgba(29,82,150,0.15);">🔌 MCP Tools</a>
+        <a href="/develop" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🤖 Develop Agent</a>
+        <a href="/admin" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">⚙️ Admin</a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+        <span id="global-session-badge" style="background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 12px; font-family: monospace;">Session: Active</span>
+        <a href="/server/status" style="color: var(--evo-text-secondary, #4a5568); text-decoration: none;">Analytics</a>
+    </div>
+</div>
+
+<div class="container" style="margin-top: 15px;">
     <header>
-        <h1>MCP Demo Server Interface</h1>
+        <h1>Model Context Protocol (MCP) Platform</h1>
+        <p style="margin: 5px 0 0; color: var(--secondary-color); font-size: 0.9rem;">Authoritative Tool Execution, Schema Validation, Security Boundaries & Observability</p>
     </header>
 
     <div class="grid" id="mcp-grid">
         <aside id="mcp-aside">
             <div class="card">
-                <div class="card-title">Connection Info</div>
+                <div class="card-title">Server Connection & Security</div>
                 <div class="info-item">
                     <span class="info-label">Status:</span>
                     <span id="server-status" class="status-running">Running</span>
@@ -220,16 +259,20 @@
                     <span>/mcp</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Tools:</span>
+                    <span class="info-label">Protocol:</span>
+                    <span id="server-protocol">2024-11-05</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Security Principal:</span>
+                    <span id="server-principal" style="font-weight: bold; font-family: monospace;">admin</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Session ID:</span>
+                    <span id="server-session" style="font-family: monospace; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">N/A</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Tools Available:</span>
                     <span id="tool-count">0</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Version:</span>
-                    <span id="server-version">1.0</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Uptime:</span>
-                    <span id="server-uptime">N/A</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Current Time:</span>
@@ -238,7 +281,10 @@
             </div>
 
             <div class="card">
-                <div class="card-title">Tool Explorer</div>
+                <div class="card-title">
+                    <span>Tool Explorer</span>
+                    <button class="btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;" onclick="loadTools()">Refresh</button>
+                </div>
                 <div id="tool-list" class="tool-list">
                     <p>Loading tools...</p>
                 </div>
@@ -249,33 +295,43 @@
 
         <main>
             <div class="card">
-                <div class="card-title">Request Editor</div>
-                <label for="tool-select">Select Tool:</label>
-                <select id="tool-select" onchange="onToolSelectChange()">
-                    <option value="">-- Choose a tool --</option>
-                </select>
+                <div class="card-title">Tool Execution & Schema Inspection</div>
+                <div style="margin-bottom: 15px;">
+                    <label for="tool-select">Select MCP Tool:</label>
+                    <select id="tool-select" onchange="onToolSelectChange()">
+                        <option value="">-- Choose a tool --</option>
+                    </select>
+                </div>
 
-                <label for="request-args">Arguments (JSON):</label>
+                <div id="tool-schema-details" style="display: none; margin-bottom: 15px; padding: 10px; background: rgba(0,123,255,0.04); border: 1px dashed var(--border-color); border-radius: 4px; font-size: 0.85rem;">
+                    <div><strong>Description:</strong> <span id="schema-desc"></span></div>
+                    <div style="margin-top: 5px;"><strong>Required Parameters:</strong> <span id="schema-required" style="font-family: monospace;"></span></div>
+                </div>
+
+                <label for="request-args">Arguments (JSON Schema Validated):</label>
                 <textarea id="request-args" placeholder='{ "arg": "value" }'></textarea>
 
                 <div class="actions">
-                    <button class="btn-primary" onclick="executeTool()">Execute</button>
+                    <button class="btn-primary" onclick="executeTool()">Invoke Tool</button>
                     <button class="btn-secondary" onclick="formatJson()">Format JSON</button>
                     <button class="btn-secondary" onclick="clearRequest()">Clear</button>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-title">Response Viewer</div>
-                <div id="response-viewer" class="response-area">Waiting for execution...</div>
+                <div class="card-title">
+                    <span>Execution Output & Structured Diagnostics</span>
+                    <span id="exec-status"></span>
+                </div>
+                <div id="response-viewer" class="response-area">Waiting for tool execution...</div>
 
                 <div class="response-meta">
-                    <span id="exec-status"></span>
                     <span id="exec-time"></span>
+                    <span id="exec-session"></span>
                 </div>
 
                 <div class="actions" style="margin-top: 15px;">
-                    <button class="btn-secondary" onclick="copyResponse()">Copy</button>
+                    <button class="btn-secondary" onclick="copyResponse()">Copy Output</button>
                     <button class="btn-secondary" onclick="downloadResponse()">Download JSON</button>
                     <button class="btn-secondary" onclick="clearResponse()">Clear</button>
                 </div>
@@ -284,6 +340,7 @@
     </div>
 </div>
 
+<script src="/auth-integration.js"></script>
 <script>
     let registeredTools = [];
 
@@ -291,8 +348,9 @@
         try {
             const response = await fetch('/ui/info');
             const info = await response.json();
-            document.getElementById('server-version').textContent = info.version || '1.0';
-            document.getElementById('server-uptime').textContent = info.uptime || 'N/A';
+            document.getElementById('server-protocol').textContent = info.version || '2024-11-05';
+            document.getElementById('server-principal').textContent = info.principal || 'admin';
+            document.getElementById('server-session').textContent = info.sessionId || 'N/A';
         } catch (e) {
             console.error('Failed to load server info', e);
         }
@@ -311,7 +369,6 @@
             document.getElementById('tool-count').textContent = registeredTools.length;
 
             registeredTools.forEach(tool => {
-                // List item
                 const div = document.createElement('div');
                 div.className = 'tool-item';
                 div.id = `tool-item-${tool.name}`;
@@ -322,7 +379,6 @@
                 `;
                 toolList.appendChild(div);
 
-                // Select option
                 const option = document.createElement('option');
                 option.value = tool.name;
                 option.textContent = tool.name;
@@ -341,9 +397,22 @@
         document.getElementById('tool-select').value = name;
 
         const tool = registeredTools.find(t => t.name === name);
-        if (tool && tool.inputSchema) {
-            // Provide a template based on schema if possible, or just empty object
-            document.getElementById('request-args').value = JSON.stringify({}, null, 2);
+        const schemaDiv = document.getElementById('tool-schema-details');
+        if (tool) {
+            schemaDiv.style.display = 'block';
+            document.getElementById('schema-desc').textContent = tool.description || 'No description';
+            const req = (tool.inputSchema && tool.inputSchema.required) ? tool.inputSchema.required.join(', ') : 'None';
+            document.getElementById('schema-required').textContent = req;
+
+            const template = {};
+            if (tool.inputSchema && tool.inputSchema.properties) {
+                for (const [k, v] of Object.entries(tool.inputSchema.properties)) {
+                    template[k] = v.type === 'integer' || v.type === 'number' ? 0 : (v.type === 'boolean' ? false : "");
+                }
+            }
+            document.getElementById('request-args').value = JSON.stringify(template, null, 2);
+        } else {
+            schemaDiv.style.display = 'none';
         }
     }
 
@@ -365,17 +434,19 @@
         try {
             args = JSON.parse(argsText || '{}');
         } catch (e) {
-            alert('Invalid JSON in arguments');
+            alert('Invalid JSON in arguments: ' + e.message);
             return;
         }
 
         const responseViewer = document.getElementById('response-viewer');
         const execStatus = document.getElementById('exec-status');
         const execTime = document.getElementById('exec-time');
+        const execSession = document.getElementById('exec-session');
 
-        responseViewer.textContent = 'Executing...';
+        responseViewer.textContent = 'Executing tool ' + toolName + '...';
         execStatus.innerHTML = '';
         execTime.textContent = '';
+        execSession.textContent = '';
 
         const startTime = performance.now();
         try {
@@ -389,7 +460,7 @@
             const duration = (performance.now() - startTime).toFixed(0);
 
             responseViewer.textContent = JSON.stringify(result, null, 2);
-            execTime.textContent = `Time: ${duration}ms`;
+            execTime.textContent = `Duration: ${duration}ms`;
 
             if (response.ok && !result.isError) {
                 execStatus.innerHTML = '<span class="status-badge status-ok">Success</span>';
@@ -397,7 +468,7 @@
                 execStatus.innerHTML = '<span class="status-badge status-error">Error</span>';
             }
         } catch (e) {
-            responseViewer.textContent = 'Network Error: ' + e.message;
+            responseViewer.textContent = 'Network / Server Error: ' + e.message;
             execStatus.innerHTML = '<span class="status-badge status-error">Error</span>';
         }
     }
@@ -415,19 +486,21 @@
     function clearRequest() {
         document.getElementById('tool-select').value = '';
         document.getElementById('request-args').value = '';
+        document.getElementById('tool-schema-details').style.display = 'none';
         document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('selected'));
     }
 
     function clearResponse() {
-        document.getElementById('response-viewer').textContent = 'Waiting for execution...';
+        document.getElementById('response-viewer').textContent = 'Waiting for tool execution...';
         document.getElementById('exec-status').innerHTML = '';
         document.getElementById('exec-time').textContent = '';
+        document.getElementById('exec-session').textContent = '';
     }
 
     function copyResponse() {
         const content = document.getElementById('response-viewer').textContent;
         navigator.clipboard.writeText(content).then(() => {
-            alert('Response copied to clipboard');
+            alert('Output copied to clipboard');
         });
     }
 
@@ -437,7 +510,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `mcp-response-${Date.now()}.json`;
+        a.download = `mcp-result-${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -472,7 +545,7 @@
             if (!isDragging) return;
             const rect = container.getBoundingClientRect();
             let newWidth = e.clientX - rect.left;
-            if (newWidth < 180) newWidth = 180;
+            if (newWidth < 200) newWidth = 200;
             if (newWidth > rect.width - 250) newWidth = rect.width - 250;
             aside.style.width = newWidth + 'px';
         });
