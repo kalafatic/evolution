@@ -5,9 +5,11 @@ package eu.kalafatic.evolution.controller.orchestration.cognitive.loop;
  */
 public enum CognitiveState {
     CREATED,
-    OBSERVING,
+    GOAL,
     UNDERSTANDING,
+    OBSERVING,
     PLANNING,
+    SELECT_CAPABILITY,
     ACTING,
     EVALUATING,
     ADAPTING,

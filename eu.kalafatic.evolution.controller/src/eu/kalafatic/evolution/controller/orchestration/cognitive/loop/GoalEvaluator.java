@@ -72,17 +72,104 @@ public class GoalEvaluator {
             }
         }
 
-        // 3. Last action outcome assessment
+        // 3. Explicit file target conditions
+        Object targetFileObj = goal.getParameter("targetFile");
+        if (targetFileObj instanceof String) {
+            String targetPath = (String) targetFileObj;
+            java.io.File file = new java.io.File(targetPath);
+            if (!file.exists()) {
+                missing.add("Target file does not exist: " + targetPath);
+            } else {
+                evidence.add("Target file exists: " + targetPath);
+                Object containsObj = goal.getParameter("targetFileContains");
+                if (containsObj instanceof String) {
+                    String pattern = (String) containsObj;
+                    try {
+                        String content = java.nio.file.Files.readString(file.toPath());
+                        if (!content.contains(pattern)) {
+                            missing.add("Target file " + targetPath + " does not contain required text: '" + pattern + "'");
+                        } else {
+                            evidence.add("Target file contains required text: '" + pattern + "'");
+                        }
+                    } catch (Exception e) {
+                        missing.add("Failed reading target file " + targetPath + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        // 4. Explicit output / content match conditions
+        Object expectedOutputObj = goal.getParameter("expectedOutputContains");
+        if (expectedOutputObj instanceof String) {
+            String exp = (String) expectedOutputObj;
+            boolean found = observations.stream().anyMatch(o ->
+                (o.getStdout() != null && o.getStdout().contains(exp)) ||
+                (o.getMetadata() != null && o.getMetadata().values().stream().anyMatch(v -> v != null && v.toString().contains(exp)))
+            );
+            if (!found) {
+                missing.add("Expected output text not found in observations: '" + exp + "'");
+            } else {
+                evidence.add("Found expected output text: '" + exp + "'");
+            }
+        }
+
+        // 5. Minimum items / results count condition
+        Object minResultsObj = goal.getParameter("minimumResults");
+        if (minResultsObj instanceof Number) {
+            int minResults = ((Number) minResultsObj).intValue();
+            int accumulatedResults = 0;
+            for (CognitiveObservation obs : observations) {
+                if (obs.isSuccess()) {
+                    Object countVal = obs.getMetadata().get("resultCount");
+                    if (countVal == null) countVal = obs.getMetadata().get("itemsFound");
+                    if (countVal instanceof Number) {
+                        accumulatedResults += ((Number) countVal).intValue();
+                    }
+                }
+            }
+            if (accumulatedResults < minResults) {
+                missing.add("Minimum results not met: required " + minResults + ", found " + accumulatedResults);
+            } else {
+                evidence.add("Minimum results threshold satisfied: " + accumulatedResults + " >= " + minResults);
+            }
+        }
+
+        // 6. Explicit Custom Evaluator Predicate
+        Object predicateObj = goal.getParameter("goalPredicate");
+        if (predicateObj instanceof java.util.function.Predicate) {
+            @SuppressWarnings("unchecked")
+            java.util.function.Predicate<List<CognitiveObservation>> pred = (java.util.function.Predicate<List<CognitiveObservation>>) predicateObj;
+            if (!pred.test(observations)) {
+                missing.add("Custom goal predicate evaluation failed");
+            } else {
+                evidence.add("Custom goal predicate passed");
+            }
+        }
+
+        // 7. Last action outcome and completion assessment
         CognitiveObservation lastObs = observations.get(observations.size() - 1);
-        if (missing.isEmpty()) {
-            evidence.add("Goal target metric requirements satisfied");
-            return GoalEvaluation.achieved("All declared goal requirements verified by observations");
-        } else if (!lastObs.isSuccess()) {
+        if (!missing.isEmpty()) {
+            double currentProg = worldState != null ? worldState.getCurrentProgress() : 0.0;
+            return GoalEvaluation.partial(currentProg, missing, evidence);
+        }
+
+        if (!lastObs.isSuccess() && targetMetricObj == null && targetFileObj == null && expectedOutputObj == null) {
             missing.add("Last action failed: " + lastObs.getStructuredError());
             double currentProg = worldState != null ? worldState.getCurrentProgress() : 0.0;
             return GoalEvaluation.partial(currentProg, missing, evidence);
         }
 
-        return GoalEvaluation.achieved("Goal requirements satisfied");
+        // If goal had no explicit condition parameters at all, require at least one successful non-empty action
+        boolean anySuccessfulAction = observations.stream().anyMatch(CognitiveObservation::isSuccess);
+        if (!anySuccessfulAction) {
+            missing.add("No successful observation recorded to verify goal");
+            return GoalEvaluation.notAchieved(missing);
+        }
+
+        if (worldState != null && worldState.getCurrentProgress() < 1.0) {
+            worldState.setCurrentProgress(1.0);
+        }
+        evidence.add("All declared goal criteria verified successfully");
+        return GoalEvaluation.achieved(String.join("; ", evidence));
     }
 }
