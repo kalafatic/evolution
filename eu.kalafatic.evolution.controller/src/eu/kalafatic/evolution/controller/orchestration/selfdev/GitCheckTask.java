@@ -23,20 +23,66 @@ public class GitCheckTask extends AbstractSelfDevTask {
                 ? context.getResourceManager()
                 : ResourceManager.getInstance();
         repositories.clear();
-        File repo = (context != null && context.getRepositoryRoot() != null)
-                ? context.getRepositoryRoot().getAbsoluteFile()
-                : rm.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile();
-        repositories.put("evolution", repo);
+
+        eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator = context != null ? context.getOrchestrator() : null;
+
+        // 1. Evolution repository (Actual EVO project sources)
+        File evolutionRepo = null;
+        if (orchestrator != null && orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null && !orchestrator.getGit().getLocalPath().trim().isEmpty()) {
+            evolutionRepo = new File(orchestrator.getGit().getLocalPath().trim()).getAbsoluteFile();
+        } else if (context != null && context.getRepositoryRoot() != null) {
+            evolutionRepo = context.getRepositoryRoot().getAbsoluteFile();
+        } else {
+            evolutionRepo = rm.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile();
+        }
+        repositories.put("evolution", evolutionRepo);
+
+        // 2. Evo repository (EVO self-development / Darwin working repository)
+        File evoRepo = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null && orchestrator.getSupervisorSettings().getGit().getLocalPath() != null && !orchestrator.getSupervisorSettings().getGit().getLocalPath().trim().isEmpty()) {
+            evoRepo = new File(orchestrator.getSupervisorSettings().getGit().getLocalPath().trim()).getAbsoluteFile();
+        } else {
+            String path = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_WORKSPACE);
+            if (path != null && !path.trim().isEmpty()) {
+                evoRepo = new File(path.trim()).getAbsoluteFile();
+            }
+        }
+        if (evoRepo != null) {
+            repositories.put("evo", evoRepo);
+        }
+
+        // 3. LLM repository (Forge / LLM self-development working repository)
+        File llmRepo = null;
+        if (orchestrator != null && !orchestrator.getForgeSessions().isEmpty()) {
+            for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
+                if (fs.getGit() != null && fs.getGit().getLocalPath() != null && !fs.getGit().getLocalPath().trim().isEmpty()) {
+                    llmRepo = new File(fs.getGit().getLocalPath().trim()).getAbsoluteFile();
+                    break;
+                }
+            }
+        }
+        if (llmRepo == null) {
+            String path = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_LLM);
+            if (path != null && !path.trim().isEmpty()) {
+                llmRepo = new File(path.trim()).getAbsoluteFile();
+            }
+        }
+        if (llmRepo != null) {
+            repositories.put("llm", llmRepo);
+        }
     }
 
     @Override
     protected TaskResult preValidate(SelfDevContext context) throws Exception {
         if (repositories.isEmpty()) {
-            return TaskResult.failure(id, "Pre-validation failed: No target repositories resolved.", null);
+            return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: No target repositories resolved.", null);
+        }
+        if (!repositories.containsKey("evolution") || !repositories.containsKey("evo") || !repositories.containsKey("llm")) {
+            return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: All three required repositories (evolution, evo, llm) must be resolved. Found: " + repositories.keySet(), null);
         }
         return new TaskResult.Builder(id)
                 .status(TaskStatus.READY)
-                .message("Global Git Check initialized for " + repositories.size() + " repositories.")
+                .message("Global Git Check initialized for " + repositories.size() + " repositories (" + String.join(", ", repositories.keySet()) + ").")
                 .build();
     }
 

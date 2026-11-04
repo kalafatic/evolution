@@ -270,6 +270,27 @@ public class SelfDevPipelineHardeningTest {
                 client.getBaseUrl().contains(":" + context.getEffectiveSupervisorPort()));
     }
 
+    @Test
+    public void testRollbackAndPromoteLifecycle() {
+        File repoRoot = new File(".").getAbsoluteFile();
+        SelfDevContext context = new SelfDevContext(repoRoot, null);
+
+        // Test Promotion pre-validation blocks without START_EVO success
+        eu.kalafatic.evolution.controller.orchestration.selfdev.PromoteTask promoteTask =
+                new eu.kalafatic.evolution.controller.orchestration.selfdev.PromoteTask("PROMOTE");
+        TaskResult prePromote = promoteTask.validate(context);
+        assertEquals(TaskStatus.FAILED, prePromote.getStatus());
+
+        // Test Rollback execution
+        eu.kalafatic.evolution.controller.orchestration.selfdev.RollbackTask rollbackTask =
+                new eu.kalafatic.evolution.controller.orchestration.selfdev.RollbackTask("ROLLBACK");
+        TaskResult rollbackRes = rollbackTask.execute(context);
+        assertEquals(TaskStatus.SUCCESS, rollbackRes.getStatus());
+        assertNotNull(rollbackRes.getDiagnostic("currentRun", null));
+        assertNotNull(rollbackRes.getDiagnostic("deploymentState", null));
+        assertNotNull(rollbackRes.getDiagnostic("processOwnership", null));
+    }
+
     private void deleteRecursively(File f) {
         if (f.isDirectory()) {
             File[] children = f.listFiles();
