@@ -122,4 +122,51 @@ public class LLMDarwinEngineOptimizationTest {
         // Fitness should be dominated by loss (valLoss*0.75 + trainLoss*0.25 = 1.95), plus tiny sizePenalty (0.01)
         assertEquals(1.96, fitness, 0.001);
     }
+
+    @Test
+    public void testEvoLlmTrainerEpochProgressLoggingWithoutException() {
+        EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), 64, 2, 1, 128, 64);
+        EvoLlmTrainer trainer = new EvoLlmTrainer(model);
+
+        List<NormalizedSample> normSamples = new ArrayList<>();
+        NormalizedSample norm = new NormalizedSample();
+        norm.setType(TrainingSampleType.TEXT);
+        norm.setText("The quick brown fox jumps over the lazy dog.");
+        normSamples.add(norm);
+
+        List<TrainingSample> samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, 64);
+
+        final boolean[] epochCompletedCalled = new boolean[1];
+        trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+            @Override
+            public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
+
+            @Override
+            public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+                epochCompletedCalled[0] = true;
+                assertTrue("Train loss should be finite", !Double.isNaN(trainLoss));
+            }
+        });
+
+        eu.kalafatic.evolution.forge.trainer.api.TrainingResult result = trainer.train(samples, 2);
+        assertEquals(eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus.TRAINING_COMPLETED, result.getTerminationStatus());
+        assertEquals(2, result.getCompletedEpochs());
+        assertTrue(epochCompletedCalled[0]);
+    }
+
+    @Test
+    public void testSafeWriteStringWithSurrogateCharacters() throws Exception {
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("evo-safe-write-test", ".json");
+        try {
+            // Unpaired surrogate character \uD800 that would fail standard Files.writeString
+            String unmappableText = "{\"vocab\": {\"token_\uD800\": 42}}";
+            eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.safeWriteString(tempFile, unmappableText);
+
+            String readBack = java.nio.file.Files.readString(tempFile, java.nio.charset.StandardCharsets.UTF_8);
+            assertNotNull(readBack);
+            assertTrue(readBack.contains("token_"));
+        } finally {
+            java.nio.file.Files.deleteIfExists(tempFile);
+        }
+    }
 }

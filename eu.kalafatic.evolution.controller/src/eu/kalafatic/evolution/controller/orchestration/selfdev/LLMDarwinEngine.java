@@ -249,6 +249,21 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		return value.substring(0, maximumLength);
 	}
 
+	private static String safeReadString(Path path) throws Exception {
+		if (path == null || !Files.exists(path)) {
+			return "";
+		}
+		try {
+			return Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
+		} catch (java.nio.charset.CharacterCodingException ex) {
+			byte[] bytes = Files.readAllBytes(path);
+			java.nio.charset.CharsetDecoder decoder = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+					.onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE)
+					.onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPLACE);
+			return decoder.decode(java.nio.ByteBuffer.wrap(bytes)).toString();
+		}
+	}
+
 	/**
 	 * Centralized candidate comparison method. Lower fitness is better. Successful
 	 * candidates always rank above failed ones.
@@ -1229,23 +1244,32 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		artifact.save(evoFilePath);
 
 		// Verify saved artifact loading and vocabulary
-		EvoModelArtifact loadedArtifact = EvoModelArtifact.load(evoFilePath);
-		context.log("[FORGE] Verified artifact contains " + loadedArtifact.getTokenizerVocab().size()
-				+ " vocabulary entries");
+		EvoModelArtifact loadedArtifact = null;
+		try {
+			loadedArtifact = EvoModelArtifact.load(evoFilePath);
+			context.log("[FORGE] Verified artifact contains " + loadedArtifact.getTokenizerVocab().size()
+					+ " vocabulary entries");
 
-		Map<Integer, String> sampleVocab = loadedArtifact.getIdToToken();
-		int sampleCount = 0;
-		for (Map.Entry<Integer, String> entry : sampleVocab.entrySet()) {
-			if (sampleCount++ < 5) {
-				context.log("[FORGE] Sample vocab: " + entry.getKey() + " -> \"" + entry.getValue() + "\"");
+			Map<Integer, String> sampleVocab = loadedArtifact.getIdToToken();
+			int sampleCount = 0;
+			for (Map.Entry<Integer, String> entry : sampleVocab.entrySet()) {
+				if (sampleCount++ < 5) {
+					context.log("[FORGE] Sample vocab: " + entry.getKey() + " -> \"" + entry.getValue() + "\"");
+				}
 			}
+		} catch (Exception ex) {
+			context.log("[FORGE] Warning verifying saved artifact: " + ex.getMessage());
 		}
 
 		context.log("[FORGE] Loading native EVO model artifact from *.evo file for subsequent target export.");
 
-		// EXPORT TO OLLAMA/GGUF WITHOUT RETRAINING (Consumes the loaded artifact)
-		OllamaExporter exporter = new OllamaExporter();
-		exporter.export(loadedArtifact, forgeOutputDir.toPath());
+		// EXPORT TO OLLAMA/GGUF WITHOUT RETRAINING (Consumes the loaded artifact or fresh artifact)
+		try {
+			OllamaExporter exporter = new OllamaExporter();
+			exporter.export(loadedArtifact != null ? loadedArtifact : artifact, forgeOutputDir.toPath());
+		} catch (Exception ex) {
+			context.log("[FORGE] Warning during Ollama/GGUF export: " + ex.getMessage());
+		}
 
 		// Copy forged model and native inference artifacts to controller lib/models
 		try {
@@ -1267,7 +1291,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			Path finalModelfilePath = forgeOutputDir.toPath().resolve("Modelfile");
 			if (Files.exists(finalModelfilePath)) {
-				String finalModelfileContent = Files.readString(finalModelfilePath);
+				String finalModelfileContent = safeReadString(finalModelfilePath);
 				context.log("[FORGE] Registering evolved model in Ollama via Ollama Protocol: " + dynamicModelName);
 				managedService.createModel(dynamicModelName, finalModelfileContent);
 
@@ -1296,27 +1320,31 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		context.log(String.format("[FORGE] Total sum time spent on forging: %s",
 				eu.kalafatic.utils.time.DateUtils.formatDuration(totalForgingDurationMs)));
 
-		// Save training-report.json
-		JSONObject reportJson = new JSONObject();
-		reportJson.put("modelName", dynamicModelName);
-		reportJson.put("forgeMode", modelSource.getForgeMode());
-		if (modelSource.getParentIdentifier() != null) {
-			reportJson.put("parentModel", modelSource.getParentIdentifier());
-		}
-		reportJson.put("generationsTrained", generations);
-		reportJson.put("cleanCorpusChars", cleanCorpus.length());
-		reportJson.put("finalLoss", overallWinner.loss);
-		reportJson.put("parameterCount", overallWinner.paramCount);
-		reportJson.put("durationMs", overallWinner.durationMs);
-		reportJson.put("totalForgingDurationMs", totalForgingDurationMs);
-		reportJson.put("fitnessScore", overallWinner.fitness);
+		// Save training-report.json safely
+		try {
+			JSONObject reportJson = new JSONObject();
+			reportJson.put("modelName", dynamicModelName);
+			reportJson.put("forgeMode", modelSource.getForgeMode());
+			if (modelSource.getParentIdentifier() != null) {
+				reportJson.put("parentModel", modelSource.getParentIdentifier());
+			}
+			reportJson.put("generationsTrained", generations);
+			reportJson.put("cleanCorpusChars", cleanCorpus.length());
+			reportJson.put("finalLoss", overallWinner.loss);
+			reportJson.put("parameterCount", overallWinner.paramCount);
+			reportJson.put("durationMs", overallWinner.durationMs);
+			reportJson.put("totalForgingDurationMs", totalForgingDurationMs);
+			reportJson.put("fitnessScore", overallWinner.fitness);
 
-		JSONArray historyArr = new JSONArray();
-		for (JSONObject gr : genReports) {
-			historyArr.put(gr);
+			JSONArray historyArr = new JSONArray();
+			for (JSONObject gr : genReports) {
+				historyArr.put(gr);
+			}
+			reportJson.put("generationHistory", historyArr);
+			EvoModelArtifact.safeWriteString(forgeOutputDir.toPath().resolve("training-report.json"), reportJson.toString(4));
+		} catch (Exception ex) {
+			context.log("[FORGE] Warning saving training report: " + ex.getMessage());
 		}
-		reportJson.put("generationHistory", historyArr);
-		Files.writeString(forgeOutputDir.toPath().resolve("training-report.json"), reportJson.toString(4));
 
 		context.log("[FORGE] Saved winning model artifacts successfully to " + forgeOutputDir.getAbsolutePath());
 
@@ -1503,8 +1531,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			long tDataStart = System.currentTimeMillis();
 			String sampleCacheKey = config.vocabSize + "_" + seqLen + "_" + maxScreeningSamples;
 			List<eu.kalafatic.evolution.forge.data.api.TrainingSample> cached = cachedCandidateSamples.get(sampleCacheKey);
-			if (cached != null) {
-				samples = cached;
+			if (cached != null && !cached.isEmpty()) {
+				samples = new ArrayList<>(cached);
 			} else {
 				if (normSamples != null && !normSamples.isEmpty()) {
 					samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen, maxScreeningSamples);
@@ -1531,7 +1559,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 						}
 					}
 				}
-				cachedCandidateSamples.put(sampleCacheKey, samples);
+				cachedCandidateSamples.put(sampleCacheKey, new ArrayList<>(samples));
 			}
 
 			long tDataDuration = System.currentTimeMillis() - tDataStart;

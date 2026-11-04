@@ -365,7 +365,7 @@ public class EvoLlmTrainer {
                 result.setValLoss(avgValLoss);
 
                 System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %s%n",
-                        epoch + 1, epochs, formatDuration(epochDuration));
+                        epoch + 1, epochs, avgTrainLoss, avgValLoss, formatDuration(epochDuration));
 
                 for (ProgressListener listener : progressListeners) {
                     listener.onEpochCompleted(epoch + 1, epochs, avgTrainLoss, avgValLoss, epochDuration);
