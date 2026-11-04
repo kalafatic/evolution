@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.servers.mcp.connectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.kalafatic.evolution.servers.mcp.model.McpExecutionContext;
 import eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry;
 import eu.kalafatic.evolution.servers.mcp.model.Tool;
 import java.util.*;
@@ -10,19 +11,19 @@ public class DummyConnector {
     public void registerTools(ToolRegistry registry) {
         // Jira tools
         registry.register(new Tool("searchIssues", "Search for Jira issues", createSearchSchema()),
-            this::searchIssues);
+            (args, ctx) -> searchIssues(args));
         registry.register(new Tool("getIssue", "Get details of a Jira issue", Collections.singletonMap("type", "object")),
-            this::getIssue);
+            (args, ctx) -> getIssue(args));
 
         // Confluence tools
         registry.register(new Tool("searchPages", "Search for Confluence pages", createSearchSchema()),
-            this::searchPages);
+            (args, ctx) -> searchPages(args));
         registry.register(new Tool("getPage", "Get details of a Confluence page", Collections.singletonMap("type", "object")),
-            this::getPage);
+            (args, ctx) -> getPage(args));
 
         // GitHub tools
         registry.register(new Tool("searchRepositories", "Search for GitHub repositories", createSearchSchema()),
-            this::searchRepositories);
+            (args, ctx) -> searchRepositories(args));
     }
 
     private Map<String, Object> createSearchSchema() {

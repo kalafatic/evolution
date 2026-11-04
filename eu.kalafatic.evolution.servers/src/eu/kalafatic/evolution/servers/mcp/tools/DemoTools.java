@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.servers.mcp.tools;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.kalafatic.evolution.servers.mcp.model.McpExecutionContext;
 import eu.kalafatic.evolution.servers.mcp.model.Tool;
 import java.util.*;
 
@@ -8,21 +9,21 @@ public class DemoTools {
 
     public static class EchoToolExecutor implements ToolRegistry.ToolExecutor {
         @Override
-        public Object execute(JsonNode args) {
-            return Collections.singletonMap("text", args.get("text").asText());
+        public Object execute(JsonNode args, McpExecutionContext context) {
+            return Collections.singletonMap("text", args != null && args.has("text") ? args.get("text").asText() : "");
         }
     }
 
     public static class TimeToolExecutor implements ToolRegistry.ToolExecutor {
         @Override
-        public Object execute(JsonNode args) {
+        public Object execute(JsonNode args, McpExecutionContext context) {
             return Collections.singletonMap("currentTime", new Date().toString());
         }
     }
 
     public static class SystemInfoToolExecutor implements ToolRegistry.ToolExecutor {
         @Override
-        public Object execute(JsonNode args) {
+        public Object execute(JsonNode args, McpExecutionContext context) {
             Map<String, Object> info = new HashMap<>();
             info.put("javaVersion", System.getProperty("java.version"));
             info.put("osName", System.getProperty("os.name"));
@@ -36,7 +37,7 @@ public class DemoTools {
 
     public static class CalculatorToolExecutor implements ToolRegistry.ToolExecutor {
         @Override
-        public Object execute(JsonNode args) throws Exception {
+        public Object execute(JsonNode args, McpExecutionContext context) throws Exception {
             String op = args.get("operation").asText();
             double a = args.get("a").asDouble();
             double b = args.get("b").asDouble();
@@ -45,8 +46,11 @@ public class DemoTools {
                 case "add": result = a + b; break;
                 case "subtract": result = a - b; break;
                 case "multiply": result = a * b; break;
-                case "divide": result = a / b; break;
-                default: throw new Exception("Unknown operation: " + op);
+                case "divide":
+                    if (b == 0.0) throw new IllegalArgumentException("Division by zero");
+                    result = a / b;
+                    break;
+                default: throw new IllegalArgumentException("Unknown operation: " + op);
             }
             return Collections.singletonMap("result", result);
         }
@@ -54,11 +58,13 @@ public class DemoTools {
 
     public static class ProjectInfoToolExecutor implements ToolRegistry.ToolExecutor {
         @Override
-        public Object execute(JsonNode args) {
+        public Object execute(JsonNode args, McpExecutionContext context) {
             Map<String, Object> info = new HashMap<>();
             info.put("serverName", "EvoMcpServer");
             info.put("version", "1.0.0");
             info.put("capabilities", Arrays.asList("tools", "resources", "prompts"));
+            info.put("sessionId", context != null ? context.getSessionId() : "N/A");
+            info.put("principal", context != null ? context.getPrincipal() : "N/A");
             return info;
         }
     }
