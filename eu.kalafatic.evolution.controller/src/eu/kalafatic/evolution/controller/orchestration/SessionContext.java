@@ -46,6 +46,7 @@ public class SessionContext implements SessionContainer {
     private final eu.kalafatic.evolution.controller.log.SessionLogger sessionLogger;
 
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
+    private final Map<String, ServerOperation> operations = new ConcurrentHashMap<>();
     private IterationMemoryService memoryService;
     private IterationManager iterationManager;
     private TaskContext taskContext;
@@ -241,6 +242,47 @@ public class SessionContext implements SessionContainer {
     }
 
     @Override
+    public void registerOperation(ServerOperation operation) {
+        if (operation != null && operation.getOperationId() != null) {
+            operations.put(operation.getOperationId(), operation);
+            if (eventBus != null) {
+                eventBus.publish(new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,
+                    sessionId, "SessionContext", operation.getOperationId()
+                ).withMetadata("operationType", operation.getOperationType())
+                 .withMetadata("state", operation.getState().name()));
+            }
+        }
+    }
+
+    @Override
+    public ServerOperation getOperation(String operationId) {
+        if (operationId == null) return null;
+        return operations.get(operationId);
+    }
+
+    @Override
+    public java.util.Collection<ServerOperation> getOperations() {
+        return java.util.Collections.unmodifiableCollection(operations.values());
+    }
+
+    @Override
+    public boolean cancelOperation(String operationId, String reason) {
+        ServerOperation op = getOperation(operationId);
+        if (op != null) {
+            boolean cancelled = op.cancel(reason);
+            if (eventBus != null) {
+                eventBus.publish(new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FLOW_PAUSED,
+                    sessionId, "SessionContext", "CANCELLED"
+                ).withMetadata("operationId", operationId).withMetadata("reason", reason));
+            }
+            return cancelled;
+        }
+        return false;
+    }
+
+    @Override
     public boolean isDisposed() {
         return disposed;
     }
@@ -256,6 +298,13 @@ public class SessionContext implements SessionContainer {
             return;
         }
         disposed = true;
+
+        // Cancel all active operations owned by this session to prevent orphaned processes
+        for (ServerOperation op : operations.values()) {
+            if (op.getState().isActive()) {
+                op.cancel("Session " + sessionId + " shutdown");
+            }
+        }
 
         if (taskContext != null) {
             taskContext.setCancelled(true);

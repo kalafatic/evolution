@@ -75,6 +75,7 @@ public class EvolutionServer extends NanoHTTPD {
     private final eu.kalafatic.evolution.servers.controller.AdminApiController adminApiController;
     private final ArchitectureController architectureController;
     private final EvolutionDashboardController evolutionDashboardController;
+    private final eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentController demoDocumentController;
 
     private SessionController sessionController;
     private ModelController modelController;
@@ -97,6 +98,20 @@ public class EvolutionServer extends NanoHTTPD {
         this.adminApiController = new eu.kalafatic.evolution.servers.controller.AdminApiController(dbManager);
         this.architectureController = new ArchitectureController();
         this.evolutionDashboardController = new EvolutionDashboardController();
+
+        eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry toolRegistry = new eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry();
+        eu.kalafatic.evolution.servers.mcp.tools.DemoTools.registerAll(toolRegistry);
+        eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry resourceRegistry = new eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry();
+        eu.kalafatic.evolution.servers.mcp.resources.DemoResources.registerAll(resourceRegistry);
+        eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry promptRegistry = new eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry();
+        eu.kalafatic.evolution.servers.mcp.prompts.DemoPrompts.registerAll(promptRegistry);
+        eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher dispatcher =
+            new eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher(toolRegistry, resourceRegistry, promptRegistry);
+
+        this.demoDocumentController = new eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentController(
+            new eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentService("docs")
+        );
+        this.demoDocumentController.setMcpDispatcher(dispatcher);
     }
 
     public void setForgeControllers(SessionController sc, ModelController mc, DatasetController dc, TrainingController tc, SnapshotController snc) {
@@ -112,6 +127,12 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     public void stopServer() {
+        // Cancel and clean up all active server operations cleanly on shutdown
+        for (ServerOperation op : SessionManager.getInstance().getAllOperations()) {
+            if (op.getState().isActive()) {
+                op.cancel("Server shutdown initiated");
+            }
+        }
         stop();
     }
 
@@ -260,6 +281,8 @@ public class EvolutionServer extends NanoHTTPD {
             } else if (Method.GET.equals(method) && ("/mcp".equals(uri) || "/mcp.html".equals(uri) || "/experimental/mcp".equals(uri))) {
                 updateSessionWorkflow(session, "MCP");
                 return handleGetMcpPage();
+            } else if (uri.startsWith("/ui/")) {
+                return demoDocumentController.handle(session);
             } else if (Method.GET.equals(method) && "/experimental/evolution/tree".equals(uri)) {
                 return handleGetEvolutionTreePage();
             } else if (Method.GET.equals(method) && "/evolution/tree".equals(uri)) {
@@ -274,6 +297,14 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetSystemState();
             } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
                 return handleRegisterUiSession(session);
+            } else if (Method.GET.equals(method) && "/server/operations".equals(uri)) {
+                return handleGetOperations(session);
+            } else if (Method.GET.equals(method) && uri.startsWith("/server/operations/")) {
+                String opId = uri.substring("/server/operations/".length());
+                return handleGetOperation(opId);
+            } else if (Method.POST.equals(method) && uri.startsWith("/server/operations/") && uri.endsWith("/cancel")) {
+                String opId = uri.substring("/server/operations/".length(), uri.length() - "/cancel".length());
+                return handleCancelOperation(opId, session);
             } else if (Method.GET.equals(method) && uri.startsWith("/server/conversation/")) {
                 String sessionIdParam = uri.substring("/server/conversation/".length());
                 return handleGetConversation(sessionIdParam);
@@ -426,23 +457,63 @@ public class EvolutionServer extends NanoHTTPD {
 
             System.out.println("[EvolutionServer] [CREATE_TASK] Prompt=" + request.getPrompt() + ", SessionId=" + sid);
 
-            if (sid != null && !sid.isEmpty()) {
-                OrchestratorServiceImpl.getInstance().submit(sid, request);
-                JSONObject jsonRes = new JSONObject();
-                jsonRes.put("status", "SUCCESS");
-                jsonRes.put("summary", "Inference task submitted");
-                jsonRes.put("sessionId", sid);
-                jsonRes.put("prompt", request.getPrompt());
-                return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
+            final String effectiveSessionId = (sid != null && !sid.isEmpty()) ? sid : "session-" + UUID.randomUUID().toString();
+            request.getContext().put("sessionId", effectiveSessionId);
+
+            String ownerPrincipal = "ANONYMOUS";
+            String authSessionId = getSessionIdFromRequest(session);
+            if (authSessionId != null) {
+                try {
+                    java.util.Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(authSessionId);
+                    if (userOpt.isPresent()) {
+                        ownerPrincipal = userOpt.get().getUsername();
+                    }
+                } catch (Exception ignored) {}
             }
 
-            OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
+            String opId = "op-task-" + UUID.randomUUID().toString().substring(0, 8);
+            ServerOperation op = new ServerOperation(opId, effectiveSessionId, ownerPrincipal, "INFERENCE_TASK");
+            op.transitionTo(ServerOperationState.QUEUED, "Queued inference task");
+
+            SessionContainer sessionContainer = SessionManager.getInstance().getOrCreateSession(effectiveSessionId);
+            sessionContainer.registerOperation(op);
+
+            // Execute non-blocking on session executor service
+            java.util.concurrent.Future<?> future = sessionContainer.getExecutorService().submit(() -> {
+                try {
+                    op.setWorkerThread(Thread.currentThread());
+                    op.transitionTo(ServerOperationState.RUNNING, "Executing inference task: " + request.getPrompt());
+                    op.setProgress(0.1, "Submitting task to orchestrator");
+
+                    OrchestratorServiceImpl.getInstance().submit(effectiveSessionId, request);
+                    op.setProgress(0.5, "Task submitted and running");
+
+                    // Track completion through TaskContext if present
+                    TaskContext taskCtx = (sessionContainer instanceof SessionContext) ?
+                        ((SessionContext) sessionContainer).getTaskContext() : null;
+                    if (taskCtx != null) {
+                        taskCtx.addLogListener(log -> {
+                            op.setProgress(Math.min(0.9, op.getProgress() + 0.05), log);
+                        });
+                    }
+
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("sessionId", effectiveSessionId);
+                    payload.put("prompt", request.getPrompt());
+                    op.complete("Inference task successfully submitted", payload);
+                } catch (Throwable t) {
+                    op.fail("Task execution failed: " + t.getMessage(), t);
+                }
+            });
+            op.setExecutionFuture(future);
 
             JSONObject jsonRes = new JSONObject();
-            jsonRes.put("summary", response.getSummary());
-            jsonRes.put("type", response.getResultType().toString());
-            if (response.getContent() != null) jsonRes.put("content", response.getContent());
-
+            jsonRes.put("status", "SUCCESS");
+            jsonRes.put("operationId", opId);
+            jsonRes.put("state", op.getState().name());
+            jsonRes.put("summary", "Inference task submitted asynchronously");
+            jsonRes.put("sessionId", effectiveSessionId);
+            jsonRes.put("prompt", request.getPrompt());
             return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
         } catch (Exception e) {
             System.err.println("[EvolutionServer] [CREATE_TASK_ERROR] " + e.getMessage());
@@ -1734,6 +1805,60 @@ public class EvolutionServer extends NanoHTTPD {
         }
     }
 
+    private Response handleGetOperations(IHTTPSession session) {
+        String filterSession = session.getParms().get("sessionId");
+        String filterState = session.getParms().get("state");
+
+        Collection<ServerOperation> ops = SessionManager.getInstance().getAllOperations();
+        JSONArray arr = new JSONArray();
+        for (ServerOperation op : ops) {
+            if (filterSession != null && !filterSession.isEmpty() && !filterSession.equals(op.getSessionId())) {
+                continue;
+            }
+            if (filterState != null && !filterState.isEmpty() && !filterState.equalsIgnoreCase(op.getState().name())) {
+                continue;
+            }
+            arr.put(op.toJsonObject());
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", arr.toString());
+    }
+
+    private Response handleGetOperation(String operationId) {
+        ServerOperation op = SessionManager.getInstance().findOperation(operationId);
+        if (op == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json",
+                new JSONObject().put("error", "Operation not found: " + operationId).toString());
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", op.toJsonObject().toString());
+    }
+
+    private Response handleCancelOperation(String operationId, IHTTPSession session) throws IOException, ResponseException {
+        ServerOperation op = SessionManager.getInstance().findOperation(operationId);
+        if (op == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json",
+                new JSONObject().put("error", "Operation not found: " + operationId).toString());
+        }
+
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        String reason = "Cancelled by user request";
+        if (postData != null && !postData.trim().isEmpty()) {
+            try {
+                JSONObject json = new JSONObject(postData);
+                reason = json.optString("reason", reason);
+            } catch (Exception ignored) {}
+        }
+
+        boolean cancelled = SessionManager.getInstance().cancelOperation(operationId, reason);
+        JSONObject res = new JSONObject();
+        res.put("operationId", operationId);
+        res.put("cancelled", cancelled);
+        res.put("state", op.getState().name());
+        res.put("statusMessage", op.getStatusMessage());
+        return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+    }
+
     private Response handleRegisterUiSession(IHTTPSession session) throws IOException, ResponseException {
         Map<String, String> files = new HashMap<>();
         session.parseBody(files);
@@ -2224,72 +2349,123 @@ public class EvolutionServer extends NanoHTTPD {
         String sessionId = body.optString("sessionId", "dataset_acq_" + UUID.randomUUID().toString());
         SessionContainer sessionCont = SessionManager.getInstance().getOrCreateSession(sessionId);
 
-        TaskContext taskContext = new TaskContext(OrchestratorServiceImpl.getInstance().getOrchestrator(), new File("."));
-        taskContext.setSessionId(sessionId);
-        taskContext.getOrchestrationState().setExecutionProfile(
-            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(taskContext, null, null)
-        );
-        taskContext.getMetadata().put("sourceType", sourceType);
-        taskContext.getMetadata().put("repository", repo);
-        taskContext.getMetadata().put("split", split);
-        taskContext.getMetadata().put("targetUsableBytes", targetUsableBytes);
-        taskContext.getMetadata().put("customOutputDir", customOutputDir);
-
-        Map<String, Object> goalParams = new HashMap<>();
-        goalParams.put("targetUsableBytes", targetUsableBytes);
-        goalParams.put("targetMetric", (double) targetUsableBytes);
-        goalParams.put("currentMetricKey", "quantity");
-        goalParams.put("sourceType", sourceType);
-        goalParams.put("repository", repo);
-
-        eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
-            new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
-                "Acquire and prepare " + targetUsableBytes + " bytes of " + repo + " training dataset",
-                "DATASET_ACQUISITION",
-                goalParams
-            );
-
-        if (sessionCont.getIterationManager() == null) {
+        String ownerPrincipal = "ANONYMOUS";
+        String authSessionId = getSessionIdFromRequest(session);
+        if (authSessionId != null) {
             try {
-                IterationManager iterManager = KernelFactory.create(goal.getDescription(), taskContext, sessionCont);
-                sessionCont.setIterationManager(iterManager);
-            } catch (Exception e) {
-                eu.kalafatic.evolution.controller.log.Log.log("[EVO-SERVER] Warning: Failed to initialize IterationManager for session " + sessionId + ": " + e.getMessage());
-            }
+                java.util.Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(authSessionId);
+                if (userOpt.isPresent()) {
+                    ownerPrincipal = userOpt.get().getUsername();
+                }
+            } catch (Exception ignored) {}
         }
 
-        eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
-            new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
+        String opId = "op-acq-" + UUID.randomUUID().toString().substring(0, 8);
+        ServerOperation op = new ServerOperation(opId, sessionId, ownerPrincipal, "DATASET_PREPARATION");
+        op.transitionTo(ServerOperationState.QUEUED, "Queued dataset preparation for " + repo);
+        sessionCont.registerOperation(op);
 
-        eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult cognitiveResult =
-            cognitiveEngine.solve(sessionCont, taskContext, goal);
+        final long finalTargetBytes = targetUsableBytes;
+        final String finalRepo = repo;
+        final String finalSourceType = sourceType;
+        final String finalSplit = split;
+        final String finalCustomOutputDir = customOutputDir;
 
-        // Retrieve authoritative acquisition result from TaskContext metadata
-        eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult acqResult =
-            (eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult) taskContext.getMetadata().get("acquisitionResult");
+        java.util.concurrent.Future<?> future = sessionCont.getExecutorService().submit(() -> {
+            try {
+                op.setWorkerThread(Thread.currentThread());
+                op.transitionTo(ServerOperationState.RUNNING, "Preparing dataset for " + finalRepo);
+                op.setProgress(0.1, "Initializing task context and cognitive goal");
 
-        long usableBytes = acqResult != null ? acqResult.getAcceptedContentBytes() : 0L;
-        String acqStatus = acqResult != null ? acqResult.getStatus().name() : cognitiveResult.getFinalState().name();
-        String failureReason = acqResult != null ? (acqResult.getFailureReason() != null ? acqResult.getFailureReason() : "") : "";
+                TaskContext taskContext = new TaskContext(OrchestratorServiceImpl.getInstance().getOrchestrator(), new File("."));
+                taskContext.setSessionId(sessionId);
+                taskContext.getOrchestrationState().setExecutionProfile(
+                    eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(taskContext, null, null)
+                );
+                taskContext.getMetadata().put("sourceType", finalSourceType);
+                taskContext.getMetadata().put("repository", finalRepo);
+                taskContext.getMetadata().put("split", finalSplit);
+                taskContext.getMetadata().put("targetUsableBytes", finalTargetBytes);
+                taskContext.getMetadata().put("customOutputDir", finalCustomOutputDir);
+
+                Map<String, Object> goalParams = new HashMap<>();
+                goalParams.put("targetUsableBytes", finalTargetBytes);
+                goalParams.put("targetMetric", (double) finalTargetBytes);
+                goalParams.put("currentMetricKey", "quantity");
+                goalParams.put("sourceType", finalSourceType);
+                goalParams.put("repository", finalRepo);
+
+                eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
+                    new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
+                        "Acquire and prepare " + finalTargetBytes + " bytes of " + finalRepo + " training dataset",
+                        "DATASET_ACQUISITION",
+                        goalParams
+                    );
+
+                if (sessionCont.getIterationManager() == null) {
+                    try {
+                        IterationManager iterManager = KernelFactory.create(goal.getDescription(), taskContext, sessionCont);
+                        sessionCont.setIterationManager(iterManager);
+                    } catch (Exception e) {
+                        eu.kalafatic.evolution.controller.log.Log.log("[EVO-SERVER] Warning: Failed to initialize IterationManager for session " + sessionId + ": " + e.getMessage());
+                    }
+                }
+
+                op.setProgress(0.3, "Executing cognitive loop search");
+                eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
+                    new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
+
+                eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult cognitiveResult =
+                    cognitiveEngine.solve(sessionCont, taskContext, goal);
+
+                eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult acqResult =
+                    (eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult) taskContext.getMetadata().get("acquisitionResult");
+
+                long usableBytes = acqResult != null ? acqResult.getAcceptedContentBytes() : 0L;
+                String acqStatus = acqResult != null ? acqResult.getStatus().name() : cognitiveResult.getFinalState().name();
+                String failureReason = acqResult != null ? (acqResult.getFailureReason() != null ? acqResult.getFailureReason() : "") : "";
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("sessionId", sessionId);
+                payload.put("status", acqStatus);
+                payload.put("cognitiveState", cognitiveResult.getFinalState().name());
+                payload.put("repository", finalRepo);
+                payload.put("sourceType", finalSourceType);
+                payload.put("split", finalSplit);
+                payload.put("requestedUsableBytes", finalTargetBytes);
+                payload.put("actualUsableBytes", usableBytes);
+                payload.put("attempts", cognitiveResult.getAttempts());
+                payload.put("failureReason", failureReason);
+
+                if (op.isCancellationRequested()) {
+                    op.markCancelled("Cancelled during acquisition");
+                } else if (acqResult != null || usableBytes > 0) {
+                    op.complete(cognitiveResult.getSummary(), payload);
+                } else {
+                    op.fail("Dataset preparation failed: " + failureReason, null);
+                }
+            } catch (Throwable t) {
+                if (op.isCancellationRequested()) {
+                    op.markCancelled("Cancelled: " + t.getMessage());
+                } else {
+                    op.fail("Dataset acquisition exception: " + t.getMessage(), t);
+                }
+            }
+        });
+        op.setExecutionFuture(future);
 
         JSONObject result = new JSONObject();
+        result.put("operationId", opId);
         result.put("sessionId", sessionId);
-        result.put("status", acqStatus);
-        result.put("cognitiveState", cognitiveResult.getFinalState().name());
+        result.put("status", "QUEUED");
+        result.put("state", op.getState().name());
         result.put("repository", repo);
         result.put("sourceType", sourceType);
         result.put("split", split);
         result.put("requestedUsableBytes", targetUsableBytes);
-        result.put("actualUsableBytes", usableBytes);
-        result.put("attempts", cognitiveResult.getAttempts());
-        result.put("failureReason", failureReason);
-        result.put("summary", cognitiveResult.getSummary());
+        result.put("summary", "Dataset preparation task initiated asynchronously");
 
-        if (acqResult != null || usableBytes > 0) {
-            return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
-        } else {
-            return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", result.toString());
-        }
+        return newFixedLengthResponse(Response.Status.ACCEPTED, "application/json", result.toString());
     }
 
     private Response handleGetDatasetArtifacts() {
