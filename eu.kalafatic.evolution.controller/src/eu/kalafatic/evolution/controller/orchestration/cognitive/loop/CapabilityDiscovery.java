@@ -52,22 +52,32 @@ public class CapabilityDiscovery {
     public List<CapabilityDescriptor> discoverCapabilities(SessionContainer session) {
         List<CapabilityDescriptor> list = new ArrayList<>();
 
-        // 1. Discover registered tools in ToolFactory
-        List<String> defaultTools = List.of("file", "maven", "git", "shell", "eclipse", "cpp", "database", "dataset_acquisition");
-        for (String toolName : defaultTools) {
+        // 1. Discover dynamically registered tools in ToolFactory
+        java.util.Set<String> toolNames = new java.util.TreeSet<>(ToolFactory.getRegisteredTools());
+        for (String toolName : toolNames) {
             ITool tool = ToolFactory.getTool(toolName);
-            if (tool != null) {
-                list.add(new CapabilityDescriptor(tool.getName(), "System tool capability for " + tool.getName(), "ToolFactory", false));
-            } else {
-                list.add(new CapabilityDescriptor(toolName, "Generic environment capability: " + toolName, "BuiltIn", false));
-            }
+            String desc = (tool != null) ? "System tool capability: " + tool.getName() : "Environment tool: " + toolName;
+            boolean reqAuth = "shell".equalsIgnoreCase(toolName) || "git".equalsIgnoreCase(toolName);
+            list.add(new CapabilityDescriptor(toolName, desc, "ToolFactory", reqAuth));
         }
 
-        // 2. Discover session capabilities
+        // 2. Discover session capabilities from CapabilityRegistry
         if (session != null && session.getCapabilityRegistry() != null) {
             session.getCapabilityRegistry().getAllCapabilities().forEach(cap -> {
-                list.add(new CapabilityDescriptor(cap.getCapabilityId(), "Session capability " + cap.getCapabilityId(), "CapabilityRegistry", true));
+                list.add(new CapabilityDescriptor(cap.getCapabilityId(), "Session capability: " + cap.getCapabilityId(), "CapabilityRegistry", true));
             });
+        }
+
+        // 3. Discover isolated agents available in session
+        if (session != null) {
+            try {
+                var agents = eu.kalafatic.evolution.controller.agents.AgentFactory.createIsolatedAgents(session);
+                for (var agent : agents) {
+                    if (agent != null && agent.getType() != null) {
+                        list.add(new CapabilityDescriptor("agent:" + agent.getType().toLowerCase(), "Agent capability: " + agent.getType(), "AgentFactory", false));
+                    }
+                }
+            } catch (Exception ignored) {}
         }
 
         return Collections.unmodifiableList(list);
