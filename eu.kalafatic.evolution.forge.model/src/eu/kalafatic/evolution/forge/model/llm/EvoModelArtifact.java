@@ -175,7 +175,7 @@ public class EvoModelArtifact {
         modelJson.put("numBlocks", getNumBlocks());
         modelJson.put("dff", getDff());
         modelJson.put("maxSeqLen", getMaxSeqLen());
-        Files.writeString(dir.resolve("model.json"), modelJson.toString(2));
+        safeWriteString(dir.resolve("model.json"), modelJson.toString(2));
 
         // 2. config.json
         JSONObject configJson = new JSONObject();
@@ -196,7 +196,7 @@ public class EvoModelArtifact {
         configJson.put("topK", topK);
         configJson.put("top_k", topK);
         configJson.put("repeat_penalty", repeatPenalty);
-        Files.writeString(dir.resolve("config.json"), configJson.toString(2));
+        safeWriteString(dir.resolve("config.json"), configJson.toString(2));
 
         // 3. tokenizer.json
         JSONObject tokenizerJson = new JSONObject();
@@ -218,7 +218,7 @@ public class EvoModelArtifact {
             }
             tokenizerJson.put("tokens", tokensArr);
         }
-        Files.writeString(dir.resolve("tokenizer.json"), tokenizerJson.toString(2));
+        safeWriteString(dir.resolve("tokenizer.json"), tokenizerJson.toString(2));
 
         // 4. weights.bin
         Path weightsPath = dir.resolve("weights.bin");
@@ -448,7 +448,23 @@ public class EvoModelArtifact {
         vocabData.put("vocab", tokenizerDescriptor.getTokenToId());
 
         JSONObject json = new JSONObject(vocabData);
-        Files.writeString(path, json.toString(2));
+        safeWriteString(path, json.toString(2));
+    }
+
+    public static void safeWriteString(Path path, String content) throws IOException {
+        if (content == null) {
+            content = "";
+        }
+        java.nio.charset.CharsetEncoder encoder = java.nio.charset.StandardCharsets.UTF_8.newEncoder()
+                .onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPLACE);
+        java.nio.ByteBuffer bb = encoder.encode(java.nio.CharBuffer.wrap(content));
+        byte[] bytes = new byte[bb.remaining()];
+        bb.get(bytes);
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+        Files.write(path, bytes);
     }
 
     // ============ MODEL RECREATION ============
