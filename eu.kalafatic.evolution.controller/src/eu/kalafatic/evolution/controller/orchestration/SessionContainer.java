@@ -41,6 +41,11 @@ public interface SessionContainer {
     eu.kalafatic.evolution.controller.workflow.RuntimeContextCollector getContextCollector();
     eu.kalafatic.evolution.controller.log.SessionLogger getSessionLogger();
 
+    void registerOperation(ServerOperation operation);
+    ServerOperation getOperation(String operationId);
+    java.util.Collection<ServerOperation> getOperations();
+    boolean cancelOperation(String operationId, String reason);
+
     boolean isDisposed();
     void dispose();
     void shutdown();
