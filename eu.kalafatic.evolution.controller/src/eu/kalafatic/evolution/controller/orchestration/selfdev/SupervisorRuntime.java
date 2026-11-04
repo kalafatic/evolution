@@ -256,28 +256,40 @@ public class SupervisorRuntime implements ProcessLifecycle {
         SupervisorClient activeClient = new SupervisorClient(context);
         long targetPid = context != null ? context.getSupervisorPid() : -1;
 
-        if (supervisorProcess == null && uiRcpSupervisorProcess == null && !activeClient.ping()) {
+        if (supervisorProcess == null && uiRcpSupervisorProcess == null && targetPid <= 0) {
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
-                    .message("Supervisor is not running.")
+                    .message("Supervisor is not running or not owned by current run.")
                     .build();
         }
 
         try {
-            if (activeClient.ping()) {
-                activeClient.sendCommand("shutdown", null);
-                Thread.sleep(1000);
-            }
-
+            // STOP must terminate only the process owned by the current run.
+            // If we launched the process directly, terminate our owned process.
             if (supervisorProcess != null) {
+                if (activeClient.ping()) {
+                    try {
+                        activeClient.sendCommand("shutdown", null);
+                        Thread.sleep(800);
+                    } catch (Exception ignored) {}
+                }
                 killProcessTree(supervisorProcess);
                 supervisorProcess = null;
-            } else if (context != null && context.getSupervisorPid() > 0) {
+            } else if (targetPid > 0) {
                 java.util.Optional<ProcessHandle> ph = ProcessHandle.of(targetPid);
-                ph.ifPresent(p -> {
-                    p.descendants().forEach(ProcessHandle::destroyForcibly);
-                    p.destroyForcibly();
-                });
+                if (ph.isPresent()) {
+                    ProcessHandle p = ph.get();
+                    if (p.isAlive()) {
+                        if (activeClient.ping()) {
+                            try {
+                                activeClient.sendCommand("shutdown", null);
+                                Thread.sleep(800);
+                            } catch (Exception ignored) {}
+                        }
+                        p.descendants().forEach(ProcessHandle::destroyForcibly);
+                        p.destroyForcibly();
+                    }
+                }
             }
 
             if (uiRcpSupervisorProcess != null) {

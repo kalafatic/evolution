@@ -76,8 +76,13 @@ public class SelfDevOrchestrator {
         SelfDevTask exportSuper = new ExportSupervisorTask("EXPORT_SUPERVISOR");
         exportSuper.addDependency("BUILD_SUPERVISOR_LOCAL");
 
+        SelfDevTask deployEvo = new DeployEvoTask("DEPLOY_EVO");
+        deployEvo.addDependency("EXPORT_EVO");
+        SelfDevTask deploy = new DeployEvoTask("DEPLOY");
+        deploy.addDependency("EXPORT_EVO");
+
         SelfDevTask startEvo = new StartEvoTask("START_EVO");
-        startEvo.addDependency("EXPORT_EVO");
+        startEvo.addDependency("DEPLOY_EVO");
         SelfDevTask stopEvo = new StopEvoTask("STOP_EVO");
 
         SelfDevTask startSuper = new StartSupervisorTask("START_SUPERVISOR");
@@ -126,6 +131,9 @@ public class SelfDevOrchestrator {
         taskRegistry.put("EXPORT_EVO", exportEvo);
         taskRegistry.put("EXPORT_SUPERVISOR", exportSuper);
 
+        taskRegistry.put("DEPLOY", deploy);
+        taskRegistry.put("DEPLOY_EVO", deployEvo);
+
         taskRegistry.put("START_EVO", startEvo);
         taskRegistry.put("STOP_EVO", stopEvo);
         taskRegistry.put("START_SUPERVISOR", startSuper);
@@ -140,6 +148,14 @@ public class SelfDevOrchestrator {
         taskRegistry.put("CREATE_EVO_PROJECT", createProject);
         taskRegistry.put("CREATE_INFERENCE_TASK", createInference);
         taskRegistry.put("ANALYTIC_CHAT_VALIDATION", analyticChat);
+
+        SelfDevTask promote = new PromoteTask("PROMOTE");
+        promote.addDependency("START_EVO");
+
+        SelfDevTask rollback = new RollbackTask("ROLLBACK");
+
+        taskRegistry.put("PROMOTE", promote);
+        taskRegistry.put("ROLLBACK", rollback);
 
         taskRegistry.put("LLM", llm);
         taskRegistry.put("SUPERVISOR_LOOP", supervisorLoop);

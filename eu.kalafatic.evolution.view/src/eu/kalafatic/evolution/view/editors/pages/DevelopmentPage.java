@@ -95,9 +95,12 @@ public class DevelopmentPage extends AEvoPage {
 		public static final String START_EVO = "Start Evo Product";
 		public static final String START_EVO_PRODUCT_SUPERVISOR = "Start Evo Product (Supervisor)";
 		public static final String STOP_EVO_PRODUCT_SUPERVISOR = "Stop Evo Product (Supervisor)";
+		public static final String DEPLOY_PRODUCT_EVO = "Deploy Product (Evo)";
 		public static final String CREATE_EVO_PROJECT = "Create EVO Project";
 		public static final String CREATE_INFERENCE_TASK = "Create Local Inference Task";
 		public static final String ANALYTIC_CHAT_VALIDATION = "Analytic Chat Validation";
+		public static final String PROMOTE_PRODUCT = "Promote Candidate Product";
+		public static final String ROLLBACK_PRODUCT = "Rollback Product & State";
 		public static final String SUPERVISOR_LOOP = "Supervisor Engine";
 		public static final String SELF_DEV_LOOP = "Self-Dev Loop";
 
@@ -372,15 +375,19 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(row++, "BUILD_SUPERVISOR", SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn clean install -pl eu.kalafatic.evolution.supervisor -DskipTests", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "EXPORT_EVO", SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "EXPORT_SUPERVISOR", SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "DEPLOY_EVO", SelfDevRow.DEPLOY_PRODUCT_EVO, "deploy exported product to runtime/evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port 8099", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "START_EVO", SelfDevRow.START_EVO, "./evo --port 48091", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "CREATE_EVO_PROJECT", SelfDevRow.CREATE_EVO_PROJECT, "curl -X POST http://localhost:48091/server/project/create -d '{\"name\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "CREATE_INFERENCE_TASK", SelfDevRow.CREATE_INFERENCE_TASK, "curl -X POST http://localhost:48091/task -d '{\"prompt\":\"hi\",\"sessionId\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "ANALYTIC_CHAT_VALIDATION", SelfDevRow.ANALYTIC_CHAT_VALIDATION, "curl -s http://localhost:48091/server/conversation/SelfDevProject", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "STOP_EVO", "STOP_EVO", "stop running EVO RCP product", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "PROMOTE", SelfDevRow.PROMOTE_PRODUCT, "promote candidate artifact after successful verification", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "ROLLBACK", SelfDevRow.ROLLBACK_PRODUCT, "rollback candidate artifact and restore previous state", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "SUPERVISOR_LOOP", SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "SELF_DEV_LOOP", SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		updateRowOrders(sdData);
@@ -767,12 +774,18 @@ public class DevelopmentPage extends AEvoPage {
 			"FROM Workspace Export Directory TO Active Process: Launches EVO RCP product via Supervisor runner and verifies startup.";
 		case SelfDevRow.CREATE_EVO_PROJECT ->
 			"Creates a new EVO project session ('SelfDevProject') on EVO RCP via HTTP request after process startup.";
+		case SelfDevRow.DEPLOY_PRODUCT_EVO ->
+			"FROM Workspace Export Directory TO Workspace Runtime Directory: Deploys and validates unzipped product layout in runtime/evo.";
 		case SelfDevRow.CREATE_INFERENCE_TASK ->
 			"Submits a simple 'hi' local inference prompt inside the active EVO project session via HTTP.";
 		case SelfDevRow.ANALYTIC_CHAT_VALIDATION ->
 			"Polls and retrieves chat conversation history, waiting for terminal response and validating the final chat result.";
-		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR ->
-			"Sends graceful stop request to running EVO RCP product via Supervisor.";
+		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "STOP_EVO" ->
+			"Sends graceful stop request to running EVO RCP product.";
+		case SelfDevRow.PROMOTE_PRODUCT ->
+			"Promotes candidate artifact to production/promoted baseline upon verified success.";
+		case SelfDevRow.ROLLBACK_PRODUCT ->
+			"Rolls back candidate changes, stops processes, and restores previous known-good deployment upon failure.";
 		case SelfDevRow.SUPERVISOR_LOOP -> "Starts continuous Supervisor process monitoring loop for EVO RCP runtime.";
 		case SelfDevRow.SELF_DEV_LOOP -> "Executes autonomous Self-Development iteration loop in Orchestrator.";
 		default -> "Executes task scenario for " + row.name + ".";

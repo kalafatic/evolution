@@ -39,19 +39,31 @@ public class PermissionsCheckTask extends AbstractSelfDevTask {
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
         try {
-            File testFile = new File(logDir, ".perm_test_" + System.currentTimeMillis());
-            boolean created = testFile.createNewFile();
-            if (!created) {
-                return TaskResult.failure(id, "Permission check failed: Could not create test file in " + logDir.getAbsolutePath(), null);
-            }
-            boolean deleted = testFile.delete();
-            if (!deleted) {
-                logError("Warning: Could not delete test permission file: " + testFile.getAbsolutePath());
+            // Test write permission across log, runtime, and build directories
+            File[] dirsToTest = new File[] {
+                logDir,
+                context != null ? context.getRuntimeDirectory() : null,
+                context != null ? context.getBuildDirectory() : null
+            };
+
+            for (File dir : dirsToTest) {
+                if (dir == null) continue;
+                if (!dir.exists()) dir.mkdirs();
+
+                File testFile = new File(dir, ".perm_test_" + System.currentTimeMillis());
+                boolean created = testFile.createNewFile();
+                if (!created) {
+                    return TaskResult.failure(id, "Permission check failed: Could not create test file in " + dir.getAbsolutePath(), null);
+                }
+                boolean deleted = testFile.delete();
+                if (!deleted) {
+                    logError("Warning: Could not delete test permission file: " + testFile.getAbsolutePath());
+                }
             }
 
             return new TaskResult.Builder(id)
                     .status(TaskStatus.SUCCESS)
-                    .message("Filesystem write permission verified in " + logDir.getAbsolutePath())
+                    .message("Filesystem write permission verified in workspace run directories.")
                     .workingDirectory(logDir)
                     .build();
 
