@@ -119,7 +119,8 @@ public class DatasetQualityAndLeakageVerificationTest {
         // Verify target size is strictly preserved in stats and report output
         assertEquals(13107200L, stats.getRequestedUsableBytes());
 
-        EvoDatasetArtifact artifact = new EvoDatasetArtifact(new File("dummy.evodata"));
+        File tempDummy = tempFolder.newFile("dummy.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(tempDummy);
         DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", "test");
         artifact.save(List.of(NormalizedSample.createTextSample("Test sample", "src")), config, stats, 0.1);
 

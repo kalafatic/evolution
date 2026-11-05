@@ -259,10 +259,28 @@ public class EvoDatasetArtifact {
                         artifact.stats.setDownloadedBytes(dl);
                         artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", actual));
                         artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", dl));
-                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", statsObj != null ? statsObj.optLong("rejectedRecords", 0) : 0));
-                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", statsObj != null ? statsObj.optLong("duplicateRecords", 0) : 0));
+                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", 0));
+                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", 0));
                         artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", statsObj != null ? statsObj.optLong("totalTrainingBytes", 0) : 0));
                         artifact.stats.setValidationBytes(metaJson.optLong("validationBytes", 0));
+
+                        long accRecs = metaJson.optLong("acceptedRecords", statsObj != null ? statsObj.optLong("acceptedRecords", 0) : 0);
+                        long rejRecs = metaJson.optLong("rejectedRecords", statsObj != null ? statsObj.optLong("rejectedRecords", 0) : 0);
+                        long dupRecs = metaJson.optLong("duplicateRecords", statsObj != null ? statsObj.optLong("duplicateRecords", 0) : 0);
+                        artifact.stats.setAcceptedRecords(accRecs);
+                        artifact.stats.setRejectedRecords(rejRecs);
+                        artifact.stats.setDuplicateRecords(dupRecs);
+
+                        if (statsObj != null) {
+                            artifact.stats.setExactDuplicates(statsObj.optLong("exactDuplicates", 0));
+                            artifact.stats.setNormalizedDuplicates(statsObj.optLong("normalizedDuplicates", 0));
+                            artifact.stats.setNearDuplicates(statsObj.optLong("nearDuplicates", 0));
+                            artifact.stats.setMalformedJsonCount(statsObj.optLong("malformedJsonCount", 0));
+                            artifact.stats.setEmptyMeaninglessCount(statsObj.optLong("emptyMeaninglessCount", 0));
+                            artifact.stats.setCorruptedTextCount(statsObj.optLong("corruptedTextCount", 0));
+                            artifact.stats.setInvalidQaCount(statsObj.optLong("invalidQaCount", 0));
+                            artifact.stats.setTrainValLeakageCount(statsObj.optLong("trainValLeakageCount", 0));
+                        }
                     } catch (Exception ignored) {}
                 } else if ("data.jsonl".equals(normalizedName) || "val_data.jsonl".equals(normalizedName)) {
                     boolean isVal = "val_data.jsonl".equals(normalizedName);

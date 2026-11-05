@@ -360,13 +360,23 @@ public class DatasetPreparationService {
         context.log("Status: " + result.getStatus().name());
     }
 
+    public static final String SCHEMA_VERSION = "2.0";
+
     private String computeCacheKey(List<DatasetItem> items, long targetBytes, double valSplitRatio, double minQualityScore) {
         StringBuilder sb = new StringBuilder();
-        sb.append(targetBytes).append(";");
-        sb.append(valSplitRatio).append(";");
-        sb.append(minQualityScore).append(";");
+        sb.append("schema=").append(SCHEMA_VERSION).append(";");
+        sb.append("target=").append(targetBytes).append(";");
+        sb.append("val=").append(valSplitRatio).append(";");
+        sb.append("qual=").append(minQualityScore).append(";");
+        if (registry != null && registry.getAdapters() != null) {
+            sb.append("adapters=");
+            for (DatasetSourceAdapter a : registry.getAdapters()) {
+                sb.append(a.getClass().getSimpleName()).append(",");
+            }
+            sb.append(";");
+        }
         for (DatasetItem item : items) {
-            sb.append(item.getPath()).append(":");
+            sb.append(item.getType()).append(":").append(item.getPath()).append(":");
             File f = new File(item.getPath());
             if (f.exists()) {
                 if (f.isDirectory()) {

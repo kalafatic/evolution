@@ -86,9 +86,9 @@ public class DatasetDeduplicator implements DataDeduplicator {
 
     private String computeNormalizedText(String text) {
         if (text == null) return "";
-        // Unicode NFC normalization & whitespace collapse preserving diacritics, symbols, math & code
+        // Unicode NFC normalization, strip punctuation differences & collapse whitespace
         String nfc = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
-        return nfc.toLowerCase().replaceAll("\\s+", " ").trim();
+        return nfc.toLowerCase().replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
     }
 
     private String computeNormalizedHash(String text) {

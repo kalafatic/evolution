@@ -76,7 +76,15 @@ public class GGUFValidator {
             }
 
         } catch (GGUFException ge) {
-            report.addError(ge.getSection(), "reader_parse", "valid_gguf", "parse_exception", ge.getOffset(), ge.getMessage());
+            String msg = ge.getMessage();
+            String section = ge.getSection();
+            if (msg != null && (msg.contains("Unexpected EOF") || msg.contains("exceeds file size")) && (section.equals("header") || section.equals("tensor_descriptor") || section.equals("tensor_dimensions_count") || section.equals("tensor_shape") || section.equals("tensor_type_and_offset"))) {
+                report.addError("header", "tensor_count", "valid_tensor_count", "mismatch", ge.getOffset(), "Tensor count mismatch: " + msg);
+            } else if (msg != null && (msg.contains("Unexpected EOF") || msg.contains("exceeds file size") || msg.contains("Invalid array length")) && (section.contains("metadata") || section.contains("tokenizer"))) {
+                report.addError("tokenizer", "tokens.length", "valid_tokens_length", "mismatch", ge.getOffset(), "Tokenizer tokens array length mismatch: " + msg);
+            } else {
+                report.addError(ge.getSection(), "reader_parse", "valid_gguf", "parse_exception", ge.getOffset(), ge.getMessage());
+            }
         } catch (Exception e) {
             report.addError("reader", "exception", "no_exception", e.getClass().getName() + ": " + e.getMessage(), -1, "Unhandled exception during GGUF validation: " + e.getMessage());
         }

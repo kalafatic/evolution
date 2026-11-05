@@ -93,8 +93,8 @@ public class DataCleaner implements DataNormalizer {
         if (input == null) return null;
         String text = input;
 
-        // 1. Strip non-printable ASCII control characters and Unicode replacement chars
-        text = text.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFD]", "");
+        // 1. Strip non-printable ASCII control characters (preserve \uFFFD so QualityScorer can detect corruption)
+        text = text.replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]", "");
 
         // 2. Whitespace normalization
         if (normalizeWhitespace) {

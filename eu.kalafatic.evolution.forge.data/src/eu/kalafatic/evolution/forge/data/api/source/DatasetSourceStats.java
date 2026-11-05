@@ -101,19 +101,28 @@ public class DatasetSourceStats {
     public long getDuplicateRecords() { return exactDuplicates + normalizedDuplicates + nearDuplicates; }
 
     public long getMalformedJsonCount() { return malformedJsonCount; }
+    public void setMalformedJsonCount(long count) { this.malformedJsonCount = count; }
     public void incrementMalformedJson() { this.malformedJsonCount++; }
 
     public long getEmptyMeaninglessCount() { return emptyMeaninglessCount; }
+    public void setEmptyMeaninglessCount(long count) { this.emptyMeaninglessCount = count; }
     public void incrementEmptyMeaningless() { this.emptyMeaninglessCount++; }
 
     public long getCorruptedTextCount() { return corruptedTextCount; }
+    public void setCorruptedTextCount(long count) { this.corruptedTextCount = count; }
     public void incrementCorruptedText() { this.corruptedTextCount++; }
 
     public long getInvalidQaCount() { return invalidQaCount; }
+    public void setInvalidQaCount(long count) { this.invalidQaCount = count; }
     public void incrementInvalidQa() { this.invalidQaCount++; }
 
     public long getTrainValLeakageCount() { return trainValLeakageCount; }
+    public void setTrainValLeakageCount(long count) { this.trainValLeakageCount = count; }
     public void incrementTrainValLeakage() { this.trainValLeakageCount++; }
+
+    public void setAcceptedRecords(long records) { this.acceptedSamples = records; }
+    public void setRejectedRecords(long records) { this.rejectedSamples = records; }
+    public void setDuplicateRecords(long records) { this.exactDuplicates = records; }
 
     public long getEstimatedTokens() { return estimatedTokens; }
     public void setEstimatedTokens(long estimatedTokens) { this.estimatedTokens = estimatedTokens; }

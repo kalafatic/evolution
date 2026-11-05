@@ -110,8 +110,9 @@ public class LocalDatasetSource implements DatasetSource {
                 if (isJsonl) {
                     line = currentReader.readLine();
                     if (line != null) {
-                        if (!line.trim().isEmpty()) {
-                            NormalizedSample sample = NormalizedSample.createTextSample(line.trim(), file.getAbsolutePath());
+                        String trimmed = line.trim();
+                        if (!trimmed.isEmpty()) {
+                            NormalizedSample sample = parseJsonlLine(trimmed, file.getAbsolutePath());
                             stats.incrementSamplesRead();
                             stats.addBytesRead(line.getBytes(StandardCharsets.UTF_8).length);
                             nextBufferedSample = sample;
@@ -163,6 +164,26 @@ public class LocalDatasetSource implements DatasetSource {
         NormalizedSample current = nextBufferedSample;
         advanceToNextSample();
         return current;
+    }
+
+    private NormalizedSample parseJsonlLine(String line, String sourcePath) {
+        if (line.startsWith("{") && line.endsWith("}")) {
+            try {
+                org.json.JSONObject obj = new org.json.JSONObject(line);
+                String typeStr = obj.optString("type", null);
+                if ("INSTRUCTION".equalsIgnoreCase(typeStr)) {
+                    String inst = obj.optString("instruction", obj.optString("prompt", ""));
+                    String resp = obj.optString("response", obj.optString("completion", ""));
+                    return NormalizedSample.createInstructionSample(inst, resp, sourcePath);
+                } else {
+                    String text = obj.optString("text", obj.optString("content", null));
+                    if (text != null) {
+                        return NormalizedSample.createTextSample(text, sourcePath);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        return NormalizedSample.createTextSample(line, sourcePath);
     }
 
     @Override

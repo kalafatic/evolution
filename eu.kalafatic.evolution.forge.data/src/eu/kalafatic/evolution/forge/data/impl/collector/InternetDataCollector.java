@@ -62,7 +62,11 @@ public class InternetDataCollector extends TrainingDataCollector {
                 if (fetched != null) {
                     for (TrainingDataItem item : fetched) {
                         item.setSourceType(SourceType.INTERNET);
+                        if (item.getSource() == null || item.getSource().isEmpty()) {
+                            item.setSource("internet://" + topic);
+                        }
                         item.addMetadata("query", topic);
+                        item.addMetadata("provenance", item.getSource());
                         if (!item.getMetadata().containsKey("retrievedAt")) {
                             item.addMetadata("retrievedAt", Instant.now().toString());
                         }
