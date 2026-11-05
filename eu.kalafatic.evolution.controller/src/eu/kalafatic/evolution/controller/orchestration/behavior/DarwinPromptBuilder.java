@@ -55,6 +55,35 @@ public class DarwinPromptBuilder {
               .append("Purpose: ").append(realityModel.getPurpose()).append("\n")
               .append("Hotspots: ").append(realityModel.getHotspots().stream().map(h -> h.getName()).collect(Collectors.joining(", "))).append("\n\n");
         }
+
+        // Authoritative Persistent Genome Integration
+        java.io.File projectRoot = context.getProjectRoot();
+        if (projectRoot != null) {
+            java.io.File genomeJsonFile = new java.io.File(new java.io.File(projectRoot, "genome"), "current/genome.json");
+            if (genomeJsonFile.exists()) {
+                try {
+                    String jsonStr = java.nio.file.Files.readString(genomeJsonFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+                    org.json.JSONObject gJson = new org.json.JSONObject(jsonStr);
+
+                    org.json.JSONArray recArr = gJson.optJSONArray("recommendations");
+                    org.json.JSONArray probArr = gJson.optJSONArray("problems");
+                    if ((recArr != null && recArr.length() > 0) || (probArr != null && probArr.length() > 0)) {
+                        sb.append("🧬 AUTHORITATIVE GENOME EVOLUTIONARY INTELLIGENCE\n");
+                        if (recArr != null) {
+                            for (int i = 0; i < Math.min(3, recArr.length()); i++) {
+                                sb.append("  + ").append(recArr.optString(i)).append("\n");
+                            }
+                        }
+                        if (probArr != null) {
+                            for (int i = 0; i < Math.min(3, probArr.length()); i++) {
+                                sb.append("  - ").append(probArr.optString(i)).append("\n");
+                            }
+                        }
+                        sb.append("\n");
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
         return this;
     }
 
