@@ -801,6 +801,56 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                     }
                 }
             }
+
+            // Load persistent Genome memory and experiences from genome/current/genome.json
+            File projectRoot = taskContext != null ? taskContext.getProjectRoot() : null;
+            if (projectRoot != null) {
+                File genomeJsonFile = new File(new File(projectRoot, "genome"), "current/genome.json");
+                if (genomeJsonFile.exists()) {
+                    try {
+                        String jsonStr = java.nio.file.Files.readString(genomeJsonFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+                        org.json.JSONObject genomeJson = new org.json.JSONObject(jsonStr);
+
+                        org.json.JSONArray expArr = genomeJson.optJSONArray("experiences");
+                        if (expArr != null) {
+                            for (int i = 0; i < expArr.length(); i++) {
+                                org.json.JSONObject exp = expArr.optJSONObject(i);
+                                if (exp != null) {
+                                    String type = exp.optString("type", "EXPERIENCE");
+                                    String strategy = exp.optString("strategy", "");
+                                    String outcome = exp.optString("outcome", "");
+                                    double score = exp.optDouble("score", 0.0);
+                                    experiences.add("GENOME_EXPERIENCE: [" + type + "] Strategy=" + strategy + ", Outcome=" + outcome + ", Score=" + score);
+                                }
+                            }
+                        }
+
+                        org.json.JSONArray probArr = genomeJson.optJSONArray("problems");
+                        if (probArr != null) {
+                            for (int i = 0; i < probArr.length(); i++) {
+                                String prob = probArr.optString(i, "");
+                                if (!prob.isEmpty()) experiences.add("GENOME_PROBLEM: " + prob);
+                            }
+                        }
+
+                        org.json.JSONArray recArr = genomeJson.optJSONArray("recommendations");
+                        if (recArr != null) {
+                            for (int i = 0; i < recArr.length(); i++) {
+                                String rec = recArr.optString(i, "");
+                                if (!rec.isEmpty()) experiences.add("GENOME_RECOMMENDATION: " + rec);
+                            }
+                        }
+
+                        org.json.JSONArray factArr = genomeJson.optJSONArray("facts");
+                        if (factArr != null) {
+                            for (int i = 0; i < Math.min(5, factArr.length()); i++) {
+                                String fact = factArr.optString(i, "");
+                                if (!fact.isEmpty()) experiences.add("GENOME_FACT: " + fact);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
         } catch (Exception ignored) {}
         return experiences;
     }

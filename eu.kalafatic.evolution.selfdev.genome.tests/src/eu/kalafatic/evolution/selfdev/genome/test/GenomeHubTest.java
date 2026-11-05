@@ -192,6 +192,81 @@ public class GenomeHubTest {
         }
     }
 
+    @Test
+    public void testEvolutionaryMemoryIntelligenceAndAtomicSafety() throws IOException {
+        File repoDir = createTempRepo();
+        try {
+            LocalGenomeRepository repository = new LocalGenomeRepository();
+            MockEventBus eventBus = new MockEventBus();
+            MediatedPackageProcessor processor = new MediatedPackageProcessor();
+            SecondhandUpgradeEngine upgradeEngine = new SecondhandUpgradeEngine(repository);
+            SelfDevGenomeHub hub = new SelfDevGenomeHub(repository, eventBus, processor, upgradeEngine);
+
+            // Create memory/audit.jsonl to simulate real previous execution experience
+            File memDir = new File(repoDir, "memory");
+            memDir.mkdirs();
+            File auditFile = new File(memDir, "audit.jsonl");
+            String auditJson1 = "{\"id\":\"audit-1\",\"strategy\":\"GENETIC_REPAIR\",\"result\":\"SUCCESS\",\"score\":0.95,\"timestamp\":1700000000,\"goal\":\"Fix broken parser\"}";
+            String auditJson2 = "{\"id\":\"audit-2\",\"strategy\":\"BRUTE_FORCE_PATCH\",\"result\":\"FAIL\",\"score\":0.2,\"errorMessage\":\"Compilation timeout\",\"goal\":\"Attempt timeout fix\"}";
+            Files.writeString(auditFile.toPath(), auditJson1 + "\n" + auditJson2 + "\n", StandardCharsets.UTF_8);
+
+            // Execute Genome Update
+            GenomeUpdateResult res = hub.updateGenome(repoDir, "EvoPlatform", "v1.0.0");
+            assertNotNull(res);
+            assertTrue(res.isSuccess());
+            assertEquals(GenomeUpdateStatus.SUCCESS, res.getStatus());
+            assertTrue(res.isHasChanges());
+
+            // 1. Verify genome/current/genome.json structure
+            File genomeJsonFile = new File(repoDir, "genome/current/genome.json");
+            assertTrue("genome.json must exist in current", genomeJsonFile.exists());
+            String jsonStr = Files.readString(genomeJsonFile.toPath(), StandardCharsets.UTF_8);
+
+            // Check FACT, OBSERVATION, PROBLEM, RECOMMENDATION, HISTORY
+            assertTrue(jsonStr.contains("\"facts\":"));
+            assertTrue(jsonStr.contains("\"observations\":"));
+            assertTrue(jsonStr.contains("\"problems\":"));
+            assertTrue(jsonStr.contains("\"recommendations\":"));
+            assertTrue(jsonStr.contains("\"history\":"));
+            assertTrue(jsonStr.contains("\"experiences\":"));
+
+            // Verify extracted execution experiences from memory
+            assertTrue(jsonStr.contains("\"strategy\": \"GENETIC_REPAIR\""));
+            assertTrue(jsonStr.contains("\"type\": \"SUCCESS\""));
+            assertTrue(jsonStr.contains("\"strategy\": \"BRUTE_FORCE_PATCH\""));
+            assertTrue(jsonStr.contains("\"type\": \"FAIL\""));
+            assertTrue(jsonStr.contains("Compilation timeout"));
+
+            // Verify recommendations learned from experiences
+            assertTrue("Recommendations must include successful pattern",
+                    jsonStr.contains("GENETIC_REPAIR") && jsonStr.contains("RECOMMENDATION:"));
+
+            // Verify problems learned from failures
+            assertTrue("Problems must include failure lesson",
+                    jsonStr.contains("BRUTE_FORCE_PATCH") || jsonStr.contains("timeout"));
+
+            // 2. Verify historical snapshot in genome-docs/ddMMyyyy/
+            String datePattern = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyyyy"));
+            File snapDir = new File(new File(repoDir, "genome-docs"), datePattern);
+            assertTrue("genome-docs/" + datePattern + " must exist", snapDir.exists() && snapDir.isDirectory());
+            File sysAnalysis = new File(snapDir, "SYSTEM_ANALYSIS_" + datePattern + ".md");
+            assertTrue("SYSTEM_ANALYSIS markdown snapshot must exist", sysAnalysis.exists());
+
+            // 3. Verify Atomic Failure Safety: Staging folder must be cleaned up if generation fails
+            File corruptRepo = new File(repoDir, "non_existent_sub");
+            GenomeUpdateResult failRes = hub.updateGenome(corruptRepo, "Corrupt", "v1.0.0");
+            assertFalse(failRes.isSuccess());
+            assertEquals(GenomeUpdateStatus.FAILED, failRes.getStatus());
+
+            File[] leftOverStaging = new File(repoDir, "genome").listFiles((d, n) -> n.startsWith("current_tmp_"));
+            assertTrue("Staging directories must be completely removed on completion or failure",
+                    leftOverStaging == null || leftOverStaging.length == 0);
+
+        } finally {
+            deleteDir(repoDir);
+        }
+    }
+
     private File createTempRepo() throws IOException {
         File dir = Files.createTempDirectory("evo-genome-test-repo").toFile();
         File srcDir = new File(dir, "src");

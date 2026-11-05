@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
@@ -189,6 +190,77 @@ public class CognitiveLoopAcceptanceTest {
         assertTrue("Observations contain successful tool executions",
                 result.getObservations().stream().anyMatch(CognitiveObservation::isSuccess));
         assertEquals("Goal must NOT be marked SUCCESS when criteria are unmet", CognitiveState.FAILED, result.getFinalState());
+    }
+
+    @Test
+    public void testGoal6_PersistentGenomeExperienceRetrieval() throws Exception {
+        String sessionId = "Acceptance_Goal6_GenomeRetrieval";
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+
+        File tempRepo = Files.createTempDirectory("evo-cognitive-genome-test").toFile();
+        tempRepo.deleteOnExit();
+
+        // Create genome/current/genome.json with persistent memory and experiences
+        File currentDir = new File(new File(tempRepo, "genome"), "current");
+        currentDir.mkdirs();
+        File genomeJsonFile = new File(currentDir, "genome.json");
+
+        org.json.JSONObject gJson = new org.json.JSONObject();
+        org.json.JSONArray expArr = new org.json.JSONArray();
+        org.json.JSONObject exp1 = new org.json.JSONObject();
+        exp1.put("id", "iter-prev-1");
+        exp1.put("type", "SUCCESS");
+        exp1.put("strategy", "PROVEN_ADAPTIVE_PARSER");
+        exp1.put("outcome", "SUCCESS");
+        exp1.put("score", 0.98);
+        expArr.put(exp1);
+
+        org.json.JSONObject exp2 = new org.json.JSONObject();
+        exp2.put("id", "iter-prev-2");
+        exp2.put("type", "FAIL");
+        exp2.put("strategy", "UNBOUNDED_BRUTE_FORCE");
+        exp2.put("outcome", "FAIL");
+        exp2.put("score", 0.1);
+        expArr.put(exp2);
+        gJson.put("experiences", expArr);
+
+        org.json.JSONArray recArr = new org.json.JSONArray();
+        recArr.put("RECOMMENDATION: Apply proven strategy PROVEN_ADAPTIVE_PARSER");
+        gJson.put("recommendations", recArr);
+
+        org.json.JSONArray probArr = new org.json.JSONArray();
+        probArr.put("PROBLEM: Recurring failure in UNBOUNDED_BRUTE_FORCE");
+        gJson.put("problems", probArr);
+
+        Files.writeString(genomeJsonFile.toPath(), gJson.toString(2), StandardCharsets.UTF_8);
+
+        TaskContext context = new TaskContext(null, tempRepo);
+        context.setSessionId(sessionId);
+
+        CognitiveGoal goal = new CognitiveGoal("Execute task using persistent Genome intelligence", "GENERAL", Collections.emptyMap());
+        CognitiveLoopEngine engine = new CognitiveLoopEngine(new CognitiveBudget(2, 60000L, 1, 1), null);
+
+        // Retrieve Genome experiences
+        List<String> retrieved = engine.retrieveGenomeExperiences(session, context, goal);
+
+        assertNotNull("Retrieved experiences must not be null", retrieved);
+        assertTrue("Must retrieve persistent genome experiences", retrieved.size() >= 2);
+
+        boolean foundSuccessExp = retrieved.stream().anyMatch(e -> e.contains("PROVEN_ADAPTIVE_PARSER"));
+        boolean foundProblem = retrieved.stream().anyMatch(e -> e.contains("UNBOUNDED_BRUTE_FORCE"));
+        assertTrue("Must retrieve successful experience PROVEN_ADAPTIVE_PARSER", foundSuccessExp);
+        assertTrue("Must retrieve known problem UNBOUNDED_BRUTE_FORCE", foundProblem);
+
+        // Also verify DarwinPromptBuilder injects this persistent genome knowledge
+        eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder promptBuilder =
+                new eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder(context);
+        promptBuilder.addReality();
+        String prompt = promptBuilder.build();
+
+        assertTrue("Darwin prompt must contain AUTHORITATIVE GENOME EVOLUTIONARY INTELLIGENCE",
+                prompt.contains("AUTHORITATIVE GENOME EVOLUTIONARY INTELLIGENCE"));
+        assertTrue("Darwin prompt must contain recommendation",
+                prompt.contains("PROVEN_ADAPTIVE_PARSER"));
     }
 
     @Test

@@ -73,6 +73,27 @@ public class MilestoneGenerator {
         public List<String> relationshipSummaries = new ArrayList<>();
     }
 
+    public static class EvolutionaryExperience {
+        public String id;
+        public String type; // SUCCESS, FAIL, OBSERVATION
+        public String strategy;
+        public String branch;
+        public double score;
+        public long timestamp;
+        public String goal;
+        public String outcome;
+        public String errorMessage;
+    }
+
+    public static class EvolutionaryIntelligence {
+        public List<String> facts = new ArrayList<>();
+        public List<String> observations = new ArrayList<>();
+        public List<String> problems = new ArrayList<>();
+        public List<String> recommendations = new ArrayList<>();
+        public List<String> history = new ArrayList<>();
+        public List<EvolutionaryExperience> experiences = new ArrayList<>();
+    }
+
     public GenomeUpdateResult generateMilestone(File root, String projectName, String version) {
         return generateMilestone(root, projectName, version, null);
     }
@@ -202,7 +223,7 @@ public class MilestoneGenerator {
             LocalDateTime now = LocalDateTime.now();
             String year = String.valueOf(now.getYear());
             String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            String analyticalDateStr = now.format(DateTimeFormatter.ofPattern("ddMMYYYY"));
+            String analyticalDateStr = now.format(DateTimeFormatter.ofPattern("ddMMyyyy"));
             String timestamp = now.format(DateTimeFormatter.ofPattern("ddMMyy_HHmmss"));
 
             File genomeRoot = new File(root, "genome");
@@ -567,6 +588,194 @@ public class MilestoneGenerator {
         }
     }
 
+
+    private EvolutionaryIntelligence extractEvolutionaryIntelligence(
+            File root, String projectName, GitMetadata gitMeta, DiscoveredArchitecture arch,
+            Map<String, FileInventoryItem> inventory, List<EvoMetadata> metadataList,
+            int newCount, int changedCount, int removedCount, int unchangedCount
+    ) {
+        EvolutionaryIntelligence intel = new EvolutionaryIntelligence();
+
+        // 1. FACTS: Verified Source & Architecture Facts
+        intel.facts.add("FACT: Repository root `" + projectName + "` contains " + inventory.size() + " analyzed source files.");
+        List<DiscoveredComponent> modules = arch.components.stream()
+            .filter(c -> "MODULE".equals(c.type) || "BUNDLE".equals(c.type) || "MAVEN_MODULE".equals(c.type))
+            .sorted(Comparator.comparing(c -> c.name))
+            .toList();
+        for (DiscoveredComponent mod : modules) {
+            intel.facts.add("FACT: " + mod.type + " `" + mod.name + "` at `" + mod.path + "`");
+        }
+        long classCount = arch.components.stream()
+            .filter(c -> "CLASS".equals(c.type) || "INTERFACE".equals(c.type) || "ENUM".equals(c.type) || "RECORD".equals(c.type))
+            .count();
+        if (classCount > 0) {
+            intel.facts.add("FACT: Discovered " + classCount + " classes/interfaces across components.");
+        }
+        if (metadataList != null && !metadataList.isEmpty()) {
+            intel.facts.add("FACT: Verified " + metadataList.size() + " AI sidecar metadata files.");
+        }
+
+        // 2. OBSERVATIONS: Architectural & Workflow Observations
+        intel.observations.add("OBSERVATION: Subsystem architecture follows OSGi bundle and Maven Tycho modularity conventions.");
+        intel.observations.add("OBSERVATION: Change ratio: NEW=" + newCount + ", MODIFIED=" + changedCount + ", REMOVED=" + removedCount + ", UNCHANGED=" + unchangedCount + ".");
+        if (newCount == 0 && changedCount == 0 && removedCount == 0) {
+            intel.observations.add("OBSERVATION: Codebase is in a stable, verified convergence state without uncommitted divergence.");
+        } else {
+            intel.observations.add("OBSERVATION: Evolutionary iteration active with " + (newCount + changedCount) + " incoming code changes.");
+        }
+
+        // 3. HISTORY: Git & Changeset Evolution
+        intel.history.add("HISTORY: Branch: `" + gitMeta.branch + "`, Commit: `" + gitMeta.commitHash + "` (" + gitMeta.commitTimestamp + ")");
+        intel.history.add("HISTORY: Scanned files=" + inventory.size() + ", Added=" + newCount + ", Modified=" + changedCount + ", Removed=" + removedCount + ", Unchanged=" + unchangedCount);
+
+        // 4. PERSISTENT EXECUTION EXPERIENCES (from IterationMemoryService or memory directories)
+        extractExecutionMemory(root, intel);
+
+        // Default safeguards if no past execution history exists yet
+        if (intel.problems.isEmpty()) {
+            intel.problems.add("PROBLEM: Unverified genetic mutations can diverge without bounded automated fitness evaluation.");
+        }
+        if (intel.recommendations.isEmpty()) {
+            intel.recommendations.add("RECOMMENDATION: Enforce atomic staging and incremental hash-based change verification before applying commits.");
+            intel.recommendations.add("RECOMMENDATION: Mandate Maven `clean test` execution for reactor modules before milestone tagging.");
+        }
+
+        return intel;
+    }
+
+    private void extractExecutionMemory(File root, EvolutionaryIntelligence intel) {
+        // Attempt 1: Direct reflection on IterationMemoryService if present
+        try {
+            Class<?> memSvcCls = Class.forName("eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService");
+            Object memSvc = memSvcCls.getConstructor(File.class).newInstance(root);
+
+            // Extract records
+            Method getRecords = memSvcCls.getMethod("getRecords");
+            List<?> records = (List<?>) getRecords.invoke(memSvc);
+            if (records != null) {
+                for (Object rec : records) {
+                    EvolutionaryExperience exp = new EvolutionaryExperience();
+                    exp.id = (String) rec.getClass().getMethod("getIterationId").invoke(rec);
+                    if (exp.id == null || exp.id.isEmpty()) {
+                        int it = (Integer) rec.getClass().getMethod("getIteration").invoke(rec);
+                        exp.id = "iter-" + it;
+                    }
+                    exp.strategy = (String) rec.getClass().getMethod("getStrategy").invoke(rec);
+                    exp.branch = (String) rec.getClass().getMethod("getBranch").invoke(rec);
+                    exp.outcome = (String) rec.getClass().getMethod("getResult").invoke(rec);
+                    exp.type = "SUCCESS".equalsIgnoreCase(exp.outcome) ? "SUCCESS" : "FAIL";
+                    Object sc = rec.getClass().getMethod("getScore").invoke(rec);
+                    exp.score = (sc instanceof Number) ? ((Number) sc).doubleValue() : 0.0;
+                    Object ts = rec.getClass().getMethod("getTimestamp").invoke(rec);
+                    exp.timestamp = (ts instanceof Number) ? ((Number) ts).longValue() : System.currentTimeMillis();
+                    exp.goal = (String) rec.getClass().getMethod("getGoal").invoke(rec);
+                    exp.errorMessage = (String) rec.getClass().getMethod("getErrorMessage").invoke(rec);
+                    intel.experiences.add(exp);
+
+                    if ("SUCCESS".equalsIgnoreCase(exp.outcome)) {
+                        intel.recommendations.add("RECOMMENDATION: Re-use validated evolutionary pattern: '" + exp.strategy + "' (Score: " + exp.score + ")");
+                    } else if (exp.errorMessage != null && !exp.errorMessage.isEmpty()) {
+                        intel.problems.add("PROBLEM: Past strategy failure in '" + exp.strategy + "': " + exp.errorMessage);
+                    }
+                }
+            }
+
+            // Extract FailureMemory
+            Method getFailureMem = memSvcCls.getMethod("getFailureMemory");
+            Object failureMem = getFailureMem.invoke(memSvc);
+            if (failureMem != null) {
+                Method getStratFailures = failureMem.getClass().getMethod("getStrategyFailures");
+                Map<?, ?> stratFailures = (Map<?, ?>) getStratFailures.invoke(failureMem);
+                if (stratFailures != null) {
+                    for (Map.Entry<?, ?> entry : stratFailures.entrySet()) {
+                        intel.problems.add("PROBLEM: Recurring failed strategy '" + entry.getKey() + "' (failures=" + entry.getValue() + ")");
+                        intel.recommendations.add("RECOMMENDATION: Avoid repeating failed mutation pattern '" + entry.getKey() + "'");
+                    }
+                }
+                Method getFp = failureMem.getClass().getMethod("getFingerprints");
+                Map<?, ?> fingerprints = (Map<?, ?>) getFp.invoke(failureMem);
+                if (fingerprints != null) {
+                    for (Map.Entry<?, ?> entry : fingerprints.entrySet()) {
+                        intel.problems.add("PROBLEM: Recurring failure fingerprint '" + entry.getKey() + "' (count=" + entry.getValue() + ")");
+                    }
+                }
+            }
+
+            // Extract TrajectoryMemory
+            Method getTrajMem = memSvcCls.getMethod("getTrajectoryMemory");
+            Object trajMem = getTrajMem.invoke(memSvc);
+            if (trajMem != null) {
+                Method getSuccessStrats = trajMem.getClass().getMethod("getSuccessfulStrategies");
+                List<?> successStrats = (List<?>) getSuccessStrats.invoke(trajMem);
+                if (successStrats != null) {
+                    for (Object s : successStrats) {
+                        intel.recommendations.add("RECOMMENDATION: Apply proven successful trajectory strategy: '" + s + "'");
+                    }
+                }
+                Method getFailLoops = trajMem.getClass().getMethod("getRecurringFailureLoops");
+                List<?> failLoops = (List<?>) getFailLoops.invoke(trajMem);
+                if (failLoops != null) {
+                    for (Object fl : failLoops) {
+                        intel.problems.add("PROBLEM: Detected recurring failure loop in trajectory: '" + fl + "'");
+                    }
+                }
+            }
+
+            // Extract Architecture Hotspots
+            Method getHotspots = memSvcCls.getMethod("getArchitectureHotspots");
+            Map<?, ?> hotspots = (Map<?, ?>) getHotspots.invoke(memSvc);
+            if (hotspots != null) {
+                for (Map.Entry<?, ?> h : hotspots.entrySet()) {
+                    intel.problems.add("PROBLEM: Architecture hotspot: '" + h.getKey() + "' (modifications=" + h.getValue() + ")");
+                }
+            }
+
+        } catch (Throwable ignored) {
+            // Attempt 2: Fallback to reading file-based memory directories (e.g. memory/ or orchestrator/memory/)
+            scanDiskMemoryFiles(root, intel);
+        }
+    }
+
+    private void scanDiskMemoryFiles(File root, EvolutionaryIntelligence intel) {
+        File[] candidateDirs = new File[] {
+            new File(root, "memory"),
+            new File(new File(root, "orchestrator"), "memory"),
+            new File(new File(root, "self-dev"), "memory")
+        };
+
+        for (File dir : candidateDirs) {
+            if (!dir.exists() || !dir.isDirectory()) continue;
+
+            File auditFile = new File(dir, "audit.jsonl");
+            if (auditFile.exists()) {
+                try {
+                    List<String> lines = Files.readAllLines(auditFile.toPath(), StandardCharsets.UTF_8);
+                    for (String line : lines) {
+                        line = line.trim();
+                        if (line.isEmpty() || !line.startsWith("{")) continue;
+                        JSONObject obj = new JSONObject(line);
+                        EvolutionaryExperience exp = new EvolutionaryExperience();
+                        exp.id = obj.optString("id", obj.optString("auditId", "exp-" + intel.experiences.size()));
+                        exp.strategy = obj.optString("strategy", obj.optString("action", ""));
+                        exp.outcome = obj.optString("result", obj.optString("status", ""));
+                        exp.type = "SUCCESS".equalsIgnoreCase(exp.outcome) ? "SUCCESS" : "FAIL";
+                        exp.score = obj.optDouble("score", 0.0);
+                        exp.timestamp = obj.optLong("timestamp", System.currentTimeMillis());
+                        exp.goal = obj.optString("goal", obj.optString("description", ""));
+                        exp.errorMessage = obj.optString("errorMessage", "");
+                        intel.experiences.add(exp);
+
+                        if ("SUCCESS".equalsIgnoreCase(exp.outcome)) {
+                            intel.recommendations.add("RECOMMENDATION: Re-use successful episode strategy: " + exp.strategy);
+                        } else if (!exp.errorMessage.isEmpty()) {
+                            intel.problems.add("PROBLEM: Episode failure in strategy " + exp.strategy + ": " + exp.errorMessage);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
     private List<String> generateArtifactsToStaging(
             File repoRoot, File stagingDir, String projectName, String version, String timestamp, GitMetadata gitMeta,
             Map<String, FileInventoryItem> inventory, List<EvoMetadata> metadataList, DiscoveredArchitecture arch,
@@ -574,24 +783,29 @@ public class MilestoneGenerator {
             GenomeGenerationProgressListener progressListener
     ) throws IOException {
 
+        EvolutionaryIntelligence intel = extractEvolutionaryIntelligence(
+                repoRoot, projectName, gitMeta, arch, inventory, metadataList,
+                newCount, changedCount, removedCount, unchangedCount
+        );
+
         List<String> artifacts = List.of("genome.json", "architecture.md", "use_cases.md", "milestone_v1.md", "milestone_dashboard.html", "functionality_inventory.json");
         int total = artifacts.size();
 
         int idx = 1;
         generateArtifactWithFeedback("genome.json", idx++, total, progressListener, () ->
-            generateGenomeJson(stagingDir, projectName, version, timestamp, gitMeta, inventory, metadataList, arch, newCount, changedCount, removedCount, unchangedCount)
+            generateGenomeJson(stagingDir, projectName, version, timestamp, gitMeta, inventory, metadataList, arch, intel, newCount, changedCount, removedCount, unchangedCount)
         );
 
         generateArtifactWithFeedback("architecture.md", idx++, total, progressListener, () ->
-            generateArchitectureMd(stagingDir, projectName, gitMeta, metadataList, arch, inventory, newCount, changedCount, removedCount, unchangedCount)
+            generateArchitectureMd(stagingDir, projectName, gitMeta, metadataList, arch, inventory, intel, newCount, changedCount, removedCount, unchangedCount)
         );
 
         generateArtifactWithFeedback("use_cases.md", idx++, total, progressListener, () ->
-            generateUseCasesMd(stagingDir, projectName, gitMeta, metadataList, arch)
+            generateUseCasesMd(stagingDir, projectName, gitMeta, metadataList, arch, intel)
         );
 
         generateArtifactWithFeedback("milestone_v1.md", idx++, total, progressListener, () ->
-            generateMilestoneV1Md(stagingDir, projectName, gitMeta, metadataList, arch)
+            generateMilestoneV1Md(stagingDir, projectName, gitMeta, metadataList, arch, intel)
         );
 
         generateArtifactWithFeedback("milestone_dashboard.html", idx++, total, progressListener, () ->
@@ -650,6 +864,7 @@ public class MilestoneGenerator {
     private void generateGenomeJson(
             File dir, String name, String version, String timestamp, GitMetadata gitMeta,
             Map<String, FileInventoryItem> inventory, List<EvoMetadata> metadata, DiscoveredArchitecture arch,
+            EvolutionaryIntelligence intel,
             int newCount, int changedCount, int removedCount, int unchangedCount
     ) throws IOException {
 
@@ -698,12 +913,52 @@ public class MilestoneGenerator {
         }
         genome.put("fileInventory", invObj);
 
+        // Structured Evolutionary Memory & Intelligence
+        JSONArray factsArr = new JSONArray();
+        intel.facts.forEach(factsArr::put);
+        genome.put("facts", factsArr);
+
+        JSONArray obsArr = new JSONArray();
+        intel.observations.forEach(obsArr::put);
+        genome.put("observations", obsArr);
+
+        JSONArray probArr = new JSONArray();
+        intel.problems.forEach(probArr::put);
+        genome.put("problems", probArr);
+
+        JSONArray recArr = new JSONArray();
+        intel.recommendations.forEach(recArr::put);
+        genome.put("recommendations", recArr);
+
+        JSONArray histArr = new JSONArray();
+        intel.history.forEach(histArr::put);
+        genome.put("history", histArr);
+
+        JSONArray expArr = new JSONArray();
+        for (EvolutionaryExperience exp : intel.experiences) {
+            JSONObject expObj = new JSONObject();
+            expObj.put("id", exp.id);
+            expObj.put("type", exp.type);
+            expObj.put("strategy", exp.strategy);
+            expObj.put("branch", exp.branch != null ? exp.branch : "main");
+            expObj.put("score", exp.score);
+            expObj.put("timestamp", exp.timestamp);
+            expObj.put("goal", exp.goal != null ? exp.goal : "");
+            expObj.put("outcome", exp.outcome != null ? exp.outcome : "");
+            if (exp.errorMessage != null && !exp.errorMessage.isEmpty()) {
+                expObj.put("errorMessage", exp.errorMessage);
+            }
+            expArr.put(expObj);
+        }
+        genome.put("experiences", expArr);
+
         Files.write(new File(dir, "genome.json").toPath(), genome.toString(2).getBytes(StandardCharsets.UTF_8));
     }
 
     private void generateArchitectureMd(
             File dir, String name, GitMetadata gitMeta, List<EvoMetadata> metadata, DiscoveredArchitecture arch,
-            Map<String, FileInventoryItem> inventory, int newCount, int changedCount, int removedCount, int unchangedCount
+            Map<String, FileInventoryItem> inventory, EvolutionaryIntelligence intel,
+            int newCount, int changedCount, int removedCount, int unchangedCount
     ) throws IOException {
 
         KnowledgeMetadata km = new KnowledgeMetadata();
@@ -754,14 +1009,19 @@ public class MilestoneGenerator {
         sb.append("- **FACT**: Discovered and verified 28 core implemented functionalities with 6 evaluation dimensions.\n");
 
         sb.append("\n## Architectural Observations (OBSERVATION)\n\n");
-        sb.append("- **OBSERVATION**: Subsystem separation follows OSGi bundle conventions.\n");
-        sb.append("- **OBSERVATION**: Self-Development pipeline coordinates with Supervisor and Controller modules.\n");
+        for (String obs : intel.observations) {
+            sb.append("- **OBSERVATION**: ").append(obs.replace("OBSERVATION: ", "")).append("\n");
+        }
 
         sb.append("\n## Known Problems & Hotspots (PROBLEM)\n\n");
-        sb.append("- **PROBLEM**: Legacy unformatted sidecar `.ai.json` metadata requires manual or automated re-indexing.\n");
+        for (String prob : intel.problems) {
+            sb.append("- **PROBLEM**: ").append(prob.replace("PROBLEM: ", "")).append("\n");
+        }
 
         sb.append("\n## Evolution Recommendations (RECOMMENDATION)\n\n");
-        sb.append("- **RECOMMENDATION**: Continue enforcing atomic updates and incremental source hash validation.\n");
+        for (String rec : intel.recommendations) {
+            sb.append("- **RECOMMENDATION**: ").append(rec.replace("RECOMMENDATION: ", "")).append("\n");
+        }
 
         sb.append("\n## Historical Evolutionary Information (HISTORICAL)\n\n");
         sb.append("- **Commit**: `").append(gitMeta.commitHash).append("` (Branch: `").append(gitMeta.branch).append("`)\n");
@@ -772,7 +1032,7 @@ public class MilestoneGenerator {
         Files.write(new File(dir, "architecture.md").toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
-    private void generateUseCasesMd(File dir, String name, GitMetadata gitMeta, List<EvoMetadata> metadata, DiscoveredArchitecture arch) throws IOException {
+    private void generateUseCasesMd(File dir, String name, GitMetadata gitMeta, List<EvoMetadata> metadata, DiscoveredArchitecture arch, EvolutionaryIntelligence intel) throws IOException {
         KnowledgeMetadata km = new KnowledgeMetadata();
         km.setId("use-cases");
         km.setTitle("Use Cases and Behaviors - " + name);
@@ -790,17 +1050,24 @@ public class MilestoneGenerator {
 
         sb.append("\n## Observed Workflows (OBSERVATION)\n\n");
         sb.append("- **OBSERVATION**: ArchitectureController delegates genome synchronization to GenomeUpdateAgent.\n");
+        for (String obs : intel.observations) {
+            sb.append("- **OBSERVATION**: ").append(obs.replace("OBSERVATION: ", "")).append("\n");
+        }
 
         sb.append("\n## Known Limitations (PROBLEM)\n\n");
-        sb.append("- **PROBLEM**: Asynchronous background jobs must check browser widget disposal prior to execution.\n");
+        for (String prob : intel.problems) {
+            sb.append("- **PROBLEM**: ").append(prob.replace("PROBLEM: ", "")).append("\n");
+        }
 
         sb.append("\n## Future Enhancements (RECOMMENDATION)\n\n");
-        sb.append("- **RECOMMENDATION**: Integrate deep semantic diffing for class-level method signatures.\n");
+        for (String rec : intel.recommendations) {
+            sb.append("- **RECOMMENDATION**: ").append(rec.replace("RECOMMENDATION: ", "")).append("\n");
+        }
 
         Files.write(new File(dir, "use_cases.md").toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
-    private void generateMilestoneV1Md(File dir, String name, GitMetadata gitMeta, List<EvoMetadata> metadata, DiscoveredArchitecture arch) throws IOException {
+    private void generateMilestoneV1Md(File dir, String name, GitMetadata gitMeta, List<EvoMetadata> metadata, DiscoveredArchitecture arch, EvolutionaryIntelligence intel) throws IOException {
         KnowledgeMetadata km = new KnowledgeMetadata();
         km.setId("milestone-v1");
         km.setTitle("Milestone Freezepoint v1 - " + name);
@@ -817,13 +1084,19 @@ public class MilestoneGenerator {
         sb.append("- **FACT**: Core model, utils, and controller modules maintain system integrity.\n");
 
         sb.append("\n## Controlled Evolution Zone (OBSERVATION)\n\n");
-        sb.append("- **OBSERVATION**: Forge training pipeline and Self-Dev supervisor modules evolve iteratively.\n");
+        for (String obs : intel.observations) {
+            sb.append("- **OBSERVATION**: ").append(obs.replace("OBSERVATION: ", "")).append("\n");
+        }
 
         sb.append("\n## Core Invariants & Risk Assessment (PROBLEM)\n\n");
-        sb.append("- **PROBLEM**: Architectural divergence without verification can introduce regressions.\n");
+        for (String prob : intel.problems) {
+            sb.append("- **PROBLEM**: ").append(prob.replace("PROBLEM: ", "")).append("\n");
+        }
 
         sb.append("\n## Milestone Recommendations (RECOMMENDATION)\n\n");
-        sb.append("- **RECOMMENDATION**: Mandate Maven `clean verify` test execution before milestone tagged releases.\n");
+        for (String rec : intel.recommendations) {
+            sb.append("- **RECOMMENDATION**: ").append(rec.replace("RECOMMENDATION: ", "")).append("\n");
+        }
 
         Files.write(new File(dir, "milestone_v1.md").toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
@@ -876,7 +1149,7 @@ public class MilestoneGenerator {
     }
 
     private String getAnalyticalSnapshotPath(File root) {
-        String analyticalDateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("ddMMYYYY"));
+        String analyticalDateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"));
         return "genome-docs/" + analyticalDateStr;
     }
 
