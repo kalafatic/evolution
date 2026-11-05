@@ -405,12 +405,21 @@ public class FunctionalityInventoryManager {
         }
         root.put("functionalities", array);
 
-        File genomeCurrent = new File(new File(repoRoot, "genome"), "current");
+        File genomeDir = new File(repoRoot, "genome");
+        File genomeCurrent = new File(genomeDir, "current");
         genomeCurrent.mkdirs();
         File invFile = new File(genomeCurrent, "functionality_inventory.json");
 
         try {
-            Files.write(invFile.toPath(), root.toString(2).getBytes(StandardCharsets.UTF_8));
+            byte[] bytes = root.toString(2).getBytes(StandardCharsets.UTF_8);
+            Files.write(invFile.toPath(), bytes);
+
+            // Also mirror snapshot to genome/history/<timestamp>
+            String timestampDir = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            File genomeHistory = new File(genomeDir, "history" + File.separator + timestampDir);
+            genomeHistory.mkdirs();
+            File histFile = new File(genomeHistory, "functionality_inventory.json");
+            Files.write(histFile.toPath(), bytes);
         } catch (IOException e) {
             System.err.println("[FunctionalityInventoryManager] Failed to write inventory: " + e.getMessage());
         }

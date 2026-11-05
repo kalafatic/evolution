@@ -34,7 +34,73 @@ public class FunctionalityInventoryTest {
             assertNotNull("Timestamp should not be null", e.timestamp);
             assertTrue("Timestamp should not be empty", !e.timestamp.isEmpty());
             assertTrue("Overall score should be between 0 and 100", e.calculateOverallScore() >= 0 && e.calculateOverallScore() <= 100);
+
+            // Verify mapping to actual source file
+            File srcFile = new File(repoRoot, e.sourcePath);
+            assertTrue("Functionality source path must exist: " + e.sourcePath, srcFile.exists());
         }
+    }
+
+    @Test
+    public void testGenerateInventoryAndSnapshotHistory() throws Exception {
+        File tempDir = Files.createTempDir();
+        File dummyRepo = new File(tempDir, "dummy-repo");
+        dummyRepo.mkdirs();
+
+        FunctionalityInventoryManager mgr = FunctionalityInventoryManager.getInstance();
+        File invFile = mgr.generateInventory(dummyRepo, "TEST_PROJECT", "test-commit-123");
+
+        assertNotNull("Generated inventory file should not be null", invFile);
+        assertTrue("Generated inventory file must exist in genome/current", invFile.exists());
+
+        File historyDir = new File(new File(dummyRepo, "genome"), "history");
+        assertTrue("Genome history directory must be created", historyDir.exists());
+        File[] historySnapshots = historyDir.listFiles();
+        assertNotNull("History snapshots list should not be null", historySnapshots);
+        assertTrue("At least one historical snapshot directory must be created", historySnapshots.length > 0);
+
+        File histInv = new File(historySnapshots[0], "functionality_inventory.json");
+        assertTrue("Historical functionality_inventory.json must exist", histInv.exists());
+
+        deleteDirectory(tempDir);
+    }
+
+    @Test
+    public void testMetadataFreshnessAndStalenessDetection() throws Exception {
+        File tempDir = Files.createTempDir();
+        File dummySource = new File(tempDir, "TestClass.java");
+        Files.touch(dummySource);
+
+        AIContextTool tool = new AIContextTool();
+
+        // 1. Initially no sidecar -> isMetadataStale is true
+        assertTrue("Missing sidecar should be considered stale", tool.isMetadataStale(dummySource));
+
+        // 2. Save sidecar -> should be fresh
+        FunctionalityMetadata meta = new FunctionalityMetadata();
+        meta.setFunctionalityId("FUNC-TEST");
+        meta.setFunctionalityName("Test Freshness");
+        meta.setPrimaryClass("TestClass");
+        meta.setImportanceScore0To100(80);
+        meta.setEvaluationTimestamp("2026-11-05 12:00:00");
+        tool.saveFunctionalityMetadata(dummySource, meta);
+
+        File sidecar = new File(tempDir, "TestClass.java" + AIContextTool.METADATA_SUFFIX);
+        assertTrue("Sidecar must exist", sidecar.exists());
+
+        // Ensure sidecar timestamp is equal or newer than source
+        sidecar.setLastModified(dummySource.lastModified() + 2000);
+        assertTrue("Sidecar newer than source should be fresh", !tool.isMetadataStale(dummySource));
+
+        // 3. Touch source to simulate source modification -> should become stale
+        dummySource.setLastModified(sidecar.lastModified() + 5000);
+        assertTrue("Source modified after sidecar should be detected as stale", tool.isMetadataStale(dummySource));
+
+        FunctionalityMetadata loaded = tool.loadFunctionalityMetadata(dummySource);
+        assertNotNull("Loaded metadata should not be null", loaded);
+        assertTrue("Loaded metadata should have stale flag set to true", loaded.isStale());
+
+        deleteDirectory(tempDir);
     }
 
     @Test

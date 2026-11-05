@@ -545,26 +545,35 @@ public class FunctionalityInventoryGroup {
             prompt.append("Provide a comprehensive architectural analysis, dependency review, and correctness assessment for the primary classes above.");
         }
 
-        Task newTask = OrchestrationFactory.eINSTANCE.createTask();
-        newTask.setId(newSessionId);
-        newTask.setName("[" + mode + "] " + selectedEntries.get(0).name);
-        newTask.setPrompt(prompt.toString());
-        newTask.setDescription("Isolated " + mode + " session for " + selectedEntries.size() + " functionalities");
-        newTask.setStatus(TaskStatus.READY);
+        String selectedModeStr = (modeCombo != null && modeCombo.getText() != null && !modeCombo.getText().isEmpty())
+                ? modeCombo.getText() : "SELF_DEV_MODE";
 
-        if (orchestrator != null) {
-            orchestrator.getTasks().add(newTask);
-            if (editor != null) editor.setDirty(true);
-            page.runSingleTask(newTask);
-        }
+        createAndExecuteSession(mode, selectedModeStr, selectedEntries);
     }
 
-    private void createAndExecuteSession(String mode, List<FunctionalityEntry> selectedEntries) {
+    private void createAndExecuteSession(String action, List<FunctionalityEntry> selectedEntries) {
+        if (selectedEntries == null || selectedEntries.isEmpty()) return;
+        FunctionalityEntry first = selectedEntries.get(0);
+        String rowMode = (first != null && first.selectedMode != null) ? first.selectedMode : "self-dev";
+        createAndExecuteSession(action, rowMode, selectedEntries);
+    }
+
+    private void createAndExecuteSession(String action, String modeStr, List<FunctionalityEntry> selectedEntries) {
         if (selectedEntries == null || selectedEntries.isEmpty()) return;
 
         File repoRoot = resolveRepoRoot();
-        FunctionalityEntry first = selectedEntries.get(0);
-        String rowMode = (first != null && first.selectedMode != null) ? first.selectedMode.toLowerCase() : "self-dev";
+        String normalizedMode = modeStr != null ? modeStr.trim().toLowerCase() : "self-dev";
+        if (normalizedMode.contains("intent")) {
+            normalizedMode = "intent";
+        } else if (normalizedMode.contains("mediated")) {
+            normalizedMode = "mediated";
+        } else if (normalizedMode.contains("dream")) {
+            normalizedMode = "dream";
+        } else if (normalizedMode.contains("darwin")) {
+            normalizedMode = "darwin";
+        } else {
+            normalizedMode = "self-dev";
+        }
 
         String newSessionId = "func-session-" + System.currentTimeMillis();
         SessionContainer newSession = SessionManager.getInstance().getOrCreateSession(newSessionId);
@@ -576,9 +585,9 @@ public class FunctionalityInventoryGroup {
         }
 
         StringBuilder prompt = new StringBuilder();
-        prompt.append("[AI COMMANDER INSTRUCTIONS - ").append(rowMode.toUpperCase()).append("]\n");
-        prompt.append("Row Selected Mode: ").append(rowMode).append("\n");
-        prompt.append("Action: ").append(mode).append("\n\n");
+        prompt.append("[AI COMMANDER INSTRUCTIONS - ").append(normalizedMode.toUpperCase()).append("]\n");
+        prompt.append("Mode: ").append(normalizedMode).append("\n");
+        prompt.append("Action: ").append(action).append("\n\n");
 
         for (FunctionalityEntry e : selectedEntries) {
             prompt.append("=== FUNCTIONALITY: ").append(e.name).append(" (ID: ").append(e.id).append(") ===\n");
@@ -613,7 +622,7 @@ public class FunctionalityInventoryGroup {
         }
 
         prompt.append("Task Instructions:\n");
-        if ("REFACTOR".equals(mode)) {
+        if ("REFACTOR".equalsIgnoreCase(action)) {
             prompt.append("Propose concrete refactoring steps, modularization enhancements, or risk mitigations based on the source code and evaluation scores.");
         } else {
             prompt.append("Provide a comprehensive architectural analysis, dependency review, and correctness assessment for the primary classes above.");
@@ -621,24 +630,24 @@ public class FunctionalityInventoryGroup {
 
         Task newTask = OrchestrationFactory.eINSTANCE.createTask();
         newTask.setId(newSessionId);
-        newTask.setName("[" + rowMode.toUpperCase() + " - " + mode + "] " + selectedEntries.get(0).name);
+        newTask.setName("[" + normalizedMode.toUpperCase() + " - " + action + "] " + selectedEntries.get(0).name);
         newTask.setPrompt(prompt.toString());
-        newTask.setDescription("Isolated " + rowMode + " session for " + selectedEntries.size() + " functionalities");
+        newTask.setDescription("Isolated " + normalizedMode + " session for " + selectedEntries.size() + " functionalities (" + action + ")");
         newTask.setStatus(TaskStatus.READY);
 
-        // Select Darwin Engine execution mode based on the row's mode
-        if ("self-dev".equalsIgnoreCase(rowMode)) {
+        // Select Darwin Engine execution mode based on the chosen mode
+        if ("self-dev".equalsIgnoreCase(normalizedMode)) {
             newTask.setType("SELF_DEV_MODE");
             newTask.setSelfIterativeMode(true);
             newTask.setDarwinMode(true);
-        } else if ("mediated".equalsIgnoreCase(rowMode)) {
+        } else if ("mediated".equalsIgnoreCase(normalizedMode)) {
             newTask.setType("MEDIATED_MODE");
             newTask.setDarwinMode(true);
             newTask.setIterativeMode(true);
-        } else if ("intent".equalsIgnoreCase(rowMode)) {
+        } else if ("intent".equalsIgnoreCase(normalizedMode)) {
             newTask.setType("INTENT_MODE");
             newTask.setDarwinMode(true);
-        } else if ("dream".equalsIgnoreCase(rowMode)) {
+        } else if ("dream".equalsIgnoreCase(normalizedMode)) {
             newTask.setType("DREAM_MODE");
             newTask.setDarwinMode(true);
         } else { // fallback local/darwin
