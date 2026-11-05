@@ -102,7 +102,7 @@ public class SimpleBPETokenizerDecoderTest {
 
     @Test
     public void testMultiByteUtf8SplitAcrossTokens() {
-        // UTF-8 smiley emoji: 😀 (0xF0 0x9F 0x98 0x90)
+        // UTF-8 neutral face emoji: 😐 (0xF0 0x9F 0x98 0x90)
         byte[] emojiBytes = new byte[] { (byte) 0xF0, (byte) 0x9F, (byte) 0x98, (byte) 0x90 };
 
         List<Integer> tokenIds = new ArrayList<>();
@@ -113,7 +113,7 @@ public class SimpleBPETokenizerDecoderTest {
         }
 
         String decoded = tokenizer.decode(tokenIds);
-        assertEquals("😀", decoded);
+        assertEquals("😐", decoded);
     }
 
     @Test
@@ -149,7 +149,7 @@ public class SimpleBPETokenizerDecoderTest {
 
             String decoded = tokenizer.decode(encoded);
             assertEquals("Round-trip failed for phrase: " + phrase, phrase, decoded);
-            assertFalse("Decoded text should not contain replacement character  for phrase: " + phrase, decoded.contains(""));
+            assertFalse("Decoded text should not contain replacement character for phrase: " + phrase, decoded.contains("\uFFFD"));
         }
     }
 

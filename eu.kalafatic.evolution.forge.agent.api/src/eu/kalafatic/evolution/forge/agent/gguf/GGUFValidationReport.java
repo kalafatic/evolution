@@ -17,13 +17,16 @@ public class GGUFValidationReport {
 
     public void addError(String section, String field, String expected, String actual, long fileOffset, String message) {
         valid = false;
-        if ("header".equals(section) || "alignment".equals(section) || "tensor_offset".equals(section) || "tensor_payload".equals(section) || "tensor_overlap".equals(section)) {
+        if ("header".equals(section) || "alignment".equals(section) || "tensor_offset".equals(section) || "tensor_payload".equals(section) || "tensor_overlap".equals(section) || "reader_parse".equals(field)) {
             structureValid = false;
-        } else if ("metadata".equals(section) || "tokenizer".equals(section)) {
+        }
+        if ("metadata".equals(section) || "tokenizer".equals(section)) {
             metadataValid = false;
-        } else if ("tensor_info".equals(section) || "tensor_names".equals(section) || "tensor_dims".equals(section)) {
+        }
+        if ("tensor_info".equals(section) || "tensor_names".equals(section) || "tensor_dims".equals(section)) {
             tensorsValid = false;
-        } else if ("semantics".equals(section)) {
+        }
+        if ("semantics".equals(section)) {
             semanticsValid = false;
         }
 

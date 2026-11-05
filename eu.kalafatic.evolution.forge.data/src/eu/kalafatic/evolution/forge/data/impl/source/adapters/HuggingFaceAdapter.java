@@ -28,9 +28,27 @@ public class HuggingFaceAdapter implements DatasetSourceAdapter {
             return true;
         }
 
+        // Do not match explicit local file/folder types
+        if ("FILE".equals(type) || "FOLDER".equals(type)) {
+            return false;
+        }
+
+        // If path looks like an absolute local filesystem path or has a typical file extension, do not match as HF repo
+        if (path.startsWith("/") || path.startsWith("\\") || path.matches("^[A-Za-z]:.*")) {
+            return false;
+        }
+        String lower = path.toLowerCase();
+        if (lower.endsWith(".txt") || lower.endsWith(".md") || lower.endsWith(".json") ||
+            lower.endsWith(".jsonl") || lower.endsWith(".parquet") || lower.endsWith(".csv") ||
+            lower.endsWith(".evodata") || lower.endsWith(".java") || lower.endsWith(".py")) {
+            return false;
+        }
+
         // If not a local file on disk, check if path resembles HF repo ID (e.g. "wikitext", "databricks/dolly-15k")
         File f = new File(path);
-        if (!f.exists() && (path.equalsIgnoreCase("wikitext") || path.contains("/") || path.contains("huggingface"))) {
+        if (!f.exists() && (path.equalsIgnoreCase("wikitext") || path.equalsIgnoreCase("gsm8k") ||
+            path.equalsIgnoreCase("fineweb") || path.contains("huggingface") ||
+            (path.contains("/") && !path.contains(":") && !path.startsWith(".")))) {
             return true;
         }
 

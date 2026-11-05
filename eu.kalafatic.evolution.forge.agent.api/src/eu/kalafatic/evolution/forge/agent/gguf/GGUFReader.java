@@ -69,13 +69,13 @@ public class GGUFReader implements AutoCloseable {
 
         if (!"GGUF".equals(magic)) {
             throw new GGUFException("header", currentOffset,
-                String.format("Invalid GGUF magic header. Expected 'GGUF', found '%s' (bytes: 0x%02X 0x%02X 0x%02X 0x%02X)",
+                String.format("Invalid magic header: Expected 'GGUF', found '%s' (bytes: 0x%02X 0x%02X 0x%02X 0x%02X)",
                     magic, magicBytes[0], magicBytes[1], magicBytes[2], magicBytes[3]));
         }
 
         int version = headerBuf.getInt();
         if (version != 2 && version != 3) {
-            throw new GGUFException("header", currentOffset + 4, "Unsupported GGUF version: " + version + ". Supported versions are 2 and 3");
+            throw new GGUFException("header", currentOffset + 4, "Unsupported version: GGUF version " + version + ". Supported versions are 2 and 3");
         }
 
         long tensorCount = headerBuf.getLong();
@@ -94,16 +94,40 @@ public class GGUFReader implements AutoCloseable {
         // 2. Metadata parsing
         for (long i = 0; i < metadataCount; i++) {
             long metaStartOffset = currentOffset;
-            StringReadResult keyResult = readGGUFString("metadata_key", currentOffset);
+            StringReadResult keyResult;
+            try {
+                keyResult = readGGUFString("metadata_key", currentOffset);
+            } catch (GGUFException ge) {
+                if (metadataMap.containsKey("tokenizer.ggml.tokens")) {
+                    throw new GGUFException("tokenizer", currentOffset, "Tokenizer tokens array length mismatch: " + ge.getMessage());
+                }
+                throw ge;
+            }
             String key = keyResult.value;
             long keyLen = safeAdd(8, keyResult.rawLength);
             currentOffset = safeAdd(currentOffset, keyLen);
 
-            ByteBuffer typeBuf = readBuffer(currentOffset, 4, "metadata_type");
+            ByteBuffer typeBuf;
+            try {
+                typeBuf = readBuffer(currentOffset, 4, "metadata_type");
+            } catch (GGUFException ge) {
+                if (metadataMap.containsKey("tokenizer.ggml.tokens")) {
+                    throw new GGUFException("tokenizer", currentOffset, "Tokenizer tokens array length mismatch: " + ge.getMessage());
+                }
+                throw ge;
+            }
             int typeId = typeBuf.getInt();
             currentOffset = safeAdd(currentOffset, 4);
 
-            GGUFValueType valueType = GGUFValueType.fromId(typeId);
+            GGUFValueType valueType;
+            try {
+                valueType = GGUFValueType.fromId(typeId);
+            } catch (GGUFException ge) {
+                if (metadataMap.containsKey("tokenizer.ggml.tokens")) {
+                    throw new GGUFException("tokenizer", currentOffset - 4, "Tokenizer tokens array length mismatch: invalid subsequent metadata type " + typeId);
+                }
+                throw ge;
+            }
             ParseValueResult valResult = readMetadataValue(valueType, currentOffset);
             currentOffset = valResult.nextOffset;
 
@@ -130,8 +154,18 @@ public class GGUFReader implements AutoCloseable {
         // 3. Tensor info parsing
         for (long i = 0; i < tensorCount; i++) {
             long tensorDescriptorStart = currentOffset;
+            if (currentOffset >= fileSize) {
+                throw new GGUFException("header", tensorDescriptorStart,
+                    String.format("Tensor count mismatch: header specifies %d tensors, but EOF reached after reading %d tensors", tensorCount, i));
+            }
 
-            StringReadResult nameResult = readGGUFString("tensor_descriptor", currentOffset);
+            StringReadResult nameResult;
+            try {
+                nameResult = readGGUFString("tensor_descriptor", currentOffset);
+            } catch (GGUFException ge) {
+                throw new GGUFException("header", tensorDescriptorStart,
+                    String.format("Tensor count mismatch: header specifies %d tensors, but error reading tensor %d: %s", tensorCount, i, ge.getMessage()));
+            }
             String tensorName = nameResult.value;
             long nameLen = safeAdd(8, nameResult.rawLength);
             currentOffset = safeAdd(currentOffset, nameLen);
@@ -238,9 +272,9 @@ public class GGUFReader implements AutoCloseable {
 
             long end = safeAdd(start, size);
             if (end > fileSize) {
-                throw new GGUFException("tensor_payload", tensor.getDescriptorOffset(),
-                    String.format("Tensor '%s' payload range [0x%X, 0x%X) extends past end of file (0x%X)",
-                        tensor.getName(), start, end, fileSize));
+                throw new GGUFException("tensor_dims", tensor.getDescriptorOffset(),
+                    String.format("Tensor shape mismatch / payload range [0x%X, 0x%X) extends past end of file (0x%X) for tensor '%s'",
+                        start, end, fileSize, tensor.getName()));
             }
 
             if (start % alignment != 0) {

@@ -264,7 +264,8 @@ public class ForgeDataPipelineEndToEndTest {
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
 
-        assertEquals(DatasetPreparationResult.Status.SUCCESS, result.getStatus());
+        // Status is PARTIAL when one source fails and one source succeeds
+        assertEquals(DatasetPreparationResult.Status.PARTIAL, result.getStatus());
         assertEquals(1, result.getSuccessfulSources().size());
         assertEquals(1, result.getFailedSources().size());
         assertEquals(1, result.getSamples().size());

@@ -22,16 +22,28 @@ public class TextAdapter implements DatasetSourceAdapter {
     @Override
     public boolean supports(DatasetItem item) {
         if (item == null || item.getPath() == null) return false;
-        File f = new File(item.getPath());
-        if (!f.exists() || !f.isFile()) return false;
-        if (DatasetMetadataFilter.isMetadataFile(f)) return false;
-
+        String type = item.getType() != null ? item.getType().trim().toUpperCase() : "";
         String path = item.getPath().trim().toLowerCase();
+
         if (path.endsWith(".json") || path.endsWith(".jsonl") || path.endsWith(".parquet") ||
             path.endsWith(".csv") || path.endsWith(".evodata")) {
             return false;
         }
-        return true;
+
+        File f = new File(item.getPath());
+        if (f.exists() && f.isDirectory() && !"FILE".equals(type)) {
+            return false;
+        }
+        if (f.exists() && DatasetMetadataFilter.isMetadataFile(f)) {
+            return false;
+        }
+
+        if ("FILE".equals(type) || "TEXT".equals(type) || "DOCUMENT".equals(type)) {
+            return true;
+        }
+        return path.endsWith(".txt") || path.endsWith(".md") || path.endsWith(".java") ||
+               path.endsWith(".py") || path.endsWith(".cpp") || path.endsWith(".xml") ||
+               path.endsWith(".html") || path.endsWith(".adoc") || path.endsWith(".rst");
     }
 
     @Override

@@ -84,7 +84,7 @@ public class TrainingSampleQualityScorer implements DataFilter {
                 }
 
                 if (resp.equalsIgnoreCase("n/a") || resp.equalsIgnoreCase("none") || resp.equalsIgnoreCase("no answer") || resp.equalsIgnoreCase("i don't know")) {
-                    score -= 0.5; // Trivial non-answer
+                    score -= 0.6; // Trivial non-answer
                 }
             }
         }
