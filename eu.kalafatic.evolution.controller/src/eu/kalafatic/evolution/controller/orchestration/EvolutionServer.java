@@ -246,9 +246,12 @@ public class EvolutionServer extends NanoHTTPD {
         try {
             if (Method.GET.equals(method) && ("/".equals(uri) || "/index.html".equals(uri))) {
                 return handleGetIndex();
-            } else if (Method.GET.equals(method) && ("/develop".equals(uri) || "/experimental/develop".equals(uri) || "/mutation".equals(uri) || "/experimental/mutation".equals(uri))) {
+            } else if (Method.GET.equals(method) && ("/develop".equals(uri) || "/experimental/develop".equals(uri))) {
                 updateSessionWorkflow(session, "DEVELOP");
                 return handleGetDevelopPage();
+            } else if (Method.GET.equals(method) && ("/mutation".equals(uri) || "/experimental/mutation".equals(uri))) {
+                updateSessionWorkflow(session, "MUTATION");
+                return handleGetMutationPage();
             } else if (Method.POST.equals(method) && ("/develop/task".equals(uri) || "/develop/tasks".equals(uri))) {
                 return handleCreateDevelopTask(session);
             } else if (Method.POST.equals(method) && "/develop/upload".equals(uri)) {
@@ -272,6 +275,10 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleMutationPush(session);
             } else if (Method.POST.equals(method) && "/mutation/build".equals(uri)) {
                 return handleMutationBuild(session);
+            } else if (Method.POST.equals(method) && "/mutation/approve".equals(uri)) {
+                return handleMutationApprove(session);
+            } else if (Method.POST.equals(method) && "/mutation/cancel".equals(uri)) {
+                return handleMutationCancel(session);
             } else if (Method.GET.equals(method) && "/experimental/chat".equals(uri)) {
                 updateSessionWorkflow(session, "CHAT");
                 return handleGetChat();
@@ -983,10 +990,21 @@ public class EvolutionServer extends NanoHTTPD {
     private Response handleGetDevelopPage() {
         InputStream is = getClass().getResourceAsStream("develop.html");
         if (is == null) {
-            is = getClass().getResourceAsStream("mutation.html");
-        }
-        if (is == null) {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "develop.html not found");
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String content = reader.lines().collect(Collectors.joining("\n"));
+            content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
+            return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
+    }
+
+    private Response handleGetMutationPage() {
+        InputStream is = getClass().getResourceAsStream("mutation.html");
+        if (is == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "mutation.html not found");
         }
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String content = reader.lines().collect(Collectors.joining("\n"));
@@ -1242,13 +1260,7 @@ public class EvolutionServer extends NanoHTTPD {
 
         JSONArray arr = new JSONArray();
         for (eu.kalafatic.evolution.controller.orchestration.mutation.MutationSession s : list) {
-            JSONObject obj = new JSONObject();
-            obj.put("sessionId", s.getSessionId());
-            obj.put("repoUrl", s.getRepoUrl());
-            obj.put("branch", s.getBranch());
-            obj.put("workspaceDir", s.getWorkspaceDir().getAbsolutePath());
-            obj.put("lastActivityTime", s.getLastActivityTime());
-            arr.put(obj);
+            arr.put(s.toJsonObject());
         }
         return newFixedLengthResponse(Response.Status.OK, "application/json", arr.toString());
     }
@@ -1259,13 +1271,7 @@ public class EvolutionServer extends NanoHTTPD {
         if (s == null) {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", new JSONObject().put("error", "Session not found").toString());
         }
-        JSONObject obj = new JSONObject();
-        obj.put("sessionId", s.getSessionId());
-        obj.put("repoUrl", s.getRepoUrl());
-        obj.put("branch", s.getBranch());
-        obj.put("workspaceDir", s.getWorkspaceDir().getAbsolutePath());
-        obj.put("lastActivityTime", s.getLastActivityTime());
-        return newFixedLengthResponse(Response.Status.OK, "application/json", obj.toString());
+        return newFixedLengthResponse(Response.Status.OK, "application/json", s.toJsonObject().toString());
     }
 
     private Response handleGetMutationDiff(IHTTPSession session) {
@@ -1371,6 +1377,52 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
         }
+    }
+
+    private Response handleMutationApprove(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+
+        String sid = json.optString("sessionId", "Default");
+        boolean approve = json.optBoolean("approve", true);
+
+        eu.kalafatic.evolution.controller.orchestration.mutation.MutationSession mutSession =
+            eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance().getSession(sid);
+
+        if (mutSession == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", new JSONObject().put("error", "Mutation session not found").toString());
+        }
+
+        try {
+            mutSession.setApproved(approve);
+            if (approve && !mutSession.getProposedChanges().isEmpty()) {
+                mutSession.applyProposedChanges();
+            }
+            return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").put("approved", approve).toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
+        }
+    }
+
+    private Response handleMutationCancel(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+
+        String sid = json.optString("sessionId", "Default");
+
+        eu.kalafatic.evolution.controller.orchestration.mutation.MutationSession mutSession =
+            eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance().getSession(sid);
+
+        if (mutSession == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", new JSONObject().put("error", "Mutation session not found").toString());
+        }
+
+        mutSession.cancel();
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").put("message", "Session cancelled").toString());
     }
 
     private Response handleGetDatasources(String id) {
@@ -1750,7 +1802,9 @@ public class EvolutionServer extends NanoHTTPD {
         // Determine workflow type from request URI
         String uri = session.getUri();
         String inferredWorkflow = "GENERAL";
-        if (uri.startsWith("/develop") || uri.startsWith("/experimental/develop") || uri.startsWith("/mutation")) {
+        if (uri.startsWith("/mutation") || uri.startsWith("/experimental/mutation")) {
+            inferredWorkflow = "MUTATION";
+        } else if (uri.startsWith("/develop") || uri.startsWith("/experimental/develop")) {
             inferredWorkflow = "DEVELOP";
         } else if (uri.startsWith("/experimental/chat") || uri.startsWith("/conversation") || uri.startsWith("/server/conversation")) {
             inferredWorkflow = "CHAT";
