@@ -1715,6 +1715,12 @@ public class AiCommanderPage extends AEvoPage {
 			instructionsGroup.setDarwin(true);
 		} else if ("DREAM_MODE".equals(task.getType())) {
 			instructionsGroup.setDarwin(true);
+			instructionsGroup.setDream(true);
+		} else if ("MEDIATED_MODE".equals(task.getType())) {
+			instructionsGroup.setIterative(true);
+			instructionsGroup.setDarwin(true);
+		} else if ("INTENT_MODE".equals(task.getType())) {
+			instructionsGroup.setDarwin(true);
 		} else if ("ASSISTED_CODING".equals(task.getType())) {
 			instructionsGroup.setIterative(true);
 		}
