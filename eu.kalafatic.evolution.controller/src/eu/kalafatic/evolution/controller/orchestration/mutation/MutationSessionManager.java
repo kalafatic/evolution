@@ -2,12 +2,15 @@ package eu.kalafatic.evolution.controller.orchestration.mutation;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.ConversationOutputController;
 import eu.kalafatic.evolution.controller.orchestration.MessagePriority;
@@ -23,7 +26,9 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
- * Single control plane for Mutation interactive repository evolution sessions.
+ * Single authoritative control plane for Mutation interactive repository evolution sessions.
+ * Manages persistent sessions, repository acquisition/cloning/linking, Darwin Engine state synchronization,
+ * and session state persistence/recovery.
  */
 public class MutationSessionManager {
 
@@ -37,6 +42,7 @@ public class MutationSessionManager {
         if (!baseWorkspacesDir.exists()) {
             baseWorkspacesDir.mkdirs();
         }
+        recoverSessions();
     }
 
     public static MutationSessionManager getInstance() {
@@ -45,6 +51,42 @@ public class MutationSessionManager {
 
     public File getBaseWorkspacesDir() {
         return baseWorkspacesDir;
+    }
+
+    public synchronized void recoverSessions() {
+        if (!baseWorkspacesDir.exists() || !baseWorkspacesDir.isDirectory()) return;
+        File[] dirs = baseWorkspacesDir.listFiles(File::isDirectory);
+        if (dirs == null) return;
+
+        for (File dir : dirs) {
+            File stateFile = new File(dir, "mutation_session.json");
+            if (stateFile.exists()) {
+                try {
+                    String jsonText = Files.readString(stateFile.toPath());
+                    JSONObject obj = new JSONObject(jsonText);
+                    String sid = obj.optString("sessionId", dir.getName());
+                    String repoUrl = obj.optString("repoUrl", "");
+                    String branch = obj.optString("branch", "main");
+
+                    MutationSession mutSession = new MutationSession(sid, repoUrl, branch, dir);
+                    String statusStr = obj.optString("status", null);
+                    if (statusStr != null) {
+                        try {
+                            mutSession.setStatus(MutationSession.Status.valueOf(statusStr));
+                        } catch (Exception ignored) {}
+                    }
+                    sessions.put(sid, mutSession);
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public void persistSessionState(MutationSession session) {
+        if (session == null || !session.getWorkspaceDir().exists()) return;
+        try {
+            File stateFile = new File(session.getWorkspaceDir(), "mutation_session.json");
+            Files.writeString(stateFile.toPath(), session.toJsonObject().toString(2));
+        } catch (Exception ignored) {}
     }
 
     public MutationSession createSession(String repoUrl, String branch, String requestedSessionId) throws Exception {
@@ -60,6 +102,17 @@ public class MutationSessionManager {
         File workspaceDir = new File(baseWorkspacesDir, sessionId);
 
         ShellTool shell = new ShellTool();
+
+        // Check if repoUrl is a local repository path
+        boolean isLocalRepo = false;
+        if (repoUrl != null && !repoUrl.trim().isEmpty()) {
+            File localPath = new File(repoUrl.trim());
+            if (localPath.exists() && localPath.isDirectory() && new File(localPath, ".git").exists()) {
+                isLocalRepo = true;
+                // If local path is provided and workspace directory is missing or points to it,
+                // we can clone from local or copy into workspace
+            }
+        }
 
         if (!workspaceDir.exists()) {
             workspaceDir.mkdirs();
@@ -97,6 +150,7 @@ public class MutationSessionManager {
 
         MutationSession mutationSession = new MutationSession(sessionId, repoUrl, activeBranch, workspaceDir);
         sessions.put(sessionId, mutationSession);
+        persistSessionState(mutationSession);
 
         // Register / sync with EVO core SessionManager and TaskContext
         SessionContainer container = SessionManager.getInstance().getOrCreateSession(sessionId);

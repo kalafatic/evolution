@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVO / Mutation - Interactive AI Software Engineer</title>
+    <title>EVO Mutation - Interactive AI Software Engineer</title>
     <base href="/">
     <link rel="stylesheet" href="/evo-style.css">
     <style>
@@ -51,6 +51,7 @@
             --accent-hover: var(--evo-primary-hover);
             --success: var(--evo-success);
             --error: var(--evo-danger);
+            --warning: var(--evo-warning);
             --user-msg-bg: var(--evo-primary);
             --ai-msg-bg: var(--evo-surface-alt);
             --diff-add-bg: var(--evo-success-light);
@@ -59,14 +60,10 @@
             --diff-del-text: var(--evo-danger);
         }
 
-        * { box-sizing: border-box; }
-
-        body, html {
-            margin: 0; padding: 0; height: 100%;
+        body {
             font-family: var(--evo-font-family);
-            background-color: var(--evo-bg);
-            color: var(--evo-text);
-            overflow: hidden;
+            margin: 0; padding: 0; background-color: var(--evo-bg);
+            color: var(--text-primary); display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
         #app-container {
@@ -83,55 +80,51 @@
         }
 
         .brand-title {
-            display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05em; color: #ffffff;
+            display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05em; color: var(--text-primary);
         }
         .brand-badge {
-            background: var(--accent); color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; letter-spacing: 0.5px;
+            font-size: 0.65em; background: var(--accent); color: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;
         }
 
         .repo-controls {
-            display: flex; align-items: center; gap: 8px; flex: 1; max-width: 750px;
+            display: flex; align-items: center; gap: 8px; flex: 1; max-width: 900px;
         }
         .repo-controls input, .repo-controls select {
-            background: var(--bg-tertiary); color: #ffffff; border: 1px solid var(--border);
-            padding: 6px 10px; border-radius: 3px; font-size: 0.85em; outline: none;
+            padding: 5px 10px; font-size: 0.85em; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg-primary); color: var(--text-primary);
         }
-        .repo-controls input[type="text"] { flex: 1; }
+        #repo-url { flex: 1; }
 
         .btn {
-            background: var(--bg-tertiary); color: #ffffff; border: 1px solid var(--border);
-            padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.82em; font-weight: 600;
-            display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;
+            padding: 5px 12px; font-size: 0.85em; font-weight: 600; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; transition: 0.15s;
         }
-        .btn:hover { background: #3c3c3c; border-color: var(--accent); }
-        .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+        .btn:hover { background: var(--border); }
+        .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
         .btn-primary:hover { background: var(--accent-hover); }
-        .btn-success { background: #2e7d32; border-color: #2e7d32; color: white; }
-        .btn-success:hover { background: #388e3c; }
+        .btn-success { background: var(--success); color: white; border-color: var(--success); }
+        .btn-danger { background: var(--error); color: white; border-color: var(--error); }
 
-        .status-indicators {
-            display: flex; align-items: center; gap: 8px; font-size: 0.75em;
-        }
         .status-pill {
-            padding: 3px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-tertiary);
+            font-size: 0.75em; padding: 4px 8px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;
         }
-        .status-pill.online { border-color: var(--success); color: var(--success); }
+        .status-pill.online { background: #dcfce7; color: #166534; }
+        .status-pill.busy { background: #fef3c7; color: #b45309; }
 
-        /* MAIN CONTENT SPLIT */
+        /* MAIN SPLIT VIEW */
         #main-split {
-            flex: 1; display: flex; overflow: hidden;
+            display: flex; flex: 1; overflow: hidden;
         }
 
         /* LEFT CHAT PANEL */
         #chat-panel {
-            flex: 1; display: flex; flex-direction: column;
-            border-right: 1px solid var(--border); background: var(--bg-primary);
+            width: 50%; display: flex; flex-direction: column; border-right: 1px solid var(--border);
+            background: var(--bg-primary);
         }
 
         .panel-header {
-            height: 36px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
-            font-size: 0.8em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);
+            padding: 8px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            font-size: 0.85em; font-weight: 600; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center;
         }
 
         #chat-messages {
@@ -161,7 +154,7 @@
         }
         #chat-input-area input {
             flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
-            background: var(--bg-tertiary); color: #ffffff; outline: none; font-size: 0.9em;
+            background: var(--bg-primary); color: var(--text-primary); outline: none; font-size: 0.9em;
         }
         #chat-input-area input:focus { border-color: var(--accent); }
 
@@ -178,18 +171,18 @@
             padding: 3px 8px; border-radius: 3px; background: var(--bg-primary); border: 1px solid var(--border);
             cursor: pointer; font-family: monospace; white-space: nowrap; display: flex; align-items: center; gap: 5px;
         }
-        .file-chip.modified { color: #dcdcaa; }
-        .file-chip.added { color: var(--success); }
-        .file-chip.deleted { color: var(--error); }
+        .file-chip.modified { color: #854d0e; font-weight: bold; }
+        .file-chip.added { color: var(--success); font-weight: bold; }
+        .file-chip.deleted { color: var(--error); font-weight: bold; }
 
         #diff-content {
             flex: 1; overflow: auto; padding: 12px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.82em; line-height: 1.4;
             background: #1e1e1e; color: #d4d4d4; white-space: pre;
         }
 
-        .diff-line-add { background: var(--diff-add-bg); color: var(--diff-add-text); }
-        .diff-line-del { background: var(--diff-del-bg); color: var(--diff-del-text); }
-        .diff-hunk-header { color: #569cd6; font-weight: bold; background: rgba(86, 156, 214, 0.1); }
+        .diff-line-add { background: rgba(30, 126, 52, 0.25); color: #86efac; display: block; }
+        .diff-line-del { background: rgba(185, 28, 28, 0.25); color: #fca5a5; display: block; }
+        .diff-hunk-header { color: #569cd6; font-weight: bold; background: rgba(86, 156, 214, 0.15); display: block; }
 
         .thinking-indicator {
             display: none; align-items: center; gap: 6px; font-size: 0.8em; color: var(--accent); padding: 8px 16px;
@@ -199,8 +192,28 @@
         .dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
     </style>
+    <script src="/auth-integration.js"></script>
 </head>
 <body>
+    <div id="evo-global-nav" style="background: var(--evo-surface-alt, #f1f3f6); border-bottom: 1px solid var(--evo-border, #b8c0c8); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; flex-shrink: 0; font-family: 'Segoe UI', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 16px;">🧬</span>
+            <a href="/index.html" style="color: var(--evo-primary, #1d5296); text-decoration: none; font-weight: 700;">EVOLUTION AI PLATFORM</a>
+            <span style="color: #98a2ac;">|</span>
+            <a href="/experimental/chat" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">💬 Chat</a>
+            <a href="/experimental/architecture" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">📐 Architecture</a>
+            <a href="/experimental/forge" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🛠️ Forge Lab</a>
+            <a href="/mcp" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🔌 MCP Tools</a>
+            <a href="/develop" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🤖 Develop Agent</a>
+            <a href="/mutation" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px; background: rgba(29,82,150,0.15);">🧬 Mutation Agent</a>
+            <a href="/admin" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">⚙️ Admin</a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+            <span id="global-session-badge" style="background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 12px; font-family: monospace;">Session: Active</span>
+            <a href="/server/status" style="color: var(--evo-text-secondary, #4a5568); text-decoration: none;">Analytics</a>
+        </div>
+    </div>
+
     <div id="app-container">
         <!-- TOP HEADER -->
         <div id="top-header">
@@ -209,15 +222,15 @@
             </div>
 
             <div class="repo-controls">
-                <input type="text" id="repo-url" placeholder="Git repository URL or local path (e.g. https://github.com/org/repo.git)" value="https://github.com/kalafatic/evolution">
-                <input type="text" id="repo-branch" placeholder="Branch" value="main" style="width: 100px;">
+                <input type="text" id="repo-url" placeholder="Git repository URL or local path (e.g. https://github.com/org/repo.git)" value="">
+                <input type="text" id="repo-branch" placeholder="Branch" value="main" style="width: 90px;">
                 <select id="model-select" style="max-width: 140px;" title="Select LLM Model"><option value="">Model: Loading...</option></select>
                 <button class="btn btn-primary" onclick="initSession()">Start Session</button>
                 <select id="session-select" onchange="switchSession()"><option value="Default">Session: Default</option></select>
             </div>
 
             <div class="status-indicators">
-                <div class="status-pill online">SERVER ONLINE</div>
+                <div id="status-badge" class="status-pill online">AGENT READY</div>
             </div>
         </div>
 
@@ -227,24 +240,28 @@
             <div id="chat-panel">
                 <div class="panel-header">
                     <span>💬 Conversation & Reasoning</span>
-                    <span id="active-session-label">Session: Default</span>
+                    <div>
+                        <span id="active-session-label" style="margin-right: 8px;">Session: Default</span>
+                        <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75em;" onclick="cancelSession()">Cancel</button>
+                    </div>
                 </div>
 
                 <div id="chat-messages">
                     <div class="msg-bubble ai">
                         <div class="msg-meta"><span>🤖 Mutation Agent</span><span>Just now</span></div>
                         Hello! I am your interactive AI software engineer.
-Select a repository or type a command to analyze code, propose implementations, or modify files.
+Provide a Git repository and describe the feature, bugfix, or refactoring you want to achieve.
+I will inspect the codebase, propose exact changes, run builds & tests, and let you review and commit explicitly.
                     </div>
                 </div>
 
                 <div id="thinking" class="thinking-indicator">
                     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                    <span>Agent is analyzing workspace...</span>
+                    <span id="thinking-text">Agent is analyzing workspace...</span>
                 </div>
 
                 <div id="chat-input-area">
-                    <input type="text" id="user-input" placeholder="Ask a question or instruct a change (e.g. 'Why is auth broken?' or 'Implement fix and run tests')" onkeypress="if(event.key==='Enter') sendMessage()">
+                    <input type="text" id="user-input" placeholder="Ask a question or instruct a change (e.g. 'Fix NullPointerException in UserAuth' or 'Add unit tests for payment service')" onkeypress="if(event.key==='Enter') sendMessage()">
                     <button class="btn btn-primary" onclick="sendMessage()">Send</button>
                 </div>
             </div>
@@ -252,18 +269,19 @@ Select a repository or type a command to analyze code, propose implementations, 
             <!-- DIFF PANEL -->
             <div id="diff-panel">
                 <div class="panel-header">
-                    <span>📝 Diff Panel & Changes</span>
-                    <div>
+                    <span>📝 First-Class Diff Review & Verification</span>
+                    <div style="display: flex; gap: 6px;">
                         <button class="btn" onclick="runBuildAndTest()">🧪 Build & Test</button>
+                        <button class="btn btn-success" onclick="approveChanges()">✅ Approve</button>
                         <button class="btn" onclick="commitChanges()">💾 Commit</button>
-                        <button class="btn btn-success" onclick="pushChanges()">🚀 Push</button>
+                        <button class="btn" onclick="pushChanges()">🚀 Push</button>
                         <button class="btn" onclick="fetchDiff()">🔄 Refresh</button>
                     </div>
                 </div>
 
                 <div id="changed-files-bar">
-                    <span style="color: var(--text-dim); font-size: 0.85em;">Changed files:</span>
-                    <div id="files-list" style="display: flex; gap: 6px;">
+                    <span style="color: var(--text-dim); font-size: 0.85em; font-weight: bold;">Files:</span>
+                    <div id="files-list" style="display: flex; gap: 6px; align-items: center;">
                         <span style="color: var(--text-dim); font-style: italic;">No uncommitted changes</span>
                     </div>
                 </div>
@@ -355,7 +373,7 @@ Select a repository or type a command to analyze code, propose implementations, 
                 sessions.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.sessionId;
-                    opt.text = s.sessionId + ' (' + (s.branch || 'main') + ')';
+                    opt.text = s.sessionId + ' (' + (s.branch || 'main') + ' - ' + (s.status || 'ACTIVE') + ')';
                     if (s.sessionId === currentSessionId) opt.selected = true;
                     select.appendChild(opt);
                 });
@@ -382,6 +400,9 @@ Select a repository or type a command to analyze code, propose implementations, 
 
             try {
                 document.getElementById('thinking').style.display = 'flex';
+                document.getElementById('status-badge').innerText = 'AGENT BUSY';
+                document.getElementById('status-badge').className = 'status-pill busy';
+
                 await fetch(getBaseUrl() + '/task?runtime=SWT', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -389,6 +410,43 @@ Select a repository or type a command to analyze code, propose implementations, 
                 });
             } catch (err) {
                 console.error('Error sending message:', err);
+            }
+        }
+
+        async function cancelSession() {
+            if (!confirm('Cancel current mutation session?')) return;
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId })
+                });
+                const data = await res.json();
+                alert(data.message || 'Cancelled');
+                document.getElementById('thinking').style.display = 'none';
+                document.getElementById('status-badge').innerText = 'CANCELLED';
+                refreshSessionList();
+            } catch (err) {
+                alert('Cancel failed: ' + err.message);
+            }
+        }
+
+        async function approveChanges() {
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId, approve: true })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    alert('Changes approved and applied to workspace.');
+                    fetchDiff();
+                } else {
+                    alert('Approval error: ' + (data.error || 'Failed'));
+                }
+            } catch (err) {
+                alert('Approval failed: ' + err.message);
             }
         }
 
@@ -433,6 +491,8 @@ Select a repository or type a command to analyze code, propose implementations, 
 
             if (msg.isTerminal) {
                 document.getElementById('thinking').style.display = 'none';
+                document.getElementById('status-badge').innerText = 'AGENT READY';
+                document.getElementById('status-badge').className = 'status-pill online';
                 fetchDiff();
             }
         }
@@ -450,7 +510,7 @@ Select a repository or type a command to analyze code, propose implementations, 
                     data.changedFiles.forEach(f => {
                         const chip = document.createElement('span');
                         let typeClass = 'modified';
-                        if (f.startsWith('A ')) typeClass = 'added';
+                        if (f.startsWith('A ') || f.startsWith('?? ')) typeClass = 'added';
                         if (f.startsWith('D ')) typeClass = 'deleted';
                         chip.className = 'file-chip ' + typeClass;
                         chip.innerText = f;
@@ -503,7 +563,7 @@ Select a repository or type a command to analyze code, propose implementations, 
         }
 
         async function pushChanges() {
-            if (!confirm('Push changes to remote repository?')) return;
+            if (!confirm('Push changes to remote repository? (Explicit user authorization required)')) return;
             try {
                 const res = await fetch(getBaseUrl() + '/mutation/push', {
                     method: 'POST',
