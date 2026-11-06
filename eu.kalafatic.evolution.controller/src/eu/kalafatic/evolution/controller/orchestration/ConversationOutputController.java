@@ -83,9 +83,12 @@ public class ConversationOutputController {
         msg.setResponseKind(responseKind);
 
         synchronized (buffer) {
-            // Drop late noise if turn is already finalized
-            if (buffer.isTurnFinalized(turnId) && msg.getPriority() < MessagePriority.USER_ACTION_REQUIRED.getLevel()) {
-                System.out.println("[CONTROLLER] Dropping late message for finalized turn " + turnId + ": " + text);
+            // Drop late noise if turn is already finalized and message is low priority (DEBUG / raw PROGRESS)
+            if (buffer.isTurnFinalized(turnId) && msg.getPriority() < MessagePriority.NORMAL.getLevel()) {
+                System.out.println(String.format(
+                    "[CONTROLLER] Dropping late message [sessionId=%s, turnId=%s, seq=%d, sender=%s, priority=%s, reason=TURN_FINALIZED_LOW_PRIORITY]: %s",
+                    sessionId, turnId, seq, sender, priority, text
+                ));
                 return;
             }
 
@@ -101,13 +104,13 @@ public class ConversationOutputController {
         if (buffer == null) return;
 
         List<ChatMessage> toEmit = new ArrayList<>();
+        boolean hasTerminal = false;
         synchronized (buffer) {
             toEmit.addAll(buffer.consume(turnId));
 
-            // Mark turn finalized if any terminal message is emitted
             for (ChatMessage msg : toEmit) {
                 if (msg.isIsTerminal()) {
-                    buffer.markFinalized(turnId);
+                    hasTerminal = true;
                 }
             }
         }
@@ -125,6 +128,22 @@ public class ConversationOutputController {
                     }
                 }
             }
+        }
+
+        if (hasTerminal) {
+            // Allow a short grace period (1500ms) for trailing async diagnostics before finalizing the turn
+            scheduler.schedule(() -> {
+                SessionBuffer b = sessionBuffers.get(sessionId);
+                if (b != null) {
+                    b.markFinalized(turnId);
+                }
+            }, 1500, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    public void clearSession(String sessionId) {
+        if (sessionId != null) {
+            sessionBuffers.remove(sessionId);
         }
     }
 

@@ -1656,8 +1656,13 @@ public class IterationManager {
 							"IterationManager: sessionContainer is null. Cannot publish task started event.");
 				}
 				RuntimeEventBus bus = sessionContainer.getEventBus();
-				bus.publish(new RuntimeEvent(RuntimeEventType.TASK_STARTED, context.getSessionId(), "Kernel",
-						task.getId()));
+				RuntimeEvent taskStartEv = new RuntimeEvent(RuntimeEventType.TASK_STARTED, context.getSessionId(), "Kernel",
+						task.getId());
+				if (task.getName() != null) taskStartEv.withMetadata("name", task.getName());
+				if (task.getType() != null) taskStartEv.withMetadata("taskType", task.getType());
+				if (task.getDescription() != null) taskStartEv.withMetadata("description", task.getDescription());
+				taskStartEv.withMetadata("priority", task.getPriority());
+				bus.publish(taskStartEv);
 
 				checkStep(task.getId(), "TASK_EXECUTION", "Executing task: " + task.getName());
 

@@ -102,7 +102,7 @@ public class RuntimeEventBus {
         propagateToRegistry(event);
     }
 
-    private void flush() {
+    public void flush() {
         if (eventBuffer.isEmpty()) return;
 
         List<RuntimeEvent> batch = new ArrayList<>();
