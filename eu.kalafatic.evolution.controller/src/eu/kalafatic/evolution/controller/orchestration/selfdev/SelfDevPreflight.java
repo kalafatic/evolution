@@ -388,7 +388,7 @@ public class SelfDevPreflight {
 
     private void validateNetworkAndEnvironmentReadiness(SelfDevContext context, List<SelfDevPreflightResult.CheckDetail> checks, List<String> errors, List<String> warnings) {
         int serverPort = context != null ? context.getEffectiveServerPort() : 48080;
-        int supervisorPort = context != null ? context.getEffectiveSupervisorPort() : 8089;
+        int supervisorPort = context != null ? context.getEffectiveSupervisorPort() : 28480;
 
         boolean loopbackOk = true;
         try (java.net.ServerSocket ss = new java.net.ServerSocket()) {

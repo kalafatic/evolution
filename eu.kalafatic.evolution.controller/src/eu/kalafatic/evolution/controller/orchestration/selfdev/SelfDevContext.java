@@ -374,18 +374,19 @@ public class SelfDevContext {
 
     public int getEffectiveSupervisorPort() {
         eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SUPERVISOR");
-        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 8089;
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 28480;
         return basePort + getPortOffset();
     }
 
     public int getEffectiveSupervisorControlPort() {
-        int basePort = 28080;
+        eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SUPERVISOR_CONTROL");
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 28580;
         return basePort + getPortOffset();
     }
 
     public int getEffectiveServerPort() {
         eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SERVER");
-        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 48081;
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 28080;
         return basePort + getPortOffset();
     }
 

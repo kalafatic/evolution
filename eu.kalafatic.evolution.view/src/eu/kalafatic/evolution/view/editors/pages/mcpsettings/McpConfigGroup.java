@@ -15,7 +15,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
 
 public class McpConfigGroup extends AEvoGroup {
 
-	public static final Integer MCP_PORT = 38080;
+	public static final Integer MCP_PORT = 28280;
 	public static final String MCP_ADDRESS = "localhost:" + MCP_PORT;
 	public static final String MCP_URL = "http://" + MCP_ADDRESS + "/mcp";
 
@@ -52,7 +52,7 @@ public class McpConfigGroup extends AEvoGroup {
 		Composite txtComposite = GUIFactory.INSTANCE.createComposite(group,2);
 
 		org.eclipse.swt.widgets.Label portLabel = GUIFactory.INSTANCE.createLabel(txtComposite, "Local MCP Port:");
-		portLabel.setToolTipText("The port on which the local Evolution MCP server runs (default: 38080).");
+		portLabel.setToolTipText("The port on which the local Evolution MCP server runs (default: 28280).");
 		mcpPortText = GUIFactory.INSTANCE.createText(txtComposite);
 		mcpPortText.setText(MCP_PORT.toString());
 		// int mcpPort = orchestrator.getServerSettings().getMcpPort();
@@ -68,7 +68,7 @@ public class McpConfigGroup extends AEvoGroup {
 		});
 
 		org.eclipse.swt.widgets.Label urlLabel = GUIFactory.INSTANCE.createLabel(txtComposite, "Remote MCP Server URL:");
-		urlLabel.setToolTipText("The URL of the MCP server to connect to (e.g., http://localhost:38080/mcp).");
+		urlLabel.setToolTipText("The URL of the MCP server to connect to (e.g., http://localhost:28280/mcp).");
 		mcpUrlText = GUIFactory.INSTANCE.createText(txtComposite);
 		mcpUrlText.addModifyListener(e -> {
 			if (orchestrator != null) {
@@ -99,7 +99,7 @@ public class McpConfigGroup extends AEvoGroup {
 		});
 
 		Button loadDemoBtn = GUIFactory.INSTANCE.createButton(btnComposite, "Load Demo Settings", SWT.PUSH, 150);
-		loadDemoBtn.setToolTipText("Set the URL to the local demo documentation MCP server (localhost:38080).");
+		loadDemoBtn.setToolTipText("Set the URL to the local demo documentation MCP server (localhost:28280).");
 		loadDemoBtn.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -112,7 +112,7 @@ public class McpConfigGroup extends AEvoGroup {
 		});
 
 		Button startDemoBtn = GUIFactory.INSTANCE.createButton(btnComposite, "Start Demo Server", SWT.PUSH, 150);
-		startDemoBtn.setToolTipText("Start the local MCP Demo Documentation Server on port 38080.");
+		startDemoBtn.setToolTipText("Start the local MCP Demo Documentation Server on port 28280.");
 		startDemoBtn.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {

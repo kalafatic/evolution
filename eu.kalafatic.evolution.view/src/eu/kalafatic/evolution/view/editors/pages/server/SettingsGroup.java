@@ -54,7 +54,7 @@ public class SettingsGroup extends AToolGroup {
         section.setClient(group);
 
         toolkit.createLabel(group, "Server Port:");
-        portText = toolkit.createText(group, "48080");
+        portText = toolkit.createText(group, "28080");
         portText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         toolkit.createLabel(group, "Auto-start with UI:");
@@ -124,17 +124,17 @@ public class SettingsGroup extends AToolGroup {
         createServerColumn("State", 80, s -> s.running ? "RUNNING" : "STOPPED");
         createServerColumn("Address", 150, s -> "localhost:" + s.port);
         createServerColumn("Note", 200, s -> {
-            int primary = 48080;
+            int primary = 28080;
             try { primary = Integer.parseInt(portText.getText()); } catch(Exception e) {}
-            if (s.port == primary) return "AI Inference Server";
-            if (s.port == primary + 10000) return "AI Chat Server";
+            if (s.port == primary) return "EVO Primary HTTP / REST Server";
+            if (s.port == 28180 || s.port == primary + 100) return "EVO Portal / AI Chat Server";
 
-            int mcp = 38080;
+            int mcp = 28280;
             if (orchestrator != null && orchestrator.getServerSettings() != null) {
                 mcp = orchestrator.getServerSettings().getMcpPort();
             }
-            if (s.port == mcp) return "MCP Server";
-            if (s.port == 8089) return "Self-Dev Supervisor";
+            if (s.port == mcp) return "Model Context Protocol";
+            if (s.port == 28480 || s.port == 8089) return "Self-Dev Supervisor";
             return "Evolution Node";
         });
 
@@ -213,18 +213,18 @@ public class SettingsGroup extends AToolGroup {
             statuses.forEach((p, r) -> list.add(new ServerStatus(p, r)));
 
             // Ensure primary, secondary, MCP, and Supervisor ports are in the list even if not running
-            int primary = 48080;
+            int primary = 28080;
             try { primary = Integer.parseInt(portText.getText()); } catch(Exception e) {}
             final int finalPrimary = primary;
             if (list.stream().noneMatch(s -> s.port == finalPrimary)) {
                 list.add(new ServerStatus(finalPrimary, false));
             }
-            int secondary = finalPrimary + 10000;
+            int secondary = 28180;
             if (list.stream().noneMatch(s -> s.port == secondary)) {
                 list.add(new ServerStatus(secondary, false));
             }
 
-            int mcp = 38080;
+            int mcp = 28280;
             if (orchestrator != null && orchestrator.getServerSettings() != null) {
                 mcp = orchestrator.getServerSettings().getMcpPort();
             }
@@ -233,8 +233,9 @@ public class SettingsGroup extends AToolGroup {
                 list.add(new ServerStatus(finalMcp, false));
             }
 
-            if (list.stream().noneMatch(s -> s.port == 8089)) {
-                list.add(new ServerStatus(8089, false));
+            int supervisorPort = 28480;
+            if (list.stream().noneMatch(s -> s.port == supervisorPort)) {
+                list.add(new ServerStatus(supervisorPort, false));
             }
 
             serverViewer.setInput(list);

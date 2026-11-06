@@ -37,7 +37,7 @@ public class SupervisorClient {
         if (service != null && service.getUrl() != null) {
             return service.getUrl();
         }
-        return "http://127.0.0.1:8089";
+        return "http://127.0.0.1:28480";
     }
 
     public String getBaseUrl() {

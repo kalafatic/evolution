@@ -64,7 +64,7 @@ public class McpSettingsPage extends AEvoPage {
 					configGroup.setStatus(true, "Connected");
 
 					String additionalInfo = "";
-					if (url.contains("38080")) {
+					if (url.contains("28280") || url.contains("38080")) {
 						try {
 							String docContent = client.readResource("docs://README.md");
 							if (docContent != null && !docContent.isEmpty()) {
@@ -122,7 +122,7 @@ public class McpSettingsPage extends AEvoPage {
 						refreshUI();
 						MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
 						mb.setText("Success");
-						mb.setMessage("MCP Demo Documentation Server started on port 38080.");
+						mb.setMessage("MCP Demo Documentation Server started on port 28280.");
 						mb.open();
 					});
 
@@ -156,7 +156,7 @@ public class McpSettingsPage extends AEvoPage {
 		String defaultMethod = "ping";
 		String defaultParams = "{}";
 
-		if (url.contains("38080")) {
+		if (url.contains("28280") || url.contains("38080")) {
 			defaultMethod = "resources/read";
 			defaultParams = "{\"uri\": \"docs://README.md\"}";
 		}
@@ -364,7 +364,7 @@ public class McpSettingsPage extends AEvoPage {
 
 		String url = orchestrator.getMcpServerUrl();
 		if (url == null || url.isEmpty()) {
-			orchestrator.setMcpServerUrl("http://localhost:38080/mcp");
+			orchestrator.setMcpServerUrl("http://localhost:28280/mcp");
 			setDirty(true);
 		}
 

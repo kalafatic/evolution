@@ -87,7 +87,7 @@ public class EvolutionServer extends NanoHTTPD {
     private void startDemoMcpServer() {
         DemoConfiguration demoConfig = new DemoConfiguration();
         // Overwrite defaults with system properties if provided
-        demoConfig.setPort(Integer.getInteger("mcp.demo.port", 38080));
+        demoConfig.setPort(Integer.getInteger("mcp.demo.port", 28280));
         demoConfig.setHost(System.getProperty("mcp.demo.host", "localhost"));
         demoConfig.setDocsFolder(System.getProperty("mcp.demo.docsFolder", "docs"));
         demoConfig.setEnabled(!"false".equalsIgnoreCase(System.getProperty("mcp.demo.enabled", "true")));
@@ -146,7 +146,8 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     public static void main(String[] args) {
-        EvolutionServer server = new EvolutionServer(8080);
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 28080;
+        EvolutionServer server = new EvolutionServer(port);
         try {
             server.startServer();
         } catch (IOException e) {

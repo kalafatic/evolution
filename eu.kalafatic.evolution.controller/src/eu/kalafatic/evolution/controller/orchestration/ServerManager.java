@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.controller.resource.PortAllocationManager;
+import eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker;
+import eu.kalafatic.evolution.controller.resource.PortRegistry;
 import eu.kalafatic.evolution.forge.controller.api.DatasetController;
 import eu.kalafatic.evolution.forge.controller.api.ModelController;
 import eu.kalafatic.evolution.forge.controller.api.SessionController;
@@ -18,12 +22,13 @@ import eu.kalafatic.evolution.forge.controller.impl.TrainingControllerImpl;
 
 /**
  * Singleton manager for multi-port EvolutionServer lifecycle.
+ * Integrates with authoritative PortRegistry and deterministic collision policy.
  */
 public class ServerManager {
     private static ServerManager instance;
     private final Map<Integer, EvolutionServer> activeServers = new ConcurrentHashMap<>();
     private final Map<Integer, eu.kalafatic.evolution.servers.server.EvolutionServer> activeSecondaryServers = new ConcurrentHashMap<>();
-    private int primaryPort = 48080;
+    private int primaryPort = PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
 
     private ServerManager() {}
 
@@ -34,10 +39,19 @@ public class ServerManager {
         return instance;
     }
 
+    public synchronized void start() throws IOException {
+        int primary = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId());
+        start(primary > 0 ? primary : PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort());
+    }
+
     public synchronized void start(int port) throws IOException {
-        boolean isMcp = port == 38080;
-        boolean isSupervisor = port == 8089;
-        boolean isSecondary = (port % 10000 == 8080 && port >= 50000) || port == 58080;
+        int mcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
+        int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
+        int secondaryPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+
+        boolean isMcp = (port == mcpPort) || (port == PortRegistry.EVO_MCP.getDefaultPort()) || (port == 38080);
+        boolean isSupervisor = (port == supervisorPort) || (port == PortRegistry.EVO_SUPERVISOR_API.getDefaultPort()) || (port == 8089);
+        boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
 
         if (!isMcp && !isSupervisor && !isSecondary) {
             java.io.File readyFile = new java.io.File("self-dev-run/evo_ready.txt");
@@ -49,81 +63,49 @@ public class ServerManager {
         if (isMcp) {
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().setPort(port);
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
-            System.out.println("Started MCP server on port " + port);
+            System.out.println("Started MCP server on authoritative port " + port);
         } else if (isSupervisor) {
             System.out.println("Starting Supervisor on port " + port + " is handled by the self-dev bootstrap process.");
         } else if (isSecondary) {
-            int targetPort = port;
-            eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = null;
-            IOException lastEx = null;
-            for (int offset = 0; offset <= 10; offset++) {
-                int testPort = port + offset;
-                try {
-                    if (activeSecondaryServers.containsKey(testPort)) {
-                        stopSecondary(testPort);
-                    }
-                    secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(testPort);
-                    secondaryServer.startServer();
-                    targetPort = testPort;
-                    lastEx = null;
-                    if (offset > 0) {
-                        System.out.println("[ServerManager] Secondary port " + port + " in use. Fallback secondary server started on port " + targetPort);
-                    }
-                    break;
-                } catch (IOException e) {
-                    lastEx = e;
-                    if (secondaryServer != null) {
-                        try { secondaryServer.stopServer(); } catch (Exception ignored) {}
-                    }
-                }
+            if (activeSecondaryServers.containsKey(port) && activeSecondaryServers.get(port).isRunning()) {
+                return; // Already running
             }
-            if (lastEx != null) {
-                throw lastEx;
+            // Strict conflict check before launch
+            PortAvailabilityChecker.ConflictReport report = PortAvailabilityChecker.inspectPort(port, "Secondary Evolution Server (AI Chat / Portal)");
+            if (report.isInUse()) {
+                Log.log("[ServerManager] " + report.toString());
+                throw new IOException(report.toString());
             }
-            activeSecondaryServers.put(targetPort, secondaryServer);
-            System.out.println("Started secondary Evolution server (AI Chat) on port " + targetPort);
+
+            eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(port);
+            secondaryServer.startServer();
+            activeSecondaryServers.put(port, secondaryServer);
+            System.out.println("Started secondary Evolution server (AI Chat / Portal) on authoritative port " + port);
         } else {
-            int targetPort = port;
-            EvolutionServer server = null;
-            IOException lastEx = null;
-
-            for (int offset = 0; offset <= 10; offset++) {
-                int testPort = port + offset;
-                try {
-                    if (activeServers.containsKey(testPort)) {
-                        stop(testPort);
-                    }
-                    server = new EvolutionServer(testPort);
-
-                    // Wire Controllers
-                    SessionController sc = new SessionControllerImpl(null);
-                    ModelController mc = new ModelControllerImpl(null);
-                    DatasetController dc = new DatasetControllerImpl(null);
-                    TrainingController tc = new TrainingControllerImpl(null);
-                    SnapshotController snc = new SnapshotControllerImpl(null);
-                    server.setForgeControllers(sc, mc, dc, tc, snc);
-
-                    server.startServer();
-                    targetPort = testPort;
-                    lastEx = null;
-                    if (offset > 0) {
-                        System.out.println("[ServerManager] Port " + port + " in use. Fallback primary server started on port " + targetPort);
-                    }
-                    break;
-                } catch (IOException e) {
-                    lastEx = e;
-                    if (server != null) {
-                        try { server.stop(); } catch (Exception ignored) {}
-                    }
-                }
+            if (activeServers.containsKey(port) && activeServers.get(port).isAlive()) {
+                return; // Already running
             }
 
-            if (lastEx != null) {
-                throw lastEx;
+            // Strict conflict check before launch
+            PortAvailabilityChecker.ConflictReport report = PortAvailabilityChecker.inspectPort(port, "Primary Evolution Server");
+            if (report.isInUse()) {
+                Log.log("[ServerManager] " + report.toString());
+                throw new IOException(report.toString());
             }
 
-            activeServers.put(targetPort, server);
-            this.primaryPort = targetPort;
+            EvolutionServer server = new EvolutionServer(port);
+
+            // Wire Controllers
+            SessionController sc = new SessionControllerImpl(null);
+            ModelController mc = new ModelControllerImpl(null);
+            DatasetController dc = new DatasetControllerImpl(null);
+            TrainingController tc = new TrainingControllerImpl(null);
+            SnapshotController snc = new SnapshotControllerImpl(null);
+            server.setForgeControllers(sc, mc, dc, tc, snc);
+
+            server.startServer();
+            activeServers.put(port, server);
+            this.primaryPort = port;
 
             // Write readiness marker file
             java.io.File runDir = new java.io.File("self-dev-run");
@@ -138,25 +120,32 @@ public class ServerManager {
                 System.err.println("[ServerManager] Failed to write readiness marker file: " + e.getMessage());
             }
 
-            // Auto-start MCP Demo Server
+            // Auto-start MCP Demo Server on authoritative port (28280)
             try {
+                int configuredMcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
+                eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().setPort(configuredMcpPort);
                 eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
             } catch (IOException e) {
                 eu.kalafatic.utils.log.Log.log("Could not auto-start MCP Demo Server: " + e.getMessage());
             }
 
-            // Auto-start secondary server on port + 10000 (e.g. 58080)
-            int secondaryPort = port + 10000;
+            // Auto-start secondary server on authoritative secondary port (28180)
+            int effectiveSecondaryPort = secondaryPort > 0 ? secondaryPort : PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort();
             try {
-                if (activeSecondaryServers.containsKey(secondaryPort)) {
-                    stopSecondary(secondaryPort);
+                if (activeSecondaryServers.containsKey(effectiveSecondaryPort)) {
+                    stopSecondary(effectiveSecondaryPort);
                 }
-                eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(secondaryPort);
-                secondaryServer.startServer();
-                activeSecondaryServers.put(secondaryPort, secondaryServer);
-                System.out.println("Auto-started secondary Evolution server (AI Chat) on port " + secondaryPort);
+                PortAvailabilityChecker.ConflictReport secReport = PortAvailabilityChecker.inspectPort(effectiveSecondaryPort, "Secondary Evolution Server");
+                if (!secReport.isInUse()) {
+                    eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(effectiveSecondaryPort);
+                    secondaryServer.startServer();
+                    activeSecondaryServers.put(effectiveSecondaryPort, secondaryServer);
+                    System.out.println("Auto-started secondary Evolution server (AI Chat / Portal) on authoritative port " + effectiveSecondaryPort);
+                } else {
+                    System.err.println("[ServerManager] Cannot auto-start secondary server: " + secReport.toString());
+                }
             } catch (Exception e) {
-                System.err.println("Failed to auto-start secondary background server on port " + secondaryPort + ": " + e.getMessage());
+                System.err.println("Failed to auto-start secondary background server on port " + effectiveSecondaryPort + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -171,9 +160,13 @@ public class ServerManager {
     }
 
     public synchronized void stop(int port) {
-        boolean isMcp = port == 38080;
-        boolean isSupervisor = port == 8089;
-        boolean isSecondary = (port % 10000 == 8080 && port >= 50000) || port == 58080;
+        int mcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
+        int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
+        int secondaryPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+
+        boolean isMcp = (port == mcpPort) || (port == PortRegistry.EVO_MCP.getDefaultPort()) || (port == 38080);
+        boolean isSupervisor = (port == supervisorPort) || (port == PortRegistry.EVO_SUPERVISOR_API.getDefaultPort()) || (port == 8089);
+        boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
 
         if (isMcp) {
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().stop();
@@ -187,8 +180,9 @@ public class ServerManager {
                 server.stop();
                 activeServers.remove(port);
             }
-            // Also stop corresponding secondary server if it exists
-            stopSecondary(port + 10000);
+            // Stop active secondary server
+            int secPort = secondaryPort > 0 ? secondaryPort : PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort();
+            stopSecondary(secPort);
         }
     }
 
@@ -217,15 +211,19 @@ public class ServerManager {
     }
 
     public synchronized boolean isRunning(int port) {
-        boolean isMcp = port == 38080;
-        boolean isSupervisor = port == 8089;
-        boolean isSecondary = (port % 10000 == 8080 && port >= 50000) || port == 58080;
+        int mcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
+        int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
+        int secondaryPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+
+        boolean isMcp = (port == mcpPort) || (port == PortRegistry.EVO_MCP.getDefaultPort()) || (port == 38080);
+        boolean isSupervisor = (port == supervisorPort) || (port == PortRegistry.EVO_SUPERVISOR_API.getDefaultPort()) || (port == 8089);
+        boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
 
         if (isMcp) {
             return eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning();
         } else if (isSupervisor) {
             try (java.net.Socket s = new java.net.Socket()) {
-                s.connect(new java.net.InetSocketAddress("127.0.0.1", 8089), 200);
+                s.connect(new java.net.InetSocketAddress("127.0.0.1", port), 200);
                 return true;
             } catch (Exception e) {
                 return false;
@@ -255,9 +253,11 @@ public class ServerManager {
         for (Map.Entry<Integer, eu.kalafatic.evolution.servers.server.EvolutionServer> entry : activeSecondaryServers.entrySet()) {
             statuses.put(entry.getKey(), entry.getValue().isRunning());
         }
-        statuses.put(eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().getPort(),
-                     eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning());
-        statuses.put(8089, isRunning(8089));
+        int mcpPort = eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().getPort();
+        statuses.put(mcpPort, eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning());
+
+        int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
+        statuses.put(supervisorPort, isRunning(supervisorPort));
         return statuses;
     }
 }

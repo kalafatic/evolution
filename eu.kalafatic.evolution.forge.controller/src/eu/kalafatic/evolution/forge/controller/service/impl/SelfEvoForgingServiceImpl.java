@@ -24,7 +24,7 @@ import eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService;
 
 public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
-    public static final Integer MCP_PORT = 38080;
+    public static final Integer MCP_PORT = 28280;
     public static final String MCP_ADDRESS = "localhost:" + MCP_PORT;
     public static final String MCP_URL = "http://" + MCP_ADDRESS + "/mcp";
 

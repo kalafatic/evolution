@@ -17,8 +17,8 @@ public class SupervisorRcpApplication implements IApplication {
         }
 
         File baseDir = new File(".");
-        int supervisorPort = 8089;
-        int controlPort = 28080;
+        int supervisorPort = 28480;
+        int controlPort = 28580;
         boolean debug = false;
 
         for (int i = 0; i < args.length; i++) {

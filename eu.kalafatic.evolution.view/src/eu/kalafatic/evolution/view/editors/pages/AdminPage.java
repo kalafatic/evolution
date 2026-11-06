@@ -122,7 +122,7 @@ public class AdminPage extends AEvoPage {
     protected void refreshUI() {
         if (browser == null || browser.isDisposed()) return;
 
-        int port = 48081;
+        int port = 28080;
         if (orchestrator != null && orchestrator.getServerSettings() != null) {
             port = orchestrator.getServerSettings().getPort();
         }

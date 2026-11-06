@@ -194,7 +194,7 @@ public class ForgePage extends AEvoPage {
     public void refreshUI() {
         if (!isJsReady || browser.isDisposed()) return;
 
-        int port = 48080;
+        int port = 28080;
         if (orchestrator != null && orchestrator.getServerSettings() != null) {
             port = orchestrator.getServerSettings().getPort();
         }

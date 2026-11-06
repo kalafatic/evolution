@@ -43,7 +43,7 @@ public class SupervisorUiWindow {
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public SupervisorUiWindow() {
-        this(new File("."), 8089, 28080, false);
+        this(new File("."), 28480, 28580, false);
     }
 
     public SupervisorUiWindow(File baseDir, int supervisorPort, int controlPort, boolean debug) {

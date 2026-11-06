@@ -11,7 +11,7 @@
 
     function getBaseUrl() {
         if (window.location.protocol === 'file:') {
-            return 'http://localhost:48080';
+            return 'http://localhost:28080';
         }
         return '';
     }

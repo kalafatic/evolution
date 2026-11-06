@@ -10,7 +10,7 @@ import eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentationProvider;
 public class McpDemoServerManager {
     private static McpDemoServerManager instance;
     private DemoDocumentationProvider demoServer;
-    private int port = 38080;
+    private int port = 28280;
 
     private McpDemoServerManager() {}
 
@@ -26,11 +26,10 @@ public class McpDemoServerManager {
             return; // Already running
         }
 
-        // Check if port is in use
-        try (java.net.ServerSocket ss = new java.net.ServerSocket(port)) {
-            // Port is free
-        } catch (IOException e) {
-            throw new IOException("Port " + port + " is already in use. MCP Demo Server cannot start.");
+        eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker.ConflictReport report =
+                eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker.inspectPort(port, "MCP Demo Documentation Server");
+        if (report.isInUse()) {
+            throw new IOException(report.toString());
         }
 
         DemoConfiguration config = new DemoConfiguration();

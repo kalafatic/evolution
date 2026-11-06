@@ -2,7 +2,7 @@ package eu.kalafatic.evolution.servers.mcp.demo;
 
 public class DemoConfiguration {
     private String host = "localhost";
-    private int port = 38080;
+    private int port = 28280;
     private String docsFolder = "docs";
     private boolean enabled = true;
 
