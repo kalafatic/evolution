@@ -14,11 +14,23 @@
                 <button class="control-btn maximize">□</button>
             </div>
         </div>
-        <div style="flex:1; display:flex; flex-direction:column; background: white; overflow: hidden; position: relative; width:100%; height:100%;">
+        <div style="flex:1; display:flex; flex-direction:column; background: #f8fafc; overflow: hidden; position: relative; width:100%; height:100%;">
             <div id="workflow-container" style="width:100%; height:100%; flex:1;">
-                <svg id="workflow-svg" style="width:100%; height:100%; display:block;"></svg>
+                <svg id="workflow-svg" style="width:100%; height:100%; display:block;">
+                    <defs>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+                        </marker>
+                        <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb"/>
+                        </marker>
+                        <marker id="arrow-done" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a"/>
+                        </marker>
+                    </defs>
+                </svg>
             </div>
-            <div id="tooltip" class="flow-tooltip" style="opacity: 0; position: absolute; pointer-events: none; z-index: 1000; background: rgba(15, 23, 42, 0.95); color: white; padding: 12px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #334155; max-width: 250px;"></div>
+            <div id="tooltip" class="flow-tooltip" style="opacity: 0; position: absolute; pointer-events: none; z-index: 1000; background: rgba(15, 23, 42, 0.95); color: white; padding: 12px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #334155; max-width: 280px;"></div>
 
             <div id="details-panel" class="details-card hidden">
                 <div class="details-header">
@@ -30,11 +42,11 @@
                 </div>
             </div>
 
-            <div id="controls" style="position: absolute; bottom: 10px; right: 10px; z-index: 10;">
-                <button onclick="applyZoom(1.2)">+</button>
-                <button onclick="applyZoom(0.8)">-</button>
-                <button onclick="resetZoom()">Reset</button>
-                <button onclick="fitToScreen()">Fit</button>
+            <div id="controls" style="position: absolute; bottom: 15px; right: 15px; z-index: 10;">
+                <button onclick="applyZoom(1.2)" title="Zoom In">+</button>
+                <button onclick="applyZoom(0.8)" title="Zoom Out">-</button>
+                <button onclick="resetZoom()" title="Reset Zoom">Reset</button>
+                <button onclick="fitToScreen()" title="Fit to Screen">Fit</button>
             </div>
         </div>
     </div>

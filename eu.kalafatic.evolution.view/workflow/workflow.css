@@ -1,18 +1,19 @@
 /* Workflow Visualization Styles - Workstation Theme */
 :root {
-    --evo-bg: #f2f3f5;
+    --evo-bg: #f8fafc;
     --evo-surface: #ffffff;
-    --evo-surface-alt: #f8f9fa;
-    --evo-border: #c8ccd1;
-    --evo-border-dark: #aeb4bb;
-    --evo-text: #202428;
-    --evo-text-secondary: #555b62;
-    --evo-primary: #2864a5;
-    --evo-success: #287a45;
-    --evo-warning: #9a6a00;
-    --evo-danger: #a52a2a;
-    --evo-radius: 3px;
-    --evo-shadow-md: 0 2px 6px rgba(0,0,0,0.12);
+    --evo-surface-alt: #f1f5f9;
+    --evo-border: #cbd5e1;
+    --evo-border-dark: #94a3b8;
+    --evo-text: #0f172a;
+    --evo-text-secondary: #64748b;
+    --evo-primary: #2563eb;
+    --evo-success: #16a34a;
+    --evo-warning: #d97706;
+    --evo-danger: #dc2626;
+    --evo-radius: 6px;
+    --evo-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --evo-shadow-md: 0 4px 12px rgba(0,0,0,0.12);
 }
 
 body {
@@ -21,100 +22,151 @@ body {
     overflow: hidden;
     background-color: var(--evo-bg);
     color: var(--evo-text);
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 12px;
 }
 
 #workflow-container {
     width: 100%;
     height: 100%;
+    position: relative;
 }
 
 #workflow-svg {
     width: 100%;
     height: 100%;
     display: block;
+    user-select: none;
 }
 
-/* Chat Bubble / Node Styling */
+/* Node Styling */
 .node {
     cursor: pointer;
+    transition: transform 0.1s ease;
 }
 
-.node rect {
+.node rect.node-box {
     fill: var(--evo-surface);
-    stroke: var(--evo-border-dark);
+    stroke: var(--evo-border);
     stroke-width: 1.5px;
     rx: var(--evo-radius);
-    transition: stroke 0.15s ease;
+    ry: var(--evo-radius);
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+    transition: all 0.2s ease;
 }
 
-.node:hover rect {
+.node:hover rect.node-box {
     stroke: var(--evo-primary) !important;
     stroke-width: 2px !important;
+    filter: drop-shadow(0 3px 6px rgba(37,99,235,0.15));
 }
 
-.node.active rect {
+.node.selected rect.node-box {
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2.5px !important;
+    filter: drop-shadow(0 0 0 3px rgba(37,99,235,0.25));
+}
+
+/* Status variants */
+.node.status-pending rect.node-box {
+    stroke: var(--evo-border-dark);
+    stroke-dasharray: 4,3;
+    fill: #fcfdfe;
+}
+
+.node.status-running rect.node-box {
     stroke: var(--evo-primary);
     stroke-width: 2px;
+    fill: #eff6ff;
 }
 
-.node.waiting rect {
+.node.status-waiting rect.node-box,
+.node.status-waiting_user rect.node-box {
     stroke: var(--evo-warning);
     stroke-width: 2px;
-    fill: #fef7e0;
+    fill: #fffbeb;
 }
 
-.node.failed rect {
+.node.status-done rect.node-box {
+    stroke: var(--evo-success);
+    stroke-width: 1.5px;
+    fill: #f0fdf4;
+}
+
+.node.status-failed rect.node-box {
     stroke: var(--evo-danger);
-    fill: #fce8e8;
+    stroke-width: 2px;
+    fill: #fef2f2;
 }
 
-/* Text and Icons */
+/* Node Typography */
 .node text {
-    font-size: 11px;
-    fill: var(--evo-text);
     pointer-events: none;
-}
-
-.node .node-id {
-    font-weight: 600;
+    font-family: inherit;
 }
 
 .node .node-type-icon {
-    font-size: 14px;
+    font-size: 18px;
+    dominant-baseline: central;
 }
 
-.runtime-state {
-    font-size: 10px !important;
-    fill: var(--evo-text-secondary) !important;
-    font-style: italic;
+.node .node-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    fill: var(--evo-text);
+}
+
+.node .node-subtitle {
+    font-size: 10px;
+    fill: var(--evo-text-secondary);
+}
+
+.node .badge-bg {
+    rx: 3px;
+    ry: 3px;
+}
+
+.node .badge-text {
+    font-size: 9px;
+    font-weight: 700;
+    text-anchor: middle;
+    dominant-baseline: central;
 }
 
 /* Links */
 .link {
     fill: none;
-    stroke: var(--evo-border-dark);
+    stroke: #94a3b8;
     stroke-width: 1.5px;
-    transition: stroke 0.15s ease;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
 .link.active {
     stroke: var(--evo-primary);
     stroke-width: 2px;
-    stroke-dasharray: 4,4;
-    animation: dash 1s linear infinite;
+    stroke-dasharray: 6,4;
+    animation: flowDash 1.2s linear infinite;
 }
 
-@keyframes dash {
-    to { stroke-dashoffset: -8; }
+.link.done {
+    stroke: var(--evo-success);
+    stroke-width: 1.5px;
 }
 
-/* Actions */
+@keyframes flowDash {
+    to { stroke-dashoffset: -20; }
+}
+
+/* Action Buttons inside node */
 .action-btn {
     cursor: pointer;
     stroke: var(--evo-surface);
     stroke-width: 1px;
+    transition: r 0.15s ease;
+}
+
+.action-btn:hover {
+    r: 7px;
 }
 
 .action-btn.continue { fill: var(--evo-success); }
@@ -124,37 +176,44 @@ body {
 
 #controls {
     position: absolute;
-    bottom: 20px;
-    right: 20px;
+    bottom: 15px;
+    right: 15px;
     display: flex;
     gap: 6px;
+    background: rgba(255,255,255,0.9);
+    padding: 4px;
+    border-radius: var(--evo-radius);
+    border: 1px solid var(--evo-border);
+    box-shadow: var(--evo-shadow-sm);
 }
 
 #controls button {
     background: var(--evo-surface);
     border: 1px solid var(--evo-border);
-    padding: 5px 10px;
-    border-radius: var(--evo-radius);
+    padding: 5px 12px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 11px;
     font-weight: 600;
     color: var(--evo-text);
+    transition: all 0.15s ease;
 }
 
 #controls button:hover {
     background: var(--evo-surface-alt);
     border-color: var(--evo-border-dark);
+    color: var(--evo-primary);
 }
 
 /* Sidebar / Details Card */
 .details-card {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 280px;
+    top: 15px;
+    left: 15px;
+    width: 300px;
     background: var(--evo-surface);
     border: 1px solid var(--evo-border);
-    border-radius: var(--evo-radius);
+    border-radius: 8px;
     box-shadow: var(--evo-shadow-md);
     z-index: 100;
     font-size: 11px;
@@ -167,17 +226,20 @@ body {
 }
 
 .details-card.hidden {
-    transform: translateX(-320px);
+    transform: translateX(-340px);
     opacity: 0;
+    pointer-events: none;
 }
 
 .details-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--evo-border);
     background: var(--evo-surface-alt);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 #details-title {
@@ -189,7 +251,8 @@ body {
 .close-details {
     background: none;
     border: none;
-    font-size: 14px;
+    font-size: 16px;
+    line-height: 1;
     cursor: pointer;
     color: var(--evo-text-secondary);
     padding: 0 4px;
@@ -200,13 +263,14 @@ body {
 }
 
 #details-content {
-    padding: 12px;
+    padding: 14px;
     overflow-y: auto;
 }
 
 .placeholder-text {
     color: var(--evo-text-secondary);
     font-style: italic;
+    margin: 0;
 }
 
 .metric-row {
@@ -227,32 +291,34 @@ body {
     font-weight: 600;
     color: var(--evo-text);
     word-break: break-all;
+    text-align: right;
+    max-width: 170px;
 }
 
 .node-status-badge {
     display: inline-block;
-    padding: 2px 6px;
-    border-radius: var(--evo-radius);
-    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 9.5px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
-.status-idle { background: var(--evo-surface-alt); color: var(--evo-text-secondary); }
-.status-running { background: #e8f2fc; color: var(--evo-primary); }
-.status-waiting { background: #fef7e0; color: var(--evo-warning); }
-.status-done { background: #e6f4ea; color: var(--evo-success); }
-.status-ready { background: #e6f4ea; color: var(--evo-success); }
-.status-failed { background: #fce8e8; color: var(--evo-danger); }
+.status-idle, .status-pending { background: #f1f5f9; color: #475569; }
+.status-running { background: #dbeafe; color: #1d4ed8; }
+.status-waiting, .status-waiting_user { background: #fef3c7; color: #b45309; }
+.status-done, .status-ready { background: #dcfce7; color: #15803d; }
+.status-failed { background: #fee2e2; color: #b91c1c; }
 
 .node-notes {
-    margin-top: 10px;
-    padding: 8px;
+    margin-top: 12px;
+    padding: 10px;
     background: var(--evo-surface-alt);
     border-left: 3px solid var(--evo-primary);
-    border-radius: var(--evo-radius);
+    border-radius: 4px;
     font-size: 11px;
-    line-height: 1.4;
+    line-height: 1.45;
     color: var(--evo-text);
 }
 
@@ -261,16 +327,17 @@ body {
     pointer-events: none;
     font-family: inherit;
     line-height: 1.4;
+    transition: opacity 0.15s ease;
 }
 
 .flow-tooltip h4 {
-    margin: 0 0 4px 0;
-    font-size: 11px;
+    margin: 0 0 6px 0;
+    font-size: 12px;
     font-weight: 700;
-    border-bottom: 1px solid var(--evo-border);
-    padding-bottom: 2px;
+    border-bottom: 1px solid #475569;
+    padding-bottom: 4px;
 }
 
 .flow-tooltip p {
-    margin: 2px 0;
+    margin: 3px 0;
 }

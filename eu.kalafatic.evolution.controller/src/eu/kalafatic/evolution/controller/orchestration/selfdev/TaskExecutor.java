@@ -40,9 +40,18 @@ public class TaskExecutor {
         // HOWEVER, EvolutionOrchestrator (which this class owns) can execute tasks directly.
         try {
             for (Task task : tasks) {
-                context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.TASK_STARTED, context.getSessionId(), "TaskExecutor", task.getId()));
+                RuntimeEvent startEvent = new RuntimeEvent(RuntimeEventType.TASK_STARTED, context.getSessionId(), "TaskExecutor", task.getId());
+                if (task.getName() != null) startEvent.withMetadata("name", task.getName());
+                if (task.getType() != null) startEvent.withMetadata("taskType", task.getType());
+                if (task.getDescription() != null) startEvent.withMetadata("description", task.getDescription());
+                startEvent.withMetadata("priority", task.getPriority());
+                context.getKernelContext().getEventBus().publish(startEvent);
+
                 orchestrator.executeTask(task, context);
-                context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.TASK_COMPLETED, context.getSessionId(), "TaskExecutor", task.getId()));
+
+                RuntimeEvent completeEvent = new RuntimeEvent(RuntimeEventType.TASK_COMPLETED, context.getSessionId(), "TaskExecutor", task.getId());
+                if (task.getName() != null) completeEvent.withMetadata("name", task.getName());
+                context.getKernelContext().getEventBus().publish(completeEvent);
             }
             return true;
         } catch (Exception e) {
