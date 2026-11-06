@@ -92,5 +92,10 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.ui,
  eu.kalafatic.evolution.controller.vcs,
  eu.kalafatic.evolution.controller.workflow,
- eu.kalafatic.evolution.controller.discovery
+ eu.kalafatic.evolution.controller.discovery,
+ eu.kalafatic.evolution.controller.teip.controller,
+ eu.kalafatic.evolution.controller.teip.dto,
+ eu.kalafatic.evolution.controller.teip.mcp,
+ eu.kalafatic.evolution.controller.teip.service,
+ eu.kalafatic.evolution.controller.teip.store
 Bundle-ClassPath: .
