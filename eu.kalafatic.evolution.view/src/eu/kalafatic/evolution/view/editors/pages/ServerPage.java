@@ -142,7 +142,7 @@ public class ServerPage extends AEvoPage {
         new Thread(() -> {
             try {
                 eu.kalafatic.evolution.controller.resource.EvoService serverSvc = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("SERVER");
-                String serverStatusUrl = (serverSvc != null ? serverSvc.getUrl() : "http://127.0.0.1:48081") + "/server/status";
+                String serverStatusUrl = (serverSvc != null ? serverSvc.getUrl() : "http://127.0.0.1:28080") + "/server/status";
                 URL url = new URL(serverStatusUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");

@@ -279,7 +279,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String MCP_SERVER_URL_EDEFAULT = "localhost:38080";
+	protected static final String MCP_SERVER_URL_EDEFAULT = "localhost:28280";
 
 	/**
 	 * The cached value of the '{@link #getMcpServerUrl() <em>Mcp Server Url</em>}' attribute.

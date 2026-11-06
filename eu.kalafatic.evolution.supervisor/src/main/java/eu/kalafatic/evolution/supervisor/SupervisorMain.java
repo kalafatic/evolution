@@ -20,8 +20,8 @@ public class SupervisorMain {
         System.out.println("=== EVO AI SUPERVISOR STARTING ===");
 
         String path = ".";
-        int supervisorPort = Integer.getInteger("port", Integer.getInteger("evo.supervisor.port", 8089));
-        int controlPort = Integer.getInteger("control.port", 28080);
+        int supervisorPort = Integer.getInteger("port", Integer.getInteger("evo.supervisor.port", 28480));
+        int controlPort = Integer.getInteger("control.port", 28580);
         boolean debugArg = Boolean.getBoolean("debug") || "debug".equalsIgnoreCase(System.getProperty("evo.mode"));
         boolean uiMode = "rcp".equalsIgnoreCase(System.getProperty("evo.supervisor.mode"))
                       || "ui".equalsIgnoreCase(System.getProperty("evo.supervisor.mode"));
@@ -662,7 +662,7 @@ public class SupervisorMain {
                     if (System.getProperty("evo.server.port") != null) {
                         try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                     }
-                    int portOffset = (this.port > 8089) ? (this.port - 8089) : 0;
+                        int portOffset = (this.port > 28480) ? (this.port - 28480) : 0;
                     int portToUse = findAvailablePort(baseStartPort + portOffset);
 
                     List<String> command = new ArrayList<>();
@@ -731,7 +731,7 @@ public class SupervisorMain {
                         if (System.getProperty("evo.server.port") != null) {
                             try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                         }
-                        int portOffset = (this.port > 8089) ? (this.port - 8089) : 0;
+                        int portOffset = (this.port > 28480) ? (this.port - 28480) : 0;
                         int portToUse = findAvailablePort(baseStartPort + portOffset);
 
                         List<String> command = new ArrayList<>();
@@ -874,7 +874,7 @@ public class SupervisorMain {
                 if (System.getProperty("evo.server.port") != null) {
                     try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                 }
-                int portOffset = (this.port > 8089) ? (this.port - 8089) : 0;
+                int portOffset = (this.port > 28480) ? (this.port - 28480) : 0;
                 int portToUse = findAvailablePort(baseStartPort + portOffset);
 
                 command.add("--mode=SELF_DEV");

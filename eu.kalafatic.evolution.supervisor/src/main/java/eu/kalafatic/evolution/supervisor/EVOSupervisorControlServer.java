@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import fi.iki.elonen.NanoHTTPD;
 
 /**
- * Premium glassmorphic Control Server for the External Supervisor running on port 28080.
- * Provides a beautiful Web UI and REST API proxy to interact with port 8089 dynamically.
+ * Premium glassmorphic Control Server for the External Supervisor running on port 28580.
+ * Provides a beautiful Web UI and REST API proxy to interact with port 28480 dynamically.
  */
 public class EVOSupervisorControlServer extends NanoHTTPD {
 
@@ -26,12 +26,12 @@ public class EVOSupervisorControlServer extends NanoHTTPD {
     private final int supervisorApiPort;
 
     public EVOSupervisorControlServer(int port, File baseDir) {
-        this(port, 8089, baseDir);
+        this(port, 28480, baseDir);
     }
 
     public EVOSupervisorControlServer(int port, int supervisorApiPort, File baseDir) {
         super("127.0.0.1", port);
-        this.supervisorApiPort = supervisorApiPort > 0 ? supervisorApiPort : 8089;
+        this.supervisorApiPort = supervisorApiPort > 0 ? supervisorApiPort : 28480;
         this.baseDir = baseDir;
         System.out.println("[CONTROL-HTTP] Control Server created on port " + port + " (proxying to API port " + this.supervisorApiPort + ") bound to 127.0.0.1");
     }
@@ -200,7 +200,7 @@ public class EVOSupervisorControlServer extends NanoHTTPD {
                 responseBody.append(line);
             }
 
-            // Return exact response from 8089 server with proper content type
+            // Return exact response from 28480 server with proper content type
             String responseStr = responseBody.toString();
             String contentType = conn.getHeaderField("Content-Type");
             if (contentType == null) contentType = "application/json";
@@ -687,11 +687,11 @@ public class EVOSupervisorControlServer extends NanoHTTPD {
             "        <div class=\"connection-status\">\n" +
             "            <div class=\"status-badge\">\n" +
             "                <span class=\"status-dot online\"></span>\n" +
-            "                Control Server (28080)\n" +
+            "                Control Server (28580)\n" +
             "            </div>\n" +
             "            <div class=\"status-badge\">\n" +
             "                <span id=\"supervisor-status-dot\" class=\"status-dot\"></span>\n" +
-            "                Supervisor API (8089)\n" +
+            "                Supervisor API (28480)\n" +
             "            </div>\n" +
             "        </div>\n" +
             "    </header>\n" +
@@ -839,7 +839,7 @@ public class EVOSupervisorControlServer extends NanoHTTPD {
             "                console.error(\"Error updating logs:\", e);\n" +
             "            }\n" +
             "\n" +
-            "            // 3. Ping Supervisor API (8089) for status dot\n" +
+            "            // 3. Ping Supervisor API (28480) for status dot\n" +
             "            try {\n" +
             "                const pingRes = await fetch('/api/action?action=ping');\n" +
             "                const dot = document.getElementById('supervisor-status-dot');\n" +

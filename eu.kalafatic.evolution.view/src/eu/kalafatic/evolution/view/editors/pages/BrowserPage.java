@@ -103,15 +103,17 @@ public class BrowserPage extends Composite {
             createNewTab(orchestrator.getOllama().getUrl());
         }
 
-        int port = 48080;
+        int port = 28080;
+        int mcpPort = 28280;
         if (orchestrator.getServerSettings() != null) {
             port = orchestrator.getServerSettings().getPort();
+            mcpPort = orchestrator.getServerSettings().getMcpPort();
         }
 
         createNewTab("http://localhost:" + port + "/experimental/chat?runtime=SWT");
         createNewTab("http://localhost:" + port + "/dashboard.html?runtime=SWT");
         createNewTab("http://localhost:" + port + "/develop?runtime=SWT");
-        createNewTab("http://localhost:38080/");
+        createNewTab("http://localhost:" + mcpPort + "/");
         // Listeners
         goButton.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { navigateTo(urlText.getText()); }

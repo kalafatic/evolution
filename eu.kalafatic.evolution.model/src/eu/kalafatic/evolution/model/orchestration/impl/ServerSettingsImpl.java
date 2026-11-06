@@ -41,7 +41,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int PORT_EDEFAULT = 48080;
+	protected static final int PORT_EDEFAULT = 28080;
 
 	/**
 	 * The cached value of the '{@link #getPort() <em>Port</em>}' attribute.
@@ -121,7 +121,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int MCP_PORT_EDEFAULT = 38080;
+	protected static final int MCP_PORT_EDEFAULT = 28280;
 
 	/**
 	 * The cached value of the '{@link #getMcpPort() <em>Mcp Port</em>}' attribute.
@@ -161,7 +161,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int PORTAL_PORT_EDEFAULT = 58080;
+	protected static final int PORTAL_PORT_EDEFAULT = 28180;
 
 	/**
 	 * The cached value of the '{@link #getPortalPort() <em>Portal Port</em>}' attribute.
@@ -181,7 +181,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String PORTAL_URL_EDEFAULT = "http://localhost:58080/dashboard.html";
+	protected static final String PORTAL_URL_EDEFAULT = "http://localhost:28180/dashboard.html";
 
 	/**
 	 * The cached value of the '{@link #getPortalUrl() <em>Portal Url</em>}' attribute.

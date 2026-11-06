@@ -95,7 +95,7 @@ public class SupervisorGroup extends AEvoGroup {
         pidLabel = toolkit.createLabel(statusComp, "N/A");
 
         toolkit.createLabel(statusComp, "Endpoint: ");
-        baseUrlLabel = toolkit.createLabel(statusComp, "http://127.0.0.1:8089");
+        baseUrlLabel = toolkit.createLabel(statusComp, "http://127.0.0.1:28480");
         baseUrlLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
 
         toolkit.createLabel(statusComp, "Working Dir: ");
@@ -264,8 +264,8 @@ public class SupervisorGroup extends AEvoGroup {
                 setTextSafe(gitBranchText, git.getBranch());
             }
 
-            int port = extractSettingValue(settings.getSettings(), "port", 8089);
-            int controlPort = extractSettingValue(settings.getSettings(), "controlPort", 28080);
+            int port = extractSettingValue(settings.getSettings(), "port", 28480);
+            int controlPort = extractSettingValue(settings.getSettings(), "controlPort", 28580);
             boolean debug = extractSettingBoolean(settings.getSettings(), "debug", false);
 
             setTextSafe(portText, String.valueOf(port));
@@ -307,7 +307,7 @@ public class SupervisorGroup extends AEvoGroup {
     }
 
     private void checkProcessTelemetry() {
-        int port = parsePort(portText.getText(), 8089);
+        int port = parsePort(portText.getText(), 28480);
         Job job = new Job("Supervisor Telemetry Ping") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
@@ -349,8 +349,8 @@ public class SupervisorGroup extends AEvoGroup {
         settings.setSourcePath(sourcePathText.getText());
         settings.setCommands(commandsText.getText());
 
-        int port = parsePort(portText.getText(), 8089);
-        int controlPort = parsePort(controlPortText.getText(), 28080);
+        int port = parsePort(portText.getText(), 28480);
+        int controlPort = parsePort(controlPortText.getText(), 28580);
         boolean debug = debugCheck.getSelection();
 
         String combinedSettings = "port=" + port + ";controlPort=" + controlPort + ";debug=" + debug + ";custom=" + settingsText.getText();

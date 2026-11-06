@@ -1,7 +1,7 @@
 #!/bin/bash
 # Evolution Platform - Headless Starter
 
-PORT=${1:-48080}
+PORT=${1:-28080}
 
 # Build classpath from target jars and local libs
 CP="eu.kalafatic.evolution.controller/target/eu.kalafatic.evolution.controller-2.6.5-SNAPSHOT.jar"

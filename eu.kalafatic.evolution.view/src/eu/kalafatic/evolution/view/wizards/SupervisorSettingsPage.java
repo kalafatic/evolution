@@ -103,8 +103,8 @@ public class SupervisorSettingsPage extends AWizardPage {
         }
         new Label(container, SWT.NONE);
 
-        int initPort = supervisor != null ? SupervisorGroup.extractSettingValue(supervisor.getSettings(), "port", 8089) : 8089;
-        int initControlPort = supervisor != null ? SupervisorGroup.extractSettingValue(supervisor.getSettings(), "controlPort", 28080) : 28080;
+        int initPort = supervisor != null ? SupervisorGroup.extractSettingValue(supervisor.getSettings(), "port", 28480) : 28480;
+        int initControlPort = supervisor != null ? SupervisorGroup.extractSettingValue(supervisor.getSettings(), "controlPort", 28580) : 28580;
         boolean initDebug = supervisor != null ? SupervisorGroup.extractSettingBoolean(supervisor.getSettings(), "debug", false) : false;
 
         label = new Label(container, SWT.NONE);

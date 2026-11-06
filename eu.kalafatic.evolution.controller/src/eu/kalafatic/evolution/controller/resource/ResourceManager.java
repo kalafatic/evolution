@@ -424,34 +424,29 @@ public class ResourceManager {
         List<EvoService> services = new ArrayList<>();
         Orchestrator orch = getOrchestrator();
 
-        // 1. SUPERVISOR Service
-        int supervisorPort = 8089;
+        // Ensure synchronization with authoritative PortPersistence and PortAllocationManager
+        PortPersistence.getInstance().loadFromEmf(orch);
+        PortAllocationManager pam = PortAllocationManager.getInstance();
+
+        // 1. SUPERVISOR Service (28480)
+        int supervisorPort = pam.getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
         String supervisorHost = "127.0.0.1";
-        if (orch != null && orch.getSupervisorSettings() != null) {
-            SupervisorSettings sup = orch.getSupervisorSettings();
-            if (sup.getSettings() != null && sup.getSettings().contains("port=")) {
-                try {
-                    String pStr = sup.getSettings().substring(sup.getSettings().indexOf("port=") + 5).trim();
-                    if (pStr.contains(" ")) pStr = pStr.substring(0, pStr.indexOf(" "));
-                    supervisorPort = Integer.parseInt(pStr);
-                } catch (Exception e) {
-                }
-            }
-        }
         services.add(new EvoService("SUPERVISOR", "Supervisor Service", supervisorHost, supervisorPort, true, "EMF.supervisorSettings"));
 
-        // 2. SERVER / ORCHESTRATOR Service
-        int serverPort = 48081;
+        // 2. SERVER / ORCHESTRATOR Service (Primary HTTP 28080)
+        int serverPort = pam.getPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId());
         String serverHost = "127.0.0.1";
         boolean serverEnabled = true;
         if (orch != null && orch.getServerSettings() != null) {
-            ServerSettings srv = orch.getServerSettings();
-            if (srv.getPort() > 0) serverPort = srv.getPort();
-            serverEnabled = srv.isAutoStart();
+            serverEnabled = orch.getServerSettings().isAutoStart();
         }
         services.add(new EvoService("SERVER", "Orchestrator Control Server", serverHost, serverPort, serverEnabled, "EMF.serverSettings"));
 
-        // 3. INFERENCE / OLLAMA Service
+        // 3. SECONDARY / PORTAL Service (28180)
+        int portalPort = pam.getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+        services.add(new EvoService("PORTAL", "EVO Dashboard & Portal Server", "127.0.0.1", portalPort, true, "EMF.portalSettings"));
+
+        // 4. INFERENCE / OLLAMA Service
         int ollamaPort = 11434;
         String ollamaHost = "127.0.0.1";
         if (orch != null && orch.getOllama() != null) {
@@ -467,22 +462,18 @@ public class ResourceManager {
         }
         services.add(new EvoService("INFERENCE", "LLM Inference Engine (Ollama/llama.cpp)", ollamaHost, ollamaPort, true, "EMF.ollama"));
 
-        // 4. MCP Server
-        int mcpPort = 48082;
+        // 5. MCP Server (28280)
+        int mcpPort = pam.getPort(PortRegistry.EVO_MCP.getServiceId());
         String mcpHost = "127.0.0.1";
-        if (orch != null && orch.getMcpServerUrl() != null && !orch.getMcpServerUrl().isEmpty()) {
-            try {
-                URL url = new URI(orch.getMcpServerUrl()).toURL();
-                mcpHost = url.getHost();
-                if (url.getPort() > 0) mcpPort = url.getPort();
-            } catch (Exception e) {
-            }
-        }
         services.add(new EvoService("MCP", "Model Context Protocol Server", mcpHost, mcpPort, true, "EMF.mcpServerUrl"));
 
-        // 5. DEVELOP Autonomous Coding Agent Server
-        int developPort = 48083;
+        // 6. DEVELOP Autonomous Coding Agent Server (28380)
+        int developPort = pam.getPort(PortRegistry.EVO_DEVELOP.getServiceId());
         services.add(new EvoService("DEVELOP", "EVO Autonomous Coding Agent", "127.0.0.1", developPort, true, "EMF.develop"));
+
+        // 7. SUPERVISOR CONTROL Server (28580)
+        int controlPort = pam.getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
+        services.add(new EvoService("SUPERVISOR_CONTROL", "Supervisor Control Server", "127.0.0.1", controlPort, true, "EMF.supervisorControlSettings"));
 
         return services;
     }
@@ -513,26 +504,35 @@ public class ResourceManager {
     }
 
     public synchronized void setServerPort(int port) {
+        PortAllocationManager.getInstance().setAssignedPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId(), port);
         Orchestrator orch = getOrchestrator();
         if (orch != null) {
             if (orch.getServerSettings() == null) {
                 orch.setServerSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createServerSettings());
             }
             orch.getServerSettings().setPort(port);
+            PortPersistence.getInstance().saveToEmf(orch);
         }
     }
 
     public synchronized void setSupervisorPort(int port) {
+        PortAllocationManager.getInstance().setAssignedPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId(), port);
         Orchestrator orch = getOrchestrator();
         if (orch != null) {
             if (orch.getSupervisorSettings() == null) {
                 orch.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSupervisorSettings());
             }
             orch.getSupervisorSettings().setSettings("port=" + port);
+            PortPersistence.getInstance().saveToEmf(orch);
         }
     }
 
     public OptionalInt getPort(String serviceId) {
+        PortRegistry reg = PortRegistry.findByServiceId(serviceId);
+        if (reg != null) {
+            int p = PortAllocationManager.getInstance().getPort(reg.getServiceId());
+            if (p > 0) return OptionalInt.of(p);
+        }
         EvoService svc = getService(serviceId);
         return svc != null && svc.getPort() > 0 ? OptionalInt.of(svc.getPort()) : OptionalInt.empty();
     }

@@ -108,7 +108,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="aiMode" lowerBound="1"
         eType="#//AiMode"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpServerUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
-        defaultValueLiteral="localhost:38080"/>
+        defaultValueLiteral="localhost:28280"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="openAiToken" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="openAiModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="localModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -154,7 +154,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ServerSettings">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="port" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
-        defaultValueLiteral="48080"/>
+        defaultValueLiteral="28080"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoStart" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="gitAutomation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
@@ -162,13 +162,13 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpEnabled" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpPort" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
-        defaultValueLiteral="38080"/>
+        defaultValueLiteral="28280"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="authenticate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="portalPort" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
-        defaultValueLiteral="58080"/>
+        defaultValueLiteral="28180"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="portalUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
-        defaultValueLiteral="http://localhost:58080/dashboard.html"/>
+        defaultValueLiteral="http://localhost:28180/dashboard.html"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ServerSession">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

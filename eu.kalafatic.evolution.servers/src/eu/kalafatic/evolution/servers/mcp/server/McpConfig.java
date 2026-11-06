@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.List;
 
 public class McpConfig {
-    private int port = 68080;
+    private int port = 28280;
     private boolean enableLogging = true;
     private List<String> enabledConnectors;
 

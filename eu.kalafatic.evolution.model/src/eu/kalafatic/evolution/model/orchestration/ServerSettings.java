@@ -30,13 +30,13 @@ import org.eclipse.emf.ecore.EObject;
 public interface ServerSettings extends EObject {
 	/**
 	 * Returns the value of the '<em><b>Port</b></em>' attribute.
-	 * The default value is <code>"48080"</code>.
+	 * The default value is <code>"28080"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Port</em>' attribute.
 	 * @see #setPort(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_Port()
-	 * @model default="48080"
+	 * @model default="28080"
 	 * @generated
 	 */
 	int getPort();
@@ -122,13 +122,13 @@ public interface ServerSettings extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Mcp Port</b></em>' attribute.
-	 * The default value is <code>"38080"</code>.
+	 * The default value is <code>"28280"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Mcp Port</em>' attribute.
 	 * @see #setMcpPort(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_McpPort()
-	 * @model default="38080"
+	 * @model default="28280"
 	 * @generated
 	 */
 	int getMcpPort();
@@ -168,13 +168,13 @@ public interface ServerSettings extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Portal Port</b></em>' attribute.
-	 * The default value is <code>"58080"</code>.
+	 * The default value is <code>"28180"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Portal Port</em>' attribute.
 	 * @see #setPortalPort(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_PortalPort()
-	 * @model default="58080"
+	 * @model default="28180"
 	 * @generated
 	 */
 	int getPortalPort();
@@ -191,13 +191,13 @@ public interface ServerSettings extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Portal Url</b></em>' attribute.
-	 * The default value is <code>"http://localhost:58080/dashboard.html"</code>.
+	 * The default value is <code>"http://localhost:28180/dashboard.html"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Portal Url</em>' attribute.
 	 * @see #setPortalUrl(String)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_PortalUrl()
-	 * @model default="http://localhost:58080/dashboard.html"
+	 * @model default="http://localhost:28180/dashboard.html"
 	 * @generated
 	 */
 	String getPortalUrl();
