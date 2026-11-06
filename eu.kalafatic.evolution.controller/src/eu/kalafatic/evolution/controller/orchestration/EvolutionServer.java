@@ -2676,12 +2676,20 @@ public class EvolutionServer extends NanoHTTPD {
     private Response handleGetTrainingEvents(String sessionId) {
         ForgeSessionManager.TrainingTelemetry telemetry = ForgeSessionManager.getInstance().getTelemetry(sessionId);
         if (telemetry != null) {
-            return newFixedLengthResponse(Response.Status.OK, "application/json", telemetry.toJsonObject().optJSONArray("logStream").toString());
+            org.json.JSONArray logStream = telemetry.toJsonObject().optJSONArray("logStream");
+            if (logStream != null) {
+                return newFixedLengthResponse(Response.Status.OK, "application/json", logStream.toString());
+            }
         }
 
-        if (trainingController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "TrainingController not available");
-        JSONArray array = new JSONArray(trainingController.getRecentEvents(sessionId));
-        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+        if (trainingController != null) {
+            List<String> events = trainingController.getRecentEvents(sessionId);
+            if (events != null) {
+                JSONArray array = new JSONArray(events);
+                return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+            }
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", "[]");
     }
 
     private Response handleGetForgeSnapshots(String sessionId) {

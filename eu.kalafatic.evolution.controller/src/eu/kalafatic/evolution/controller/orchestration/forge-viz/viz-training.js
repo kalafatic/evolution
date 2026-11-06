@@ -1,8 +1,9 @@
 window.renderTrainingViz = function(data, events) {
     const area = document.getElementById('viz-area');
     const details = document.getElementById('viz-details-content');
+    if (!area) return;
 
-    if (!data || (!data.sessionId && !data.loss)) {
+    if (!data || (!data.sessionId && !data.loss && !data.currentLoss && (!data.history || data.history.length === 0))) {
         area.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--evo-text-muted); text-align:center; padding:30px;">
                 <div style="font-size:2.5em; margin-bottom:12px; opacity:0.6;">🎛️</div>
@@ -93,17 +94,25 @@ window.renderTrainingViz = function(data, events) {
 
         const pts = history.map((h, idx) => {
             const x = pad + (idx / (history.length - 1)) * (svgW - 2 * pad);
-            const y = svgH - pad - ((h.loss - minL) / range) * (svgH - 2 * pad);
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
+            const lossVal = typeof h.loss === 'number' && isFinite(h.loss) ? h.loss : minL;
+            const y = svgH - pad - ((lossVal - minL) / range) * (svgH - 2 * pad);
+            const safeX = isFinite(x) ? x.toFixed(1) : pad.toFixed(1);
+            const safeY = isFinite(y) ? y.toFixed(1) : (svgH - pad).toFixed(1);
+            return `${safeX},${safeY}`;
         });
-        lossSvgPath = 'M ' + pts.join(' L ');
+        if (pts.length > 0) {
+            lossSvgPath = 'M ' + pts.join(' L ');
+        }
 
-        const valPts = history.filter(h => h.valLoss > 0).map((h, idx, arr) => {
-            const x = pad + (idx / (arr.length - 1)) * (svgW - 2 * pad);
-            const y = svgH - pad - ((h.valLoss - minL) / range) * (svgH - 2 * pad);
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
-        });
-        if (valPts.length > 1) {
+        const filteredVal = history.filter(h => typeof h.valLoss === 'number' && h.valLoss > 0 && isFinite(h.valLoss));
+        if (filteredVal.length > 1) {
+            const valPts = filteredVal.map((h, idx, arr) => {
+                const x = pad + (idx / (arr.length - 1)) * (svgW - 2 * pad);
+                const y = svgH - pad - ((h.valLoss - minL) / range) * (svgH - 2 * pad);
+                const safeX = isFinite(x) ? x.toFixed(1) : pad.toFixed(1);
+                const safeY = isFinite(y) ? y.toFixed(1) : (svgH - pad).toFixed(1);
+                return `${safeX},${safeY}`;
+            });
             valLossSvgPath = 'M ' + valPts.join(' L ');
         }
     }
