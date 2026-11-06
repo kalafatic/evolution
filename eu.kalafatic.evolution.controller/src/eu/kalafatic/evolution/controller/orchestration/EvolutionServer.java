@@ -76,6 +76,7 @@ public class EvolutionServer extends NanoHTTPD {
     private final ArchitectureController architectureController;
     private final EvolutionDashboardController evolutionDashboardController;
     private final eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentController demoDocumentController;
+    private final eu.kalafatic.evolution.controller.teip.controller.TeipApiController teipApiController = new eu.kalafatic.evolution.controller.teip.controller.TeipApiController();
 
     private SessionController sessionController;
     private ModelController modelController;
@@ -239,6 +240,11 @@ public class EvolutionServer extends NanoHTTPD {
         // 4. Authorized Static Resources (Dashboard)
         if ("/dashboard.html".equals(uri)) {
             return serveExternalResource(uri);
+        }
+
+        // 4.1 TEIP 1.0 API Endpoints
+        if (uri.startsWith("/teip/v1")) {
+            return teipApiController.handle(session);
         }
 
         trackHttpSession(session);

@@ -26,6 +26,7 @@ public class McpSettingsPage extends AEvoPage {
 	private McpResourcesGroup resourcesGroup;
 	private McpToolsGroup toolsGroup;
 	private McpPromptsGroup promptsGroup;
+	private TrystIntegrationGroup trystGroup;
 
 	public McpSettingsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
@@ -36,6 +37,7 @@ public class McpSettingsPage extends AEvoPage {
 		Composite comp = toolkit.createComposite(this);
 		comp.setLayout(new GridLayout(1, false));
 		configGroup = new McpConfigGroup(toolkit, comp, editor, orchestrator, this);
+		trystGroup = new TrystIntegrationGroup(toolkit, comp, editor, orchestrator, this);
 		serversGroup = new McpServersGroup(toolkit, comp, editor, orchestrator, this);
 		resourcesGroup = new McpResourcesGroup(toolkit, comp, editor, orchestrator, this);
 		toolsGroup = new McpToolsGroup(toolkit, comp, editor, orchestrator, this);
