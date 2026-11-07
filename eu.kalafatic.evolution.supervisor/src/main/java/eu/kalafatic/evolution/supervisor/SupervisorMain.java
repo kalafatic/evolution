@@ -13,15 +13,26 @@ import java.util.concurrent.TimeUnit;
 import fi.iki.elonen.NanoHTTPD;
 
 public class SupervisorMain {
+    public static final int DEFAULT_SUPERVISOR_PORT = 28480;
+    public static final int DEFAULT_CONTROL_PORT = 28580;
+
     private static NanoHTTPD server;
     private static NanoHTTPD controlServer;
+
+    public static int getEffectiveSupervisorPort() {
+        return Integer.getInteger("port", Integer.getInteger("evo.supervisor.port", DEFAULT_SUPERVISOR_PORT));
+    }
+
+    public static int getEffectiveControlPort() {
+        return Integer.getInteger("control.port", DEFAULT_CONTROL_PORT);
+    }
     
     public static void main(String[] args) {
         System.out.println("=== EVO AI SUPERVISOR STARTING ===");
 
         String path = ".";
-        int supervisorPort = Integer.getInteger("port", Integer.getInteger("evo.supervisor.port", 28480));
-        int controlPort = Integer.getInteger("control.port", 28580);
+        int supervisorPort = getEffectiveSupervisorPort();
+        int controlPort = getEffectiveControlPort();
         boolean debugArg = Boolean.getBoolean("debug") || "debug".equalsIgnoreCase(System.getProperty("evo.mode"));
         boolean uiMode = "rcp".equalsIgnoreCase(System.getProperty("evo.supervisor.mode"))
                       || "ui".equalsIgnoreCase(System.getProperty("evo.supervisor.mode"));
