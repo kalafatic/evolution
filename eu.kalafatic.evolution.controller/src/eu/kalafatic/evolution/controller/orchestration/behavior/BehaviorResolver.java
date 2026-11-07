@@ -9,11 +9,11 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class BehaviorResolver {
 
     public long resolveBitState(TaskContext context) {
-        Orchestrator orchestrator = context.getOrchestrator();
+        Orchestrator orchestrator = context != null ? context.getOrchestrator() : null;
 
         // Base encoding derived from model
         int mode = BitState.MODE_LOCAL;
-        if (orchestrator.getAiMode() != null) {
+        if (orchestrator != null && orchestrator.getAiMode() != null) {
             mode = orchestrator.getAiMode().ordinal(); // Assumes ordinal mapping for now
         }
 
@@ -31,7 +31,7 @@ public class BehaviorResolver {
         }
 
         // Handle instruction-based overrides (still dynamic via EMF model)
-        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+        if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
             var instructions = orchestrator.getAiChat().getPromptInstructions();
             if (instructions.isStepMode()) interaction = BitState.INTERACTION_STEP;
             if (instructions.isAutoApprove()) options |= BitState.OPTION_AUTO_APPROVE;

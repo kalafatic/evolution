@@ -23,7 +23,8 @@ public class KernelFactory {
 
 	public static IterationManager create(String prompt, TaskContext context, SessionContainer sessionContext)
 			throws Exception {
-		return create(prompt, context, sessionContext, new AiService());
+		AiService service = (context != null && context.getAiService() != null) ? context.getAiService() : new AiService();
+		return create(prompt, context, sessionContext, service);
 	}
 
 	public static IterationManager create(String prompt, TaskContext context, SessionContainer sessionContext,
@@ -167,7 +168,12 @@ public class KernelFactory {
 
 		IterationMemoryService memoryService = (sessionContext != null)
 				? sessionContext.getMemoryService(context.getProjectRoot())
-				: context.getKernelContext().getMemoryService();	
+				: context.getKernelContext().getMemoryService();
+
+		PromptIntentAnalyzer intentAnalyzer = new PromptIntentAnalyzer(sessionContext, context.getProjectRoot());
+		intentAnalyzer.setAiService(aiService);
+		darwinEngine.setAiService(aiService);
+		darwinEngine.setIntentAnalyzer(intentAnalyzer);
 
 		context.log("[DARWIN] Delegating to " + darwinEngine.getClass().getSimpleName());
 

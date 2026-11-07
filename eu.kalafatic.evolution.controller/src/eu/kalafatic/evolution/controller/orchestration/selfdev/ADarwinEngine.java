@@ -1845,7 +1845,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
 			context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
 
-			IterationManager variantManager = KernelFactory.create(tasks.get(0).getPrompt(), variantContext,
+			String taskPrompt = (!tasks.isEmpty() && tasks.get(0).getPrompt() != null) ? tasks.get(0).getPrompt() : variant.getStrategy();
+			// Sub-task evaluation should reuse the existing authoritative engine or use an isolated context without overwriting session registry
+			IterationManager variantManager = KernelFactory.create(this, variantContext,
 					getSessionContainer(), aiService);
 
 			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
@@ -3370,6 +3372,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	 */
 	protected OrchestratorResponse handleIntentRouting(String request, IterationManager iterationManager) throws Exception {
 		OrchestrationState state = context.getOrchestrationState();
+		if (intentAnalyzer == null) {
+			intentAnalyzer = new PromptIntentAnalyzer(getSessionContainer(), context != null ? context.getProjectRoot() : null);
+			intentAnalyzer.setAiService(aiService);
+		}
 		PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
 		context.log("[DARWIN] Intent Analysis: " + intent.toString());
 

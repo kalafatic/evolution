@@ -17,7 +17,11 @@ public class BehaviorPolicyRegistry {
         // MEDIATED POLICY
         policies.add(new IBehaviorPolicy() {
             @Override public boolean applies(TaskContext context) {
-                return context.getOrchestrator().getAiMode() == AiMode.MEDIATED;
+                if (context == null) return false;
+                if (context.getOrchestrator() != null && context.getOrchestrator().getAiMode() == AiMode.MEDIATED) {
+                    return true;
+                }
+                return context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT;
             }
             @Override public void apply(BehaviorProfile profile, TaskContext context) {
                 profile.addTrait(BehaviorTrait.SUPERVISION_MEDIATED);
@@ -55,8 +59,11 @@ public class BehaviorPolicyRegistry {
         // DARWIN POLICY
         policies.add(new IBehaviorPolicy() {
             @Override public boolean applies(TaskContext context) {
-                return context.getOrchestrator().isDarwinMode() ||
-                       (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.DARWIN_MODE);
+                if (context == null) return false;
+                if (context.getOrchestrator() != null && context.getOrchestrator().isDarwinMode()) {
+                    return true;
+                }
+                return context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.DARWIN_MODE;
             }
             @Override public void apply(BehaviorProfile profile, TaskContext context) {
                 profile.addTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE);

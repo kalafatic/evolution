@@ -39,10 +39,12 @@ public class DarwinApprovalGateTest {
         orchestrator.setId(sessionId);
         orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
         orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setAutoApprove(false);
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         TaskContext context = new TaskContext(orchestrator, null);
         context.setSessionId(sessionId);
+        context.setAutoApprove(false);
         context.getMetadata().put("testMode", true);
         OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
 

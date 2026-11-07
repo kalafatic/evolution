@@ -91,7 +91,7 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         }
 
         // Early exit: Respect authoritative explicit execution mode and forced technical modes
-        if (context != null && ModeRecognizer.isForcedTechnicalMode(context)) {
+        if (context != null && (ModeRecognizer.isForcedTechnicalMode(context) || context.getPlatformMode() != null)) {
             PlatformType forcedType = ModeRecognizer.determineType(context);
             context.log("[INTENT] Authoritative mode pre-established: " + forcedType + ". Bypassing LLM intent analysis.");
             return new IntentResult(IntentCategory.TASK, 1.0, "Authoritative execution mode: " + forcedType, forcedType.name(), null);
