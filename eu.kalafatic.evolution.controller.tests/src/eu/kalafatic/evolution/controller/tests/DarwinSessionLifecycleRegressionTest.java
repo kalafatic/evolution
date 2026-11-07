@@ -157,15 +157,23 @@ public class DarwinSessionLifecycleRegressionTest {
         context.getOrchestrationState().setCurrentPhase("ANALYSIS");
         context.getOrchestrationState().setIterationCount(2);
 
+        AiService mockAi = new AiService() {
+            @Override
+            public String sendRequest(Orchestrator orch, String prompt, float temperature, String proxyUrl, TaskContext ctx, String forcedModel) throws Exception {
+                return "{\"category\": \"TASK\", \"confidence\": 0.9, \"reasoning\": \"Test execution\"}";
+            }
+        };
+        context.setAiService(mockAi);
+
         IterationMemoryService memoryService = container.getMemoryService(tempDir);
-        IterationManager manager = KernelFactory.create("Test Task", context, container, new AiService());
+        IterationManager manager = KernelFactory.create("Test Task", context, container, mockAi);
         container.setIterationManager(manager);
 
         // Save full checkpoint
         manager.saveFullCheckpoint();
 
         // Verify checkpoint file written to disk
-        File checkpointFile = new File(tempDir, ".evolution/memory/" + sessionId + "/checkpoint.json");
+        File checkpointFile = new File(tempDir, "orchestrator/memory/checkpoint_" + sessionId + ".json");
         assertTrue("Checkpoint file must be persisted", checkpointFile.exists());
 
         // Dispose previous session
@@ -195,6 +203,13 @@ public class DarwinSessionLifecycleRegressionTest {
         // Context with null orchestrator
         TaskContext context = new TaskContext(null, tempDir);
         context.setSessionId(sessionId);
+        AiService mockAi = new AiService() {
+            @Override
+            public String sendRequest(Orchestrator orch, String prompt, float temperature, String proxyUrl, TaskContext ctx, String forcedModel) throws Exception {
+                return "{\"category\": \"TASK\", \"confidence\": 0.9, \"reasoning\": \"Test resolution\"}";
+            }
+        };
+        context.setAiService(mockAi);
 
         // Should resolve and create IterationManager cleanly without throwing NPE
         IterationManager manager = KernelFactory.create("Verify manager resolution", context, session);

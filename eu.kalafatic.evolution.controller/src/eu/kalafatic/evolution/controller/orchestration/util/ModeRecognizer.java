@@ -128,28 +128,36 @@ public class ModeRecognizer {
 	}
 
 	public static boolean isForgeMode(TaskContext context) {
-		return (context.getOrchestrator() != null && AiMode.FORGE.equals(context.getOrchestrator().getAiMode()));
+		if (context == null) return false;
+		return (context.getOrchestrator() != null && AiMode.FORGE.equals(context.getOrchestrator().getAiMode()))
+				|| (context.getPlatformMode() != null && PlatformType.FORGE.equals(context.getPlatformMode().getType()));
 	}
 
 	public static boolean isSelfDevMode(TaskContext context) {
+		if (context == null) return false;
 		return (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null
 				&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
 				&& context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode())
+				|| (context.getPlatformMode() != null && PlatformType.SELF_DEV_MODE.equals(context.getPlatformMode().getType()))
 				|| (context.getBehaviorProfile() != null && context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV));
 	}
 
 	public static boolean isMediatedMode(TaskContext context) {
+		if (context == null) return false;
 		return (context.getOrchestrator() != null && AiMode.MEDIATED.equals(context.getOrchestrator().getAiMode()))
+				|| (context.getPlatformMode() != null && PlatformType.HYBRID_MANUAL_EXPORT.equals(context.getPlatformMode().getType()))
 				|| (context.getBehaviorProfile() != null && context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY));
 	}
 
 	public static boolean isIntentMode(TaskContext context) {
-		return (context != null && context.getOrchestrator() != null && AiMode.INTENT.equals(context.getOrchestrator().getAiMode()))
-				|| (context != null && context.getPlatformMode() != null && PlatformType.INTENT_RECONSTRUCTION.equals(context.getPlatformMode().getType()));
+		if (context == null) return false;
+		return (context.getOrchestrator() != null && AiMode.INTENT.equals(context.getOrchestrator().getAiMode()))
+				|| (context.getPlatformMode() != null && PlatformType.INTENT_RECONSTRUCTION.equals(context.getPlatformMode().getType()));
 	}
 
 	public static boolean isForcedTechnicalMode(TaskContext context) {
-		return isDreamMode(context) || isForgeMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context);
+		if (context == null) return false;
+		return isDreamMode(context) || isForgeMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isCoding(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {
@@ -210,8 +218,9 @@ public class ModeRecognizer {
 		}
 	}
 
-	private static boolean isCoding(TaskContext context) {
-		return false;
+	public static boolean isCoding(TaskContext context) {
+		if (context == null) return false;
+		return (context.getPlatformMode() != null && PlatformType.ASSISTED_CODING.equals(context.getPlatformMode().getType()));
 	}
 
 }

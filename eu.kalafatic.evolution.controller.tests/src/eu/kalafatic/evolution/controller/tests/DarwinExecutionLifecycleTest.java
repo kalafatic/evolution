@@ -73,8 +73,21 @@ public class DarwinExecutionLifecycleTest {
 
         context = new TaskContext(orchestrator, tempDir);
         context.setSessionId(sessionId);
+        context.setAutoApprove(true);
         context.getMetadata().put("testMode", true);
         context.getMetadata().put("sessionContext", session);
+
+        AiService mockAiService = new AiService() {
+            @Override
+            public String sendRequest(Orchestrator orch, String prompt, float temperature, String proxyUrl, TaskContext ctx, String forcedModel) throws Exception {
+                return "{\"category\": \"TASK\", \"confidence\": 0.95, \"reasoning\": \"Automated unit testing prompt analysis\"}";
+            }
+            @Override
+            public eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse sendLlmRequest(Orchestrator orch, String prompt, float temperature, String proxyUrl, TaskContext ctx, String forcedModel) throws Exception {
+                return eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse.finalOnly("Test Response");
+            }
+        };
+        context.setAiService(mockAiService);
     }
 
     @After
@@ -153,7 +166,7 @@ public class DarwinExecutionLifecycleTest {
             }
         };
 
-        IterationManager manager = KernelFactory.create(failingEngine, context, session, new AiService());
+        IterationManager manager = KernelFactory.create(failingEngine, context, session, context.getAiService());
         session.setIterationManager(manager);
 
         OrchestratorResponse response = failingEngine.orchestrateEvolution(new TaskRequest("Failing evolution", tempDir), manager);
@@ -181,13 +194,13 @@ public class DarwinExecutionLifecycleTest {
 
         IterationManager manager;
         try {
-            manager = KernelFactory.create(throwingEngine, context, session, new AiService());
+            manager = KernelFactory.create(throwingEngine, context, session, context.getAiService());
             session.setIterationManager(manager);
             OrchestratorResponse resp = throwingEngine.orchestrateEvolution(new TaskRequest("Throwing task", tempDir), manager);
             assertEquals("ResultType must be ERROR", ResultType.ERROR, resp.getResultType());
             assertEquals("State must be FAILED", SystemState.FAILED, context.getStateHolder().getState());
         } catch (Exception e) {
-            assertTrue("Exception message preserved", e.getMessage().contains("Simulated critical kernel exception"));
+            assertTrue("Exception message preserved", e.getMessage() != null && e.getMessage().contains("Simulated critical kernel exception"));
             assertEquals("State must be FAILED", SystemState.FAILED, context.getStateHolder().getState());
         }
     }
@@ -248,12 +261,18 @@ public class DarwinExecutionLifecycleTest {
         IterationManager manager = KernelFactory.create("Test delegation", context, session);
         session.setIterationManager(manager);
 
-        DarwinFlow flow = new DarwinFlow(new AiService(), manager);
+        DarwinFlow flow = new DarwinFlow(context.getAiService(), manager);
         BranchVariant variant = new BranchVariant();
         variant.setId("v-test-1");
         variant.setStrategy("Test strategy");
+        BranchVariant.Action action = new BranchVariant.Action();
+        action.setDomain("file");
+        action.setOperation("CREATE");
+        action.setTarget("TestFile.txt");
+        variant.getActions().add(action);
 
         TaskPlanner planner = new TaskPlanner(session);
+        planner.setAiService(context.getAiService());
         EvolutionaryPressureVector pressure = new EvolutionaryPressureVector();
 
         VariantExecutionContext result = flow.evaluateVariantParallel(variant, planner, context, null, pressure);
@@ -277,10 +296,12 @@ public class DarwinExecutionLifecycleTest {
         TaskContext ctxA = new TaskContext(orchestrator, tempDir);
         ctxA.setSessionId(sidA);
         ctxA.getMetadata().put("testMode", true);
+        ctxA.setAiService(context.getAiService());
 
         TaskContext ctxB = new TaskContext(orchestrator, tempDir);
         ctxB.setSessionId(sidB);
         ctxB.getMetadata().put("testMode", true);
+        ctxB.setAiService(context.getAiService());
 
         IterationManager mgrA = KernelFactory.create("Task A", ctxA, sessionA);
         IterationManager mgrB = KernelFactory.create("Task B", ctxB, sessionB);

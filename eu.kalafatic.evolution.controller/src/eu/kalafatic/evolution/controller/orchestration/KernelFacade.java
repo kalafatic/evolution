@@ -2,7 +2,9 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer.IntentResult;
 import eu.kalafatic.evolution.controller.orchestration.dream.WakeDreamCoordinator;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFactory;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineRegistry;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider;
@@ -190,9 +192,14 @@ public class KernelFacade implements IOrchestrator {
 				context);
 		IDarwinEngine darwinEngine = DarwinEngineFactory.createEngine(platformType, context, memoryService,
 				stateProvider);
-		darwinEngine.setIntentAnalyzer(kernel.getDarwinEngine().getIntentAnalyzer());
-		darwinEngine.setAiService(kernel.getDarwinEngine().getIntentAnalyzer().getAiService());
+		if (kernel.getDarwinEngine() != null && kernel.getDarwinEngine().getIntentAnalyzer() != null) {
+			darwinEngine.setIntentAnalyzer(kernel.getDarwinEngine().getIntentAnalyzer());
+			darwinEngine.setAiService(kernel.getDarwinEngine().getIntentAnalyzer().getAiService());
+		}
 		
 		kernel.setDarwinEngine(darwinEngine);
+		if (darwinEngine instanceof ADarwinEngine) {
+			DarwinEngineRegistry.register(context.getSessionId(), (ADarwinEngine) darwinEngine);
+		}
 	}
 }

@@ -406,7 +406,7 @@ public class OllamaProvider implements ILlmProvider {
             throw new Exception("Maximum fallback depth reached for Ollama requests");
         }
 
-        if (orchestrator.getOllama() == null || orchestrator.getOllama().getUrl() == null || orchestrator.getOllama().getUrl().isEmpty()) {
+        if (orchestrator == null || orchestrator.getOllama() == null || orchestrator.getOllama().getUrl() == null || orchestrator.getOllama().getUrl().isEmpty()) {
             throw new Exception("Ollama is not configured");
         }
 

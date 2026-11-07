@@ -17,7 +17,8 @@ public class RoutingPolicyRegistry {
         // LOCAL POLICY
         policies.add(new IRoutingPolicy() {
             @Override public boolean applies(Orchestrator orchestrator, TaskContext context) {
-                return orchestrator.getAiMode() == AiMode.LOCAL || orchestrator.getAiMode() == AiMode.PROXY;
+                if (orchestrator == null) return true; // Default fallback to LOCAL if orchestrator is not set
+                return orchestrator.getAiMode() == null || orchestrator.getAiMode() == AiMode.LOCAL || orchestrator.getAiMode() == AiMode.PROXY;
             }
             @Override public String handle(LlmRouter router, Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
                 return router.sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -27,7 +28,7 @@ public class RoutingPolicyRegistry {
         // HYBRID POLICY
         policies.add(new IRoutingPolicy() {
             @Override public boolean applies(Orchestrator orchestrator, TaskContext context) {
-                return orchestrator.getAiMode() == AiMode.HYBRID;
+                return orchestrator != null && orchestrator.getAiMode() == AiMode.HYBRID;
             }
             @Override public String handle(LlmRouter router, Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
                 String augmentedPrompt = router.buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
@@ -39,7 +40,7 @@ public class RoutingPolicyRegistry {
         // REMOTE POLICY
         policies.add(new IRoutingPolicy() {
             @Override public boolean applies(Orchestrator orchestrator, TaskContext context) {
-                return orchestrator.getAiMode() == AiMode.REMOTE;
+                return orchestrator != null && orchestrator.getAiMode() == AiMode.REMOTE;
             }
             @Override public String handle(LlmRouter router, Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
                 return router.sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -49,7 +50,7 @@ public class RoutingPolicyRegistry {
         // MEDIATED & INTENT POLICY (Local fallback)
         policies.add(new IRoutingPolicy() {
             @Override public boolean applies(Orchestrator orchestrator, TaskContext context) {
-                return orchestrator.getAiMode() == AiMode.MEDIATED || orchestrator.getAiMode() == AiMode.INTENT;
+                return orchestrator != null && (orchestrator.getAiMode() == AiMode.MEDIATED || orchestrator.getAiMode() == AiMode.INTENT);
             }
             @Override public String handle(LlmRouter router, Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
                 return router.sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
