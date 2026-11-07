@@ -6,9 +6,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Specialized agent responsible for hardware inspection, Transformer FLOPs-based
- * training throughput calculation, recursive dataset sizing, training duration
- * estimation, and smart dataset scaling for target forging time budgets.
+ * Specialized agent responsible for hardware inspection, dynamic model capacity sizing,
+ * Transformer FLOPs-based training throughput calculation, recursive dataset sizing,
+ * training duration estimation, and smart dataset scaling for target forging time budgets.
  */
 public class ForgeTrainingEstimationAgent {
 
@@ -42,6 +42,36 @@ public class ForgeTrainingEstimationAgent {
 
         public int getUpdatedEpochs() {
             return updatedEpochs;
+        }
+    }
+
+    public static class DynamicSizingResult {
+        public final int dModel;
+        public final int numBlocks;
+        public final int numHeads;
+        public final int dff;
+        public final int maxSeqLen;
+        public final int vocabSize;
+        public final long estimatedParameters;
+        public final long estimatedMemoryMb;
+        public final String rationale;
+
+        public DynamicSizingResult(int dModel, int numBlocks, int numHeads, int dff, int maxSeqLen, int vocabSize, String rationale) {
+            this.dModel = dModel;
+            this.numBlocks = numBlocks;
+            this.numHeads = numHeads;
+            this.dff = dff;
+            this.maxSeqLen = maxSeqLen;
+            this.vocabSize = vocabSize;
+            this.rationale = rationale;
+
+            long params = (long) vocabSize * dModel;
+            params += (long) numBlocks * (4L * dModel * dModel + 3L * dModel * dff + 2L * dModel);
+            params += dModel;
+            params += (long) dModel * vocabSize;
+            this.estimatedParameters = params;
+            // Weights + Gradients + AdamW m + AdamW v + activations (~16 bytes/param float32)
+            this.estimatedMemoryMb = Math.max(32L, (params * 16L) / (1024L * 1024L));
         }
     }
 
@@ -110,6 +140,67 @@ public class ForgeTrainingEstimationAgent {
         return String.format("CPU: %d Cores | JVM RAM: %d MB%s%s | OS: %s (%s)",
             getCpuCores(), getMaxMemoryMb(), gpuDetected, backend,
             System.getProperty("os.name"), System.getProperty("os.arch"));
+    }
+
+    /**
+     * Dynamically calculates optimal model architecture based on available training tokens,
+     * system memory constraints, and GPU accelerator availability.
+     */
+    public DynamicSizingResult calculateDynamicModelSizing(long usableTokens, int targetVocabSize, long maxMemoryBudgetMb) {
+        long safeTokens = Math.max(1_000L, usableTokens);
+        int vocab = Math.max(256, targetVocabSize);
+        long memoryBudget = maxMemoryBudgetMb > 0 ? maxMemoryBudgetMb : (getMaxMemoryMb() / 2);
+
+        int dModel;
+        int numBlocks;
+        int numHeads;
+        int dff;
+        int maxSeqLen;
+        String rationale;
+
+        if (safeTokens < 50_000L || memoryBudget < 1024) {
+            // Nano tier: <50k tokens or <1GB RAM
+            dModel = 128;
+            numBlocks = 3;
+            numHeads = 4;
+            dff = 256;
+            maxSeqLen = 128;
+            rationale = "Dataset <50k tokens or restricted memory budget: sized as Nano architecture for fast convergence.";
+        } else if (safeTokens < 500_000L || memoryBudget < 2048) {
+            // Micro tier: 50k - 500k tokens
+            dModel = 256;
+            numBlocks = 4;
+            numHeads = 8;
+            dff = 512;
+            maxSeqLen = 256;
+            rationale = "Dataset between 50k and 500k tokens: sized as Micro architecture (~2-5M parameters).";
+        } else if (safeTokens < 2_000_000L || memoryBudget < 4096) {
+            // Tiny tier: 500k - 2M tokens
+            dModel = 384;
+            numBlocks = 6;
+            numHeads = 8;
+            dff = 1024;
+            maxSeqLen = 512;
+            rationale = "Dataset between 500k and 2M tokens: sized as Tiny architecture (~15M parameters).";
+        } else if (safeTokens < 10_000_000L || memoryBudget < 8192) {
+            // Small tier: 2M - 10M tokens
+            dModel = 512;
+            numBlocks = 8;
+            numHeads = 8;
+            dff = 2048;
+            maxSeqLen = 1024;
+            rationale = "Dataset between 2M and 10M tokens: sized as Small architecture (~50M parameters).";
+        } else {
+            // Medium tier: >10M tokens with sufficient memory budget
+            dModel = 768;
+            numBlocks = 12;
+            numHeads = 12;
+            dff = 3072;
+            maxSeqLen = 2048;
+            rationale = "Large dataset exceeding 10M tokens: sized as Medium architecture (~250M parameters).";
+        }
+
+        return new DynamicSizingResult(dModel, numBlocks, numHeads, dff, maxSeqLen, vocab, rationale);
     }
 
     public double getModelComplexityFactor(String sizeName) {
