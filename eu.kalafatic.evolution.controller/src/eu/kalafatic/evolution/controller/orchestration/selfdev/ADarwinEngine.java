@@ -674,6 +674,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			response.setResultType(ResultType.ERROR);
 			context.log("[DARWIN] Evolution loop terminated without any iteration result.");
 			iterationManager.transition(SystemState.FAILED, context);
+		} else if (context.isCancelled()) {
+			response.setResultType(ResultType.ERROR);
+			context.log("[DARWIN] Evolution loop terminated due to cancellation.");
+			iterationManager.transition(SystemState.FAILED, context);
 		}
 
 		String summary;
@@ -713,6 +717,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			iterationManager.transition(SystemState.DONE, context);
 		} else {
 			summary = "Evolution completed at phase: " + state.getCurrentPhase();
+			if (response.getResultType() != ResultType.ERROR) {
+				iterationManager.transition(SystemState.DONE, context);
+			}
 		}
 
 		response.setSummary(summary);
