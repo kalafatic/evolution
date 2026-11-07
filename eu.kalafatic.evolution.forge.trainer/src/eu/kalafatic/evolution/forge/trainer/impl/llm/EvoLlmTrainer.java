@@ -8,11 +8,17 @@ import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.trainer.api.LossReduction;
 import eu.kalafatic.evolution.forge.trainer.api.TerminationReason;
+import eu.kalafatic.evolution.forge.trainer.api.TrainingCheckpoint;
 import eu.kalafatic.evolution.forge.trainer.api.TrainingResult;
 import eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus;
 
 import java.util.*;
 
+/**
+ * Production Canonical EVO LLM Trainer.
+ * Provides deterministic training loop, multi-head backpropagation, AdamW optimization,
+ * loss calculation, per-token reduction, full lifecycle management, and training resumption.
+ */
 public class EvoLlmTrainer {
 
     public interface ProgressListener {
@@ -67,6 +73,10 @@ public class EvoLlmTrainer {
     private volatile boolean stopRequested = false;
     private TrainingResult lastResult;
 
+    // Resumption state
+    private TrainingCheckpoint resumeCheckpoint = null;
+    private EmbeddedAdamW activeOptimizer = null;
+
     public EvoLlmTrainer(EvoLlmModel model, TrainingProfile profile) {
         if (model == null) throw new IllegalArgumentException("EvoLlmModel cannot be null");
         this.model = model;
@@ -87,6 +97,18 @@ public class EvoLlmTrainer {
     public void setMicroBatchSize(int microBatchSize) { this.microBatchSize = microBatchSize; }
     public void setAccumulationSteps(int steps) { this.accumulationSteps = Math.max(1, steps); }
     public void setBaseSeed(long seed) { this.baseSeed = seed; }
+    public void setValidationSplitRatio(float ratio) { this.validationSplitRatio = Math.max(0.0f, Math.min(0.5f, ratio)); }
+    public void setLearningRate(float lr) { this.initialLr = lr; }
+    public void setMaxGradNorm(float maxGradNorm) { this.maxGradNorm = maxGradNorm; }
+
+    public void setResumeCheckpoint(TrainingCheckpoint checkpoint) {
+        this.resumeCheckpoint = checkpoint;
+    }
+
+    public TrainingCheckpoint getResumeCheckpoint() {
+        return resumeCheckpoint;
+    }
+
     public void setProgressListener(ProgressListener listener) {
         this.progressListeners.clear();
         if (listener != null) this.progressListeners.add(listener);
@@ -101,6 +123,7 @@ public class EvoLlmTrainer {
     public void finishTraining() { this.stopRequested = true; }
     public boolean isStopRequested() { return stopRequested; }
     public TrainingResult getLastTrainingResult() { return lastResult; }
+    public EvoLlmModel getModel() { return model; }
 
     public static String formatDuration(long ms) {
         if (ms < 0) return "0 ms";
@@ -116,6 +139,29 @@ public class EvoLlmTrainer {
         long hours = totalHours % 24;
         long days = totalHours / 24;
         return String.format("%d d %d hr %d min %d sec (%d ms)", days, hours, min, sec, ms);
+    }
+
+    public TrainingCheckpoint captureCheckpoint(String runId, String modelName, int completedEpochs, float lastTrainLoss, float lastValLoss, String datasetFingerprint, Map<String, Integer> vocab) {
+        Map<String, float[]> m = activeOptimizer != null ? activeOptimizer.getMVectorMap(model.parameters()) : Collections.emptyMap();
+        Map<String, float[]> v = activeOptimizer != null ? activeOptimizer.getVVectorMap(model.parameters()) : Collections.emptyMap();
+        long stepCount = activeOptimizer != null ? activeOptimizer.getStepCounter() : model.getTrainingState().getStep();
+        float curLr = activeOptimizer != null ? activeOptimizer.getLr() : initialLr;
+
+        return TrainingCheckpoint.capture(
+                runId,
+                modelName,
+                model,
+                completedEpochs,
+                stepCount,
+                lastTrainLoss,
+                lastValLoss,
+                curLr,
+                baseSeed,
+                datasetFingerprint,
+                m,
+                v,
+                vocab
+        );
     }
 
     public TrainingResult train(List<?> rawSamples, int epochs) {
@@ -197,20 +243,54 @@ public class EvoLlmTrainer {
 
         ModelParameterGroups paramGroups = ModelParameterGroups.fromModel(model);
         EmbeddedAdamW optimizer = new EmbeddedAdamW(initialLr, beta1, beta2, eps, weightDecay);
+        this.activeOptimizer = optimizer;
 
-        lossHistory.clear();
+        int startEpoch = 0;
+        int completedStepsPrior = 0;
+
+        // Check if resuming from checkpoint
+        if (resumeCheckpoint != null) {
+            resumeCheckpoint.validateCompatibility(model);
+            Map<String, float[]> restoredM = new HashMap<>();
+            Map<String, float[]> restoredV = new HashMap<>();
+            resumeCheckpoint.restoreInto(model, restoredM, restoredV);
+            optimizer.loadState(model.parameters(), restoredM, restoredV, (int) resumeCheckpoint.getTotalOptimizerSteps());
+            startEpoch = resumeCheckpoint.getCompletedEpochs();
+            completedStepsPrior = (int) resumeCheckpoint.getTotalOptimizerSteps();
+            lossHistory.add((double) resumeCheckpoint.getLastTrainLoss());
+            System.out.printf("[EVO Trainer] Resuming from checkpoint: starting epoch %d/%d (completed prior: %d, steps: %d)%n",
+                    startEpoch + 1, epochs, startEpoch, completedStepsPrior);
+        } else {
+            lossHistory.clear();
+        }
 
         long paramCount = model.parameters().stream().mapToLong(Tensor::getSize).sum();
-        result.getMetadata().put("trainingMode", "FROM_SCRATCH");
-        result.getMetadata().put("pretrainedWeights", false);
+        result.getMetadata().put("trainingMode", (resumeCheckpoint != null) ? "RESUMED" : "FROM_SCRATCH");
+        result.getMetadata().put("pretrainedWeights", (resumeCheckpoint != null));
         result.getMetadata().put("parameterCount", paramCount);
         result.getMetadata().put("baseSeed", baseSeed);
 
-        System.out.printf("[EVO Trainer] Mode: FROM_SCRATCH | Pretrained Weights: FALSE | Parameters: %d | Base Seed: %d%n",
-                paramCount, baseSeed);
+        System.out.printf("[EVO Trainer] Mode: %s | Pretrained Weights: %b | Parameters: %d | Base Seed: %d%n",
+                result.getMetadata().get("trainingMode"), (resumeCheckpoint != null), paramCount, baseSeed);
+
+        // Check if requested epochs already satisfied
+        if (startEpoch >= epochs) {
+            System.out.printf("[EVO Trainer] Training already completed: requested %d epochs, checkpoint has %d completed epochs. No-op termination.%n",
+                    epochs, startEpoch);
+            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_COMPLETED);
+            result.setTerminationReason(TerminationReason.PLANNED_COMPLETION);
+            result.setCompletedEpochs(startEpoch);
+            result.setCompletedSteps(completedStepsPrior);
+            result.setPlannedSteps(completedStepsPrior);
+            result.setLastLoss(resumeCheckpoint != null ? resumeCheckpoint.getLastTrainLoss() : 0.0);
+            result.setValLoss(resumeCheckpoint != null ? resumeCheckpoint.getLastValLoss() : 0.0);
+            result.setTrainingDurationMs(0);
+            this.lastResult = result;
+            return result;
+        }
 
         List<TrainingBatch> initialBatches = buildBatches(trainSamples, microBatchSize);
-        int stepsPerEpoch = (initialBatches.size() + accumulationSteps - 1) / accumulationSteps;
+        int stepsPerEpoch = Math.max(1, (initialBatches.size() + accumulationSteps - 1) / accumulationSteps);
         int totalOptimizationSteps = epochs * stepsPerEpoch;
         result.setPlannedSteps(totalOptimizationSteps);
 
@@ -219,15 +299,18 @@ public class EvoLlmTrainer {
             epochTokenCount += sample.inputIds.length;
         }
         long totalTokensToTrain = epochTokenCount * (long) epochs;
-        long totalProcessedTokens = 0;
+        long totalProcessedTokens = (long) startEpoch * epochTokenCount;
         long lastMeasurementTime = System.currentTimeMillis();
-        long windowStartTokens = 0;
-        int windowStartStep = 0;
+        long windowStartTokens = totalProcessedTokens;
+        int windowStartStep = completedStepsPrior;
         double movingAvgTokPerSec = 0.0;
         double movingAvgStepsPerSec = 0.0;
 
+        int optStep = completedStepsPrior;
+        int actualCompletedSteps = 0;
+
         try {
-            for (int epoch = 0; epoch < epochs; epoch++) {
+            for (int epoch = startEpoch; epoch < epochs; epoch++) {
                 if (Thread.currentThread().isInterrupted()) {
                     System.out.printf("[EVO Trainer] Thread interrupted before epoch %d/%d.%n", epoch + 1, epochs);
                     result.setTerminationStatus(TrainingTerminationStatus.TRAINING_INTERRUPTED);
@@ -249,8 +332,6 @@ public class EvoLlmTrainer {
                 long epochValidTokens = 0;
                 long epochStartTime = System.currentTimeMillis();
 
-                int optStep = epoch * stepsPerEpoch;
-                int actualCompletedSteps = 0;
                 boolean epochStoppedEarly = false;
 
                 for (int bIdx = 0; bIdx < batches.size(); bIdx += accumulationSteps) {
@@ -357,10 +438,11 @@ public class EvoLlmTrainer {
 
                 lossHistory.add(avgTrainLoss);
                 model.getTrainingState().setEpoch(epoch + 1);
+                model.getTrainingState().setStep(optStep);
                 model.getTrainingState().setLastLoss((float) avgTrainLoss);
 
                 result.setCompletedEpochs(epoch + 1);
-                result.setCompletedSteps(actualCompletedSteps);
+                result.setCompletedSteps(optStep);
                 result.setLastLoss(avgTrainLoss);
                 result.setValLoss(avgValLoss);
 
@@ -385,7 +467,6 @@ public class EvoLlmTrainer {
 
         if (result.getTerminationStatus() == TrainingTerminationStatus.TRAINING_COMPLETED
                 && result.getCompletedEpochs() < epochs) {
-            // Default completion set if all requested epochs ran
             result.setTerminationStatus(TrainingTerminationStatus.TRAINING_COMPLETED);
             result.setTerminationReason(TerminationReason.PLANNED_COMPLETION);
         }
@@ -398,7 +479,7 @@ public class EvoLlmTrainer {
         return result;
     }
 
-    private double processMicroBatch(TrainingBatch batch, long accumulationWindowTokens) {
+    public double processMicroBatch(TrainingBatch batch, long accumulationWindowTokens) {
         double microBatchRawLoss = 0.0;
 
         for (int i = 0; i < batch.batchSize; i++) {
@@ -544,7 +625,7 @@ public class EvoLlmTrainer {
         }
     }
 
-    private static class EmbeddedAdamW {
+    public static class EmbeddedAdamW {
         private float lr;
         private final float beta1, beta2, eps, weightDecay;
         private int stepCounter = 0;
@@ -556,6 +637,44 @@ public class EvoLlmTrainer {
         }
 
         public void setLr(float lr) { this.lr = lr; }
+        public float getLr() { return lr; }
+        public int getStepCounter() { return stepCounter; }
+
+        public Map<String, float[]> getMVectorMap(List<Tensor> paramList) {
+            Map<String, float[]> res = new HashMap<>();
+            for (int i = 0; i < paramList.size(); i++) {
+                Tensor p = paramList.get(i);
+                float[] mArr = m.get(p);
+                if (mArr != null) res.put("p_" + i, mArr.clone());
+            }
+            return res;
+        }
+
+        public Map<String, float[]> getVVectorMap(List<Tensor> paramList) {
+            Map<String, float[]> res = new HashMap<>();
+            for (int i = 0; i < paramList.size(); i++) {
+                Tensor p = paramList.get(i);
+                float[] vArr = v.get(p);
+                if (vArr != null) res.put("p_" + i, vArr.clone());
+            }
+            return res;
+        }
+
+        public void loadState(List<Tensor> paramList, Map<String, float[]> mVectors, Map<String, float[]> vVectors, int stepCount) {
+            this.stepCounter = stepCount;
+            this.m.clear();
+            this.v.clear();
+            for (int i = 0; i < paramList.size(); i++) {
+                Tensor p = paramList.get(i);
+                String k = "p_" + i;
+                if (mVectors != null && mVectors.containsKey(k)) {
+                    this.m.put(p, mVectors.get(k).clone());
+                }
+                if (vVectors != null && vVectors.containsKey(k)) {
+                    this.v.put(p, vVectors.get(k).clone());
+                }
+            }
+        }
 
         public void step(ModelParameterGroups groups, float maxGradNorm) {
             stepCounter++;

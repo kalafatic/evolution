@@ -46,6 +46,7 @@ import eu.kalafatic.evolution.forge.model.source.ForgeModelSourceFactory;
 import eu.kalafatic.evolution.forge.model.target.EvoModelValidator;
 import eu.kalafatic.evolution.forge.model.target.EvoModelValidator.ModelValidationResult;
 import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
+import eu.kalafatic.evolution.forge.trainer.api.TrainingCheckpoint;
 import eu.kalafatic.evolution.forge.trainer.api.TrainingResult;
 import eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
@@ -190,7 +191,8 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setState(JobState.TRAINING);
             job.setProgressPercent(60);
             job.setCurrentStageDescription("Training EVO LLM model...");
-            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] START plannedEpochs=%d", job.getJobId(), job.getTrainingConfig().getEpochs()));
+            int plannedEpochs = job.getTrainingConfig().getEpochs();
+            logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] START plannedEpochs=%d", job.getJobId(), plannedEpochs));
 
             EvoLlmModel model = modelSource.createOrRestoreModel(
                     tokenizer.getVocabSize(),
@@ -205,38 +207,86 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             if (job.getTrainingConfig().getBatchSize() > 0) {
                 trainer.setMicroBatchSize(job.getTrainingConfig().getBatchSize());
             }
+            if (job.getTrainingConfig().getLearningRate() > 0) {
+                trainer.setLearningRate((float) job.getTrainingConfig().getLearningRate());
+            }
+            if (job.getTrainingConfig().getValidationRatio() > 0) {
+                trainer.setValidationSplitRatio((float) job.getTrainingConfig().getValidationRatio());
+            }
+
+            // Check if existing latest checkpoint is present in run directory to support resumption
+            Path checkpointsDir = runFolder.resolve("checkpoints");
+            Files.createDirectories(checkpointsDir);
+
+            TrainingCheckpoint latestResumeChk = null;
+            try (Stream<Path> chkFiles = Files.list(checkpointsDir)) {
+                List<Path> sortedChks = chkFiles
+                        .filter(p -> p.getFileName().toString().endsWith(".chk"))
+                        .sorted((p1, p2) -> p2.getFileName().toString().compareTo(p1.getFileName().toString()))
+                        .collect(Collectors.toList());
+                if (!sortedChks.isEmpty()) {
+                    latestResumeChk = TrainingCheckpoint.load(sortedChks.get(0));
+                    logToFile(logFile, String.format("[FORGE][RESUME] Discovered existing checkpoint: %s (epoch %d/%d, steps: %d)",
+                            sortedChks.get(0).getFileName(), latestResumeChk.getCompletedEpochs(), plannedEpochs, latestResumeChk.getTotalOptimizerSteps()));
+                    trainer.setResumeCheckpoint(latestResumeChk);
+                }
+            } catch (Exception ex) {
+                logToFile(logFile, "[FORGE][RESUME][WARN] Could not inspect checkpoints: " + ex.getMessage());
+            }
 
             final Path chkRunFolder = runFolder;
+            final Path chkStoreFolder = checkpointsDir;
             final String chkJobId = job.getJobId();
             final SimpleBPETokenizer chkTokenizer = tokenizer;
             final boolean saveCheckpoints = job.getTrainingConfig().isSaveEpochCheckpoints();
+            final int checkpointFreq = Math.max(1, job.getTrainingConfig().getCheckpointFrequencyEpochs());
+
             trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
                 @Override
                 public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
 
                 @Override
                 public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+                    // Note: epoch argument is 1-based (1..totalEpochs)
                     logToFile(logFile, String.format("[FORGE][EPOCH] Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
                             epoch, totalEpochs, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.formatDuration(durationMs), trainLoss, valLoss));
 
-                    if (saveCheckpoints) {
+                    boolean isPeriodic = (epoch % checkpointFreq == 0);
+                    boolean isFinal = (epoch == totalEpochs);
+
+                    if (saveCheckpoints && (isPeriodic || isFinal)) {
                         try {
                             String ts = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
-                            String chkName = String.format("model_%s_epoch_%d_%s", chkJobId, epoch, ts);
+                            String chkBaseName = String.format("model_%s_epoch_%d_%s", chkJobId, epoch, ts);
+
+                            // 1. Save atomic .chk resumption container
+                            TrainingCheckpoint chk = trainer.captureCheckpoint(
+                                    chkJobId,
+                                    chkBaseName,
+                                    epoch,
+                                    (float) trainLoss,
+                                    (float) valLoss,
+                                    evodataFileName,
+                                    chkTokenizer.getVocab()
+                            );
+                            chk.saveAtomic(chkStoreFolder.resolve(String.format("checkpoint_%s_epoch_%04d.chk", chkJobId, epoch)));
+
+                            // 2. Save .evo portable model artifact
                             EvoModelArtifact chkArtifact = new EvoModelArtifact();
-                            chkArtifact.initializeFromModel(chkName, model, chkTokenizer.getVocab());
+                            chkArtifact.initializeFromModel(chkBaseName, model, chkTokenizer.getVocab());
                             chkArtifact.getMetadata().put("epoch", String.valueOf(epoch));
                             chkArtifact.getMetadata().put("trainLoss", String.valueOf(trainLoss));
                             chkArtifact.getMetadata().put("valLoss", String.valueOf(valLoss));
                             chkArtifact.getMetadata().put("epochDurationMs", String.valueOf(durationMs));
-                            chkArtifact.save(chkRunFolder.resolve(chkName + ".evo"));
-                            logToFile(logFile, String.format("[FORGE][CHECKPOINT] Saved epoch %d model artifact: %s.evo", epoch, chkName));
+                            chkArtifact.save(chkRunFolder.resolve(chkBaseName + ".evo"));
+                            logToFile(logFile, String.format("[FORGE][CHECKPOINT] Saved epoch %d checkpoint and model artifact (%s)", epoch, chkBaseName));
                         } catch (Exception ex) {
                             logToFile(logFile, String.format("[FORGE][CHECKPOINT][WARN] Failed to save epoch %d model checkpoint: %s", epoch, ex.getMessage()));
                         }
                     }
                 }
             });
+
             try {
                 Class<?> fsmClass = null;
                 try {

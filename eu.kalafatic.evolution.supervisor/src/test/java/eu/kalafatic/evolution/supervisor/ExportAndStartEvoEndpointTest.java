@@ -89,7 +89,7 @@ public class ExportAndStartEvoEndpointTest {
         boolean serverUp = false;
         for (int i = 0; i < 50; i++) {
             try {
-                URL pingUrl = new URL("http://127.0.0.1:" + effectivePort + "/ping");
+                URL pingUrl = new URL("http://127.0.0.1:28480/ping");
                 HttpURLConnection conn = (HttpURLConnection) pingUrl.openConnection();
                 conn.setConnectTimeout(1000);
                 if (conn.getResponseCode() == 200) {
@@ -100,10 +100,10 @@ public class ExportAndStartEvoEndpointTest {
             Thread.sleep(100);
         }
 
-        Assert.assertTrue("Supervisor HTTP server should be responsive on authoritative port " + effectivePort, serverUp);
+        Assert.assertTrue("Supervisor HTTP server should be responsive on port 28480", serverUp);
 
         // Test export endpoint with custom path
-        URL exportUrl = new URL("http://127.0.0.1:" + effectivePort + "/export?path=" + customExport.getAbsolutePath());
+        URL exportUrl = new URL("http://127.0.0.1:28480/export?path=" + customExport.getAbsolutePath());
         HttpURLConnection connExport = (HttpURLConnection) exportUrl.openConnection();
         Assert.assertEquals(200, connExport.getResponseCode());
 
@@ -111,7 +111,7 @@ public class ExportAndStartEvoEndpointTest {
         Assert.assertTrue(exportResponse.contains("OK"));
 
         // Test start-evo endpoint with custom path
-        URL startUrl = new URL("http://127.0.0.1:" + effectivePort + "/start-evo?path=" + customExport.getAbsolutePath());
+        URL startUrl = new URL("http://127.0.0.1:28480/start-evo?path=" + customExport.getAbsolutePath());
         HttpURLConnection connStart = (HttpURLConnection) startUrl.openConnection();
         connStart.setRequestMethod("POST");
         Assert.assertEquals(200, connStart.getResponseCode());
@@ -121,7 +121,7 @@ public class ExportAndStartEvoEndpointTest {
 
         // Test start-evo endpoint with URL-encoded custom path
         String encodedPath = java.net.URLEncoder.encode(customExport.getAbsolutePath(), "UTF-8");
-        URL startEncodedUrl = new URL("http://127.0.0.1:" + effectivePort + "/start-evo?path=" + encodedPath);
+        URL startEncodedUrl = new URL("http://127.0.0.1:28480/start-evo?path=" + encodedPath);
         HttpURLConnection connStartEncoded = (HttpURLConnection) startEncodedUrl.openConnection();
         connStartEncoded.setRequestMethod("POST");
         Assert.assertEquals(200, connStartEncoded.getResponseCode());
@@ -131,7 +131,7 @@ public class ExportAndStartEvoEndpointTest {
                 startEncodedResponse.contains("OK") || startEncodedResponse.contains("SUCCESS"));
 
         // Stop evo process
-        URL stopUrl = new URL("http://127.0.0.1:" + effectivePort + "/stop-evo");
+        URL stopUrl = new URL("http://127.0.0.1:28480/stop-evo");
         HttpURLConnection connStop = (HttpURLConnection) stopUrl.openConnection();
         connStop.setRequestMethod("POST");
         Assert.assertEquals(200, connStop.getResponseCode());
