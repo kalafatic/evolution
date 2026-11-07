@@ -401,7 +401,7 @@ public class SupervisorGroup extends AEvoGroup {
     }
 
     private void handlePingHealth() {
-        int port = parsePort(portText.getText(), 8089);
+        int port = parsePort(portText.getText(), 28480);
         Job job = new Job("Supervisor Health Check") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {

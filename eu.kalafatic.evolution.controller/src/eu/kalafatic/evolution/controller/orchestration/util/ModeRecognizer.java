@@ -66,6 +66,9 @@ public class ModeRecognizer {
 		if (isIntentMode(context)) {
 			return PlatformType.INTENT_RECONSTRUCTION;
 		}
+		if (isDarwinMode(context)) {
+			return PlatformType.DARWIN_MODE;
+		}
 		if (intentResult != null && intentResult.getReasoning() != null) {
 			String reasoning = intentResult.getReasoning().toLowerCase();
 			if (reasoning.contains("reconstruct intent") || reasoning.contains("discover intent")
@@ -106,6 +109,9 @@ public class ModeRecognizer {
 		}
 		if (isIntentMode(context)) {
 			return PlatformType.INTENT_RECONSTRUCTION;
+		}
+		if (isDarwinMode(context)) {
+			return PlatformType.DARWIN_MODE;
 		}
 		if (isCoding(context)) {
 			return PlatformType.ASSISTED_CODING;
@@ -155,9 +161,15 @@ public class ModeRecognizer {
 				|| (context.getPlatformMode() != null && PlatformType.INTENT_RECONSTRUCTION.equals(context.getPlatformMode().getType()));
 	}
 
+	public static boolean isDarwinMode(TaskContext context) {
+		if (context == null) return false;
+		return (context.getOrchestrator() != null && context.getOrchestrator().isDarwinMode())
+				|| (context.getPlatformMode() != null && PlatformType.DARWIN_MODE.equals(context.getPlatformMode().getType()));
+	}
+
 	public static boolean isForcedTechnicalMode(TaskContext context) {
 		if (context == null) return false;
-		return isDreamMode(context) || isForgeMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isCoding(context);
+		return isDreamMode(context) || isForgeMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isDarwinMode(context) || isCoding(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {

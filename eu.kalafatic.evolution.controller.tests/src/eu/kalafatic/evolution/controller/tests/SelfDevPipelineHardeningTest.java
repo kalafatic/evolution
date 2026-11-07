@@ -236,7 +236,7 @@ public class SelfDevPipelineHardeningTest {
         assertFalse(context.isDebugMode());
         assertEquals("Port offset for normal run must be 0", 0, context.getPortOffset());
 
-        int baseSupervisorPort = context.getResourceManager().getService("SUPERVISOR") != null ? context.getResourceManager().getService("SUPERVISOR").getPort() : 8089;
+        int baseSupervisorPort = context.getResourceManager().getService("SUPERVISOR") != null ? context.getResourceManager().getService("SUPERVISOR").getPort() : 28480;
         int baseServerPort = context.getResourceManager().getService("SERVER") != null ? context.getResourceManager().getService("SERVER").getPort() : 48081;
 
         assertEquals(baseSupervisorPort, context.getEffectiveSupervisorPort());
