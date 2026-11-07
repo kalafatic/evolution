@@ -83,6 +83,8 @@ public class ExportAndStartEvoEndpointTest {
         supervisorThread.setDaemon(true);
         supervisorThread.start();
 
+        int effectivePort = SupervisorMain.getEffectiveSupervisorPort();
+
         // Wait up to 5s for server to start
         boolean serverUp = false;
         for (int i = 0; i < 50; i++) {
