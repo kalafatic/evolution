@@ -13,6 +13,9 @@ public class DevelopTask {
     private String branch;
     private DevelopPermissions permissions;
     private DevelopTaskStatus status;
+    private int priority = 5;
+    private java.util.List<String> dependsOnTaskIds = new java.util.ArrayList<>();
+    private String userContext = "default";
     private final long createdAt;
     private long startedAt;
     private long completedAt;
@@ -74,6 +77,30 @@ public class DevelopTask {
 
     public void setPermissions(DevelopPermissions permissions) {
         this.permissions = permissions;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public java.util.List<String> getDependsOnTaskIds() {
+        return dependsOnTaskIds;
+    }
+
+    public void setDependsOnTaskIds(java.util.List<String> dependsOnTaskIds) {
+        this.dependsOnTaskIds = dependsOnTaskIds != null ? dependsOnTaskIds : new java.util.ArrayList<>();
+    }
+
+    public String getUserContext() {
+        return userContext;
+    }
+
+    public void setUserContext(String userContext) {
+        this.userContext = userContext != null ? userContext : "default";
     }
 
     public DevelopTaskStatus getStatus() {

@@ -262,6 +262,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleCreateDevelopTask(session);
             } else if (Method.POST.equals(method) && "/develop/upload".equals(uri)) {
                 return handleUploadDevelopArchive(session);
+            } else if (Method.POST.equals(method) && "/develop/plan".equals(uri)) {
+                return handlePlanDevelopCompoundRequest(session);
             } else if (Method.GET.equals(method) && "/develop/tasks".equals(uri)) {
                 return handleGetDevelopTasks();
             } else if (uri.startsWith("/develop/tasks/")) {
@@ -1115,6 +1117,37 @@ public class EvolutionServer extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
                 new JSONObject().put("error", e.getMessage()).toString());
         }
+    }
+
+    private Response handlePlanDevelopCompoundRequest(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+
+        String instruction = json.optString("instruction", "");
+        String repository = json.optString("repository", "");
+        String branch = json.optString("branch", "main");
+        String userContext = json.optString("user", "default");
+        boolean autoMaterialize = json.optBoolean("autoMaterialize", false);
+
+        eu.kalafatic.evolution.controller.orchestration.develop.agent.DevelopTaskPlanner planner =
+                new eu.kalafatic.evolution.controller.orchestration.develop.agent.DevelopTaskPlanner();
+        eu.kalafatic.evolution.controller.orchestration.develop.agent.DevelopTaskPlanner.ExecutionPlanProposal proposal =
+                planner.planCompoundRequest(instruction, repository, branch);
+
+        JSONObject res = proposal.toJson();
+        if (autoMaterialize) {
+            List<eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask> created =
+                    planner.materializePlan(proposal, repository, branch, userContext);
+            JSONArray arr = new JSONArray();
+            for (eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask t : created) {
+                arr.put(t.getId());
+            }
+            res.put("materializedTaskIds", arr);
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
     }
 
     private Response handleGetDevelopTasks() {

@@ -6,6 +6,8 @@ package eu.kalafatic.evolution.controller.orchestration.develop;
 public enum DevelopTaskStatus {
     CREATED,
     QUEUED,
+    WAITING_FOR_RESOURCES,
+    WAITING_FOR_DEPENDENCIES,
     PREPARING,
     ANALYZING,
     PLANNING,
