@@ -13,6 +13,7 @@ public final class LlmResponse {
     private final ResponseKind kind;
     private final boolean complete;
     private final String finishReason;
+    private eu.kalafatic.evolution.forge.model.inference.InferenceProvenance inferenceProvenance;
 
     public LlmResponse(String content, String reasoning, ResponseKind kind, boolean complete, String finishReason) {
         this.content = content != null ? content : "";
@@ -44,6 +45,14 @@ public final class LlmResponse {
 
     public String getFinishReason() {
         return finishReason;
+    }
+
+    public eu.kalafatic.evolution.forge.model.inference.InferenceProvenance getInferenceProvenance() {
+        return inferenceProvenance;
+    }
+
+    public void setInferenceProvenance(eu.kalafatic.evolution.forge.model.inference.InferenceProvenance inferenceProvenance) {
+        this.inferenceProvenance = inferenceProvenance;
     }
 
     public static LlmResponse finalOnly(String content) {

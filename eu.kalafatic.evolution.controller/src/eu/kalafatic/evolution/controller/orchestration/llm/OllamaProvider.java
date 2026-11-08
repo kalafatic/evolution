@@ -41,10 +41,36 @@ public class OllamaProvider implements ILlmProvider {
 
     @Override
     public LlmResponse sendLlmRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        String inferenceId = java.util.UUID.randomUUID().toString();
+        String sessionId = (context != null && context.getSessionId() != null) ? context.getSessionId() : "Default";
+        eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace trace =
+                new eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace(inferenceId, sessionId);
+        eu.kalafatic.evolution.forge.model.inference.InferenceProvenance provenance = trace.getProvenance();
+
+        String reqModel = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "evo";
+        provenance.setLoadedModelIdentity(reqModel != null ? reqModel : "UNKNOWN");
+
+        trace.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.REQUEST_RECEIVED,
+                "Inference request received for model '" + reqModel + "' in session '" + sessionId + "'", "");
+
+        if (context != null) {
+            context.getMetadata().put("currentInferenceTrace", trace);
+            context.getMetadata().put("currentInferenceProvenance", provenance);
+            context.getMetadata().put("currentInferenceId", inferenceId);
+        }
+
         String rawResponse;
+        long startExec = System.currentTimeMillis();
         try {
             rawResponse = sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, 0);
+            long duration = System.currentTimeMillis() - startExec;
+            provenance.setExecutionDurationMs(duration);
+            trace.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.EXECUTION_COMPLETED,
+                    "Inference execution completed", "duration=" + duration + "ms");
         } catch (Exception e) {
+            trace.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.EXECUTION_FAILED,
+                    "Inference execution failed: " + e.getMessage(), e.getClass().getName());
+            provenance.setVerificationStatus("FAILED");
             String model = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "evo";
             showDetailedOllamaError(orchestrator, model, e, context);
             throw e;
@@ -52,9 +78,10 @@ public class OllamaProvider implements ILlmProvider {
 
         ReasoningProtocol protocol = ReasoningProtocolRegistry.resolve(orchestrator, context);
         LlmResponse normalized = protocol.parse(rawResponse);
+        normalized.setInferenceProvenance(provenance);
 
         if (context != null) {
-            context.log("LLM response:");
+            context.log("LLM response [inferenceId=" + inferenceId + ", backend=" + provenance.getBackend() + ", verified=" + provenance.getVerificationStatus() + "]:");
             context.log("  kind=" + normalized.getKind());
             context.log("  reasoningLength=" + normalized.getReasoning().length());
             context.log("  contentLength=" + normalized.getContent().length());
@@ -63,6 +90,9 @@ public class OllamaProvider implements ILlmProvider {
             context.log("  reasoningExposed=false");
             context.log("  complete=" + normalized.isComplete());
         }
+
+        trace.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.RESPONSE_DELIVERED,
+                "Normalized response produced with authoritative provenance", "");
 
         return normalized;
     }
@@ -435,6 +465,12 @@ public class OllamaProvider implements ILlmProvider {
             configuredEngine = LlamaService.detectInferenceEngine(model != null ? model : "evo");
         }
         String engine = configuredEngine.toLowerCase().trim();
+        eu.kalafatic.evolution.forge.model.inference.InferenceProvenance prov = null;
+        eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace traceObj = null;
+        if (context != null && context.getMetadata() != null) {
+            prov = (eu.kalafatic.evolution.forge.model.inference.InferenceProvenance) context.getMetadata().get("currentInferenceProvenance");
+            traceObj = (eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace) context.getMetadata().get("currentInferenceTrace");
+        }
 
         // 1. ENGINE: "evo native" -> execute native EvoLlmModel / ReferenceEvoInferenceEngine
         if (engine.contains("evo native") || engine.contains("evo-native") || engine.contains("evo_native") || engine.equals("native")) {
@@ -446,6 +482,32 @@ public class OllamaProvider implements ILlmProvider {
 
                     java.io.File resolvedFile = res.getResolvedPath().toFile();
                     eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = res.getArtifact();
+
+                    if (prov != null) {
+                        prov.setArtifactName(resolvedFile.getName());
+                        prov.setArtifactPath(resolvedFile.getAbsolutePath());
+                        prov.setArtifactFormat("EVO");
+                        prov.setSourceFormat("EVO");
+                        prov.setActualEngine("ReferenceEvoInferenceEngine");
+                        prov.setRuntimeProvider("NativeEvoInferenceEngine");
+                        prov.setBackend("NATIVE_EVO");
+                        prov.setNative(true);
+                        prov.setVerificationStatus("VERIFIED");
+                        if (artifact.getModelContentHash() != null) {
+                            prov.setArtifactChecksum(artifact.getModelContentHash());
+                            prov.setLoadedModelChecksum(artifact.getModelContentHash());
+                        } else {
+                            try {
+                                byte[] b = java.nio.file.Files.readAllBytes(resolvedFile.toPath());
+                                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                                prov.setArtifactChecksum(java.util.HexFormat.of().formatHex(md.digest(b)));
+                            } catch (Exception ignore) {}
+                        }
+                    }
+                    if (traceObj != null) {
+                        traceObj.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.MODEL_LOADED,
+                                "Loaded Native EVO model: " + resolvedFile.getName(), "checksum=" + (prov != null ? prov.getArtifactChecksum() : ""));
+                    }
 
                     if (context != null) {
                         context.log("[EVO-NATIVE] Model source: " + resolvedFile.getAbsolutePath());
@@ -513,18 +575,41 @@ public class OllamaProvider implements ILlmProvider {
                     eu.kalafatic.evolution.forge.model.inference.InferenceResult result = nativeEngine.generateFromArtifact(artifact, request, listener);
                     String response = result.getGeneratedText();
                     if (response != null && !response.isEmpty()) {
+                        if (prov != null) {
+                            prov.setCompletionTokens(result.getGeneratedTokenCount());
+                            prov.setPromptTokens(request.getInputIds() != null ? request.getInputIds().length : (prompt.length() / 4));
+                            prov.setTotalTokens(prov.getPromptTokens() + prov.getCompletionTokens());
+                        }
                         if (context != null) {
                             context.log("Stage: LLM\nProvider: ReferenceEvoInferenceEngine (evo native)\nModel: " + model + "\nToken count: " + result.getGeneratedTokenCount() + "\nExecution time: " + result.getExecutionTimeMs() + " ms\nRaw response length: " + response.length());
                         }
                         return response;
                     }
                 } catch (Exception ex) {
+                    if (prov != null) {
+                        prov.setFallbackActivated(true);
+                        prov.setFallbackReason("Native EVO inference failed: " + ex.getMessage());
+                        prov.setVerificationStatus("UNVERIFIED");
+                    }
+                    if (traceObj != null) {
+                        traceObj.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.FALLBACK_ACTIVATED,
+                                "Native EVO execution failed; fallback activated: " + ex.getMessage(), ex.getClass().getName());
+                    }
                     if (context != null) {
                         context.log("[EVO-NATIVE] PRIMARY MODEL FAILED: " + ex.getClass().getName() + " - " + ex.getMessage());
                         context.log("[EVO-NATIVE] FALLBACK MODEL ACTIVATED");
                     }
                 }
             } else {
+                if (prov != null) {
+                    prov.setFallbackActivated(true);
+                    prov.setFallbackReason("Native EVO artifact for '" + model + "' not found");
+                    prov.setVerificationStatus("UNVERIFIED");
+                }
+                if (traceObj != null) {
+                    traceObj.addEvent(eu.kalafatic.evolution.forge.model.inference.InferenceExecutionTrace.EventType.FALLBACK_ACTIVATED,
+                            "Native EVO artifact for '" + model + "' not found; fallback activated", "");
+                }
                 if (context != null) {
                     context.log("[EVO-NATIVE] PRIMARY MODEL FAILED: Native EVO artifact for '" + model + "' not found.");
                     context.log("[EVO-NATIVE] FALLBACK MODEL ACTIVATED");
@@ -546,6 +631,23 @@ public class OllamaProvider implements ILlmProvider {
                     String sessionId = context != null ? context.getSessionId() : "Default";
                     String response = llamaService.chat(prompt, sessionId);
                     if (response != null && !response.contains("token_")) {
+                        if (prov != null) {
+                            prov.setActualEngine("LlamaService");
+                            prov.setRuntimeProvider("llama.cpp");
+                            prov.setBackend("LLAMA_CPP");
+                            prov.setSourceFormat("GGUF");
+                            prov.setExportedGgufArtifact(ggufFile.getName());
+                            prov.setArtifactPath(ggufFile.getAbsolutePath());
+                            prov.setArtifactFormat("GGUF");
+                            prov.setNative(false);
+                            prov.setVerificationStatus("VERIFIED");
+                            try {
+                                byte[] b = java.nio.file.Files.readAllBytes(ggufFile.toPath());
+                                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                                prov.setGgufChecksum(java.util.HexFormat.of().formatHex(md.digest(b)));
+                                prov.setArtifactChecksum(prov.getGgufChecksum());
+                            } catch (Exception ignore) {}
+                        }
                         if (context != null) {
                             context.log("Stage: LLM\nProvider: LlamaService (llama.cpp)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
                         }
@@ -595,6 +697,15 @@ public class OllamaProvider implements ILlmProvider {
         try {
             String sessionId = context != null ? context.getSessionId() : "Default";
             if (sessionId == null) sessionId = "Default";
+            if (prov != null && !"NATIVE_EVO".equals(prov.getBackend()) && !"LLAMA_CPP".equals(prov.getBackend())) {
+                prov.setActualEngine("OllamaService");
+                prov.setRuntimeProvider("Ollama");
+                prov.setBackend("OLLAMA");
+                prov.setSourceFormat("OLLAMA_REGISTRY");
+                prov.setLoadedModelIdentity(model);
+                prov.setNative(false);
+                prov.setVerificationStatus("VERIFIED");
+            }
             String response = service.chat(prompt, sessionId);
             if (response != null && response.contains("token_") && model != null && model.toLowerCase().contains("evo")) {
                 if (context != null) {

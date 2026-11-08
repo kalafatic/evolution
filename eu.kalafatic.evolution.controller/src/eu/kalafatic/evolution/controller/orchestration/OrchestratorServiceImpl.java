@@ -611,6 +611,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             }
         } else if (trimmedText.startsWith("Final Response: ")) {
             String modelName = null;
+            eu.kalafatic.evolution.forge.model.inference.InferenceProvenance prov = null;
             try {
                 SessionContainer session = SessionManager.getInstance().getSession(sessionId);
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
@@ -626,8 +627,20 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     if (kObj instanceof String) {
                         responseKind = (String) kObj;
                     }
+                    Object pObj = context.getOrchestrationState().getMetadata().get("currentInferenceProvenance");
+                    if (pObj instanceof eu.kalafatic.evolution.forge.model.inference.InferenceProvenance) {
+                        prov = (eu.kalafatic.evolution.forge.model.inference.InferenceProvenance) pObj;
+                    }
                 }
             } catch (Exception e) {}
+            if (prov != null) {
+                String provEnvelope = "<!--PROVENANCE:" + prov.toJsonObject().toString() + "-->";
+                if (reasoning != null && !reasoning.isEmpty()) {
+                    reasoning = reasoning + "\n" + provEnvelope;
+                } else {
+                    reasoning = provEnvelope;
+                }
+            }
             if (modelName == null && this.orchestrator != null && this.orchestrator.getOllama() != null) {
                 modelName = this.orchestrator.getOllama().getModel();
             }

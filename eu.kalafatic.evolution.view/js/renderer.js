@@ -131,6 +131,39 @@ window.ChatApp.Renderer = {
             bubble.appendChild(bubbleContent);
             content.appendChild(bubble);
             content.appendChild(window.ChatApp.Actions.renderActions(m));
+
+            // Render Inference Details compact expandable widget if provenance metadata is present
+            if (!isUser && m.inferenceProvenance) {
+                const prov = m.inferenceProvenance;
+                const detailsEl = document.createElement('details');
+                detailsEl.className = 'inference-details-widget';
+
+                const summaryEl = document.createElement('summary');
+                summaryEl.className = 'inference-summary';
+                const statusBadge = prov.verificationStatus === 'VERIFIED' ? '<span class="badge verified">VERIFIED</span>' :
+                                    (prov.verificationStatus === 'FAILED' ? '<span class="badge failed">FAILED</span>' : '<span class="badge unverified">UNVERIFIED</span>');
+                summaryEl.innerHTML = `🔍 <strong>INFERENCE DETAILS</strong> ${statusBadge} <span class="inference-model-tag">${prov.loadedModelIdentity || prov.artifactName || 'UNKNOWN'} via ${prov.backend || 'UNKNOWN'}</span>`;
+                detailsEl.appendChild(summaryEl);
+
+                const tableEl = document.createElement('table');
+                tableEl.className = 'inference-details-table';
+                tableEl.innerHTML = `
+                    <tr><th>Model</th><td>${prov.loadedModelIdentity || 'UNKNOWN'}</td></tr>
+                    <tr><th>Artifact</th><td>${prov.artifactName || 'UNKNOWN'}</td></tr>
+                    <tr><th>Artifact hash</th><td><code>${prov.artifactChecksum || 'UNKNOWN'}</code></td></tr>
+                    <tr><th>Runtime</th><td>${prov.actualEngine || 'UNKNOWN'}</td></tr>
+                    <tr><th>Backend</th><td>${prov.backend || 'UNKNOWN'}</td></tr>
+                    <tr><th>Source</th><td>${prov.sourceFormat || 'UNKNOWN'}</td></tr>
+                    <tr><th>Adapter</th><td>${prov.adapterInfo || 'NONE'}</td></tr>
+                    <tr><th>Session</th><td>${prov.sessionId || 'Default'}</td></tr>
+                    <tr><th>Duration</th><td>${prov.executionDurationMs > 0 ? prov.executionDurationMs + ' ms' : 'UNKNOWN'}</td></tr>
+                    <tr><th>Tokens</th><td>${prov.totalTokens > 0 ? 'P: ' + prov.promptTokens + ' | C: ' + prov.completionTokens + ' | Total: ' + prov.totalTokens : 'UNAVAILABLE'}</td></tr>
+                    <tr><th>Fallback</th><td>${prov.fallbackActivated ? '<span class="fallback-alert">YES (' + (prov.fallbackReason || 'Unknown reason') + ')</span>' : 'NO'}</td></tr>
+                    <tr><th>Verification</th><td><strong>${prov.verificationStatus || 'UNVERIFIED'}</strong></td></tr>
+                `;
+                detailsEl.appendChild(tableEl);
+                content.appendChild(detailsEl);
+            }
         }
 
         div.appendChild(header);
