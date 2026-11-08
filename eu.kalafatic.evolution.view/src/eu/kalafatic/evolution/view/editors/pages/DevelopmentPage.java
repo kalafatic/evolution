@@ -376,12 +376,14 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(row++, "EXPORT_EVO", SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "EXPORT_SUPERVISOR", SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "DEPLOY_EVO", SelfDevRow.DEPLOY_PRODUCT_EVO, "deploy exported product to runtime/evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port 8099", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "START_EVO", SelfDevRow.START_EVO, "./evo --port 48091", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		int defaultSupPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
+		int defaultServerPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
+		sdData.add(new SelfDevRow(row++, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port " + defaultSupPort, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "START_EVO", SelfDevRow.START_EVO, "./evo --port " + defaultServerPort, exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "CREATE_EVO_PROJECT", SelfDevRow.CREATE_EVO_PROJECT, "curl -X POST http://localhost:48091/server/project/create -d '{\"name\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "CREATE_INFERENCE_TASK", SelfDevRow.CREATE_INFERENCE_TASK, "curl -X POST http://localhost:48091/task -d '{\"prompt\":\"hi\",\"sessionId\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "ANALYTIC_CHAT_VALIDATION", SelfDevRow.ANALYTIC_CHAT_VALIDATION, "curl -s http://localhost:48091/server/conversation/SelfDevProject", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "CREATE_EVO_PROJECT", SelfDevRow.CREATE_EVO_PROJECT, "curl -X POST http://localhost:" + defaultServerPort + "/server/project/create -d '{\"name\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "CREATE_INFERENCE_TASK", SelfDevRow.CREATE_INFERENCE_TASK, "curl -X POST http://localhost:" + defaultServerPort + "/task -d '{\"prompt\":\"hi\",\"sessionId\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "ANALYTIC_CHAT_VALIDATION", SelfDevRow.ANALYTIC_CHAT_VALIDATION, "curl -s http://localhost:" + defaultServerPort + "/server/conversation/SelfDevProject", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "STOP_EVO", "STOP_EVO", "stop running EVO RCP product", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "PROMOTE", SelfDevRow.PROMOTE_PRODUCT, "promote candidate artifact after successful verification", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
@@ -1123,12 +1125,14 @@ public class DevelopmentPage extends AEvoPage {
 							|| SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
 						String exportPath = getExportPath();
 						row.path = exportPath;
+						int supPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
+						int srvPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
 						if (SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
 							row.command = "java -jar supervisor.jar --start-evo --path " + exportPath;
 						} else if (SelfDevRow.START_SUPERVISOR.equals(row.name)) {
-							row.command = "java -jar supervisor.jar --port 8099";
+							row.command = "java -jar supervisor.jar --port " + supPort;
 						} else if (SelfDevRow.START_EVO.equals(row.name)) {
-							row.command = "./evo --port 48091";
+							row.command = "./evo --port " + srvPort;
 						}
 					}
 				}

@@ -63,18 +63,18 @@ public class NetworkAccessManagerTest {
     public void testLinuxAndMacProviders() {
         LinuxNetworkAccessProvider linuxProvider = new LinuxNetworkAccessProvider();
         assertEquals("LinuxNetworkAccessProvider", linuxProvider.getName());
-        NetworkAccessResult linuxRes = linuxProvider.prepareNetworkAccess(mockExe, 48081, null);
+        NetworkAccessResult linuxRes = linuxProvider.prepareNetworkAccess(mockExe, 28080, null);
         assertTrue(linuxRes.isSuccess());
         assertTrue(linuxRes.isSupported());
 
         MacNetworkAccessProvider macProvider = new MacNetworkAccessProvider();
         assertEquals("MacNetworkAccessProvider", macProvider.getName());
-        NetworkAccessResult macRes = macProvider.prepareNetworkAccess(mockExe, 48081, null);
+        NetworkAccessResult macRes = macProvider.prepareNetworkAccess(mockExe, 28080, null);
         assertTrue(macRes.isSuccess());
         assertTrue(macRes.isSupported());
 
         UnsupportedNetworkAccessProvider unsupportedProvider = new UnsupportedNetworkAccessProvider();
-        NetworkAccessResult unsupRes = unsupportedProvider.prepareNetworkAccess(mockExe, 48081, null);
+        NetworkAccessResult unsupRes = unsupportedProvider.prepareNetworkAccess(mockExe, 28080, null);
         assertTrue(unsupRes.isSuccess());
         assertFalse(unsupRes.isSupported());
         assertTrue(unsupRes.isSkipped());
@@ -83,7 +83,7 @@ public class NetworkAccessManagerTest {
     @Test
     public void testWindowsProviderMissingExecutable() {
         WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(command -> new WindowsNetworkAccessProvider.CommandResult(0, "", ""));
-        NetworkAccessResult res = provider.prepareNetworkAccess(new File(tempFolder.getRoot(), "non_existent.exe"), 48081, null);
+        NetworkAccessResult res = provider.prepareNetworkAccess(new File(tempFolder.getRoot(), "non_existent.exe"), 28080, null);
         assertFalse(res.isSuccess());
         assertEquals("Executable file does not exist", res.getMessage());
     }
@@ -100,7 +100,7 @@ public class NetworkAccessManagerTest {
         };
 
         WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(runner);
-        NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 48081, null);
+        NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 28080, null);
 
         assertTrue(res.isSuccess());
         assertTrue(res.isPermissionAlreadyPresent());
@@ -119,7 +119,7 @@ public class NetworkAccessManagerTest {
         };
 
         WindowsNetworkAccessProvider provider = new WindowsNetworkAccessProvider(runner);
-        NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 48081, null);
+        NetworkAccessResult res = provider.prepareNetworkAccess(mockExe, 28080, null);
 
         // Elevation error gracefully allows loopback execution while reporting elevation requirement
         assertTrue(res.isSuccess());
@@ -133,7 +133,7 @@ public class NetworkAccessManagerTest {
         NetworkAccessManager manager = NetworkAccessManager.getInstance();
         manager.setProvider(new LinuxNetworkAccessProvider());
 
-        NetworkAccessResult res = manager.prepareNetworkAccess(mockExe, 48081, null);
+        NetworkAccessResult res = manager.prepareNetworkAccess(mockExe, 28080, null);
         assertTrue(res.isSuccess());
         assertEquals("LinuxNetworkAccessProvider", res.getProvider());
 

@@ -387,8 +387,8 @@ public class SelfDevPreflight {
     }
 
     private void validateNetworkAndEnvironmentReadiness(SelfDevContext context, List<SelfDevPreflightResult.CheckDetail> checks, List<String> errors, List<String> warnings) {
-        int serverPort = context != null ? context.getEffectiveServerPort() : 48080;
-        int supervisorPort = context != null ? context.getEffectiveSupervisorPort() : 28480;
+        int serverPort = context != null ? context.getEffectiveServerPort() : eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
+        int supervisorPort = context != null ? context.getEffectiveSupervisorPort() : eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
 
         boolean loopbackOk = true;
         try (java.net.ServerSocket ss = new java.net.ServerSocket()) {

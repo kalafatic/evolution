@@ -67,7 +67,7 @@ graph TD
 ### 3. Subsystem Engines (`eu.kalafatic.evolution.forge.*`, `eu.kalafatic.evolution.supervisor`, `eu.kalafatic.evolution.selfdev.genome`)
 * **Forge LLM Engine**: End-to-end dataset acquisition, character/BPE tokenization (`SimpleBPETokenizer`), model architecture modeling (`EvoLlmArchitecture`), and native Java LLM training (`EvoLlmTrainer`).
 * **Darwin Engine**: Agentic code modification engine (`LLMDarwinEngine`) running intent expansion, candidate generation, patch application, and compilation verification.
-* **Supervisor Subsystem**: Standalone process supervisor (`SupervisorMain`) running HTTP/REST servers (`EVOSupervisorServer` on port 8089, `EVOSupervisorControlServer` on port 28080) for external task control and process lifecycle monitoring.
+* **Supervisor Subsystem**: Standalone process supervisor (`SupervisorMain`) running HTTP/REST servers (`EVOSupervisorServer` on port 28480, `EVOSupervisorControlServer` on port 28580) for external task control and process lifecycle monitoring.
 * **Genome Subsystem**: Evolution tracking and self-upgrade mapping engine (`SelfDevGenomeHub`, `GenomeRepository`, `MilestoneGenerator`, `SecondhandUpgradeEngine`) that records structural project snapshots, milestone transitions, and architectural changes (`ArchitecturalChange`).
 
 ### 4. Persistence & Artifact Layer (`eu.kalafatic.evolution.model`, `eu.kalafatic.evolution.forge.data`, `eu.kalafatic.evolution.selfdev.genome`)

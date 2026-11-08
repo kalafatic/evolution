@@ -446,7 +446,7 @@ public class SupervisorGroup extends AEvoGroup {
     }
 
     private void handleOpenWebHub() {
-        int controlPort = parsePort(controlPortText.getText(), 28080);
+        int controlPort = parsePort(controlPortText.getText(), eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort());
         String url = "http://127.0.0.1:" + controlPort;
         try {
             Program.launch(url);

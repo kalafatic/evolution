@@ -15,10 +15,10 @@ EVO executes inside an OSGi Equinox framework container provided by the Eclipse 
 |                                                                                 |
 |   +-------------------------------------------------------------------------+   |
 |   | NanoHTTPD Embedded Servers:                                             |   |
-|   |   - EvolutionServer (Port 48081 / 48091)                                |   |
-|   |   - SupervisorServer (Port 8089 / 8099)                                 |   |
-|   |   - SupervisorControlServer (Port 28080 / 28090)                        |   |
-|   |   - MCP Server (Port 38080)                                             |   |
+|   |   - EvolutionServer (Port 28080 / 28090)                                |   |
+|   |   - SupervisorServer (Port 28480 / 28490)                               |   |
+|   |   - SupervisorControlServer (Port 28580 / 28590)                        |   |
+|   |   - MCP Server (Port 28280)                                             |   |
 |   +-------------------------------------------------------------------------+   |
 +---------------------------------------------------------------------------------+
 ```
@@ -35,9 +35,9 @@ When launched via `evo.exe` or `evo` binary, the OSGi framework initializes the 
 ### 2. Multi-Process Self-Dev DEBUG Isolation Mode
 During Self-Development loops, process collision on network ports and workspace directories is prevented by applying an explicit **DEBUG Port Isolation** mechanism:
 * **Port Offset**: When `context.isDebugMode() == true`, a port offset of `+10` is added to all configured service ports:
-  * Supervisor Service: Configured `8089` -> Effective `8099`
-  * Control Service: Configured `28080` -> Effective `28090`
-  * Evolution HTTP Server: Configured `48081` -> Effective `48091`
+  * Supervisor Service: Configured `28480` -> Effective `28490`
+  * Control Service: Configured `28580` -> Effective `28590`
+  * Evolution HTTP Server: Configured `28080` -> Effective `28090`
 * **Process Ownership & PID Tracking**: `SelfDevContext` tracks child process metadata (`supervisorPid`, `supervisorProcess`, `uiRcpSupervisorProcess`) with explicit `ProcessOwnership` classification (`CURRENT_RUN`, `OTHER_RUN`, `PARENT_RCP`, `UNKNOWN`).
 * **Dual Execution Mode**: `SupervisorRuntime` launches BOTH Process 1 (Headless Java Supervisor) AND Process 2 (UI RCP Supervisor with `--ui`) on distinct offset ports, recording both PIDs and ensuring clean termination upon task completion without terminating the parent workbench.
 

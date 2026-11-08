@@ -13,7 +13,7 @@ public class HeadlessApplication implements IApplication {
     @Override
     public Object start(IApplicationContext context) throws Exception {
         String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
-        int port = 48080;
+        int port = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
 
         if (args != null) {
             for (int i = 0; i < args.length; i++) {

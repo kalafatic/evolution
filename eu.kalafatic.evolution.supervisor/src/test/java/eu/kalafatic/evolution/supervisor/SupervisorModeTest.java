@@ -18,7 +18,7 @@ public class SupervisorModeTest {
     @Test
     public void testSupervisorUiWindowInitialization() throws Exception {
         File baseDir = tempFolder.newFolder("supervisor-ui-test");
-        SupervisorUiWindow ui = new SupervisorUiWindow(baseDir, 8189, 28180, true);
+        SupervisorUiWindow ui = new SupervisorUiWindow(baseDir, SupervisorMain.DEFAULT_SUPERVISOR_PORT, SupervisorMain.DEFAULT_CONTROL_PORT, true);
         Assert.assertNotNull(ui);
         Assert.assertFalse(ui.isRunning());
     }

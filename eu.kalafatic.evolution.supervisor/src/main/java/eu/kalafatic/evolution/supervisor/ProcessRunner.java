@@ -198,7 +198,7 @@ public class ProcessRunner {
                     executable.setExecutable(true, false);
                 } catch (Exception ignored) {}
             }
-            int portToUse = findAvailablePort(48080);
+            int portToUse = findAvailablePort(SupervisorMain.DEFAULT_EVO_SERVER_PORT);
             boolean ready = prepareNetworkAndExecutableAccess(executable, portToUse);
             if (!ready) {
                 System.err.println("[RUN] Mandatory network readiness gate failed for executable: " + executable.getAbsolutePath() + ". Aborting application startup.");
@@ -366,7 +366,7 @@ public class ProcessRunner {
             }
         }
 
-        int portToUse = findAvailablePort(48080);
+        int portToUse = findAvailablePort(SupervisorMain.DEFAULT_EVO_SERVER_PORT);
         boolean ready = prepareNetworkAndExecutableAccess(targetFile, portToUse);
         if (!ready) {
             File logDir = new File(variantDir, "self-dev-run");

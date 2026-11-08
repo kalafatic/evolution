@@ -2841,7 +2841,7 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     public static void main(String[] args) {
-        int port = 48080;
+        int port = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
         if (args.length > 0) port = Integer.parseInt(args[0]);
 
         EvolutionServer server = new EvolutionServer(port);
