@@ -5,11 +5,11 @@ import java.io.File;
 import eu.kalafatic.evolution.controller.orchestration.develop.DevelopPermissions;
 import eu.kalafatic.evolution.controller.orchestration.develop.DevelopSession;
 import eu.kalafatic.evolution.controller.orchestration.develop.executor.ProcessExecutor;
-import eu.kalafatic.evolution.controller.orchestration.develop.executor.ProcessExecutorImpl;
+import eu.kalafatic.evolution.controller.orchestration.develop.executor.SandboxProcessExecutor;
 
 public class RunBuildTool implements DevelopTool {
 
-    private final ProcessExecutor processExecutor = new ProcessExecutorImpl();
+    private final SandboxProcessExecutor processExecutor = new SandboxProcessExecutor();
 
     @Override
     public String getName() {
@@ -51,7 +51,7 @@ public class RunBuildTool implements DevelopTool {
             return new ToolResult(true, metrics.getStdout(), "");
         }
 
-        ProcessExecutor.ProcessResult res = processExecutor.execute(buildCmd, repoDir, null, 300000);
+        ProcessExecutor.ProcessResult res = processExecutor.executeSandboxed(buildCmd, repoDir, repoDir, null, 300000);
         metrics.setCompletedAt(System.currentTimeMillis());
         metrics.setExitCode(res.getExitCode());
         metrics.setStdout(res.getStdout());

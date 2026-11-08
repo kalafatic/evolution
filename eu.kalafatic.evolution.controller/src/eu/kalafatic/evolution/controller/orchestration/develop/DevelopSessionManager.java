@@ -170,6 +170,24 @@ public class DevelopSessionManager {
         }
 
         DevelopSession session = new DevelopSession(sessionId, task, sessionWorkspaceDir);
+
+        // Attempt repository reuse and worktree provisioning if remote repo is supplied
+        if (task.getRepository() != null && !task.getRepository().trim().isEmpty()) {
+            try {
+                eu.kalafatic.evolution.controller.orchestration.develop.workspace.RepositoryWorkspaceManager rwm =
+                        eu.kalafatic.evolution.controller.orchestration.develop.workspace.RepositoryWorkspaceManager.getInstance();
+                File mirror = rwm.getOrFetchMirror(task.getRepository(), task.getUserContext());
+                if (mirror != null && mirror.exists()) {
+                    boolean worktreeOk = rwm.provisionWorktree(mirror, task.getBranch(), session.getRepositoryDir());
+                    if (worktreeOk) {
+                        session.addLog("Reused repository bare mirror and provisioned isolated worktree for branch: " + task.getBranch());
+                    }
+                }
+            } catch (Exception ex) {
+                session.addLog("Worktree reuse note: " + ex.getMessage() + ". Will fall back to standard clone if needed.");
+            }
+        }
+
         sessions.put(sessionId, session);
         persistSessionState(session);
 
