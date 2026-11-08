@@ -96,7 +96,9 @@ public class TrystMcpClient {
         if (!authorized) {
             String err = String.format("Tool '%s' is not within grantedToolScopes %s for execution %s",
                     toolName, grantedToolScopes, executionId);
-            Log.log("[TEIP][MCP-SECURITY] " + err);
+            try {
+                Log.log("[TEIP][MCP-SECURITY] " + err);
+            } catch (Throwable ignored) {}
             throw new SecurityException(err);
         }
 

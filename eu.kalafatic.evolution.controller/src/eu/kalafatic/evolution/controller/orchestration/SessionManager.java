@@ -24,6 +24,10 @@ public class SessionManager {
         return sessions.get(sessionId);
     }
 
+    public java.util.Collection<SessionContainer> getAllSessions() {
+        return java.util.Collections.unmodifiableCollection(sessions.values());
+    }
+
     public ServerOperation findOperation(String operationId) {
         if (operationId == null) return null;
         for (SessionContainer session : sessions.values()) {

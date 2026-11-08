@@ -88,6 +88,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	private ArchitecturePage architecturePage;
 	private PropertiesPage propertiesPage;
 	private McpSettingsPage mcpSettingsPage;
+	private eu.kalafatic.evolution.view.editors.pages.TeipProtocolPage teipProtocolPage;
 	private eu.kalafatic.evolution.view.editors.pages.AdminPage adminPage;
 	private GraphPage graphPage;
 	private BrowserPage browserPage;
@@ -234,6 +235,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
 				propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
 				settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
+
+				teipProtocolPage = TeipProtocolPageFactory.createTeipProtocolPage(this, orchestrator);
 
 				adminPage = eu.kalafatic.evolution.view.editors.pages.AdminPageFactory.createAdminPage(getContainer(), this, orchestrator);
 				int adminIdx = addPage(adminPage);
@@ -481,6 +484,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			serverPage.setOrchestrator(orchestrator);
 		if (forgePage != null)
 			forgePage.setOrchestrator(orchestrator);
+		if (teipProtocolPage != null)
+			teipProtocolPage.setOrchestrator(orchestrator);
 		if (settingsPage != null)
 			settingsPage.setOrchestrator(orchestrator);
 	}
@@ -566,6 +571,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			approvalPage.scheduleRefresh();
 		if (developmentPage != null)
 			developmentPage.scheduleRefresh();
+		if (teipProtocolPage != null)
+			teipProtocolPage.scheduleRefresh();
 
 		int active = getActivePage();
 		if (active != -1 && getControl(active) == comparePage) {
@@ -724,6 +731,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			taskStackPage.scheduleRefresh();
 		} else if (control == aiChatPage && aiChatPage != null) {
 			aiChatPage.scheduleRefresh();
+		} else if (control == teipProtocolPage && teipProtocolPage != null) {
+			teipProtocolPage.scheduleRefresh();
 		}
 	}
 
