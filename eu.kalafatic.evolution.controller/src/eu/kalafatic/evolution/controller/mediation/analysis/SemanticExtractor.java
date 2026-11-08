@@ -137,7 +137,25 @@ public class SemanticExtractor {
 
     private void analyzeNode(SemanticNode node, File root, TargetSnapshot snapshot) {
         File actualFile = new File(root, node.getPath());
-        if (!actualFile.exists() || actualFile.length() > 500000) return;
+        if (!actualFile.exists()) return;
+
+        // Specialized handling for native EVO models, data, and config files
+        String name = actualFile.getName().toLowerCase();
+        if (name.endsWith(".evo")) {
+            analyzeEvoModelNode(node, actualFile, snapshot);
+            return;
+        } else if (name.endsWith(".evodata") || name.endsWith(".parquet")) {
+            analyzeDatasetNode(node, actualFile, snapshot);
+            return;
+        } else if (name.equals("training-report.json") || name.equals("model.json") || name.equals("config.json")) {
+            analyzeModelJsonNode(node, actualFile, snapshot);
+            return;
+        } else if (name.equals("modelfile") || name.endsWith(".modelfile")) {
+            analyzeModelfileNode(node, actualFile, snapshot);
+            return;
+        }
+
+        if (actualFile.length() > 500000) return;
 
         try {
             List<String> lines = Files.readAllLines(actualFile.toPath());
@@ -161,6 +179,84 @@ public class SemanticExtractor {
             resolveMetadataForNode(node, annotationMeta, sidecarMeta, markdownContext, packageDomain);
 
         } catch (IOException e) {}
+    }
+
+    private void analyzeEvoModelNode(SemanticNode node, File file, TargetSnapshot snapshot) {
+        node.setType("model");
+        node.getAttributes().put("domain", "ai_model");
+        node.getAttributes().put("role", "native_llm_artifact");
+        addTagIfNotExists(node.getTags(), "EVO_MODEL");
+        addTagIfNotExists(node.getTags(), "AI_MODEL");
+
+        try {
+            eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact =
+                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(file.toPath());
+            node.getAttributes().put("model_name", artifact.getModelName());
+            node.getAttributes().put("parameters", String.valueOf(artifact.getParameterCount()));
+            node.getAttributes().put("vocab_size", String.valueOf(artifact.getVocabSize()));
+            node.getAttributes().put("layers", String.valueOf(artifact.getLayers()));
+            node.getAttributes().put("heads", String.valueOf(artifact.getHeads()));
+            node.getAttributes().put("embed_dim", String.valueOf(artifact.getEmbeddingSize()));
+            node.getAttributes().put("dff", String.valueOf(artifact.getDff()));
+            node.getAttributes().put("max_seq_len", String.valueOf(artifact.getMaxSeqLen()));
+
+            String summary = String.format("Native EVO LLM Model '%s': %d layers, %d heads, embed: %d, dff: %d, maxSeq: %d, vocab: %d",
+                    artifact.getModelName(), artifact.getLayers(), artifact.getHeads(),
+                    artifact.getEmbeddingSize(), artifact.getDff(), artifact.getMaxSeqLen(), artifact.getVocabSize());
+            node.setSummary(summary);
+            node.getStructures().add("model:" + artifact.getModelName());
+        } catch (Exception ex) {
+            node.setSummary("Native EVO Model Container (" + file.length() + " bytes)");
+        }
+    }
+
+    private void analyzeDatasetNode(SemanticNode node, File file, TargetSnapshot snapshot) {
+        node.setType("dataset");
+        node.getAttributes().put("domain", "training_data");
+        node.getAttributes().put("role", "dataset_artifact");
+        addTagIfNotExists(node.getTags(), "DATASET");
+        node.setSummary("Training dataset archive: " + file.getName() + " (" + (file.length() / 1024) + " KB)");
+    }
+
+    private void analyzeModelJsonNode(SemanticNode node, File file, TargetSnapshot snapshot) {
+        node.setType("data");
+        node.getAttributes().put("domain", "ai_model");
+        node.getAttributes().put("role", "model_metadata");
+        addTagIfNotExists(node.getTags(), "MODEL_METADATA");
+
+        try {
+            String content = Files.readString(file.toPath());
+            org.json.JSONObject obj = new org.json.JSONObject(content);
+            StringBuilder sb = new StringBuilder();
+            sb.append("EVO Model Metadata: ");
+            if (obj.has("modelName")) {
+                sb.append("Model: ").append(obj.optString("modelName")).append(" | ");
+                node.getAttributes().put("model_name", obj.optString("modelName"));
+            }
+            if (obj.has("parameterCount")) {
+                sb.append("Params: ").append(obj.optLong("parameterCount")).append(" | ");
+                node.getAttributes().put("parameters", String.valueOf(obj.optLong("parameterCount")));
+            }
+            if (obj.has("finalLoss")) {
+                sb.append("Loss: ").append(String.format(java.util.Locale.US, "%.4f", obj.optDouble("finalLoss"))).append(" | ");
+                node.getAttributes().put("final_loss", String.valueOf(obj.optDouble("finalLoss")));
+            }
+            if (obj.has("vocabSize")) node.getAttributes().put("vocab_size", String.valueOf(obj.optInt("vocabSize")));
+            if (obj.has("numBlocks")) node.getAttributes().put("layers", String.valueOf(obj.optInt("numBlocks")));
+            if (obj.has("dModel")) node.getAttributes().put("embed_dim", String.valueOf(obj.optInt("dModel")));
+
+            node.setSummary(sb.toString().replaceAll(" \\| $", ""));
+        } catch (Exception e) {
+            node.setSummary("Model metadata file: " + file.getName());
+        }
+    }
+
+    private void analyzeModelfileNode(SemanticNode node, File file, TargetSnapshot snapshot) {
+        node.setType("model");
+        node.getAttributes().put("domain", "ai_model");
+        node.getAttributes().put("role", "ollama_modelfile");
+        addTagIfNotExists(node.getTags(), "MODELFILE");
+        node.setSummary("Ollama Modelfile runtime definition");
     }
 
     private void resolveMetadataForNode(SemanticNode node, Map<String, String> ann, EvoMetadata side, String md, String pkg) {

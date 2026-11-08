@@ -41,6 +41,7 @@ public class SemanticNode {
     public String getId() { return id; }
     public String getPath() { return path; }
     public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
     public List<String> getTags() { return tags; }

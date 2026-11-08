@@ -196,7 +196,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             context.log("[DISCOVERY] Analyzing meaning of: " + node.getPath());
 
             if (node.getSummary() == null || node.getSummary().isEmpty()) {
-                String sampleSummary = extractDatasetSampleSummary(new File(context.getProjectRoot(), node.getPath()), context);
+                String sampleSummary = extractArtifactContentSummary(new File(context.getProjectRoot(), node.getPath()), context);
                 if (sampleSummary != null && !sampleSummary.isEmpty()) {
                     node.setSummary(sampleSummary);
                 }
@@ -660,8 +660,61 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
     }
 
-    private String extractDatasetSampleSummary(File file, TaskContext context) {
+    private String extractArtifactContentSummary(File file, TaskContext context) {
         if (file == null || !file.exists() || !file.isFile()) return null;
+        String name = file.getName().toLowerCase();
+
+        // 1. Native EVO Model file (.evo)
+        if (name.endsWith(".evo")) {
+            try {
+                eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact =
+                        eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(file.toPath());
+                return String.format("Native EVO LLM Model '%s': %s parameters, Vocab: %d, %d layers, %d heads, embed: %d, dff: %d, maxSeq: %d",
+                        artifact.getModelName(), formatParamCount(artifact.getParameterCount()), artifact.getVocabSize(),
+                        artifact.getLayers(), artifact.getHeads(), artifact.getEmbeddingSize(), artifact.getDff(), artifact.getMaxSeqLen());
+            } catch (Exception ex) {
+                return "Native EVO Model Container (" + file.length() + " bytes)";
+            }
+        }
+
+        // 2. Training report / Model config JSON
+        if (name.equals("training-report.json") || name.equals("model.json") || name.equals("config.json")) {
+            try {
+                String content = java.nio.file.Files.readString(file.toPath());
+                org.json.JSONObject obj = new org.json.JSONObject(content);
+                StringBuilder sb = new StringBuilder();
+                sb.append("EVO Model Configuration / Training Report: ");
+                if (obj.has("modelName")) sb.append("Model: ").append(obj.optString("modelName")).append(" | ");
+                if (obj.has("parameterCount")) sb.append("Params: ").append(formatParamCount(obj.optLong("parameterCount"))).append(" | ");
+                if (obj.has("finalLoss")) sb.append("Loss: ").append(String.format(java.util.Locale.US, "%.4f", obj.optDouble("finalLoss"))).append(" | ");
+                if (obj.has("vocabSize")) sb.append("Vocab: ").append(obj.optInt("vocabSize")).append(" | ");
+                if (obj.has("numBlocks")) sb.append("Layers: ").append(obj.optInt("numBlocks")).append(" | ");
+                if (obj.has("dModel")) sb.append("Embed: ").append(obj.optInt("dModel")).append(" | ");
+                return sb.toString().replaceAll(" \\| $", "");
+            } catch (Exception ignored) {}
+        }
+
+        // 3. Modelfile
+        if (name.equals("modelfile") || name.endsWith(".modelfile")) {
+            try {
+                List<String> lines = java.nio.file.Files.readAllLines(file.toPath());
+                StringBuilder sb = new StringBuilder("Ollama Model Definition: ");
+                for (String line : lines) {
+                    String trimmed = line.trim();
+                    if (trimmed.startsWith("FROM") || trimmed.startsWith("PARAMETER") || trimmed.startsWith("SYSTEM")) {
+                        sb.append(trimmed).append(" | ");
+                    }
+                }
+                return sb.toString().replaceAll(" \\| $", "");
+            } catch (Exception ignored) {}
+        }
+
+        // 4. GGUF file
+        if (name.endsWith(".gguf")) {
+            return String.format("Exported GGUF Model weights artifact (%s MB)", file.length() / (1024 * 1024));
+        }
+
+        // 5. Dataset adapters via SourceAdapterRegistry (.evodata, .parquet, .jsonl, .csv, etc.)
         try {
             eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry registry =
                     eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry.createDefaultRegistry();
@@ -701,6 +754,18 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             }
         }
         return null;
+    }
+
+    private static String formatParamCount(long params) {
+        if (params >= 1_000_000_000) {
+            return String.format("%.2fB", params / 1_000_000_000.0);
+        } else if (params >= 1_000_000) {
+            return String.format("%.2fM", params / 1_000_000.0);
+        } else if (params >= 1_000) {
+            return String.format("%.1fK", params / 1_000.0);
+        } else {
+            return String.valueOf(params);
+        }
     }
 
     private String limitString(String str, int max) {

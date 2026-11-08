@@ -110,7 +110,7 @@ public class IntentReconstructionEngineTest {
         File pkgJson = new File(webDir, "package.json");
         try (FileWriter fw = new FileWriter(pkgJson)) { fw.write("{\"name\": \"my-web-app\"}"); }
 
-        TargetScanner scanner = new TargetScanner();
+        eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
         TargetSnapshot snapshot = scanner.scanToSnapshot(webDir, TargetSnapshot.TargetType.PROJECT);
 
         assertNotNull(snapshot);
@@ -220,5 +220,53 @@ public class IntentReconstructionEngineTest {
         // Run iteration 2 (reads next batch without losing remaining files)
         EvaluationResult eval2 = engine.runDarwinIteration(context, manager);
         assertNotNull(eval2);
+    }
+
+    @Test
+    public void testEvoModelFolderIntentReconstructionAndAnalysis() throws Exception {
+        File evoModelDir = File.createTempFile("evo-q-v14500-e576-l8-h8", "");
+        evoModelDir.delete();
+        evoModelDir.mkdirs();
+
+        // Simulate typical Forge output directory (Modelfile, model.json, config.json, training-report.json)
+        File modelfile = new File(evoModelDir, "Modelfile");
+        try (FileWriter fw = new FileWriter(modelfile)) {
+            fw.write("FROM exports/ollama/evo.gguf\nPARAMETER temperature 0.2\nPARAMETER num_ctx 128\n");
+        }
+
+        File report = new File(evoModelDir, "training-report.json");
+        try (FileWriter fw = new FileWriter(report)) {
+            fw.write("{\n  \"modelName\": \"evo-q-v14500-e576-l8-h8\",\n  \"parameterCount\": 576000,\n  \"finalLoss\": 1.4231,\n  \"vocabSize\": 448,\n  \"numBlocks\": 8,\n  \"dModel\": 256\n}\n");
+        }
+
+        File config = new File(evoModelDir, "config.json");
+        try (FileWriter fw = new FileWriter(config)) {
+            fw.write("{\n  \"modelName\": \"evo-q-v14500-e576-l8-h8\",\n  \"dModel\": 256,\n  \"numBlocks\": 8,\n  \"numHeads\": 8,\n  \"dff\": 512,\n  \"maxSeqLen\": 128,\n  \"vocabSize\": 448\n}\n");
+        }
+
+        TargetScanner scanner = new TargetScanner();
+        TargetSnapshot snapshot = scanner.scanToSnapshot(evoModelDir, TargetSnapshot.TargetType.AI_MODEL);
+        assertNotNull(snapshot);
+        String classifications = (String) snapshot.getMetadata().get("targetClassifications");
+        assertNotNull(classifications);
+        assertTrue("Snapshot should classify as AI_MODEL", classifications.contains("AI_MODEL"));
+
+        TaskContext context = new TaskContext(orchestrator, evoModelDir);
+        context.setSessionId("test-session-evo-model-dir");
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-evo-model-dir");
+
+        IterationMemoryService memoryService = new IterationMemoryService(evoModelDir);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(evoModelDir, context);
+
+        IntentReconstructionEngine engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
+        IterationManager manager = KernelFactory.create("Discover intent of EVO model workspace", context, session, null);
+
+        EvaluationResult eval = engine.runDarwinIteration(context, manager);
+        assertNotNull(eval);
+        assertTrue(eval.isSuccess());
+
+        String summary = (String) context.getOrchestrationState().getMetadata().get("intentTargetSummary");
+        assertNotNull(summary);
+        assertTrue(summary.contains("AI_MODEL") || summary.contains("Modelfile") || summary.contains("training-report.json"));
     }
 }
