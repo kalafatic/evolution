@@ -833,9 +833,26 @@ public class ChatGroup extends AEvoGroup {
             }
 
             final ChatSession s = targetSession;
-                    // Downgrade previous waiting messages when a new message arrives
-                    // especially if the new one is also waiting or from the user (completing a turn)
+
+                    // Safeguard: Ensure the same message event cannot be inserted twice into EMF session
+                    for (ChatMessage existing : s.getMessages()) {
+                        if (existing == msg || (msg.getSequenceNumber() > 0 && existing.getSequenceNumber() == msg.getSequenceNumber())) {
+                            return;
+                        }
+                    }
+
+                    // Safeguard: Prevent duplicate user message entry for the same turnId
                     String newAgentType = msg.getAgentType();
+                    if (newAgentType != null && newAgentType.contains("user") && msg.getTurnId() != null) {
+                        for (ChatMessage existing : s.getMessages()) {
+                            if (msg.getTurnId().equals(existing.getTurnId()) &&
+                                existing.getAgentType() != null && existing.getAgentType().contains("user")) {
+                                return;
+                            }
+                        }
+                    }
+
+                    // especially if the new one is also waiting or from the user (completing a turn)
                     if (newAgentType != null && (newAgentType.contains("waiting") || newAgentType.contains("user"))) {
                         for (ChatMessage existing : s.getMessages()) {
                             String oldAgentType = existing.getAgentType();

@@ -377,10 +377,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     public void submit(String sessionId, TaskRequest request) {
         final SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         final RuntimeEventBus bus = session.getEventBus();
-        final String turnId = sessionId + "__" + System.currentTimeMillis();
+        final String turnId = (request != null && request.getContext() != null && request.getContext().containsKey("turnId"))
+                ? (String) request.getContext().get("turnId")
+                : sessionId + "__" + System.currentTimeMillis();
 
         bus.publish(new RuntimeEvent(RuntimeEventType.USER_INTERACTION_RECEIVED, sessionId, "UI", request.getPrompt()));
-        if (request.getPrompt() != null && !request.getPrompt().trim().isEmpty()) {
+        boolean userMessageHandled = request != null && request.getContext() != null && Boolean.TRUE.equals(request.getContext().get("userMessageHandled"));
+        if (!userMessageHandled && request.getPrompt() != null && !request.getPrompt().trim().isEmpty()) {
             processLogEntry("User: " + request.getPrompt().trim(), sessionId, turnId);
         }
 
