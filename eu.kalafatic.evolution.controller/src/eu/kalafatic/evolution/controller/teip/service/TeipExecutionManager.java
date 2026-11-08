@@ -171,7 +171,9 @@ public class TeipExecutionManager {
         if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
             TeipAcceptedResponse cached = idempotencyStore.get(idempotencyKey.trim());
             if (cached != null) {
-                Log.log("[TEIP] Idempotency match for key=" + idempotencyKey + ", returning executionId=" + cached.getExecutionId());
+                try {
+                    Log.log("[TEIP] Idempotency match for key=" + idempotencyKey + ", returning executionId=" + cached.getExecutionId());
+                } catch (Throwable ignored) {}
                 return cached;
             }
         }
