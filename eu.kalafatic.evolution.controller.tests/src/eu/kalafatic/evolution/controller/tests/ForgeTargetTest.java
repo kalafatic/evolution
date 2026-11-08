@@ -86,6 +86,33 @@ public class ForgeTargetTest {
     }
 
     @Test
+    public void test2b_ExportedOllamaWorkspaceTargetWithoutWeightsBin() throws Exception {
+        File wsDir = tempFolder.newFolder("evo-q-v14500-e576-l8-h8-061126_134935");
+        File exportsDir = new File(wsDir, "exports/ollama");
+        exportsDir.mkdirs();
+
+        File modelfile = new File(exportsDir, "Modelfile");
+        Files.writeString(modelfile.toPath(), "FROM evo.gguf\nPARAMETER temperature 0.2\nPARAMETER num_ctx 128\n");
+
+        File rootModelfile = new File(wsDir, "Modelfile");
+        Files.writeString(rootModelfile.toPath(), "FROM exports/ollama/evo.gguf\nPARAMETER temperature 0.2\nPARAMETER num_ctx 128\n");
+
+        File reportFile = new File(wsDir, "training-report.json");
+        Files.writeString(reportFile.toPath(), "{\n  \"modelName\": \"evo-q-v14500-e576-l8-h8\",\n  \"parameterCount\": 576000,\n  \"finalLoss\": 1.4231\n}\n");
+
+        File configFile = new File(wsDir, "config.json");
+        Files.writeString(configFile.toPath(), "{\n  \"modelName\": \"evo-q-v14500-e576-l8-h8\",\n  \"vocabSize\": 448,\n  \"dModel\": 256,\n  \"numHeads\": 8,\n  \"numBlocks\": 8,\n  \"dff\": 512,\n  \"maxSeqLen\": 128\n}\n");
+
+        ForgeTarget target = ForgeTargetDetector.detect(wsDir.getAbsolutePath());
+        Assert.assertEquals(ForgeTargetType.EVO_WORKSPACE, target.getType());
+        Assert.assertTrue(target.isValid());
+        Assert.assertTrue(target.getStatusMessage().contains("Valid Forge workspace"));
+        Assert.assertEquals("evo-q-v14500-e576-l8-h8", target.getModelName());
+        Assert.assertEquals(448, target.getVocabSize());
+        Assert.assertEquals(576000L, target.getParameterCount());
+    }
+
+    @Test
     public void test3_EvoModelTarget() throws Exception {
         File modelFile = tempFolder.newFile("model-base.evo");
         EvoLlmModel baseModel = new EvoLlmModel(448, 256, 8, 4, 512, 128);

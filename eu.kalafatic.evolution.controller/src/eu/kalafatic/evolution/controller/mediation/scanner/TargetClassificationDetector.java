@@ -76,7 +76,8 @@ public class TargetClassificationDetector {
 
                     // AI Model Descriptors
                     if (fName.equals("config.json") || fName.equals("tokenizer.json") || fName.equals("model_index.json") ||
-                        fName.endsWith(".gguf") || fName.endsWith(".safetensors") || fName.endsWith(".bin") ||
+                        fName.equals("modelfile") || fName.equals("training-report.json") || fName.equals("model.json") ||
+                        fName.endsWith(".evo") || fName.endsWith(".gguf") || fName.endsWith(".safetensors") || fName.endsWith(".bin") ||
                         fName.endsWith(".onnx") || fName.endsWith(".pb") || fName.endsWith(".pt")) {
                         scores.put(TargetType.AI_MODEL, scores.get(TargetType.AI_MODEL) + 4.0);
                     }

@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.tests;
 import static org.junit.Assert.*;
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Files;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -109,5 +110,20 @@ public class TargetClassificationDetectorTest {
         assertNotNull(resMissing);
         assertEquals(TargetType.UNKNOWN, resMissing.getCategory());
         assertEquals(0.0, resMissing.getConfidence(), 0.01);
+    }
+
+    @Test
+    public void testClassifyEvoModelWorkspace() throws Exception {
+        File modelWorkspace = tempFolder.newFolder("evo-q-v14500-e576-l8-h8-061126_134935");
+        File modelfile = new File(modelWorkspace, "Modelfile");
+        Files.writeString(modelfile.toPath(), "FROM exports/ollama/evo.gguf\nPARAMETER temperature 0.2\n");
+        File report = new File(modelWorkspace, "training-report.json");
+        Files.writeString(report.toPath(), "{\"modelName\": \"evo-q\", \"parameterCount\": 576000}\n");
+        File config = new File(modelWorkspace, "config.json");
+        Files.writeString(config.toPath(), "{\"dModel\": 256, \"numBlocks\": 8}\n");
+
+        ClassificationResult res = TargetClassificationDetector.detect(modelWorkspace);
+        assertEquals(TargetType.AI_MODEL, res.getCategory());
+        assertTrue(res.getConfidence() >= 0.8);
     }
 }

@@ -158,6 +158,46 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         }
     }
 
+    private void enrichModelRecord(ComponentRecord record, File file, EvoMetadata meta) {
+        String name = file.getName().toLowerCase();
+        if (name.endsWith(".evo")) {
+            try {
+                eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact =
+                        eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(file.toPath());
+                record.setDescription(String.format("Native EVO LLM Model '%s': %s params, %d layers, %d heads, embed: %d, dff: %d, vocab: %d",
+                        artifact.getModelName(), formatParamCount(artifact.getParameterCount()), artifact.getLayers(),
+                        artifact.getHeads(), artifact.getEmbeddingSize(), artifact.getDff(), artifact.getVocabSize()));
+                record.getUseCases().add("AI/ML: Native EVO Model Inference");
+            } catch (Exception ex) {
+                record.setDescription("Native EVO Model Container (" + file.length() + " bytes)");
+            }
+        } else if (name.equals("training-report.json")) {
+            try {
+                String content = java.nio.file.Files.readString(file.toPath());
+                org.json.JSONObject obj = new org.json.JSONObject(content);
+                record.setDescription(String.format("EVO Training Report: Model '%s', params: %s, finalLoss: %.4f",
+                        obj.optString("modelName", "unknown"), formatParamCount(obj.optLong("parameterCount", 0)),
+                        obj.optDouble("finalLoss", 0.0)));
+                record.getUseCases().add("AI/ML: Model Training Analytics");
+            } catch (Exception ignored) {}
+        } else if (name.equals("modelfile") || name.endsWith(".modelfile")) {
+            record.setDescription("Ollama Modelfile runtime configuration");
+            record.getUseCases().add("AI/ML: Ollama Model Deployment");
+        }
+    }
+
+    private String formatParamCount(long params) {
+        if (params >= 1_000_000_000) {
+            return String.format("%.2fB", params / 1_000_000_000.0);
+        } else if (params >= 1_000_000) {
+            return String.format("%.2fM", params / 1_000_000.0);
+        } else if (params >= 1_000) {
+            return String.format("%.1fK", params / 1_000.0);
+        } else {
+            return String.valueOf(params);
+        }
+    }
+
     /**
      * Step 1: The "Peek".
      * Selects files from the exploration queue based on filename heuristics without discarding unqueued files.
@@ -224,13 +264,17 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         String name = file.getName();
         String lower = name.toLowerCase();
 
-        // Manifests & Entry points across domains
+        // Manifests, Model Definitions & Entry points across domains
         if (lower.equalsIgnoreCase("readme.md") || lower.equals("package.json") || lower.equals("pom.xml") || lower.equals("index.html") || lower.equals("manifest.json") || lower.equals("build.gradle") || lower.contains("architecture")) return 10;
         if (lower.contains("application") || lower.contains("main") || lower.equals("main.js") || lower.equals("index.js") || lower.equals("app.js") || lower.equals("server.js")) return 10;
+        if (lower.equals("modelfile") || lower.endsWith(".modelfile") || lower.equals("model.json") || lower.equals("training-report.json") || lower.endsWith(".evo")) return 10;
 
         // Web & Software Components
         if (lower.contains("controller") || lower.contains("resource") || lower.contains("router") || lower.contains("component")) return 9;
         if (lower.contains("service") || lower.contains("manager") || lower.contains("handler") || lower.contains("api")) return 8;
+
+        // Models & Model weights
+        if (lower.endsWith(".gguf") || lower.endsWith(".safetensors") || lower.endsWith(".bin") || lower.endsWith(".onnx")) return 9;
 
         // Presentations & Documents
         if (lower.endsWith(".pptx") || lower.endsWith(".pdf") || lower.endsWith(".odp") || lower.endsWith(".docx") || lower.endsWith(".md")) return 8;
@@ -239,7 +283,7 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         if (lower.endsWith(".mp3") || lower.endsWith(".flac") || lower.endsWith(".wav") || lower.endsWith(".m4a") || lower.contains("track") || lower.contains("cover") || lower.equalsIgnoreCase("playlist.m3u")) return 8;
 
         // Datasets
-        if (lower.endsWith(".evodata") || lower.endsWith(".parquet") || lower.endsWith(".jsonl") || lower.endsWith(".csv")) return 8;
+        if (lower.endsWith(".evodata") || lower.endsWith(".parquet") || lower.endsWith(".jsonl") || lower.endsWith(".csv")) return 9;
 
         // Generic Code & Config
         if (lower.endsWith(".java") || lower.endsWith(".ts") || lower.endsWith(".py") || lower.endsWith(".cpp") || lower.endsWith(".c")) return 7;
@@ -325,7 +369,11 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         } catch (Throwable ignored) {}
 
         // Categorize component type based on structure, dynamic adapter capability, or role
-        if (name.endsWith("Controller.java") || name.endsWith("Resource.java") ||
+        if (lowerName.endsWith(".evo") || lowerName.equals("modelfile") || lowerName.endsWith(".modelfile") ||
+            lowerName.endsWith(".gguf") || lowerName.equals("training-report.json") || lowerName.equals("model.json")) {
+            record.setType("AI_MODEL");
+            enrichModelRecord(record, file, meta);
+        } else if (name.endsWith("Controller.java") || name.endsWith("Resource.java") ||
             name.endsWith("Service.java") || name.endsWith("UseCase.java") ||
             name.endsWith("Handler.java") || name.endsWith("Facade.java") ||
             name.endsWith("Application.java") || lowerName.contains("router") ||
@@ -343,7 +391,9 @@ public class IntentReconstructionEngine extends ADarwinEngine {
             record.setType(meta.getRole() != null ? meta.getRole().toUpperCase() : "COMPONENT");
         }
 
-        record.setDescription(meta.getSummary());
+        if (record.getDescription() == null || record.getDescription().isEmpty()) {
+            record.setDescription(meta.getSummary());
+        }
         record.setPath(meta.getPath());
         record.setImportanceScore(meta.getImportanceScore());
 

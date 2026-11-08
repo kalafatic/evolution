@@ -116,14 +116,15 @@ public class TargetScanner {
         // 2. Categorize common carrier types
         return switch (ext) {
             case "java", "c", "cpp", "py", "js", "ts", "jsx", "tsx", "html", "css", "scss", "sql", "sh", "bat" -> "source_code";
-            case "md", "txt", "pdf", "docx", "doc", "odt" -> "document";
+            case "md", "txt", "pdf", "docx", "doc", "odt", "rtf", "tex" -> "document";
             case "pptx", "odp", "key" -> "presentation";
-            case "json", "xml", "yaml", "yml" -> "data";
-            case "evodata", "parquet", "jsonl", "csv", "tsv" -> "dataset";
-            case "png", "jpg", "jpeg", "webp", "gif", "svg" -> "image";
+            case "json", "xml", "yaml", "yml", "toml", "ini", "properties" -> "data";
+            case "evodata", "parquet", "jsonl", "csv", "tsv", "arrow" -> "dataset";
+            case "evo", "gguf", "safetensors", "onnx", "bin", "pt", "pth", "ckpt" -> "model";
+            case "png", "jpg", "jpeg", "webp", "gif", "svg", "bmp", "tiff" -> "image";
             case "mp3", "wav", "flac", "m4a", "aac", "ogg" -> "audio";
             case "mp4", "webm", "mkv", "avi", "mov" -> "video";
-            case "zip", "tar", "gz", "rar", "7z" -> "archive";
+            case "zip", "tar", "gz", "rar", "7z", "bz2", "xz" -> "archive";
             default -> ext;
         };
     }
@@ -165,10 +166,12 @@ public class TargetScanner {
         long docCount = snapshot.getNodes().values().stream().filter(n -> "document".equals(n.getType())).count();
         long presCount = snapshot.getNodes().values().stream().filter(n -> "presentation".equals(n.getType())).count();
         long datasetCount = snapshot.getNodes().values().stream().filter(n -> "dataset".equals(n.getType())).count();
+        long modelCount = snapshot.getNodes().values().stream().filter(n -> "model".equals(n.getType())).count();
         long codeCount = snapshot.getNodes().values().stream().filter(n -> "source_code".equals(n.getType())).count();
 
         boolean hasJava = snapshot.getNodes().values().stream().anyMatch(n -> n.getPath().endsWith(".java") || n.getPath().endsWith("pom.xml") || n.getPath().endsWith("build.gradle"));
         boolean hasWeb = snapshot.getNodes().values().stream().anyMatch(n -> n.getPath().endsWith(".html") || n.getPath().endsWith(".js") || n.getPath().endsWith(".ts") || n.getPath().endsWith("package.json"));
+        boolean hasModel = modelCount > 0 || snapshot.getNodes().values().stream().anyMatch(n -> n.getPath().toLowerCase().contains("modelfile") || n.getPath().toLowerCase().contains("training-report.json"));
 
         if (hasJava) { classifications.add("JAVA_CODEBASE"); classifications.add("SOFTWARE_PROJECT"); }
         if (hasWeb) { classifications.add("WEB_APPLICATION"); classifications.add("WEBSITE_SOURCE"); }
@@ -177,6 +180,7 @@ public class TargetScanner {
         if (videoCount > 0) { classifications.add("VIDEO_PROJECT"); classifications.add("MULTIMEDIA_PROJECT"); }
         if (docCount > 0 && codeCount == 0) classifications.add("DOCUMENT_COLLECTION");
         if (datasetCount > 0) classifications.add("DATASET");
+        if (hasModel) classifications.add("AI_MODEL");
 
         if (classifications.size() > 2) classifications.add("MIXED_PROJECT");
         if (classifications.isEmpty()) classifications.add("UNKNOWN");
