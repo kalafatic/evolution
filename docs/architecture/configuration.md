@@ -42,7 +42,7 @@ When resolving configuration settings at runtime, EVO applies the following stri
 1. **Self-Dev Run Context (`SelfDevContext`)**: Transient, per-run overrides (e.g. DEBUG port offsets, run-specific directory paths `<workspace>/self-dev/run_<id>/`).
 2. **EMF Persistent Project Model (`EvolutionProject` / `ForgeSession`)**: Persistent settings stored in `evo_config.xml` (e.g. service URLs, model sizes, training epoch defaults, dataset selections).
 3. **OS Environment Variables**: Platform configuration defaults (`${user.home}`, `${EVO_ROOT}`).
-4. **Hardcoded Invariant Defaults**: Fallback defaults defined in `ResourceManager` (e.g. Supervisor port default `8089`, Control port default `28080`, Evolution HTTP port default `48081`).
+4. **Hardcoded Invariant Defaults**: Fallback defaults defined in `ResourceManager` and `PortRegistry` (e.g. Supervisor port default `28480`, Control port default `28580`, Evolution HTTP port default `28080`).
 
 ---
 

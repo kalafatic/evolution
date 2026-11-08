@@ -237,10 +237,11 @@ public class SelfDevPipelineHardeningTest {
         assertEquals("Port offset for normal run must be 0", 0, context.getPortOffset());
 
         int baseSupervisorPort = context.getResourceManager().getService("SUPERVISOR") != null ? context.getResourceManager().getService("SUPERVISOR").getPort() : 28480;
-        int baseServerPort = context.getResourceManager().getService("SERVER") != null ? context.getResourceManager().getService("SERVER").getPort() : 48081;
+        int baseControlPort = context.getResourceManager().getService("SUPERVISOR_CONTROL") != null ? context.getResourceManager().getService("SUPERVISOR_CONTROL").getPort() : 28580;
+        int baseServerPort = context.getResourceManager().getService("SERVER") != null ? context.getResourceManager().getService("SERVER").getPort() : 28080;
 
         assertEquals(baseSupervisorPort, context.getEffectiveSupervisorPort());
-        assertEquals(28080, context.getEffectiveSupervisorControlPort());
+        assertEquals(baseControlPort, context.getEffectiveSupervisorControlPort());
         assertEquals(baseServerPort, context.getEffectiveServerPort());
 
         // Debug mode
@@ -249,7 +250,7 @@ public class SelfDevPipelineHardeningTest {
         assertEquals("Port offset for debug run must be 10", 10, context.getPortOffset());
 
         assertEquals(baseSupervisorPort + 10, context.getEffectiveSupervisorPort());
-        assertEquals(28080 + 10, context.getEffectiveSupervisorControlPort());
+        assertEquals(baseControlPort + 10, context.getEffectiveSupervisorControlPort());
         assertEquals(baseServerPort + 10, context.getEffectiveServerPort());
 
         // Verify base ResourceManager configuration was NOT modified

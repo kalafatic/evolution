@@ -161,11 +161,11 @@ public class SelfDevStandalonePipelineTest {
     public void testPortOffsetAndIsolatedPortInDebugMode() {
         context.setDebugMode(false);
         int normalPort = context.getEffectiveServerPort();
-        assertEquals(48081, normalPort);
+        assertEquals(28080, normalPort);
 
         context.setDebugMode(true);
         int debugPort = context.getEffectiveServerPort();
-        assertEquals(48091, debugPort);
+        assertEquals(28090, debugPort);
         assertEquals(10, context.getPortOffset());
     }
 
@@ -174,7 +174,7 @@ public class SelfDevStandalonePipelineTest {
         File logDir = context.getLogDirectory();
         File runtimeLog = new File(logDir, "evo_runtime.log");
         try (FileWriter fw = new FileWriter(runtimeLog)) {
-            fw.write("Evolution background server started on port 48091\nApplication READY\n");
+            fw.write("Evolution background server started on port 28090\nApplication READY\n");
         }
 
         Process dummyProc = new ProcessBuilder("sleep", "10").start();

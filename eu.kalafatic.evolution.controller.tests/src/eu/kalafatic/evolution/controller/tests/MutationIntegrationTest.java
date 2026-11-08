@@ -38,7 +38,7 @@ import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
 public class MutationIntegrationTest {
 
     private static EvolutionServer server;
-    private static final int TEST_PORT = 48080;
+    private static final int TEST_PORT = 28080;
     private static final String BASE_URL = "http://localhost:" + TEST_PORT;
 
     private File tempRepo;

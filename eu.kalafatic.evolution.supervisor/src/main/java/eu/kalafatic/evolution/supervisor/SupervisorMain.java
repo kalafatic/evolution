@@ -15,6 +15,7 @@ import fi.iki.elonen.NanoHTTPD;
 public class SupervisorMain {
     public static final int DEFAULT_SUPERVISOR_PORT = 28480;
     public static final int DEFAULT_CONTROL_PORT = 28580;
+    public static final int DEFAULT_EVO_SERVER_PORT = 28080;
 
     private static NanoHTTPD server;
     private static NanoHTTPD controlServer;
@@ -669,11 +670,11 @@ public class SupervisorMain {
                         } catch (InterruptedException ignored) {}
                     }
 
-                    int baseStartPort = 48080;
+                    int baseStartPort = DEFAULT_EVO_SERVER_PORT;
                     if (System.getProperty("evo.server.port") != null) {
                         try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                     }
-                        int portOffset = (this.port > 28480) ? (this.port - 28480) : 0;
+                    int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
                     int portToUse = findAvailablePort(baseStartPort + portOffset);
 
                     List<String> command = new ArrayList<>();
@@ -738,11 +739,11 @@ public class SupervisorMain {
                             try { activeEvoProcess.waitFor(2, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
                         }
 
-                        int baseStartPort = 48080;
+                        int baseStartPort = DEFAULT_EVO_SERVER_PORT;
                         if (System.getProperty("evo.server.port") != null) {
                             try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                         }
-                        int portOffset = (this.port > 28480) ? (this.port - 28480) : 0;
+                        int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
                         int portToUse = findAvailablePort(baseStartPort + portOffset);
 
                         List<String> command = new ArrayList<>();
@@ -881,11 +882,11 @@ public class SupervisorMain {
                     command.add(runnableJar.getAbsolutePath());
                 }
 
-                int baseStartPort = 48080;
+                int baseStartPort = DEFAULT_EVO_SERVER_PORT;
                 if (System.getProperty("evo.server.port") != null) {
                     try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                 }
-                int portOffset = (this.port > 28480) ? (this.port - 28480) : 0;
+                int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
                 int portToUse = findAvailablePort(baseStartPort + portOffset);
 
                 command.add("--mode=SELF_DEV");

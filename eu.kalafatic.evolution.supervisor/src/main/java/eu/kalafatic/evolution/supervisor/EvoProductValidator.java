@@ -198,7 +198,7 @@ public class EvoProductValidator {
         }
         command.add("--server");
         command.add("--port");
-        command.add("59099");
+        command.add(String.valueOf(SupervisorMain.DEFAULT_EVO_SERVER_PORT));
 
         System.out.println("[STARTUP] Launching headless product: " + command);
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -237,7 +237,7 @@ public class EvoProductValidator {
 
             // Request Graceful Shutdown via unauthenticated /api/shutdown endpoint
             System.out.println("[STARTUP] Triggering clean shutdown...");
-            triggerShutdown("http://127.0.0.1:59099/api/shutdown");
+            triggerShutdown("http://127.0.0.1:" + SupervisorMain.DEFAULT_EVO_SERVER_PORT + "/api/shutdown");
 
             // Wait for normal termination
             boolean exited = process.waitFor(5, TimeUnit.SECONDS);

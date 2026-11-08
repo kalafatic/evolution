@@ -291,7 +291,7 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         }
         File evoRuntimeDir = new File(context.getRuntimeDirectory(), "evo");
         File logDir = context != null ? context.getLogDirectory() : null;
-        int port = context != null ? context.getEffectiveServerPort() : 48080;
+        int port = context != null ? context.getEffectiveServerPort() : eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
         return verifier.verifyReady(evoProcess, evoRuntimeDir, logDir, port, timeoutSeconds);
     }
 
