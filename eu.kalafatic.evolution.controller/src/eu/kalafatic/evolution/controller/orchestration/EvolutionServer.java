@@ -127,7 +127,14 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     public void startServer() throws IOException {
-        start(30000, false);
+        try {
+            start(30000, false);
+        } catch (java.net.SocketException se) {
+            System.err.println("[SERVER][ERROR] Failed to bind EvolutionServer on port " + getListeningPort() + ": " + se.getMessage());
+            System.err.println("[SERVER][DIAGNOSTIC] Port " + getListeningPort() + " is already in use by another process.");
+            System.err.println("[SERVER][DIAGNOSTIC] To inspect: 'lsof -i :" + getListeningPort() + "' (Unix) or 'netstat -ano | findstr :" + getListeningPort() + "' (Windows).");
+            throw se;
+        }
     }
 
     public void stopServer() {

@@ -1027,8 +1027,24 @@ public class ChatGroup extends AEvoGroup {
         obj.put("sequenceNumber", m.getSequenceNumber());
         obj.put("turnId", m.getTurnId());
         obj.put("isTerminal", m.isIsTerminal());
-        obj.put("reasoning", m.getReasoning() != null ? m.getReasoning() : "");
+        String rawReasoning = m.getReasoning() != null ? m.getReasoning() : "";
+        JSONObject provJson = null;
+        if (rawReasoning.contains("<!--PROVENANCE:") && rawReasoning.contains("-->")) {
+            int pStart = rawReasoning.indexOf("<!--PROVENANCE:") + "<!--PROVENANCE:".length();
+            int pEnd = rawReasoning.indexOf("-->", pStart);
+            if (pEnd > pStart) {
+                String pStr = rawReasoning.substring(pStart, pEnd).trim();
+                try {
+                    provJson = new JSONObject(pStr);
+                    rawReasoning = (rawReasoning.substring(0, rawReasoning.indexOf("<!--PROVENANCE:")) + rawReasoning.substring(pEnd + 3)).trim();
+                } catch (Exception ignore) {}
+            }
+        }
+        obj.put("reasoning", rawReasoning);
         obj.put("responseKind", m.getResponseKind() != null ? m.getResponseKind() : "");
+        if (provJson != null) {
+            obj.put("inferenceProvenance", provJson);
+        }
         return obj;
     }
 

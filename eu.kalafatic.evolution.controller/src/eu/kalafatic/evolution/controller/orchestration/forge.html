@@ -1305,8 +1305,11 @@
             const url = getBaseUrl() + `/forge/sessions?runtime=SWT`;
             try {
                 const res = await fetch(url);
-                if (res.ok) {
+                const contentType = res.headers.get("content-type") || "";
+                if (res.ok && contentType.includes("json")) {
                     sessions = await res.json();
+                } else if (!res.ok) {
+                    console.warn(`[FORGE] HTTP error fetching sessions (${res.status} ${res.statusText}) from ${url}`);
                 }
             } catch (e) {
                 log(`Error loading sessions from ${url}: ${e.message}`);

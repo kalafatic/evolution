@@ -521,6 +521,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				context.getOrchestrationState().getMetadata().put("chatResponseReasoning", response.getReasoning());
 				context.getOrchestrationState().getMetadata().put("chatResponseKind", response.getKind().name());
 			}
+			if (response != null && response.getInferenceProvenance() != null) {
+				context.getOrchestrationState().getMetadata().put("currentInferenceProvenance", response.getInferenceProvenance());
+			}
 			return response != null ? response.getFinalContent() : "";
 		} catch (Exception e) {
 			context.log("[DARWIN] Chat response generation failed: " + e.getMessage());
