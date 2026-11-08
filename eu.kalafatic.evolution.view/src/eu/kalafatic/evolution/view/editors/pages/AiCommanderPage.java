@@ -622,6 +622,8 @@ public class AiCommanderPage extends AEvoPage {
 		TaskRequest taskRequest = new TaskRequest(request, getProjectRoot());
 		taskRequest.getContext().put("orchestrator", orchestrator);
 		taskRequest.getContext().put("sessionId", sessionId);
+		taskRequest.getContext().put("turnId", currentTurnId);
+		taskRequest.getContext().put("userMessageHandled", Boolean.TRUE);
 
 		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
 	}
@@ -1053,6 +1055,8 @@ public class AiCommanderPage extends AEvoPage {
 		TaskRequest taskRequest = new TaskRequest(finalRequest, getProjectRoot());
 		taskRequest.getContext().put("orchestrator", orchestrator);
 		taskRequest.getContext().put("sessionId", sessionId);
+		taskRequest.getContext().put("turnId", currentTurnId);
+		taskRequest.getContext().put("userMessageHandled", Boolean.TRUE);
 
 		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
 	}

@@ -92,6 +92,16 @@ public class ConversationOutputController {
                 return;
             }
 
+            boolean isUser = (agentType != null && agentType.toLowerCase().contains("user"))
+                    || (sender != null && (sender.equalsIgnoreCase("you") || sender.toLowerCase().startsWith("user")));
+            if (isUser && buffer.hasTurnUserMessage(turnId)) {
+                System.out.println(String.format(
+                    "[CONTROLLER] Dropping duplicate user message for turn [sessionId=%s, turnId=%s, sender=%s]: %s",
+                    sessionId, turnId, sender, text
+                ));
+                return;
+            }
+
             buffer.add(msg);
 
             // Schedule flush after small buffer window
@@ -168,6 +178,24 @@ public class ConversationOutputController {
         public void add(ChatMessage msg) {
             pendingByTurn.computeIfAbsent(msg.getTurnId(), k -> Collections.synchronizedList(new ArrayList<>())).add(msg);
             historyByTurn.computeIfAbsent(msg.getTurnId(), k -> Collections.synchronizedList(new ArrayList<>())).add(msg);
+        }
+
+        public boolean hasTurnUserMessage(String turnId) {
+            if (turnId == null) return false;
+            List<ChatMessage> turnHistory = historyByTurn.get(turnId);
+            if (turnHistory != null) {
+                synchronized (turnHistory) {
+                    for (ChatMessage m : turnHistory) {
+                        String at = m.getAgentType();
+                        String snd = m.getSender();
+                        if ((at != null && at.toLowerCase().contains("user"))
+                                || (snd != null && (snd.equalsIgnoreCase("you") || snd.toLowerCase().startsWith("user")))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         public List<ChatMessage> consume(String turnId) {

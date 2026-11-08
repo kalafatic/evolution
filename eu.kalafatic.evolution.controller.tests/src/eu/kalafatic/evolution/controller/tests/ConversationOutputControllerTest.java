@@ -126,4 +126,31 @@ public class ConversationOutputControllerTest {
         List<ChatMessage> emptyHistory = controller.getSessionHistory(sessionId);
         assertTrue(emptyHistory.isEmpty());
     }
+
+    @Test
+    public void testDuplicateUserMessageInSameTurnDropped() throws Exception {
+        String turnId = "turn-dup";
+        controller.submitMessage(sessionId, turnId, "User [DARWIN]", "hello", "user", MessagePriority.NORMAL, false);
+        controller.submitMessage(sessionId, turnId, "User", "hello", "user", MessagePriority.NORMAL, false);
+
+        Thread.sleep(500);
+
+        List<ChatMessage> history = controller.getSessionHistory(sessionId);
+        assertEquals("Duplicate user message for the same turn should be dropped", 1, history.size());
+        assertEquals("User [DARWIN]", history.get(0).getSender());
+    }
+
+    @Test
+    public void testIdenticalUserMessagesInDifferentTurnsPreserved() throws Exception {
+        String turn1 = "turn-1";
+        String turn2 = "turn-2";
+
+        controller.submitMessage(sessionId, turn1, "User", "hi", "user", MessagePriority.NORMAL, false);
+        controller.submitMessage(sessionId, turn2, "User", "hi", "user", MessagePriority.NORMAL, false);
+
+        Thread.sleep(500);
+
+        List<ChatMessage> history = controller.getSessionHistory(sessionId);
+        assertEquals("Identical user messages in separate turns should both be preserved", 2, history.size());
+    }
 }
