@@ -337,7 +337,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 					context.log("[DARWIN] Discovery: Selective deep analysis of " + candidates.size()
 							+ " high-signal candidates.");
 					SemanticExtractor extractor = new SemanticExtractor();
-					extractor.extractToSnapshot(snapshot, candidates);
+					extractor.extractToSnapshot(snapshot, candidates, context.getProjectRoot());
 
 					state.getMetadata().put("mediatedSnapshot", snapshot);
 

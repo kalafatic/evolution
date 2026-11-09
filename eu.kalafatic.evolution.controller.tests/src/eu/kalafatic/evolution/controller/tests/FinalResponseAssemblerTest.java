@@ -158,4 +158,33 @@ public class FinalResponseAssemblerTest {
         assertTrue("Summary should contain reconstructed target purpose", summaryText.contains("Reconstructed Target Purpose & Knowledge"));
         assertFalse("Summary should not echo raw prompt instructions", summaryText.contains("You are an experienced software architect"));
     }
+
+    @Test
+    public void testAssembleMediatedModeVerificationHonesty() throws Exception {
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.setSessionId("test-session-mediated");
+        context.getOrchestrationState().setRawInput("analyze architecture and prepare export");
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-mediated");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.MEDIATED);
+
+        PlatformMode platformMode = new PlatformMode(PlatformType.HYBRID_MANUAL_EXPORT, null, 1, false);
+        context.setPlatformMode(platformMode);
+
+        FinalResponseAssembler assembler = new FinalResponseAssembler();
+        FinalResponse failureResponse = assembler.assemble(context, "Execution failed: timeout", false, Instant.now());
+
+        assertNotNull(failureResponse);
+        String failText = failureResponse.getSummary();
+        assertFalse("Failure response must not claim build successful", failText.contains("Build successful"));
+        assertFalse("Failure response must not claim tests passed", failText.contains("Tests passed"));
+        assertTrue("Failure response must reflect failure status", failText.contains("Status: FAILED"));
+        assertTrue("Failure response must reflect incomplete knowledge acquisition", failText.contains("Knowledge acquisition & export: INCOMPLETE"));
+
+        FinalResponse successResponse = assembler.assemble(context, "Completed mediated analysis", true, Instant.now());
+        String successText = successResponse.getSummary();
+        assertFalse("Mediated mode must not claim build successful", successText.contains("Build successful"));
+        assertFalse("Mediated mode must not claim tests passed", successText.contains("Tests passed"));
+        assertTrue("Mediated mode must reflect completed knowledge acquisition", successText.contains("Knowledge acquisition & export: COMPLETED"));
+    }
 }

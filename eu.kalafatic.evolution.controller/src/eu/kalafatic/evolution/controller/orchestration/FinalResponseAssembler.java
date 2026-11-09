@@ -185,6 +185,11 @@ public class FinalResponseAssembler {
             }
         }
 
+        boolean isMediated = (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT)
+                || (context.getOrchestrator() != null && context.getOrchestrator().getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
+        boolean isIntent = (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.INTENT_RECONSTRUCTION)
+                || (context.getOrchestrator() != null && context.getOrchestrator().getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.INTENT);
+
         if (!isSimpleChat && (finalProfile.shouldPerformRealityCheck() || !isChat)) {
             sb.append("### 🔍 Verification\n---\n");
             Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
@@ -219,14 +224,31 @@ public class FinalResponseAssembler {
             String statusStr = success ? (buildFailed ? "SUCCESS_WITH_ERRORS" : "SUCCESS") : (hasPhysicalChanges ? "SUCCESS_WITH_ERRORS" : "FAILED");
             sb.append("✓ Status: ").append(statusStr).append("\n");
 
-            if (buildFailed) {
-                sb.append("⚠️ Build: FAILED (delivered despite error)\n");
+            if (isMediated) {
+                sb.append("✓ Execution Mode: MEDIATED (Read-only architectural analysis & export)\n");
+                sb.append("✓ Source code modification: SKIPPED (By design)\n");
+                if (success) {
+                    sb.append("✓ Knowledge acquisition & export: COMPLETED\n\n");
+                } else {
+                    sb.append("⚠️ Knowledge acquisition & export: INCOMPLETE\n\n");
+                }
+            } else if (isIntent) {
+                sb.append("✓ Execution Mode: INTENT_RECONSTRUCTION (Read-only project discovery)\n");
+                sb.append("✓ Source code modification: SKIPPED (By design)\n\n");
+            } else if (!success) {
+                sb.append("⚠️ Execution: FAILED\n\n");
             } else {
-                sb.append("✓ Build successful\n");
-            }
+                if (buildFailed) {
+                    sb.append("⚠️ Build: FAILED (delivered despite error)\n");
+                } else if (finalProfile.useCompiler()) {
+                    sb.append("✓ Build successful\n");
+                }
 
-            sb.append("✓ Tests passed\n");
-            sb.append("✓ Static review passed\n\n");
+                if (finalProfile.useTests()) {
+                    sb.append("✓ Tests passed\n");
+                }
+                sb.append("✓ Static review passed\n\n");
+            }
         }
 
         if (!isSimpleChat && (finalProfile.requiresRepository() || !isChat)) {

@@ -76,39 +76,76 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
 
         // PASS 1 - METADATA LOADING
         context.log("[DISCOVERY] Pass 1: Metadata Loading.");
-        loadAllMetadata(snapshot, context, model);
+        try {
+            loadAllMetadata(snapshot, context, model);
+        } catch (Exception ex) {
+            context.log("[DISCOVERY] Metadata loading note: " + ex.getMessage());
+        }
 
         // PASS 2 - LOCAL RESPONSIBILITY DISCOVERY
         if (intensity >= 2) {
-            discoverLocalResponsibilities(snapshot, model, context);
+            try {
+                discoverLocalResponsibilities(snapshot, model, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Pass 2 degraded: " + ex.getMessage() + ". Continuing with deterministic artifact knowledge.");
+            }
         }
 
         // PASS 3 - RELATIONSHIP DISCOVERY & EVOLUTIONARY INFLUENCE
         if (intensity >= 3) {
-            discoverRelationships(snapshot, model, context);
+            try {
+                discoverRelationships(snapshot, model, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Pass 3 degraded: " + ex.getMessage() + ". Continuing with topological relationships.");
+            }
         }
 
         // PASS 4 - SUBSYSTEM DISCOVERY
         if (intensity >= 3) {
-            discoverSubsystems(snapshot, model, context);
+            try {
+                discoverSubsystems(snapshot, model, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Pass 4 degraded: " + ex.getMessage() + ". Deriving subsystems from directory structure.");
+                deriveSubsystemsFromSnapshot(snapshot, model);
+            }
         }
 
         // PASS 5 - REALITY DISCOVERY (Synthesis & Completeness Tracking)
-        synthesizeReality(goal, snapshot, model, context);
+        try {
+            synthesizeReality(goal, snapshot, model, context);
+        } catch (Exception ex) {
+            context.log("[DISCOVERY] Pass 5 degraded: " + ex.getMessage() + ". Synthesizing reality from discovered evidence.");
+            synthesizeRealityFromEvidence(goal, snapshot, model, context);
+        }
 
         // PASS 6 - GENOME DISCOVERY (Portable Patterns)
         if (intensity >= 4) {
-            discoverGenome(model, context);
+            try {
+                discoverGenome(model, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Pass 6 degraded: " + ex.getMessage());
+            }
         }
 
         // PASS 7 - ARCHITECTURAL COMPRESSION
         if (intensity >= 2) {
-            compressUnderstanding(model, context);
+            try {
+                compressUnderstanding(model, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Pass 7 degraded: " + ex.getMessage());
+                if (!model.getDimensions().containsKey("information_essence")) {
+                    model.getDimensions().put("information_essence", model.getContentLandscapeSummary() != null ? model.getContentLandscapeSummary() : model.getPurpose());
+                }
+            }
         }
 
         // PASS 8 - USE CASE DISCOVERY
         if (intensity >= 3) {
-            discoverUseCases(model, context);
+            try {
+                discoverUseCases(model, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Pass 8 degraded: " + ex.getMessage());
+            }
         }
 
         // POPULATE CANONICAL PROJECTIONS
@@ -154,18 +191,25 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                     "  \"decision_flows\": [\"string\"]\n" +
                     "}";
 
-            String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-            JSONObject obj = JsonUtils.extractJsonObject(response);
-            if (obj != null) {
-                JSONArray execs = obj.optJSONArray("execution_flows");
-                if (execs != null) {
-                    model.getExecutionFlows().clear();
-                    for (int i = 0; i < execs.length(); i++) model.getExecutionFlows().add(execs.getString(i));
+            try {
+                String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+                JSONObject obj = JsonUtils.extractJsonObject(response);
+                if (obj != null) {
+                    JSONArray execs = obj.optJSONArray("execution_flows");
+                    if (execs != null) {
+                        model.getExecutionFlows().clear();
+                        for (int i = 0; i < execs.length(); i++) model.getExecutionFlows().add(execs.getString(i));
+                    }
+                    JSONArray decs = obj.optJSONArray("decision_flows");
+                    if (decs != null) {
+                        model.getDecisionFlows().clear();
+                        for (int i = 0; i < decs.length(); i++) model.getDecisionFlows().add(decs.getString(i));
+                    }
                 }
-                JSONArray decs = obj.optJSONArray("decision_flows");
-                if (decs != null) {
-                    model.getDecisionFlows().clear();
-                    for (int i = 0; i < decs.length(); i++) model.getDecisionFlows().add(decs.getString(i));
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Flow analysis note: " + ex.getMessage());
+                if (model.getExecutionFlows().isEmpty()) {
+                    model.getExecutionFlows().add("Execution Flow: Discover -> Mediate -> Export");
                 }
             }
         }
@@ -232,44 +276,58 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                     "}";
             }
 
-            String response;
-            if ("image".equals(node.getType())) {
-                String imagePath = new File(context.getProjectRoot(), node.getPath()).getAbsolutePath();
-                try {
-                    response = aiService.sendImageRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, imagePath, context);
-                } catch (Exception ex) {
-                    if (context != null) {
-                        context.log("[DISCOVERY] Multi-modal image analysis failed for " + node.getPath() + " (" + ex.getMessage() + "). Falling back to text request.");
+            String response = null;
+            try {
+                if ("image".equals(node.getType())) {
+                    String imagePath = new File(context.getProjectRoot(), node.getPath()).getAbsolutePath();
+                    try {
+                        response = aiService.sendImageRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, imagePath, context);
+                    } catch (Exception ex) {
+                        if (context != null) {
+                            context.log("[DISCOVERY] Multi-modal image analysis failed for " + node.getPath() + " (" + ex.getMessage() + "). Falling back to text request.");
+                        }
+                        response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
                     }
+                } else {
                     response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
                 }
-            } else {
-                response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+            } catch (Exception ex) {
+                if (context != null) {
+                    context.log("[DISCOVERY] LLM analysis for " + node.getPath() + " skipped (" + ex.getMessage() + "). Using local summary.");
+                }
             }
-            JSONObject obj = JsonUtils.extractJsonObject(response);
-            if (obj != null) {
-                JSONArray meanings = obj.optJSONArray("meaning");
-                if (meanings != null) {
-                    for (int i = 0; i < meanings.length(); i++) {
-                        ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-meaning-" + i, node.getPath(), "meaning: " + meanings.getString(i), 0.8);
-                        fact.getEvidence().add(node.getPath());
-                        model.addArchitecturalFact(fact);
+
+            if (response != null) {
+                JSONObject obj = JsonUtils.extractJsonObject(response);
+                if (obj != null) {
+                    JSONArray meanings = obj.optJSONArray("meaning");
+                    if (meanings != null) {
+                        for (int i = 0; i < meanings.length(); i++) {
+                            ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-meaning-" + i, node.getPath(), "meaning: " + meanings.getString(i), 0.8);
+                            fact.getEvidence().add(node.getPath());
+                            model.addArchitecturalFact(fact);
+                        }
+                    }
+                    String role = obj.optString("role_candidate");
+                    if (!role.isEmpty()) {
+                        ArchitecturalFact roleFact = new ArchitecturalFact(node.getId() + "-role", node.getPath(), "acts as " + role, 0.7);
+                        roleFact.getEvidence().add(node.getPath());
+                        model.addArchitecturalFact(roleFact);
+                    }
+
+                    String ocr = obj.optString("extracted_text");
+                    if (!ocr.isEmpty()) {
+                        node.getAttributes().put("ocr_text", ocr);
+                        ArchitecturalFact ocrFact = new ArchitecturalFact(node.getId() + "-ocr", node.getPath(), "contains text: " + (ocr.length() > 50 ? ocr.substring(0, 50) + "..." : ocr), 0.9);
+                        ocrFact.getEvidence().add(node.getPath());
+                        model.addArchitecturalFact(ocrFact);
                     }
                 }
-                String role = obj.optString("role_candidate");
-                if (!role.isEmpty()) {
-                    ArchitecturalFact roleFact = new ArchitecturalFact(node.getId() + "-role", node.getPath(), "acts as " + role, 0.7);
-                    roleFact.getEvidence().add(node.getPath());
-                    model.addArchitecturalFact(roleFact);
-                }
-
-                String ocr = obj.optString("extracted_text");
-                if (!ocr.isEmpty()) {
-                    node.getAttributes().put("ocr_text", ocr);
-                    ArchitecturalFact ocrFact = new ArchitecturalFact(node.getId() + "-ocr", node.getPath(), "contains text: " + (ocr.length() > 50 ? ocr.substring(0, 50) + "..." : ocr), 0.9);
-                    ocrFact.getEvidence().add(node.getPath());
-                    model.addArchitecturalFact(ocrFact);
-                }
+            } else if (node.getSummary() != null && !node.getSummary().isEmpty()) {
+                // Deterministic fact fallback from verified local summary
+                ArchitecturalFact fallbackFact = new ArchitecturalFact(node.getId() + "-summary", node.getPath(), "content: " + limitString(node.getSummary(), 100), 0.85);
+                fallbackFact.getEvidence().add(node.getPath());
+                model.addArchitecturalFact(fallbackFact);
             }
         }
     }
@@ -318,29 +376,43 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                     "  }\n" +
                     "}";
 
-            String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-            JSONObject obj = JsonUtils.extractJsonObject(response);
-            if (obj != null) {
-                JSONArray rels = obj.optJSONArray("relationships");
-                if (rels != null) {
-                    for (int i = 0; i < rels.length(); i++) {
-                        JSONObject rObj = rels.optJSONObject(i);
-                        if (rObj == null) continue;
-                        ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-rel-" + i, node.getPath(), rObj.optString("type") + ": " + rObj.optString("description"), 0.85);
-                        fact.setDescription("Impact if removed: " + rObj.optString("impact_if_removed"));
-                        fact.getEvidence().add(node.getPath());
-                        model.addArchitecturalFact(fact);
+            String response = null;
+            try {
+                response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+            } catch (Exception ex) {
+                context.log("[DISCOVERY] Relationship analysis for " + node.getPath() + " skipped: " + ex.getMessage());
+            }
+
+            if (response != null) {
+                JSONObject obj = JsonUtils.extractJsonObject(response);
+                if (obj != null) {
+                    JSONArray rels = obj.optJSONArray("relationships");
+                    if (rels != null) {
+                        for (int i = 0; i < rels.length(); i++) {
+                            JSONObject rObj = rels.optJSONObject(i);
+                            if (rObj == null) continue;
+                            ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-rel-" + i, node.getPath(), rObj.optString("type") + ": " + rObj.optString("description"), 0.85);
+                            fact.setDescription("Impact if removed: " + rObj.optString("impact_if_removed"));
+                            fact.getEvidence().add(node.getPath());
+                            model.addArchitecturalFact(fact);
+                        }
+                    }
+
+                    JSONObject lev = obj.optJSONObject("semantic_leverage");
+                    if (lev != null) {
+                        node.setEvolutionaryInfluenceScore(lev.optDouble("influence_score", 0.5));
+                        JSONArray breaks = lev.optJSONArray("knowledge_loss_impacts");
+                        if (breaks != null) for (int i = 0; i < breaks.length(); i++) node.addBreakImpact(breaks.getString(i));
+                        JSONArray evs = lev.optJSONArray("evolution_potentials");
+                        if (evs != null) for (int i = 0; i < evs.length(); i++) node.addEvolutionPotential(evs.getString(i));
                     }
                 }
-
-                JSONObject lev = obj.optJSONObject("semantic_leverage");
-                if (lev != null) {
-                    node.setEvolutionaryInfluenceScore(lev.optDouble("influence_score", 0.5));
-                    JSONArray breaks = lev.optJSONArray("knowledge_loss_impacts");
-                    if (breaks != null) for (int i = 0; i < breaks.length(); i++) node.addBreakImpact(breaks.getString(i));
-                    JSONArray evs = lev.optJSONArray("evolution_potentials");
-                    if (evs != null) for (int i = 0; i < evs.length(); i++) node.addEvolutionPotential(evs.getString(i));
-                }
+            } else if (!incoming.isEmpty() || !outgoing.isEmpty()) {
+                // Deterministic topological relationship fact
+                ArchitecturalFact topoFact = new ArchitecturalFact(node.getId() + "-topo", node.getPath(),
+                        "relations: in=" + incoming.size() + ", out=" + outgoing.size(), 0.7);
+                topoFact.getEvidence().add(node.getPath());
+                model.addArchitecturalFact(topoFact);
             }
         }
     }
@@ -397,6 +469,29 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 }
             }
         }
+        if (model.getSubsystems().isEmpty()) {
+            deriveSubsystemsFromSnapshot(snapshot, model);
+        }
+    }
+
+    private void deriveSubsystemsFromSnapshot(TargetSnapshot snapshot, TargetRealityModel model) {
+        if (snapshot == null || snapshot.getNodes().isEmpty()) return;
+        java.util.Map<String, List<String>> folderClusters = new java.util.HashMap<>();
+        for (SemanticNode node : snapshot.getNodes().values()) {
+            String path = node.getPath().replace('\\', '/');
+            int idx = path.indexOf('/');
+            String top = (idx > 0) ? path.substring(0, idx) : "root";
+            folderClusters.computeIfAbsent(top, k -> new ArrayList<>()).add(path);
+        }
+
+        int subIdx = 0;
+        for (java.util.Map.Entry<String, List<String>> entry : folderClusters.entrySet()) {
+            Subsystem sub = new Subsystem("sub-" + (subIdx++), entry.getKey(), 0.75);
+            sub.setPurpose("Cluster for " + entry.getKey() + " artifacts (" + entry.getValue().size() + " files)");
+            sub.getCriticalFiles().addAll(entry.getValue().stream().limit(5).collect(Collectors.toList()));
+            sub.getBoundaries().addAll(entry.getValue().stream().limit(2).collect(Collectors.toList()));
+            model.addSubsystem(sub);
+        }
     }
 
     private void synthesizeReality(String goal, TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
@@ -426,76 +521,122 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 "  }\n" +
                 "}";
 
-        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-        JSONObject obj = JsonUtils.extractJsonObject(response);
-        if (obj != null) {
-            model.setDomain(obj.optString("domain"));
-            model.setPurpose(obj.optString("purpose"));
-            model.setContentLandscapeSummary(obj.optString("landscape_summary"));
-            model.setRealityCompleteness(obj.optDouble("completeness_score", 0.5));
+        String response = null;
+        try {
+            response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        } catch (Exception ex) {
+            context.log("[DISCOVERY] Pass 5 LLM request note: " + ex.getMessage());
+        }
 
-            // Extract additional facts if discovered
-            JSONArray facts = obj.optJSONArray("information_facts");
-            if (facts != null) {
-                for (int i = 0; i < facts.length(); i++) {
-                    JSONObject fObj = facts.optJSONObject(i);
-                    if (fObj == null) continue;
-                    ArchitecturalFact fact = new ArchitecturalFact(fObj.optString("id"), fObj.optString("subject"), fObj.optString("predicate"), 0.9);
-                    fact.setDescription(fObj.optString("description"));
-                    model.addArchitecturalFact(fact);
+        if (response != null) {
+            JSONObject obj = JsonUtils.extractJsonObject(response);
+            if (obj != null) {
+                model.setDomain(obj.optString("domain"));
+                model.setPurpose(obj.optString("purpose"));
+                model.setContentLandscapeSummary(obj.optString("landscape_summary"));
+                model.setRealityCompleteness(obj.optDouble("completeness_score", 0.5));
+
+                // Extract additional facts if discovered
+                JSONArray facts = obj.optJSONArray("information_facts");
+                if (facts != null) {
+                    for (int i = 0; i < facts.length(); i++) {
+                        JSONObject fObj = facts.optJSONObject(i);
+                        if (fObj == null) continue;
+                        ArchitecturalFact fact = new ArchitecturalFact(fObj.optString("id"), fObj.optString("subject"), fObj.optString("predicate"), 0.9);
+                        fact.setDescription(fObj.optString("description"));
+                        model.addArchitecturalFact(fact);
+                    }
                 }
-            }
 
-            // Extract hotspots
-            JSONArray hotspots = obj.optJSONArray("hotspots");
-            if (hotspots != null) {
-                for (int i = 0; i < hotspots.length(); i++) {
-                    JSONObject hObj = hotspots.optJSONObject(i);
-                    if (hObj == null) continue;
+                // Extract hotspots
+                JSONArray hotspots = obj.optJSONArray("hotspots");
+                if (hotspots != null) {
+                    for (int i = 0; i < hotspots.length(); i++) {
+                        JSONObject hObj = hotspots.optJSONObject(i);
+                        if (hObj == null) continue;
 
-                    // Maintain original constructor for framework compatibility
-                    Hotspot hotspot = new Hotspot(hObj.optString("id"), hObj.optString("name"), response, i);
+                        Hotspot hotspot = new Hotspot(hObj.optString("id"), hObj.optString("name"), response, i);
+                        hotspot.setDescription(hObj.optString("description"));
+                        hotspot.setSignificance(hObj.optDouble("significance", 0.5));
 
-                    // Explicitly set domain fields
-                    hotspot.setDescription(hObj.optString("description"));
-                    hotspot.setSignificance(hObj.optDouble("significance", 0.5));
+                        JSONArray related = hObj.optJSONArray("related_artifacts");
+                        if (related != null) {
+                            for (int j = 0; j < related.length(); j++) {
+                                hotspot.getRelatedArtifactsList().add(related.getString(j));
+                            }
+                        }
+                        model.addHotspot(hotspot);
+                    }
+                }
 
-                    JSONArray related = hObj.optJSONArray("related_artifacts");
-                    if (related != null) {
-                        for (int j = 0; j < related.length(); j++) {
-                            hotspot.getRelatedArtifactsList().add(related.getString(j));
+                JSONObject views = obj.optJSONObject("views");
+                if (views != null) {
+                    JSONObject kno = views.optJSONObject("knowledge");
+                    if (kno != null) {
+                        java.util.Iterator<String> keys = kno.keys();
+                        while (keys.hasNext()) {
+                            String key = keys.next();
+                            model.getKnowledgeView().put(key, kno.get(key));
                         }
                     }
-                    model.addHotspot(hotspot);
+                    JSONObject str = views.optJSONObject("structure");
+                    if (str != null) {
+                        java.util.Iterator<String> keys = str.keys();
+                        while (keys.hasNext()) {
+                            String key = keys.next();
+                            model.getStructureView().put(key, str.get(key));
+                        }
+                    }
+                    JSONObject gen = views.optJSONObject("genome");
+                    if (gen != null) {
+                        java.util.Iterator<String> keys = gen.keys();
+                        while (keys.hasNext()) {
+                            String key = keys.next();
+                            model.getGenomeView().put(key, gen.get(key));
+                        }
+                    }
                 }
             }
+        }
 
-            JSONObject views = obj.optJSONObject("views");
-            if (views != null) {
-                JSONObject kno = views.optJSONObject("knowledge");
-                if (kno != null) {
-                    java.util.Iterator<String> keys = kno.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        model.getKnowledgeView().put(key, kno.get(key));
-                    }
-                }
-                JSONObject str = views.optJSONObject("structure");
-                if (str != null) {
-                    java.util.Iterator<String> keys = str.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        model.getStructureView().put(key, str.get(key));
-                    }
-                }
-                JSONObject gen = views.optJSONObject("genome");
-                if (gen != null) {
-                    java.util.Iterator<String> keys = gen.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        model.getGenomeView().put(key, gen.get(key));
-                    }
-                }
+        if (model.getDomain() == null || model.getDomain().isEmpty() || model.getPurpose() == null || model.getPurpose().isEmpty()) {
+            synthesizeRealityFromEvidence(goal, snapshot, model, context);
+        }
+    }
+
+    private void synthesizeRealityFromEvidence(String goal, TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) {
+        if (model.getDomain() == null || model.getDomain().isEmpty()) {
+            String domain = model.getTargetCategory() != null ? model.getTargetCategory().name() : "SOFTWARE";
+            model.setDomain(domain);
+        }
+
+        if (model.getPurpose() == null || model.getPurpose().isEmpty()) {
+            String nature = model.getTargetNature();
+            if (nature != null && !nature.isEmpty()) {
+                model.setPurpose(nature);
+            } else {
+                model.setPurpose("Discovered target repository for goal: " + goal);
+            }
+        }
+
+        if (model.getContentLandscapeSummary() == null || model.getContentLandscapeSummary().isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Target category: ").append(model.getTargetCategory()).append(". ");
+            sb.append("Files scanned: ").append(snapshot != null ? snapshot.getNodes().size() : 0).append(". ");
+            sb.append("Subsystems: ").append(model.getSubsystems().size()).append(". ");
+            sb.append("Discovered facts: ").append(model.getArchitecturalFacts().size()).append(".");
+            model.setContentLandscapeSummary(sb.toString());
+        }
+
+        if (model.getHotspots().isEmpty() && snapshot != null) {
+            List<SemanticNode> top = getTopCentralNodes(snapshot, 5);
+            int idx = 0;
+            for (SemanticNode node : top) {
+                Hotspot h = new Hotspot("hotspot-" + (idx++), node.getPath(), "Discovered node " + node.getPath(), idx);
+                h.setDescription("Key artifact: " + node.getPath() + " (" + node.getType() + ")");
+                h.setSignificance(0.8);
+                h.getRelatedArtifactsList().add(node.getPath());
+                model.addHotspot(h);
             }
         }
     }
@@ -860,9 +1001,32 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             .sorted((n1, n2) -> {
                 int d1 = inDegree.getOrDefault(n1.getId(), 0) + outDegree.getOrDefault(n1.getId(), 0);
                 int d2 = inDegree.getOrDefault(n2.getId(), 0) + outDegree.getOrDefault(n2.getId(), 0);
-                return Integer.compare(d2, d1);
+                if (d1 != d2) {
+                    return Integer.compare(d2, d1);
+                }
+                double s1 = scoreNodeSignificance(n1);
+                double s2 = scoreNodeSignificance(n2);
+                if (Double.compare(s2, s1) != 0) {
+                    return Double.compare(s2, s1);
+                }
+                return n1.getPath().compareTo(n2.getPath());
             })
             .limit(limit)
             .collect(Collectors.toList());
+    }
+
+    private double scoreNodeSignificance(SemanticNode node) {
+        if (node == null) return 0.0;
+        double score = node.getArchitecturalAuthority() + (node.getEvolutionaryInfluenceScore() * 10.0);
+        String p = node.getPath().toLowerCase();
+        if (p.endsWith("modelfile") || p.endsWith(".modelfile")) score += 50.0;
+        else if (p.endsWith("model.json") || p.endsWith("config.json") || p.endsWith("training-report.json")) score += 40.0;
+        else if (p.endsWith(".evo") || p.endsWith(".evodata") || p.endsWith(".parquet") || p.endsWith(".gguf")) score += 35.0;
+        else if (p.endsWith("pom.xml") || p.endsWith("build.gradle") || p.endsWith("package.json") || p.endsWith("readme.md")) score += 30.0;
+        else if ("source_code".equals(node.getType())) score += 20.0;
+        else if ("dataset".equals(node.getType()) || "model".equals(node.getType())) score += 25.0;
+
+        if (node.getSummary() != null && !node.getSummary().isEmpty()) score += 10.0;
+        return score;
     }
 }

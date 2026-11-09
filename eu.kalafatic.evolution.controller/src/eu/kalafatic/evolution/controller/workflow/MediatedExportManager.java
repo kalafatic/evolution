@@ -387,7 +387,16 @@ public class MediatedExportManager {
         for (String path : model.getImplementationFrontierFiles()) {
             File src = new File(projectRoot, path);
             if (src.exists() && src.isFile()) {
-                addFileToZip(zos, "implementation/files/" + path, src);
+                addFileToZip(zos, "implementation/files/" + path.replace('\\', '/'), src);
+            } else {
+                File absFile = new File(path);
+                if (absFile.exists() && absFile.isFile()) {
+                    String entryName = path.replace('\\', '/');
+                    if (entryName.startsWith(projectRoot.getAbsolutePath().replace('\\', '/'))) {
+                        entryName = projectRoot.toPath().relativize(absFile.toPath()).toString().replace('\\', '/');
+                    }
+                    addFileToZip(zos, "implementation/files/" + entryName, absFile);
+                }
             }
         }
     }

@@ -59,12 +59,21 @@ public class SemanticExtractor {
     }
 
     public void extractToSnapshot(TargetSnapshot snapshot, List<String> paths) {
-        // Compatibility method for existing IterationManager calls
-        File root = new File("."); // Usually executed in project root
+        File root = snapshot != null && snapshot.getRootPath() != null && !snapshot.getRootPath().isEmpty()
+                ? new File(snapshot.getRootPath())
+                : new File(".");
+        extractToSnapshot(snapshot, paths, root);
+    }
+
+    public void extractToSnapshot(TargetSnapshot snapshot, List<String> paths, File root) {
+        File targetRoot = (root != null) ? root :
+                (snapshot != null && snapshot.getRootPath() != null && !snapshot.getRootPath().isEmpty()
+                        ? new File(snapshot.getRootPath())
+                        : new File("."));
         for (String path : paths) {
             SemanticNode node = snapshot.getNodes().get(path);
             if (node != null) {
-                analyzeNode(node, root, snapshot);
+                analyzeNode(node, targetRoot, snapshot);
             }
         }
     }

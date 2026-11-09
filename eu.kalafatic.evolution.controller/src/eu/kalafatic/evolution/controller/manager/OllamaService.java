@@ -36,6 +36,7 @@ public class OllamaService {
     private float topP = 0.9f;
     private int topK = 40;
     private float repeatPenalty = 1.1f;
+    private int requestTimeoutSeconds = 300;
 
     public OllamaService(String url, String model) {
         this.baseUrl = (url != null && !url.isEmpty()) ? url : "http://localhost:11434";
@@ -86,6 +87,34 @@ public class OllamaService {
     public OllamaService setRepeatPenalty(float repeatPenalty) {
         this.repeatPenalty = repeatPenalty;
         return this;
+    }
+
+    public int getRequestTimeoutSeconds() {
+        return requestTimeoutSeconds;
+    }
+
+    public OllamaService setRequestTimeoutSeconds(int seconds) {
+        if (seconds > 0) {
+            this.requestTimeoutSeconds = seconds;
+        }
+        return this;
+    }
+
+    private Duration resolveEffectiveTimeout() {
+        String configured = System.getProperty("evo.ollama.timeout");
+        if (configured != null && !configured.trim().isEmpty()) {
+            try {
+                int secs = Integer.parseInt(configured.trim());
+                if (secs > 0) return Duration.ofSeconds(secs);
+            } catch (Exception ignore) {}
+        }
+        if (this.model != null) {
+            String lm = this.model.toLowerCase();
+            if (lm.contains("14b") || lm.contains("32b") || lm.contains("70b") || lm.contains("qwen3-14b")) {
+                return Duration.ofSeconds(Math.max(this.requestTimeoutSeconds, 480));
+            }
+        }
+        return Duration.ofSeconds(this.requestTimeoutSeconds);
     }
 
     /**
@@ -148,7 +177,7 @@ public class OllamaService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(chatUrl))
                 .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(120))
+                .timeout(resolveEffectiveTimeout())
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
@@ -190,7 +219,7 @@ public class OllamaService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(genUrl))
                 .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(120))
+                .timeout(resolveEffectiveTimeout())
                 .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
                 .build();
 
@@ -222,7 +251,7 @@ public class OllamaService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(genUrl))
                 .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(120))
+                .timeout(resolveEffectiveTimeout())
                 .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
                 .build();
 

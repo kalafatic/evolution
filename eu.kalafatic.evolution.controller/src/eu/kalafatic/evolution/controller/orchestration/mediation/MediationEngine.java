@@ -46,7 +46,7 @@ public class MediationEngine {
         
         // 2. EXTRACT: Semantic understanding
         List<String> candidates = curator.selectContext(snapshot, request, 32);
-        extractor.extractToSnapshot(snapshot, candidates);
+        extractor.extractToSnapshot(snapshot, candidates, context.getProjectRoot());
         
         // 3. COMPARE: What changed since last mediation?
         MediationDelta delta = calculateDelta(lastSnapshot, snapshot);
@@ -90,7 +90,7 @@ public class MediationEngine {
         // Only extract if needed
         if (snapshot.getNodes().isEmpty()) {
             List<String> candidates = curator.selectContext(snapshot, request, 16);
-            extractor.extractToSnapshot(snapshot, candidates);
+            extractor.extractToSnapshot(snapshot, candidates, context.getProjectRoot());
         }
         
         // Update model incrementally
