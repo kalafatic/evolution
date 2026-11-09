@@ -48,19 +48,24 @@ public class ServerManager {
         int mcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
         int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
         int secondaryPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+        int controlPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
 
         boolean isMcp = (port == mcpPort) || (port == PortRegistry.EVO_MCP.getDefaultPort()) || (port == 38080);
         boolean isSupervisor = (port == supervisorPort) || (port == PortRegistry.EVO_SUPERVISOR_API.getDefaultPort()) || (port == 8089);
+        boolean isSupervisorControl = (port == controlPort) || (port == PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort()) || (port == 28580) || (port == 8580);
         boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
 
-        if (!isMcp && !isSupervisor && !isSecondary) {
+        if (!isMcp && !isSupervisor && !isSupervisorControl && !isSecondary) {
             java.io.File readyFile = new java.io.File("self-dev-run/evo_ready.txt");
             if (readyFile.exists()) {
                 readyFile.delete();
             }
         }
 
-        if (isMcp) {
+        if (isSupervisorControl) {
+            System.out.println("Starting Supervisor Control TCP on port " + port + " is handled by the supervisor process (dedicated TCP listener).");
+            return;
+        } else if (isMcp) {
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().setPort(port);
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
             System.out.println("Started MCP server on authoritative port " + port);
@@ -163,12 +168,16 @@ public class ServerManager {
         int mcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
         int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
         int secondaryPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+        int controlPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
 
         boolean isMcp = (port == mcpPort) || (port == PortRegistry.EVO_MCP.getDefaultPort()) || (port == 38080);
         boolean isSupervisor = (port == supervisorPort) || (port == PortRegistry.EVO_SUPERVISOR_API.getDefaultPort()) || (port == 8089);
+        boolean isSupervisorControl = (port == controlPort) || (port == PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort()) || (port == 28580) || (port == 8580);
         boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
 
-        if (isMcp) {
+        if (isSupervisorControl) {
+            System.out.println("Stopping Supervisor Control TCP port " + port + " is handled by destroying the supervisor OS process.");
+        } else if (isMcp) {
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().stop();
         } else if (isSupervisor) {
             System.out.println("Stopping Supervisor port " + port + " is handled by destroying the supervisor OS process.");
@@ -177,7 +186,7 @@ public class ServerManager {
         } else {
             EvolutionServer server = activeServers.get(port);
             if (server != null) {
-                server.stop();
+                server.stopServer();
                 activeServers.remove(port);
             }
             // Stop active secondary server
@@ -214,14 +223,16 @@ public class ServerManager {
         int mcpPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
         int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
         int secondaryPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
+        int controlPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
 
         boolean isMcp = (port == mcpPort) || (port == PortRegistry.EVO_MCP.getDefaultPort()) || (port == 38080);
         boolean isSupervisor = (port == supervisorPort) || (port == PortRegistry.EVO_SUPERVISOR_API.getDefaultPort()) || (port == 8089);
+        boolean isSupervisorControl = (port == controlPort) || (port == PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort()) || (port == 28580) || (port == 8580);
         boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
 
         if (isMcp) {
             return eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning();
-        } else if (isSupervisor) {
+        } else if (isSupervisor || isSupervisorControl) {
             try (java.net.Socket s = new java.net.Socket()) {
                 s.connect(new java.net.InetSocketAddress("127.0.0.1", port), 200);
                 return true;
@@ -258,6 +269,9 @@ public class ServerManager {
 
         int supervisorPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId());
         statuses.put(supervisorPort, isRunning(supervisorPort));
+
+        int controlPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
+        statuses.put(controlPort, isRunning(controlPort));
         return statuses;
     }
 }

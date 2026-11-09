@@ -134,7 +134,10 @@ public class SettingsGroup extends AToolGroup {
                 mcp = orchestrator.getServerSettings().getMcpPort();
             }
             if (s.port == mcp) return "Model Context Protocol";
-            if (s.port == 28480 || s.port == 8089) return "Self-Dev Supervisor";
+            if (s.port == 28480 || s.port == 8480 || s.port == 8089) return "Self-Dev Supervisor REST";
+            if (s.port == 28580 || s.port == 8580) return "Supervisor Control TCP";
+            if (s.port == 28380 || s.port == 8380) return "EVO Autonomous Coding Agent";
+            if (s.port == 28680 || s.port == 8680) return "EVO Auxiliary Network Service";
             return "Evolution Node";
         });
 
@@ -236,6 +239,11 @@ public class SettingsGroup extends AToolGroup {
             int supervisorPort = 28480;
             if (list.stream().noneMatch(s -> s.port == supervisorPort)) {
                 list.add(new ServerStatus(supervisorPort, false));
+            }
+
+            int supervisorControlPort = 28580;
+            if (list.stream().noneMatch(s -> s.port == supervisorControlPort)) {
+                list.add(new ServerStatus(supervisorControlPort, false));
             }
 
             serverViewer.setInput(list);

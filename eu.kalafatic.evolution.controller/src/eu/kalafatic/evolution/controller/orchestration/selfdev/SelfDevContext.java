@@ -369,24 +369,24 @@ public class SelfDevContext {
     }
 
     public int getPortOffset() {
-        return isDebugMode() ? 10 : 0;
+        return isDebugMode() ? eu.kalafatic.evolution.controller.resource.PortRegistry.DEBUG_PORT_OFFSET : 0;
     }
 
     public int getEffectiveSupervisorPort() {
         eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SUPERVISOR");
-        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 28480;
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
         return basePort + getPortOffset();
     }
 
     public int getEffectiveSupervisorControlPort() {
         eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SUPERVISOR_CONTROL");
-        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 28580;
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort();
         return basePort + getPortOffset();
     }
 
     public int getEffectiveServerPort() {
         eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SERVER");
-        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 28080;
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
         return basePort + getPortOffset();
     }
 

@@ -81,11 +81,18 @@ public class PortAllocationManager {
             throw new IllegalArgumentException("Invalid port number " + newPort + ". Must be between 1024 and 65535.");
         }
 
-        // Check internal collisions
+        // Check internal collisions with other production services
         for (PortConfiguration cfg : configurations.values()) {
             if (!cfg.getServiceId().equalsIgnoreCase(existing.getServiceId()) && cfg.getAssignedPort() == newPort) {
                 throw new IllegalArgumentException("Port collision: Port " + newPort + " is already assigned to EVO service [" + cfg.getServiceName() + "]");
             }
+        }
+
+        // Prevent collision with reserved debug ports
+        if (PortRegistry.isDebugPort(newPort)) {
+            PortRegistry debugOwner = PortRegistry.findByDebugPort(newPort);
+            throw new IllegalArgumentException("Port collision: Port " + newPort + " is reserved for debug isolation [" +
+                    (debugOwner != null ? debugOwner.getServiceName() : "Debug Service") + "]");
         }
 
         configurations.put(existing.getServiceId(), existing.withAssignedPort(newPort));
@@ -115,9 +122,10 @@ public class PortAllocationManager {
                 setAssignedPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId(), port);
             }
 
-            // Secondary / Portal Port: legacy 8180, 58080
+            // Secondary / Portal Port: legacy 8180, 58080 or accidental collision with primary port
+            int primaryAssigned = getPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId());
             int portalPort = srv.getPortalPort();
-            if (portalPort == 8180 || portalPort == 58080 || portalPort <= 0) {
+            if (portalPort == 8180 || portalPort == 58080 || portalPort <= 0 || portalPort == primaryAssigned) {
                 srv.setPortalPort(PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort());
                 srv.setPortalUrl("http://localhost:" + PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort() + "/dashboard.html");
                 setAssignedPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId(), PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort());
@@ -127,9 +135,10 @@ public class PortAllocationManager {
                 setAssignedPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId(), portalPort);
             }
 
-            // MCP Port: legacy 8280, 38080, 48082
+            // MCP Port: legacy 8280, 38080, 48082 or accidental collision with other services
+            int portalAssigned = getPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId());
             int mcpPort = srv.getMcpPort();
-            if (mcpPort == 8280 || mcpPort == 38080 || mcpPort == 48082 || mcpPort <= 0) {
+            if (mcpPort == 8280 || mcpPort == 38080 || mcpPort == 48082 || mcpPort <= 0 || mcpPort == primaryAssigned || mcpPort == portalAssigned) {
                 srv.setMcpPort(PortRegistry.EVO_MCP.getDefaultPort());
                 setAssignedPort(PortRegistry.EVO_MCP.getServiceId(), PortRegistry.EVO_MCP.getDefaultPort());
                 modified = true;
@@ -187,6 +196,12 @@ public class PortAllocationManager {
                 errors.add("Internal port collision: Port " + port + " is assigned to both [" + seenPorts.get(port) + "] and [" + cfg.getServiceName() + "]");
             } else {
                 seenPorts.put(port, cfg.getServiceName());
+            }
+
+            if (PortRegistry.isDebugPort(port)) {
+                PortRegistry dbg = PortRegistry.findByDebugPort(port);
+                errors.add("Production service [" + cfg.getServiceName() + "] collides with reserved debug port " + port +
+                        " [" + (dbg != null ? dbg.getServiceName() : "Debug Service") + "]");
             }
         }
 

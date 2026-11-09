@@ -13,43 +13,44 @@ package eu.kalafatic.evolution.controller.resource;
 public enum PortRegistry {
 
     /** Main HTTP Server and REST API (formerly 8080 / 48080). */
-    EVO_HTTP_PRIMARY("HTTP_PRIMARY", "EVO Primary HTTP / REST Server", 8080, 28080, "http", "127.0.0.1", true),
+    EVO_HTTP_PRIMARY("HTTP_PRIMARY", "EVO Primary HTTP / REST Server", 8080, 28080, PortProtocol.HTTP, "127.0.0.1", true),
 
     /** Secondary HTTP Server / AI Chat / Portal (formerly 8180 / 58080 / 48081). */
-    EVO_HTTP_SECONDARY("HTTP_SECONDARY", "EVO Secondary HTTP / Portal Server", 8180, 28180, "http", "127.0.0.1", true),
+    EVO_HTTP_SECONDARY("HTTP_SECONDARY", "EVO Secondary HTTP / Portal Server", 8180, 28180, PortProtocol.HTTP, "127.0.0.1", true),
 
     /** Model Context Protocol (MCP) Server & Documentation Server (formerly 8280 / 38080 / 48082). */
-    EVO_MCP("MCP", "Model Context Protocol Server", 8280, 28280, "http", "127.0.0.1", true),
+    EVO_MCP("MCP", "Model Context Protocol Server", 8280, 28280, PortProtocol.HTTP, "127.0.0.1", true),
 
     /** Autonomous Coding Agent Server (formerly 8380 / 48083). */
-    EVO_DEVELOP("DEVELOP", "EVO Autonomous Coding Agent Server", 8380, 28380, "http", "127.0.0.1", true),
+    EVO_DEVELOP("DEVELOP", "EVO Autonomous Coding Agent Server", 8380, 28380, PortProtocol.HTTP, "127.0.0.1", true),
 
     /** Supervisor Process HTTP REST API (formerly 8480 / 8089). */
-    EVO_SUPERVISOR_API("SUPERVISOR_API", "EVO Supervisor REST API Server", 8480, 28480, "http", "127.0.0.1", true),
+    EVO_SUPERVISOR_API("SUPERVISOR_API", "EVO Supervisor REST API Server", 8480, 28480, PortProtocol.HTTP, "127.0.0.1", true),
 
-    /** Supervisor Glassmorphic Control Plane Server (formerly 8580 / 28080). */
-    EVO_SUPERVISOR_CONTROL("SUPERVISOR_CONTROL", "EVO Supervisor Control Server", 8580, 28580, "http", "127.0.0.1", true),
+    /** Dedicated Supervisor Control TCP Server (formerly 8580 / 28080). */
+    EVO_SUPERVISOR_CONTROL("SUPERVISOR_CONTROL", "EVO Supervisor Control TCP Server", 8580, 28580, PortProtocol.TCP, "127.0.0.1", true),
 
     /** Reserved Auxiliary Server (formerly 8680). */
-    EVO_AUXILIARY("AUXILIARY", "EVO Auxiliary Network Service", 8680, 28680, "http", "127.0.0.1", false);
+    EVO_AUXILIARY("AUXILIARY", "EVO Auxiliary Network Service", 8680, 28680, PortProtocol.HTTP, "127.0.0.1", false);
 
     public static final int BASE_OFFSET = 20000;
     public static final int PORT_INCREMENT = 100;
+    public static final int DEBUG_PORT_OFFSET = 10;
 
     private final String serviceId;
     private final String serviceName;
     private final int originalPort;
     private final int defaultPort;
-    private final String protocol;
+    private final PortProtocol portProtocol;
     private final String defaultHost;
     private final boolean autoStart;
 
-    PortRegistry(String serviceId, String serviceName, int originalPort, int defaultPort, String protocol, String defaultHost, boolean autoStart) {
+    PortRegistry(String serviceId, String serviceName, int originalPort, int defaultPort, PortProtocol portProtocol, String defaultHost, boolean autoStart) {
         this.serviceId = serviceId;
         this.serviceName = serviceName;
         this.originalPort = originalPort;
         this.defaultPort = defaultPort;
-        this.protocol = protocol;
+        this.portProtocol = portProtocol != null ? portProtocol : PortProtocol.HTTP;
         this.defaultHost = defaultHost;
         this.autoStart = autoStart;
     }
@@ -70,8 +71,12 @@ public enum PortRegistry {
         return defaultPort;
     }
 
+    public PortProtocol getPortProtocol() {
+        return portProtocol;
+    }
+
     public String getProtocol() {
-        return protocol;
+        return portProtocol.getScheme();
     }
 
     public String getDefaultHost() {
@@ -80,6 +85,28 @@ public enum PortRegistry {
 
     public boolean isAutoStart() {
         return autoStart;
+    }
+
+    public int getDebugPort() {
+        return defaultPort + DEBUG_PORT_OFFSET;
+    }
+
+    public static boolean isDebugPort(int port) {
+        for (PortRegistry reg : values()) {
+            if (reg.getDebugPort() == port) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static PortRegistry findByDebugPort(int port) {
+        for (PortRegistry reg : values()) {
+            if (reg.getDebugPort() == port) {
+                return reg;
+            }
+        }
+        return null;
     }
 
     /**
@@ -111,6 +138,7 @@ public enum PortRegistry {
                 return EVO_SUPERVISOR_API;
             case "CONTROL":
             case "SUPERVISOR_UI":
+            case "SUPERVISOR_TCP":
                 return EVO_SUPERVISOR_CONTROL;
             default:
                 return null;

@@ -134,4 +134,73 @@ public class PortManagementTest {
         // Attempt to assign primary port to MCP service
         pam.setAssignedPort("MCP", 28080);
     }
+
+    @Test
+    public void testProtocolsMatchAuthoritativeSpecification() {
+        assertEquals("Primary HTTP must use HTTP protocol", "http", PortRegistry.EVO_HTTP_PRIMARY.getProtocol());
+        assertTrue(PortRegistry.EVO_HTTP_PRIMARY.getPortProtocol().isHttp());
+
+        assertEquals("Secondary HTTP must use HTTP protocol", "http", PortRegistry.EVO_HTTP_SECONDARY.getProtocol());
+        assertTrue(PortRegistry.EVO_HTTP_SECONDARY.getPortProtocol().isHttp());
+
+        assertEquals("MCP must use HTTP protocol", "http", PortRegistry.EVO_MCP.getProtocol());
+        assertTrue(PortRegistry.EVO_MCP.getPortProtocol().isHttp());
+
+        assertEquals("DEVELOP must use HTTP protocol", "http", PortRegistry.EVO_DEVELOP.getProtocol());
+        assertTrue(PortRegistry.EVO_DEVELOP.getPortProtocol().isHttp());
+
+        assertEquals("Supervisor REST must use HTTP protocol", "http", PortRegistry.EVO_SUPERVISOR_API.getProtocol());
+        assertTrue(PortRegistry.EVO_SUPERVISOR_API.getPortProtocol().isHttp());
+
+        assertEquals("Supervisor Control must use TCP protocol", "tcp", PortRegistry.EVO_SUPERVISOR_CONTROL.getProtocol());
+        assertTrue(PortRegistry.EVO_SUPERVISOR_CONTROL.getPortProtocol().isTcp());
+
+        assertEquals("Auxiliary must use HTTP protocol", "http", PortRegistry.EVO_AUXILIARY.getProtocol());
+        assertTrue(PortRegistry.EVO_AUXILIARY.getPortProtocol().isHttp());
+
+        // Verify ResourceManager reflects TCP for SUPERVISOR_CONTROL
+        ResourceManager rm = ResourceManager.getInstance();
+        assertEquals("tcp", rm.getService("SUPERVISOR_CONTROL").getProtocol());
+    }
+
+    @Test
+    public void testDebugPortIsolationAndCollisionPrevention() {
+        assertEquals(10, PortRegistry.DEBUG_PORT_OFFSET);
+        assertEquals(28090, PortRegistry.EVO_HTTP_PRIMARY.getDebugPort());
+        assertEquals(28490, PortRegistry.EVO_SUPERVISOR_API.getDebugPort());
+        assertEquals(28590, PortRegistry.EVO_SUPERVISOR_CONTROL.getDebugPort());
+
+        assertTrue(PortRegistry.isDebugPort(28090));
+        assertTrue(PortRegistry.isDebugPort(28490));
+        assertTrue(PortRegistry.isDebugPort(28590));
+        assertFalse(PortRegistry.isDebugPort(28080));
+        assertFalse(PortRegistry.isDebugPort(28480));
+
+        assertEquals(PortRegistry.EVO_HTTP_PRIMARY, PortRegistry.findByDebugPort(28090));
+
+        // Ensure PortAllocationManager rejects assigning a debug port to a production service
+        try {
+            PortAllocationManager.getInstance().setAssignedPort("MCP", 28090);
+            fail("Must not allow assigning a reserved debug port");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("reserved for debug"));
+        }
+    }
+
+    @Test
+    public void testNanoHttpdRejectsTcpControlPort() {
+        try {
+            new eu.kalafatic.evolution.controller.orchestration.EvolutionServer(28580);
+            fail("NanoHTTPD EvolutionServer must reject TCP control port 28580");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("TCP control port"));
+        }
+
+        try {
+            new eu.kalafatic.evolution.servers.server.EvolutionServer(28580);
+            fail("Servers EvolutionServer must reject TCP control port 28580");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("TCP control port"));
+        }
+    }
 }

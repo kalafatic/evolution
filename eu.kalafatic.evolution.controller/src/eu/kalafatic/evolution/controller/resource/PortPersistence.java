@@ -45,12 +45,24 @@ public class PortPersistence {
         // Read primary server
         ServerSettings srv = orchestrator.getServerSettings();
         if (srv != null && srv.getPort() > 0) {
-            pam.setAssignedPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId(), srv.getPort());
+            try {
+                pam.setAssignedPort(PortRegistry.EVO_HTTP_PRIMARY.getServiceId(), srv.getPort());
+            } catch (Exception e) {
+                Log.log("[PortPersistence] Primary server port invalid: " + e.getMessage());
+            }
             if (srv.getPortalPort() > 0) {
-                pam.setAssignedPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId(), srv.getPortalPort());
+                try {
+                    pam.setAssignedPort(PortRegistry.EVO_HTTP_SECONDARY.getServiceId(), srv.getPortalPort());
+                } catch (Exception e) {
+                    Log.log("[PortPersistence] Portal port invalid or collision: " + e.getMessage());
+                }
             }
             if (srv.getMcpPort() > 0) {
-                pam.setAssignedPort(PortRegistry.EVO_MCP.getServiceId(), srv.getMcpPort());
+                try {
+                    pam.setAssignedPort(PortRegistry.EVO_MCP.getServiceId(), srv.getMcpPort());
+                } catch (Exception e) {
+                    Log.log("[PortPersistence] MCP port invalid or collision: " + e.getMessage());
+                }
             }
         }
 
