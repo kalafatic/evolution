@@ -39,6 +39,9 @@ public class EvolutionServer extends NanoHTTPD {
 
     public EvolutionServer(int port) {
         super(port);
+        if (port == 28580 || port == 8580) {
+            throw new IllegalArgumentException("Cannot assign TCP control port " + port + " to NanoHTTPD EvolutionServer");
+        }
         this.dbManager = new DatabaseManager();
         this.userRepository = new UserRepository(dbManager);
         this.sessionRepository = new SessionRepository(dbManager);

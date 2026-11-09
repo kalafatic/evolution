@@ -1,6 +1,9 @@
 package eu.kalafatic.evolution.controller.orchestration.mcp;
 
 import java.io.IOException;
+
+import eu.kalafatic.evolution.controller.resource.PortAllocationManager;
+import eu.kalafatic.evolution.controller.resource.PortRegistry;
 import eu.kalafatic.evolution.servers.mcp.demo.DemoConfiguration;
 import eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentationProvider;
 
@@ -10,7 +13,7 @@ import eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentationProvider;
 public class McpDemoServerManager {
     private static McpDemoServerManager instance;
     private DemoDocumentationProvider demoServer;
-    private int port = 28280;
+    private int port = PortRegistry.EVO_MCP.getDefaultPort();
 
     private McpDemoServerManager() {}
 
@@ -32,9 +35,12 @@ public class McpDemoServerManager {
             throw new IOException(report.toString());
         }
 
+        int configuredPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
+        int effectivePort = (port > 0) ? port : (configuredPort > 0 ? configuredPort : PortRegistry.EVO_MCP.getDefaultPort());
+
         DemoConfiguration config = new DemoConfiguration();
-        config.setPort(port);
-        config.setHost("localhost");
+        config.setPort(effectivePort);
+        config.setHost(PortRegistry.EVO_MCP.getDefaultHost());
         config.setDocsFolder("docs");
         config.setEnabled(true);
 

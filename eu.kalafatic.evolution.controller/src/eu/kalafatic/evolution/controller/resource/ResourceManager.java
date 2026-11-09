@@ -471,9 +471,9 @@ public class ResourceManager {
         int developPort = pam.getPort(PortRegistry.EVO_DEVELOP.getServiceId());
         services.add(new EvoService("DEVELOP", "EVO Autonomous Coding Agent", "127.0.0.1", developPort, true, "EMF.develop"));
 
-        // 7. SUPERVISOR CONTROL Server (28580)
+        // 7. SUPERVISOR CONTROL Server (Dedicated TCP 28580)
         int controlPort = pam.getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
-        services.add(new EvoService("SUPERVISOR_CONTROL", "Supervisor Control Server", "127.0.0.1", controlPort, true, "EMF.supervisorControlSettings"));
+        services.add(new EvoService("SUPERVISOR_CONTROL", "Supervisor Control TCP Server", "127.0.0.1", controlPort, PortProtocol.TCP.getScheme(), "", true, "EMF.supervisorControlSettings"));
 
         return services;
     }

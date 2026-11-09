@@ -15,6 +15,9 @@ public class McpServer extends NanoHTTPD {
 
     public McpServer(int port, JsonRpcDispatcher dispatcher) {
         super(port);
+        if (port == 28580 || port == 8580) {
+            throw new IllegalArgumentException("Cannot assign TCP control port " + port + " to NanoHTTPD McpServer");
+        }
         this.dispatcher = dispatcher;
     }
 
