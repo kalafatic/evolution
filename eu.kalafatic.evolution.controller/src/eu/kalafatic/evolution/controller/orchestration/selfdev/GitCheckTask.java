@@ -35,40 +35,79 @@ public class GitCheckTask extends AbstractSelfDevTask {
         } else {
             evolutionRepo = rm.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile();
         }
-        repositories.put("evolution", evolutionRepo);
+        if (isValidSourceCandidate(evolutionRepo, context)) {
+            addRepositoryIfUnique("evolution", evolutionRepo);
+        }
 
-        // 2. Evo repository (EVO self-development / Darwin working repository)
-        File evoRepo = null;
-        if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null && orchestrator.getSupervisorSettings().getGit().getLocalPath() != null && !orchestrator.getSupervisorSettings().getGit().getLocalPath().trim().isEmpty()) {
-            evoRepo = new File(orchestrator.getSupervisorSettings().getGit().getLocalPath().trim()).getAbsoluteFile();
-        } else {
-            String path = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_WORKSPACE);
-            if (path != null && !path.trim().isEmpty()) {
-                evoRepo = new File(path.trim()).getAbsoluteFile();
+        // 2. Supervisor repository (Only if explicitly configured in EMF with distinct source path)
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
+            String supPath = orchestrator.getSupervisorSettings().getGit().getLocalPath();
+            if (supPath != null && !supPath.trim().isEmpty()) {
+                File supRepo = new File(supPath.trim()).getAbsoluteFile();
+                if (isValidSourceCandidate(supRepo, context)) {
+                    addRepositoryIfUnique("supervisor", supRepo);
+                }
             }
         }
-        if (evoRepo != null) {
-            repositories.put("evo", evoRepo);
-        }
 
-        // 3. LLM repository (Forge / LLM self-development working repository)
-        File llmRepo = null;
+        // 3. LLM repository (Forge / LLM repository only if explicitly configured in EMF with distinct source path)
         if (orchestrator != null && !orchestrator.getForgeSessions().isEmpty()) {
             for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
                 if (fs.getGit() != null && fs.getGit().getLocalPath() != null && !fs.getGit().getLocalPath().trim().isEmpty()) {
-                    llmRepo = new File(fs.getGit().getLocalPath().trim()).getAbsoluteFile();
+                    File llmRepo = new File(fs.getGit().getLocalPath().trim()).getAbsoluteFile();
+                    if (isValidSourceCandidate(llmRepo, context)) {
+                        addRepositoryIfUnique("llm", llmRepo);
+                    }
                     break;
                 }
             }
         }
-        if (llmRepo == null) {
-            String path = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_LLM);
-            if (path != null && !path.trim().isEmpty()) {
-                llmRepo = new File(path.trim()).getAbsoluteFile();
+    }
+
+    private boolean isValidSourceCandidate(File candidate, SelfDevContext context) {
+        if (candidate == null) {
+            return false;
+        }
+        String pathStr = candidate.getAbsolutePath().replace('\\', '/');
+        // Exclude runtime, product, build, and export directories
+        if (pathStr.contains(".product") || pathStr.contains("/runtime-") || pathStr.contains("/runtime/")) {
+            return false;
+        }
+        if (context != null) {
+            if (context.getRuntimeDirectory() != null && isSameOrSubdirectory(context.getRuntimeDirectory(), candidate)) {
+                return false;
+            }
+            if (context.getBuildDirectory() != null && isSameOrSubdirectory(context.getBuildDirectory(), candidate)) {
+                return false;
+            }
+            if (context.getExportDirectory() != null && isSameOrSubdirectory(context.getExportDirectory(), candidate)) {
+                return false;
             }
         }
-        if (llmRepo != null) {
-            repositories.put("llm", llmRepo);
+        return true;
+    }
+
+    private boolean isSameOrSubdirectory(File base, File candidate) {
+        try {
+            String baseCanon = base.getCanonicalPath();
+            String candidateCanon = candidate.getCanonicalPath();
+            return candidateCanon.equals(baseCanon) || candidateCanon.startsWith(baseCanon + File.separator);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void addRepositoryIfUnique(String name, File repoDir) {
+        try {
+            File canon = repoDir.getCanonicalFile();
+            for (File existing : repositories.values()) {
+                if (existing.getCanonicalFile().equals(canon)) {
+                    return; // Already registered
+                }
+            }
+            repositories.put(name, repoDir);
+        } catch (Exception e) {
+            repositories.put(name, repoDir);
         }
     }
 
@@ -77,8 +116,8 @@ public class GitCheckTask extends AbstractSelfDevTask {
         if (repositories.isEmpty()) {
             return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: No target repositories resolved.", null);
         }
-        if (!repositories.containsKey("evolution") || !repositories.containsKey("evo") || !repositories.containsKey("llm")) {
-            return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: All three required repositories (evolution, evo, llm) must be resolved. Found: " + repositories.keySet(), null);
+        if (!repositories.containsKey("evolution")) {
+            return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: Canonical 'evolution' repository must be resolved. Found: " + repositories.keySet(), null);
         }
         return new TaskResult.Builder(id)
                 .status(TaskStatus.READY)
@@ -182,6 +221,5 @@ public class GitCheckTask extends AbstractSelfDevTask {
 
     private void log(String msg) {
         Log.log(msg);
-        System.out.println(msg);
     }
 }

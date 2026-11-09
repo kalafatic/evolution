@@ -113,6 +113,14 @@ public class MavenBuildExecutor {
         Map<String, String> env = pb.environment();
         if (javaHome != null && !javaHome.isEmpty()) {
             env.put("JAVA_HOME", javaHome);
+            String pathVar = env.get("PATH");
+            if (pathVar == null) {
+                pathVar = System.getenv("PATH");
+            }
+            File javaBin = new File(javaHome, "bin");
+            if (javaBin.exists()) {
+                env.put("PATH", javaBin.getAbsolutePath() + File.pathSeparator + (pathVar != null ? pathVar : ""));
+            }
         }
 
         StringBuilder outputBuffer = new StringBuilder();
