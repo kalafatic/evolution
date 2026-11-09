@@ -92,7 +92,8 @@ public class SelfDevPreflight {
         Log.log("[PATH_DISCOVERY] resource=EVO_GIT_REPOSITORY action=FORBIDDEN reason=canonical_repository_must_be_explicitly_configured");
 
         // 2. Validate Canonical EVO Git Repository Integrity (EVO_GIT_REPOSITORY)
-        boolean isRuntimeProduct = repositoryRoot.getAbsolutePath().contains(".product") || repositoryRoot.getAbsolutePath().contains("runtime-eu.kalafatic");
+        String repoPathNorm = repositoryRoot.getAbsolutePath().replace('\\', '/');
+        boolean isRuntimeProduct = repoPathNorm.contains(".product") || repoPathNorm.contains("/runtime-") || repoPathNorm.contains("/runtime/");
         boolean isGitRepo = repositoryRoot.exists() && repositoryRoot.isDirectory() && new File(repositoryRoot, ".git").exists();
 
         if (isRuntimeProduct) {
@@ -143,6 +144,42 @@ public class SelfDevPreflight {
                     "VERIFIED",
                     "None"
             ));
+        }
+
+        // Validate explicitly configured secondary repositories from EMF Orchestrator (supervisor, llm)
+        eu.kalafatic.evolution.model.orchestration.Orchestrator orch = (context != null) ? context.getOrchestrator() : null;
+        if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getGit() != null) {
+            String supPath = orch.getSupervisorSettings().getGit().getLocalPath();
+            if (supPath != null && !supPath.trim().isEmpty()) {
+                File supRepo = new File(supPath.trim()).getAbsoluteFile();
+                String supPathNorm = supRepo.getAbsolutePath().replace('\\', '/');
+                if (supPathNorm.contains(".product") || supPathNorm.contains("/runtime-") || supPathNorm.contains("/runtime/")) {
+                    String err = "Supervisor Git repository configuration is invalid. Configured path '" + supRepo.getAbsolutePath() +
+                            "' is a runtime product directory, NOT a source repository.";
+                    Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+                    errors.add(err);
+                    checks.add(new SelfDevPreflightResult.CheckDetail(
+                            "SUPERVISOR_GIT_REPOSITORY", "BLOCKED",
+                            "Supervisor repository validation",
+                            supRepo.getAbsolutePath(),
+                            "Valid source repository (not runtime)",
+                            "Runtime Product Directory",
+                            "Configure valid Supervisor Git repository path or clear setting"
+                    ));
+                } else if (!supRepo.exists() || !new File(supRepo, ".git").exists()) {
+                    String err = "Supervisor Git repository configuration is invalid. Directory does not exist or missing .git: " + supRepo.getAbsolutePath();
+                    Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+                    errors.add(err);
+                    checks.add(new SelfDevPreflightResult.CheckDetail(
+                            "SUPERVISOR_GIT_REPOSITORY", "BLOCKED",
+                            "Supervisor repository validation",
+                            supRepo.getAbsolutePath(),
+                            "Existing directory containing .git",
+                            "Missing .git folder",
+                            "Configure valid Git repository or clear setting"
+                    ));
+                }
+            }
         }
 
         // 3. Validate Path Invariants (repository, source, build, export distinctness)
@@ -203,7 +240,7 @@ public class SelfDevPreflight {
 
         // 7. Executable Validation (Java & Maven)
         File javaExec = validateJavaExecutable(checks, errors, warnings);
-        File mavenExec = validateMavenExecutable(repositoryRoot, checks, errors, warnings);
+        File mavenExec = validateMavenExecutable(repositoryRoot, javaExec, checks, errors, warnings);
 
         // 8. Network & Environment Launch Readiness
         validateNetworkAndEnvironmentReadiness(context, checks, errors, warnings);
@@ -313,7 +350,7 @@ public class SelfDevPreflight {
         }
     }
 
-    private File validateMavenExecutable(File sourceDir, List<SelfDevPreflightResult.CheckDetail> checks, List<String> errors, List<String> warnings) {
+    private File validateMavenExecutable(File sourceDir, File javaExec, List<SelfDevPreflightResult.CheckDetail> checks, List<String> errors, List<String> warnings) {
         boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
         File mvnExec = null;
 
@@ -344,6 +381,22 @@ public class SelfDevPreflight {
         try {
             ProcessBuilder pb = new ProcessBuilder(mvnExec.getAbsolutePath(), "-version");
             pb.redirectErrorStream(true);
+
+            String javaHome = System.getProperty("java.home");
+            if (javaHome != null && !javaHome.trim().isEmpty()) {
+                pb.environment().put("JAVA_HOME", javaHome);
+
+                // Prepend javaHome/bin to PATH so mvn and wrapper find the exact java runtime
+                String pathVar = pb.environment().get("PATH");
+                if (pathVar == null) {
+                    pathVar = System.getenv("PATH");
+                }
+                File javaBin = new File(javaHome, "bin");
+                if (javaBin.exists()) {
+                    pb.environment().put("PATH", javaBin.getAbsolutePath() + File.pathSeparator + (pathVar != null ? pathVar : ""));
+                }
+            }
+
             Process p = pb.start();
             StringBuilder out = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
