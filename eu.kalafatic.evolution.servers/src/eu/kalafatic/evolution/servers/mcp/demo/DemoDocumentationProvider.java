@@ -13,7 +13,7 @@ public class DemoDocumentationProvider extends NanoHTTPD {
     private final DemoDocumentService service;
 
     public DemoDocumentationProvider(DemoConfiguration config) {
-        super(config.getHost(), config.getPort());
+        super(config.getPort());
         if (config.getPort() == 28580 || config.getPort() == 8580) {
             throw new IllegalArgumentException("Cannot assign TCP control port " + config.getPort() + " to NanoHTTPD DemoDocumentationProvider");
         }

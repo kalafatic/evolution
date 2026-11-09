@@ -30,10 +30,10 @@ public class DemoDocumentController {
     public Response handle(IHTTPSession session) {
         String uri = session.getUri();
         try {
-            if (session.getMethod() == NanoHTTPD.Method.GET && "/".equals(uri)) {
+            if (session.getMethod() == NanoHTTPD.Method.GET && ("/".equals(uri) || "/mcp".equals(uri) || "/mcp/".equals(uri) || "/mcp.html".equals(uri))) {
                 return serveMcpHtml();
             }
-            if (session.getMethod() == NanoHTTPD.Method.POST && "/mcp".equals(uri)) {
+            if (session.getMethod() == NanoHTTPD.Method.POST && ("/mcp".equals(uri) || "/mcp/".equals(uri))) {
                 return handleMcp(session);
             }
             if (session.getMethod() == NanoHTTPD.Method.GET && "/ui/tools".equals(uri)) {

@@ -29,18 +29,19 @@ public class McpDemoServerManager {
             return; // Already running
         }
 
+        int configuredPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
+        int effectivePort = (this.port > 0) ? this.port : (configuredPort > 0 ? configuredPort : PortRegistry.EVO_MCP.getDefaultPort());
+        this.port = effectivePort;
+
         eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker.ConflictReport report =
-                eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker.inspectPort(port, "MCP Demo Documentation Server");
+                eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker.inspectPort(effectivePort, "MCP Demo Documentation Server");
         if (report.isInUse()) {
             throw new IOException(report.toString());
         }
 
-        int configuredPort = PortAllocationManager.getInstance().getPort(PortRegistry.EVO_MCP.getServiceId());
-        int effectivePort = (port > 0) ? port : (configuredPort > 0 ? configuredPort : PortRegistry.EVO_MCP.getDefaultPort());
-
         DemoConfiguration config = new DemoConfiguration();
         config.setPort(effectivePort);
-        config.setHost(PortRegistry.EVO_MCP.getDefaultHost());
+        config.setHost("localhost");
         config.setDocsFolder("docs");
         config.setEnabled(true);
 
