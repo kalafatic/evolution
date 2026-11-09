@@ -844,9 +844,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					if (Double.isNaN(candidateFitness) || Double.isInfinite(candidateFitness))
 						candidateFitness = 40.0;
 
+					String ollamaRefDisplay = enableOllamaRef ? String.format("%.4f", ollamaReferenceScore) : "N/A (disabled)";
 					context.log(String.format(
-							"[FORGE] Completed %s. Native Val Loss: %.4f, Params: %d, Ollama Ref Loss: %.4f, Duration: %d ms, Candidate Fitness: %.4f",
-							candidateName, nativeLoss, paramCount, ollamaReferenceScore, durationMs, candidateFitness));
+							"[FORGE] Completed %s. Native Val Loss: %.4f, Params: %d, Ollama Ref Loss: %s, Duration: %d ms, Candidate Fitness: %.4f",
+							candidateName, nativeLoss, paramCount, ollamaRefDisplay, durationMs, candidateFitness));
 					logs.add(String.format("Loss %.4f\n-----------------\n", nativeLoss));
 
 					double uiScore = Math.max(0.01, 1.0 / (1.0 + candidateFitness));
@@ -1589,8 +1590,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			}
 
 			int screeningEpochs = Math.min(2, Math.max(1, config.epochs));
-			int candBatch = 16;
-			int candStepsPerEpoch = Math.max(1, (trainSamples.size() + candBatch - 1) / candBatch);
+			int candMicroBatch = 4;
+			int candAccumulation = 2;
+			int totalMicroBatches = (trainSamples.size() + candMicroBatch - 1) / candMicroBatch;
+			int candStepsPerEpoch = Math.max(1, (totalMicroBatches + candAccumulation - 1) / candAccumulation);
 			int candTotalSteps = candStepsPerEpoch * screeningEpochs;
 			long candEstTokens = (long) trainSamples.size() * seqLen * screeningEpochs;
 
