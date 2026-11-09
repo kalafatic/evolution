@@ -26,7 +26,9 @@ public class GitCheckTask extends AbstractSelfDevTask {
 
         eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator = context != null ? context.getOrchestrator() : null;
 
-        // 1. Evolution repository (Actual EVO project sources)
+        boolean isSupervisorTask = "GIT_SUPERVISOR".equalsIgnoreCase(id);
+        boolean isEvoTask = "GIT_EVO".equalsIgnoreCase(id);
+
         File evolutionRepo = null;
         if (orchestrator != null && orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null && !orchestrator.getGit().getLocalPath().trim().isEmpty()) {
             evolutionRepo = new File(orchestrator.getGit().getLocalPath().trim()).getAbsoluteFile();
@@ -35,30 +37,55 @@ public class GitCheckTask extends AbstractSelfDevTask {
         } else {
             evolutionRepo = rm.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile();
         }
-        if (isValidSourceCandidate(evolutionRepo, context)) {
-            addRepositoryIfUnique("evolution", evolutionRepo);
-        }
 
-        // 2. Supervisor repository (Only if explicitly configured in EMF with distinct source path)
-        if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
-            String supPath = orchestrator.getSupervisorSettings().getGit().getLocalPath();
-            if (supPath != null && !supPath.trim().isEmpty()) {
-                File supRepo = new File(supPath.trim()).getAbsoluteFile();
-                if (isValidSourceCandidate(supRepo, context)) {
-                    addRepositoryIfUnique("supervisor", supRepo);
+        if (isSupervisorTask) {
+            // Task is specifically GIT_SUPERVISOR
+            File supRepo = null;
+            if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
+                String supPath = orchestrator.getSupervisorSettings().getGit().getLocalPath();
+                if (supPath != null && !supPath.trim().isEmpty()) {
+                    supRepo = new File(supPath.trim()).getAbsoluteFile();
                 }
             }
-        }
-
-        // 3. LLM repository (Forge / LLM repository only if explicitly configured in EMF with distinct source path)
-        if (orchestrator != null && !orchestrator.getForgeSessions().isEmpty()) {
-            for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
-                if (fs.getGit() != null && fs.getGit().getLocalPath() != null && !fs.getGit().getLocalPath().trim().isEmpty()) {
-                    File llmRepo = new File(fs.getGit().getLocalPath().trim()).getAbsoluteFile();
-                    if (isValidSourceCandidate(llmRepo, context)) {
-                        addRepositoryIfUnique("llm", llmRepo);
+            if (supRepo == null || !supRepo.exists() || !new GitManager(supRepo).isGitRepository()) {
+                // Supervisor is a submodule or directory within the main repository
+                File supDir = context != null ? context.getSupervisorDirectory() : null;
+                if (supDir != null && isValidSourceCandidate(evolutionRepo, context)) {
+                    addRepositoryIfUnique("supervisor", evolutionRepo);
+                } else if (supRepo != null && isValidSourceCandidate(supRepo, context)) {
+                    addRepositoryIfUnique("supervisor", supRepo);
+                }
+            } else if (isValidSourceCandidate(supRepo, context)) {
+                addRepositoryIfUnique("supervisor", supRepo);
+            }
+        } else if (isEvoTask) {
+            // Task is specifically GIT_EVO
+            if (isValidSourceCandidate(evolutionRepo, context)) {
+                addRepositoryIfUnique("evolution", evolutionRepo);
+            }
+        } else {
+            // Global GIT check
+            if (isValidSourceCandidate(evolutionRepo, context)) {
+                addRepositoryIfUnique("evolution", evolutionRepo);
+            }
+            if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
+                String supPath = orchestrator.getSupervisorSettings().getGit().getLocalPath();
+                if (supPath != null && !supPath.trim().isEmpty()) {
+                    File supRepo = new File(supPath.trim()).getAbsoluteFile();
+                    if (supRepo.exists() && new GitManager(supRepo).isGitRepository() && isValidSourceCandidate(supRepo, context)) {
+                        addRepositoryIfUnique("supervisor", supRepo);
                     }
-                    break;
+                }
+            }
+            if (orchestrator != null && !orchestrator.getForgeSessions().isEmpty()) {
+                for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
+                    if (fs.getGit() != null && fs.getGit().getLocalPath() != null && !fs.getGit().getLocalPath().trim().isEmpty()) {
+                        File llmRepo = new File(fs.getGit().getLocalPath().trim()).getAbsoluteFile();
+                        if (llmRepo.exists() && new GitManager(llmRepo).isGitRepository() && isValidSourceCandidate(llmRepo, context)) {
+                            addRepositoryIfUnique("llm", llmRepo);
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -116,12 +143,16 @@ public class GitCheckTask extends AbstractSelfDevTask {
         if (repositories.isEmpty()) {
             return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: No target repositories resolved.", null);
         }
-        if (!repositories.containsKey("evolution")) {
+        boolean isSupervisorTask = "GIT_SUPERVISOR".equalsIgnoreCase(id);
+        if (!isSupervisorTask && !repositories.containsKey("evolution")) {
             return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: Canonical 'evolution' repository must be resolved. Found: " + repositories.keySet(), null);
+        }
+        if (isSupervisorTask && !repositories.containsKey("supervisor")) {
+            return TaskResult.failure(id, "[GIT_CHECK] Pre-validation failed: Supervisor repository must be resolved. Found: " + repositories.keySet(), null);
         }
         return new TaskResult.Builder(id)
                 .status(TaskStatus.READY)
-                .message("Global Git Check initialized for " + repositories.size() + " repositories (" + String.join(", ", repositories.keySet()) + ").")
+                .message("Git Check initialized for " + repositories.size() + " repositories (" + String.join(", ", repositories.keySet()) + ").")
                 .build();
     }
 
@@ -207,15 +238,22 @@ public class GitCheckTask extends AbstractSelfDevTask {
         log("[GIT_CHECK] Global result: SUCCESS");
         log("[GIT_CHECK] Verified repositories: " + verifiedCount + "/" + totalRepos);
 
-        File evolutionRepo = repositories.get("evolution");
-        if (evolutionRepo != null && evolutionRepo.exists()) {
-            context.setSourceRevision(sourceProvider.getSourceRevision(evolutionRepo));
+        File primaryRepo = repositories.get("evolution");
+        if (primaryRepo == null) {
+            primaryRepo = repositories.get("supervisor");
+        }
+        if (primaryRepo == null && !repositories.isEmpty()) {
+            primaryRepo = repositories.values().iterator().next();
+        }
+
+        if (primaryRepo != null && primaryRepo.exists()) {
+            context.setSourceRevision(sourceProvider.getSourceRevision(primaryRepo));
         }
 
         return new TaskResult.Builder(id)
                 .status(TaskStatus.SUCCESS)
                 .message("[GIT_CHECK] Global result: SUCCESS. Verified repositories: " + verifiedCount + "/" + totalRepos)
-                .workingDirectory(repositories.get("evolution"))
+                .workingDirectory(primaryRepo)
                 .build();
     }
 

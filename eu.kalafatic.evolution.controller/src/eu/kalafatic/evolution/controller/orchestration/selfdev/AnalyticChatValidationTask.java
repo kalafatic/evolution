@@ -36,8 +36,8 @@ public class AnalyticChatValidationTask extends AbstractSelfDevTask {
         String sessionId = DEFAULT_SESSION_ID;
 
         long startTime = System.currentTimeMillis();
-        long maxWaitTimeMs = 120000;
-        long pollIntervalMs = 2000;
+        long maxWaitTimeMs = context.isDebugMode() ? 10000 : 30000;
+        long pollIntervalMs = 500;
         String finalResponseText = null;
         boolean validated = false;
         int attempt = 0;

@@ -28,6 +28,33 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
         List<String> goals = Arrays.asList("validate", "clean", "package");
         List<String> args = Arrays.asList("-DskipTests");
 
+        File repoRoot = context.getRepositoryRoot();
+        if (repoRoot != null && new File(repoRoot, "pom.xml").exists()) {
+            File genomeDir = new File(repoRoot, "eu.kalafatic.evolution.selfdev.genome");
+            if (genomeDir.exists()) {
+                // If the reactor root is available, build from root with -pl and -am to resolve upstream dependencies like genome
+                goals = Arrays.asList("validate", "clean", "install");
+                args = Arrays.asList("-pl", "eu.kalafatic.evolution.supervisor", "-am", "-DskipTests");
+                log("[MAVEN] Building Supervisor module via reactor root at " + repoRoot.getAbsolutePath());
+                TaskResult buildResult = mavenExecutor.executeBuild(repoRoot, goals, args, logFile, 15);
+                if (!buildResult.isSuccess()) {
+                    return buildResult;
+                }
+                BuildArtifact artifact = getArtifact(context);
+                if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists() || artifact.getPath().length() == 0) {
+                    return TaskResult.failure("build_supervisor", "Maven returned exit code 0 but supervisor JAR artifact was missing, empty, or unverified at " + (supervisorModuleDir != null ? supervisorModuleDir.getAbsolutePath() : "null"), null);
+                }
+                context.recordArtifact(artifact);
+                return new TaskResult.Builder("build_supervisor")
+                        .status(TaskStatus.SUCCESS)
+                        .message("Supervisor build completed and artifact verified: " + artifact.getPath().getAbsolutePath())
+                        .duration(buildResult.getDuration())
+                        .artifact(artifact)
+                        .logFile(logFile)
+                        .build();
+            }
+        }
+
         log("[MAVEN] Building Supervisor module at " + supervisorModuleDir.getAbsolutePath());
         TaskResult buildResult = mavenExecutor.executeBuild(supervisorModuleDir, goals, args, logFile, 15);
         if (!buildResult.isSuccess()) {

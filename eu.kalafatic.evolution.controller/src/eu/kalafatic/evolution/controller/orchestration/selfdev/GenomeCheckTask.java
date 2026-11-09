@@ -44,7 +44,14 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
         // Build genome module
         MavenBuildExecutor executor = new MavenBuildExecutor(id);
         File logFile = new File(context.getLogDirectory(), "genome_build.log");
-        TaskResult buildRes = executor.executeBuild(genomeModuleDir, Arrays.asList("clean", "install"), Arrays.asList("-DskipTests"), logFile, 10);
+
+        File repoRootPom = new File(repoRoot, "pom.xml");
+        TaskResult buildRes;
+        if (repoRootPom.exists()) {
+            buildRes = executor.executeBuild(repoRoot, Arrays.asList("clean", "install"), Arrays.asList("-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests"), logFile, 10);
+        } else {
+            buildRes = executor.executeBuild(genomeModuleDir, Arrays.asList("clean", "install"), Arrays.asList("-DskipTests"), logFile, 10);
+        }
 
         if (!buildRes.isSuccess()) {
             return buildRes;

@@ -67,7 +67,6 @@ public class SelfDevOrchestrator {
         SelfDevTask buildSuper = new BuildSupervisorTask("BUILD_SUPERVISOR");
         buildSuper.addDependency("BUILD_SUPERVISOR_LOCAL");
         SelfDevTask mavenSuper = new BuildSupervisorTask("MAVEN_SUPERVISOR");
-        mavenSuper.addDependency("BUILD_SUPERVISOR_LOCAL");
 
         SelfDevTask export = new ExportEvoTask("EXPORT");
         export.addDependency("BUILD_EVO");
@@ -88,7 +87,8 @@ public class SelfDevOrchestrator {
         SelfDevTask startSuper = new StartSupervisorTask("START_SUPERVISOR");
         startSuper.addDependency("EXPORT_SUPERVISOR");
         SelfDevTask startEvoSuper = new StartSupervisorTask("START_EVO_SUPERVISOR");
-        startEvoSuper.addDependency("EXPORT_SUPERVISOR");
+        startEvoSuper.addDependency("START_SUPERVISOR");
+        startEvoSuper.addDependency("DEPLOY_EVO");
         SelfDevTask stopSuper = new StopSupervisorTask("STOP_SUPERVISOR");
         SelfDevTask stopEvoSuper = new StopSupervisorTask("STOP_EVO_SUPERVISOR");
 
@@ -109,6 +109,7 @@ public class SelfDevOrchestrator {
 
         SelfDevTask llm = new LlmCheckTask("LLM");
         SelfDevTask supervisorLoop = new SupervisorLoopTask("SUPERVISOR_LOOP");
+        supervisorLoop.addDependency("START_SUPERVISOR");
         SelfDevTask selfDevLoop = new SelfDevLoopTask("SELF_DEV_LOOP");
 
         taskRegistry.put("GIT", git);
@@ -218,7 +219,7 @@ public class SelfDevOrchestrator {
                 TaskResult depRes = context.getTaskResult(depId);
 
                 // Fallback check: If dependency is START_EVO, check if START_EVO_SUPERVISOR succeeded
-                if (depRes == null && "START_EVO".equalsIgnoreCase(depId)) {
+        if ((depRes == null || !depRes.isSuccess()) && "START_EVO".equalsIgnoreCase(depId)) {
                     TaskResult superEvoRes = context.getTaskResult("START_EVO_SUPERVISOR");
                     if (superEvoRes != null && superEvoRes.isSuccess()) {
                         System.out.println("[SelfDevOrchestrator] Dependency START_EVO satisfied via START_EVO_SUPERVISOR success.");
