@@ -72,4 +72,16 @@ public class DarwinEngineRobustnessTest {
         // Should have 1 subsystem, skipping the dirty string
         assertEquals(1, v.getMediationCandidate().getSubsystems().size());
     }
+
+    @Test
+    public void testDarwinEngineFactoryResolution() {
+        Orchestrator orch = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        TaskContext context = new TaskContext(orch, null);
+        ADarwinEngine engine = eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFactory.createEngine(
+                eu.kalafatic.evolution.controller.orchestration.PlatformType.DARWIN_MODE,
+                context, null, null);
+        assertNotNull(engine);
+        org.junit.Assert.assertTrue("Engine must be instance of DarwinEngine", engine instanceof DarwinEngine);
+        assertEquals(eu.kalafatic.evolution.controller.orchestration.PlatformType.DARWIN_MODE, engine.getPlatformType());
+    }
 }

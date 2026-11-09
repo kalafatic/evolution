@@ -82,6 +82,41 @@ public class ScenarioTest {
         assertNotNull(response);
     }
 
+    @Test
+    public void testScenario_CreateJavaClassWhichCanPrintText_BypassesStructureDiscovery() throws Exception {
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.setAutoApprove(true);
+        context.getMetadata().put("testMode", true);
+
+        String javaCode = "public class PrintHelper {\n    public static void print(String text) {\n        System.out.println(text);\n    }\n}";
+        String evalResponse = "{\"success\": true, \"comment\": \"Java class generated successfully\"}";
+        String variantResponse1 = "{\"id\": \"v-probable\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Direct minimal implementation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"PrintHelper.java\", \"description\": \"Write PrintHelper.java\"}]}";
+
+        // Notice: NO "Provide a concise summary" mapping is required because StructureAgent is bypassed!
+        mockLlm.addResponseMapping("PROBABLE_SURVIVOR", variantResponse1);
+        mockLlm.addResponseMapping("Role: File", javaCode);
+        mockLlm.addResponseMapping("Role: JavaDev", javaCode);
+
+        mockLlm.setResponseSequence(new String[] {
+            javaCode,
+            evalResponse,
+            "Class generated successfully."
+        });
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+        IterationManager manager = createManager(context, session);
+        context.setAiService(aiService);
+
+        String prompt = "create java class which can print text";
+        TaskRequest request = new TaskRequest(prompt, tempDir);
+        var response = manager.handle(request);
+        assertNotNull(response);
+        // Verify that StructureAgent was NOT invoked
+        assertFalse(mockLlm.getInterceptedPrompts().stream().anyMatch(p -> p.contains("Provide a concise summary of the project structure")));
+        // Verify that atomic request was identified and stored
+        assertNotNull(context.getOrchestrationState().getMetadata().get("atomicAnalysis"));
+    }
+
     private IterationManager createManager(TaskContext context, SessionContainer session) {
         GitManager gitManager = new GitManager(tempDir);
         TaskPlanner taskPlanner = new TaskPlanner(session);
@@ -99,12 +134,15 @@ public class ScenarioTest {
         private String[] responseSequence;
         private final AtomicInteger callCount = new AtomicInteger(0);
         private final java.util.Map<String, String> responseMappings = new java.util.concurrent.ConcurrentHashMap<>();
+        private final java.util.List<String> interceptedPrompts = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         public void setResponseSequence(String[] sequence) { this.responseSequence = sequence; this.callCount.set(0); }
         public void addResponseMapping(String keyword, String response) { responseMappings.put(keyword, response); }
+        public java.util.List<String> getInterceptedPrompts() { return interceptedPrompts; }
 
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            interceptedPrompts.add(prompt);
             for (java.util.Map.Entry<String, String> entry : responseMappings.entrySet()) {
                 if (prompt.contains(entry.getKey())) return entry.getValue();
             }
