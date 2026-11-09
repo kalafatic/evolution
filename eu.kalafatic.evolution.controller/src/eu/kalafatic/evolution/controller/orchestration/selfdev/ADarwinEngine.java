@@ -254,6 +254,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		response.setResultType(ResultType.CHAT);
 
 		eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile profile = context.getBehaviorProfile();
+		if (request != null && !request.isBlank()) {
+			eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis atomicAnalysis =
+					eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier.heuristicAnalyze(request);
+			if (atomicAnalysis.getConfidence() >= 0.80 && !atomicAnalysis.isMultiStep()) {
+				profile.addTrait(BehaviorTrait.REASONING_ATOMIC);
+				state.getMetadata().put("atomicAnalysis", atomicAnalysis);
+			}
+		}
 		ModeRouter router = new ModeRouter();
 
 		try {

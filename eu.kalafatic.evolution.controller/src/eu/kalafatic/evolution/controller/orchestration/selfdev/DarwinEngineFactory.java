@@ -32,6 +32,8 @@ public class DarwinEngineFactory {
                 return new MutationEngine(context, memoryService, stateProvider);
             case DREAM_MODE:
                 return new DreamEngine(context, memoryService, stateProvider);
+            case DARWIN_MODE:
+                return new DarwinEngine(context, memoryService, stateProvider);
             default:
                 context.log("[FACTORY] Unknown mode: " + platformType + ". Defaulting to TASK.");
                 return new DarwinEngine(context, memoryService, stateProvider);
