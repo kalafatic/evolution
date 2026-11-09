@@ -1330,7 +1330,7 @@ public class IterationManager {
 				context.log("[KERNEL] Mediated Mode: Selective deep analysis of " + candidates.size()
 						+ " high-signal candidates.");
 				SemanticExtractor extractor = new SemanticExtractor();
-				extractor.extractToSnapshot(snapshot, candidates);
+				extractor.extractToSnapshot(snapshot, candidates, context.getProjectRoot());
 				context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
 			}
 
