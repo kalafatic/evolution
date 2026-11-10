@@ -440,10 +440,12 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
 			eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment = null;
 
-			if (intensity > 1) {
+			if (intensity > 1 && !ModeRecognizer.isIntentMode(context) && platformType != PlatformType.INTENT_RECONSTRUCTION) {
 				context.log("[DARWIN] Inspecting goal for unresolved semantic uncertainty.");
 				initialAssessment = iterationManager.getDimensionInferenceEngine().analyze(request, context);
 				dimensionEngine.detectUnresolvedDimensions(initialAssessment, context);
+			} else if (ModeRecognizer.isIntentMode(context) || platformType == PlatformType.INTENT_RECONSTRUCTION) {
+				context.log("[DARWIN] Intent Reconstruction Mode detected: Bypassing speculative dimension expansion.");
 			} else {
 				context.log("[DARWIN] Low Intensity detected. Bypassing deep semantic analysis.");
 			}

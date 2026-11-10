@@ -79,6 +79,13 @@ public class TargetScanner {
                 String stableId = relativePath;
                 SemanticNode node = new SemanticNode(stableId, relativePath, extension);
                 node.getAttributes().put("size", String.valueOf(current.length()));
+                if (relativePath.startsWith("exports/") || relativePath.contains("/exports/")) {
+                    node.getAttributes().put("isExport", "true");
+                    node.getAttributes().put("artifactRole", "generated_export");
+                } else {
+                    node.getAttributes().put("isExport", "false");
+                    node.getAttributes().put("artifactRole", "primary_artifact");
+                }
                 snapshot.addNode(node);
             } catch (Exception e) {
                 String path = current.getAbsolutePath().replace('\\', '/');
@@ -89,6 +96,13 @@ public class TargetScanner {
                     String extension = getExtension(current.getName());
                     SemanticNode node = new SemanticNode(rel, rel, extension);
                     node.getAttributes().put("size", String.valueOf(current.length()));
+                    if (rel.startsWith("exports/") || rel.contains("/exports/")) {
+                        node.getAttributes().put("isExport", "true");
+                        node.getAttributes().put("artifactRole", "generated_export");
+                    } else {
+                        node.getAttributes().put("isExport", "false");
+                        node.getAttributes().put("artifactRole", "primary_artifact");
+                    }
                     snapshot.addNode(node);
                 }
             }
@@ -96,6 +110,14 @@ public class TargetScanner {
     }
 
     private String getExtension(String fileName) {
+        String lowerName = fileName.toLowerCase();
+        if (lowerName.equals("modelfile") || lowerName.endsWith(".modelfile")) {
+            return "model";
+        }
+        if (lowerName.equals("training-report.json") || lowerName.equals("model.json")) {
+            return "model";
+        }
+
         int lastDot = fileName.lastIndexOf('.');
         if (lastDot <= 0) return "carrier";
         String ext = fileName.substring(lastDot + 1).toLowerCase();
