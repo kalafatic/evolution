@@ -203,4 +203,27 @@ public class PortManagementTest {
             assertTrue(expected.getMessage().contains("TCP control port"));
         }
     }
+
+    @Test
+    public void testMcpDemoDocumentationServerLocalhostConnectivity() throws Exception {
+        eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager mcpManager =
+                eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance();
+        mcpManager.start();
+        try {
+            assertTrue(mcpManager.isRunning());
+            int port = mcpManager.getPort();
+            assertEquals(28280, port);
+
+            // Connect using localhost
+            java.net.URL url = new java.net.URI("http://localhost:" + port + "/mcp/").toURL();
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(2000);
+            conn.setReadTimeout(2000);
+            int responseCode = conn.getResponseCode();
+            assertEquals(200, responseCode);
+        } finally {
+            mcpManager.stop();
+            assertFalse(mcpManager.isRunning());
+        }
+    }
 }

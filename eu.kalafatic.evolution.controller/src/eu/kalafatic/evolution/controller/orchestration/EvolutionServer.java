@@ -87,9 +87,6 @@ public class EvolutionServer extends NanoHTTPD {
 
     public EvolutionServer(int port) {
         super(port);
-        if (port == eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort()) {
-            throw new IllegalArgumentException("Cannot assign TCP control port " + port + " to NanoHTTPD EvolutionServer");
-        }
         DatabaseManager dbManager = new DatabaseManager();
         this.userRepository = new UserRepository(dbManager);
         this.sessionRepository = new SessionRepository(dbManager);
@@ -309,7 +306,7 @@ public class EvolutionServer extends NanoHTTPD {
             } else if (Method.GET.equals(method) && "/experimental/architecture".equals(uri)) {
                 updateSessionWorkflow(session, "ARCHITECTURE");
                 return handleGetArchitecture(session);
-            } else if (Method.GET.equals(method) && ("/mcp".equals(uri) || "/mcp.html".equals(uri) || "/experimental/mcp".equals(uri))) {
+            } else if (Method.GET.equals(method) && ("/mcp".equals(uri) || "/mcp/".equals(uri) || "/mcp.html".equals(uri) || "/experimental/mcp".equals(uri))) {
                 updateSessionWorkflow(session, "MCP");
                 return handleGetMcpPage();
             } else if (uri.startsWith("/ui/")) {
