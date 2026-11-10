@@ -34,6 +34,9 @@ public class ModeRecognizer {
 		if (isForgeMode(context)) {
 			return "FORGE";
 		}
+		if (isDeveloperMode(context)) {
+			return "DEVELOPER";
+		}
 		if (isSelfDevMode(context)) {
 			return "SELF_DEV";
 		}
@@ -56,6 +59,9 @@ public class ModeRecognizer {
 		}
 		if (isForgeMode(context)) {
 			return PlatformType.FORGE;
+		}
+		if (isDeveloperMode(context)) {
+			return PlatformType.DEVELOPER;
 		}
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
@@ -101,6 +107,9 @@ public class ModeRecognizer {
 		if (isForgeMode(context)) {
 			return PlatformType.FORGE;
 		}
+		if (isDeveloperMode(context)) {
+			return PlatformType.DEVELOPER;
+		}
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
@@ -139,6 +148,11 @@ public class ModeRecognizer {
 				|| (context.getPlatformMode() != null && PlatformType.FORGE.equals(context.getPlatformMode().getType()));
 	}
 
+	public static boolean isDeveloperMode(TaskContext context) {
+		if (context == null) return false;
+		return (context.getPlatformMode() != null && PlatformType.DEVELOPER.equals(context.getPlatformMode().getType()));
+	}
+
 	public static boolean isSelfDevMode(TaskContext context) {
 		if (context == null) return false;
 		return (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null
@@ -169,7 +183,7 @@ public class ModeRecognizer {
 
 	public static boolean isForcedTechnicalMode(TaskContext context) {
 		if (context == null) return false;
-		return isDreamMode(context) || isForgeMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isDarwinMode(context) || isCoding(context);
+		return isDreamMode(context) || isForgeMode(context) || isDeveloperMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isDarwinMode(context) || isCoding(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {

@@ -11,5 +11,6 @@ public enum CapabilityType {
     SELF_DEV, 
     MEDIATED,
     INTENT_RECONSTRUCTION,
-    FORGE
+    FORGE,
+    DEVELOPER
 }

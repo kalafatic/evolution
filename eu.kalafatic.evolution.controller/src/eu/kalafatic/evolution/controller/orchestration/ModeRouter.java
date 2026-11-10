@@ -42,6 +42,8 @@ public class ModeRouter {
 		case HYBRID_MANUAL_EXPORT:
 			// Mediated Mode is now handled by DarwinFlow for iterative cognitive evolution
 			return new DarwinFlow(aiService, manager);
+		case DEVELOPER:
+			return new DarwinFlow(aiService, manager);
 		case ASSISTED_CODING:
 			return new DarwinFlow(aiService, manager);
 		case FORGE:
@@ -125,6 +127,8 @@ public class ModeRouter {
 			return createDreamMode();
 		if (lower.contains("mode: chat"))
 			return createSimpleChatMode();
+		if (lower.contains("mode: developer") || lower.contains("mode: dev") || lower.equals("developer"))
+			return createDeveloperMode();
 		if (lower.contains("mode: assisted"))
 			return createAssistedCodingMode();
 		if (lower.contains("mode: darwin"))
@@ -220,6 +224,8 @@ public class ModeRouter {
 			return createDreamMode();
 		if (lower.contains("mode: chat"))
 			return createSimpleChatMode();
+		if (lower.contains("mode: developer") || lower.contains("mode: dev") || lower.equals("developer"))
+			return createDeveloperMode();
 		if (lower.contains("mode: assisted"))
 			return createAssistedCodingMode();
 		if (lower.contains("mode: darwin"))
@@ -272,6 +278,8 @@ public class ModeRouter {
 		case ARCHITECTURE:
 		case MEDIATED:
 			return createHybridManualExportMode();
+		case DEVELOPER:
+			return createDeveloperMode();
 		case CODE:
 			return createAssistedCodingMode();
 		case CHAT:
@@ -310,6 +318,10 @@ public class ModeRouter {
 
 	private PlatformMode createIntentReconstructionMode() {
 		return new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, AutonomyLevel.MEDIUM, 3, false);
+	}
+
+	private PlatformMode createDeveloperMode() {
+		return new PlatformMode(PlatformType.DEVELOPER, AutonomyLevel.HIGH, 5, true);
 	}
 
 	private PlatformMode createForgeMode() {

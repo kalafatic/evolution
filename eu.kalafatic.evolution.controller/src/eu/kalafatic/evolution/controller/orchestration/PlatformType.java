@@ -12,5 +12,6 @@ public enum PlatformType {
     INTENT_RECONSTRUCTION,
     FORGE,
     MUTATION,
-    DREAM_MODE
+    DREAM_MODE,
+    DEVELOPER
 }
