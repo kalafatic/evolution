@@ -93,7 +93,7 @@ public class MediatedTargetDialog extends DynamicMapDialog {
         fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_COMBO | DynamicField.DIRECTORY, initialPath, comboItems));
 
         String initialType = session != null ? session.getTargetType() : "Project";
-        fields.put(TARGET_TYPE, new DynamicField("Target Type:", DynamicField.TYPE_COMBO, initialType, "Project", "Folder", "PDF", "HTML", "Markdown", "EVO Model", "EVO Workspace"));
+        fields.put(TARGET_TYPE, new DynamicField("Target Type:", DynamicField.TYPE_COMBO, initialType, "Project", "Folder", "Repository", "PDF", "HTML", "Markdown", "EVO Model", "EVO Workspace"));
 
         String initialOutput = session != null ? session.getOutputPath() : "";
         if (initialOutput == null || initialOutput.isEmpty()) {
@@ -299,12 +299,26 @@ public class MediatedTargetDialog extends DynamicMapDialog {
 
     private void updateTargetStatus(String pathStr) {
         if (typeLabel == null || statusLabel == null || typeLabel.isDisposed() || statusLabel.isDisposed()) return;
+        Control typeControl = controls.get(TARGET_TYPE);
+
+        if (pathStr != null && !pathStr.trim().isEmpty()) {
+            File f = new File(pathStr.trim());
+            File gitDir = new File(f, ".git");
+            if (f.exists() && f.isDirectory() && gitDir.exists() && gitDir.isDirectory()) {
+                typeLabel.setText("GIT REPOSITORY");
+                statusLabel.setText("Valid Git repository (" + f.getName() + ")");
+                if (typeControl instanceof Combo) {
+                    ((Combo) typeControl).setText("Repository");
+                }
+                return;
+            }
+        }
+
         ForgeTarget target = ForgeTargetDetector.detect(pathStr);
         String typeName = target.getType().name().replace("_", " ");
         typeLabel.setText(typeName);
         statusLabel.setText(target.getStatusMessage());
 
-        Control typeControl = controls.get(TARGET_TYPE);
         if (typeControl instanceof Combo) {
             Combo combo = (Combo) typeControl;
             if (target.getType() == ForgeTargetType.EVO_MODEL) {

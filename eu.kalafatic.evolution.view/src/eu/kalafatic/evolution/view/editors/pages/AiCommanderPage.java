@@ -583,6 +583,7 @@ public class AiCommanderPage extends AEvoPage {
 		ModeRouter modeRouter = new ModeRouter();
 		PlatformMode detectedMode = modeRouter.routeFast(request, orchestrator);
 		boolean isSimpleChat = (detectedMode != null && detectedMode.getType() == PlatformType.SIMPLE_CHAT);
+		boolean isDeveloper = (detectedMode != null && detectedMode.getType() == PlatformType.DEVELOPER);
 		boolean isMediated = (detectedMode != null && detectedMode.getType() == PlatformType.HYBRID_MANUAL_EXPORT) || (orchestrator != null && orchestrator.getAiMode() == AiMode.MEDIATED);
 
 		// AUTOMATIC TARGETING FOR SELF-DEV
@@ -604,7 +605,7 @@ public class AiCommanderPage extends AEvoPage {
 				currentSession != null ? currentSession.isDarwinMode() :
 				(orchestrator != null && orchestrator.isDarwinMode()));
 
-		if (!isSimpleChat && (isSelfDev || isDarwin)) {
+		if (!isSimpleChat && (isSelfDev || isDarwin || isDeveloper)) {
 			startSelfDevAction(request);
 			return;
 		}

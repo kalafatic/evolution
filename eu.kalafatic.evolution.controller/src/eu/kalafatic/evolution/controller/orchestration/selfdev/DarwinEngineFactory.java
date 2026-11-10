@@ -22,6 +22,8 @@ public class DarwinEngineFactory {
                 return new ChatEngine(context, memoryService, stateProvider);
             case ASSISTED_CODING: //return new DarwinEngine(context, memoryService, stateProvider);
                return new CodingEngine(context, memoryService, stateProvider);
+            case DEVELOPER:
+                return new DeveloperEngine(context, memoryService, stateProvider);
             case HYBRID_MANUAL_EXPORT:
                 return new MediatedEngine(context, memoryService, stateProvider);
             case SELF_DEV_MODE:
