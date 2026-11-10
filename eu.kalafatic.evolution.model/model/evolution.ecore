@@ -108,7 +108,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="aiMode" lowerBound="1"
         eType="#//AiMode"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpServerUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
-        defaultValueLiteral="localhost:28280"/>
+        defaultValueLiteral="http://localhost:28280/mcp"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="openAiToken" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="openAiModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="localModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

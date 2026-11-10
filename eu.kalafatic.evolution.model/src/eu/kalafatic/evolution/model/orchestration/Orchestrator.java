@@ -340,13 +340,13 @@ public interface Orchestrator extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Mcp Server Url</b></em>' attribute.
-	 * The default value is <code>"localhost:28280"</code>.
+	 * The default value is <code>"http://localhost:28280/mcp"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Mcp Server Url</em>' attribute.
 	 * @see #setMcpServerUrl(String)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_McpServerUrl()
-	 * @model default="localhost:28280"
+	 * @model default="http://localhost:28280/mcp"
 	 * @generated
 	 */
 	String getMcpServerUrl();
