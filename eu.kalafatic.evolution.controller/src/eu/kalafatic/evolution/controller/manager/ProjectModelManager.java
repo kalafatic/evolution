@@ -28,6 +28,7 @@ import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
@@ -259,6 +260,19 @@ public class ProjectModelManager {
         }
         if (orchestrator.getAiChat() == null) {
             orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        }
+
+        if (orchestrator.getServerSettings() == null) {
+            ServerSettings serverSettings = OrchestrationFactory.eINSTANCE.createServerSettings();
+            orchestrator.setServerSettings(serverSettings);
+        }
+
+        eu.kalafatic.evolution.controller.resource.PortAllocationManager pam =
+                eu.kalafatic.evolution.controller.resource.PortAllocationManager.getInstance();
+        boolean migrated = pam.migrateFromLegacy(orchestrator);
+        eu.kalafatic.evolution.controller.resource.PortPersistence.getInstance().loadFromEmf(orchestrator);
+        if (migrated) {
+            eu.kalafatic.evolution.controller.resource.PortPersistence.getInstance().saveToEmf(orchestrator);
         }
     }
 

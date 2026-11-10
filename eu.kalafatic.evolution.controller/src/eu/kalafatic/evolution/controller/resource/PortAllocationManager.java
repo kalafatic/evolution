@@ -150,10 +150,13 @@ public class PortAllocationManager {
 
         // 2. Orchestrator McpServerUrl
         String mcpUrl = orch.getMcpServerUrl();
-        if (mcpUrl == null || mcpUrl.contains("38080") || mcpUrl.contains("48082") || mcpUrl.contains("8280")) {
-            orch.setMcpServerUrl("http://localhost:" + PortRegistry.EVO_MCP.getDefaultPort() + "/mcp");
-            modified = true;
-            Log.log("[PortAllocationManager] Migrated Orchestrator McpServerUrl to " + orch.getMcpServerUrl());
+        String canonicalMcpUrl = "http://localhost:" + PortRegistry.EVO_MCP.getDefaultPort() + "/mcp";
+        if (mcpUrl == null || mcpUrl.contains("38080") || mcpUrl.contains("48082") || mcpUrl.contains(":8280") || mcpUrl.contains("/8280") || mcpUrl.equals("localhost:28280") || mcpUrl.trim().isEmpty()) {
+            if (!canonicalMcpUrl.equals(mcpUrl)) {
+                orch.setMcpServerUrl(canonicalMcpUrl);
+                modified = true;
+                Log.log("[PortAllocationManager] Migrated Orchestrator McpServerUrl to " + orch.getMcpServerUrl());
+            }
         }
 
         // 3. Supervisor Settings: legacy 8089, 8480
@@ -164,12 +167,14 @@ public class PortAllocationManager {
                 if (settings.contains("port=8089") || settings.contains("port=8480")) {
                     settings = settings.replaceAll("port=(?:8089|8480)", "port=" + PortRegistry.EVO_SUPERVISOR_API.getDefaultPort());
                     sup.setSettings(settings);
+                    setAssignedPort(PortRegistry.EVO_SUPERVISOR_API.getServiceId(), PortRegistry.EVO_SUPERVISOR_API.getDefaultPort());
                     modified = true;
                     Log.log("[PortAllocationManager] Migrated SupervisorSettings port to " + PortRegistry.EVO_SUPERVISOR_API.getDefaultPort());
                 }
                 if (settings.contains("controlPort=28080") || settings.contains("controlPort=8580")) {
                     settings = settings.replaceAll("controlPort=(?:28080|8580)", "controlPort=" + PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort());
                     sup.setSettings(settings);
+                    setAssignedPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId(), PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort());
                     modified = true;
                     Log.log("[PortAllocationManager] Migrated SupervisorSettings controlPort to " + PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort());
                 }
