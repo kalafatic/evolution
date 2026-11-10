@@ -95,8 +95,10 @@ public class PortAllocationManager {
                     (debugOwner != null ? debugOwner.getServiceName() : "Debug Service") + "]");
         }
 
-        configurations.put(existing.getServiceId(), existing.withAssignedPort(newPort));
-        Log.log("[PortAllocationManager] Updated port for " + existing.getServiceId() + " to " + newPort);
+        if (existing.getAssignedPort() != newPort) {
+            configurations.put(existing.getServiceId(), existing.withAssignedPort(newPort));
+            Log.log("[PortAllocationManager] Updated port for " + existing.getServiceId() + " to " + newPort);
+        }
     }
 
     /**
