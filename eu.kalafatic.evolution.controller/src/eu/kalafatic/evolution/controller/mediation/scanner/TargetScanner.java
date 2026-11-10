@@ -72,6 +72,9 @@ public class TargetScanner {
                 for (File child : children) scanRecursiveToSnapshot(child, root, snapshot);
             }
         } else {
+            if (current.getName().endsWith(".ai.json")) {
+                return; // Exclude metadata sidecars from primary snapshot nodes
+            }
             try {
                 String relativePath = root.toPath().toAbsolutePath().relativize(current.toPath().toAbsolutePath()).toString().replace('\\', '/');
                 if (relativePath.isEmpty()) relativePath = current.getName();

@@ -246,6 +246,17 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 }
             }
 
+            // OPTIMIZATION: If we already have rich summary (e.g. from Pass 1 or file extraction),
+            // reuse local summary as an architectural fact without issuing expensive LLM calls for every file
+            if (!"image".equals(node.getType()) && node.getSummary() != null && !node.getSummary().isEmpty()
+                    && ("model".equals(node.getType()) || node.getPath().endsWith(".json") || "dataset".equals(node.getType()))) {
+                ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-summary", node.getPath(),
+                        "content: " + limitString(node.getSummary(), 120), 0.85);
+                fact.getEvidence().add(node.getPath());
+                model.addArchitecturalFact(fact);
+                continue;
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append("ARTIFACT: ").append(node.getPath()).append("\n");
             sb.append("TYPE: ").append(node.getType()).append("\n");
