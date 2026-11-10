@@ -40,6 +40,7 @@ public class ServerPage extends AEvoPage {
     private org.eclipse.swt.widgets.Label modeIndicatorLabel;
 
     private SettingsGroup settingsGroup;
+    private PortAllocationGroup portAllocationGroup;
     private SessionsGroup sessionsGroup;
     private ClientsGroup clientsGroup;
     private ResourcesGroup resourcesGroup;
@@ -75,6 +76,7 @@ public class ServerPage extends AEvoPage {
         updateBanner();
 
         settingsGroup = new SettingsGroup(toolkit, comp, editor, orchestrator, successColor, () -> Display.getDefault().asyncExec(() -> updateBanner()));
+        portAllocationGroup = new PortAllocationGroup(toolkit, comp, editor, orchestrator);
         sessionsGroup = new SessionsGroup(toolkit, comp, editor, orchestrator, successColor);
         clientsGroup = new ClientsGroup(toolkit, comp, editor, orchestrator, successColor);
         resourcesGroup = new ResourcesGroup(toolkit, comp, editor, orchestrator, successColor);
@@ -102,6 +104,7 @@ public class ServerPage extends AEvoPage {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
         settingsGroup.updateUI();
+        if (portAllocationGroup != null) portAllocationGroup.refreshUI();
         sessionsGroup.updateUI();
         clientsGroup.updateUI();
         resourcesGroup.updateUI();
@@ -199,6 +202,7 @@ public class ServerPage extends AEvoPage {
     public void setOrchestrator(Orchestrator orchestrator) {
         super.setOrchestrator(orchestrator);
         if (settingsGroup != null) settingsGroup.setOrchestrator(orchestrator);
+        if (portAllocationGroup != null) portAllocationGroup.setOrchestrator(orchestrator);
         if (sessionsGroup != null) sessionsGroup.setOrchestrator(orchestrator);
         if (clientsGroup != null) clientsGroup.setOrchestrator(orchestrator);
         if (resourcesGroup != null) resourcesGroup.setOrchestrator(orchestrator);

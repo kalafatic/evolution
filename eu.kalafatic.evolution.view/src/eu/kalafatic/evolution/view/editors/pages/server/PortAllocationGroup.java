@@ -78,11 +78,29 @@ public class PortAllocationGroup extends AEvoGroup {
         section.setClient(group);
 
         Composite actionsComp = toolkit.createComposite(group);
-        actionsComp.setLayout(new GridLayout(2, false));
+        actionsComp.setLayout(new GridLayout(4, false));
         actionsComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         Button refreshBtn = GUIFactory.INSTANCE.createButton(actionsComp, "Refresh Allocations");
         refreshBtn.addListener(SWT.Selection, e -> refreshUI());
+
+        Button openSelectedBtn = GUIFactory.INSTANCE.createButton(actionsComp, "Open Selected Port");
+        openSelectedBtn.addListener(SWT.Selection, e -> {
+            org.eclipse.jface.viewers.IStructuredSelection sel = (org.eclipse.jface.viewers.IStructuredSelection) portTableViewer.getSelection();
+            if (sel != null && !sel.isEmpty()) {
+                ServicePortEntry entry = (ServicePortEntry) sel.getFirstElement();
+                String url = "http://" + entry.getHost() + ":" + entry.getPort() + "/";
+                if (editor != null) {
+                    editor.showBrowserPage(url);
+                }
+            }
+        });
+
+        Button openAllPortsBtn = GUIFactory.INSTANCE.createButton(actionsComp, "Open All EVO Ports");
+        openAllPortsBtn.addListener(SWT.Selection, e -> openAllEvoPorts());
+
+        Button openAllWebPagesBtn = GUIFactory.INSTANCE.createButton(actionsComp, "Open All EVO Web Pages");
+        openAllWebPagesBtn.addListener(SWT.Selection, e -> openAllEvoWebPages());
 
         portTableViewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
         Table table = portTableViewer.getTable();
@@ -100,8 +118,59 @@ public class PortAllocationGroup extends AEvoGroup {
         createColumn("Address", 130, e -> e.getHost() + ":" + e.getPort());
         createColumn("Status", 90, e -> e.isRunning() ? "LISTENING" : "STOPPED");
 
+        portTableViewer.addDoubleClickListener(event -> {
+            org.eclipse.jface.viewers.IStructuredSelection sel = (org.eclipse.jface.viewers.IStructuredSelection) event.getSelection();
+            if (sel != null && !sel.isEmpty()) {
+                ServicePortEntry entry = (ServicePortEntry) sel.getFirstElement();
+                String url = "http://" + entry.getHost() + ":" + entry.getPort() + "/";
+                if (editor != null) {
+                    editor.showBrowserPage(url);
+                }
+            }
+        });
+
         portTableViewer.setContentProvider(ArrayContentProvider.getInstance());
         refreshUI();
+    }
+
+    public void openAllEvoPorts() {
+        PortAllocationManager pam = PortAllocationManager.getInstance();
+        List<String> urls = new ArrayList<>();
+        for (PortRegistry reg : PortRegistry.values()) {
+            if ("TCP".equalsIgnoreCase(reg.getProtocol())) {
+                continue; // Skip raw TCP control socket for browser tabs
+            }
+            PortConfiguration cfg = pam.getConfiguration(reg.getServiceId());
+            int assignedPort = (cfg != null) ? cfg.getAssignedPort() : reg.getDefaultPort();
+            urls.add("http://localhost:" + assignedPort + "/");
+        }
+        if (editor != null) {
+            editor.showBrowserPage(urls);
+        }
+    }
+
+    public void openAllEvoWebPages() {
+        int primary = 28080;
+        int mcp = 28280;
+        if (orchestrator != null && orchestrator.getServerSettings() != null) {
+            primary = orchestrator.getServerSettings().getPort();
+            mcp = orchestrator.getServerSettings().getMcpPort();
+        }
+        List<String> urls = new ArrayList<>();
+        urls.add("http://localhost:" + primary + "/");
+        urls.add("http://localhost:" + primary + "/experimental/chat?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/dashboard.html?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/develop?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/mutation?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/experimental/forge?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/experimental/architecture?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/teip.html?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/admin.html?runtime=SWT");
+        urls.add("http://localhost:" + mcp + "/");
+
+        if (editor != null) {
+            editor.showBrowserPage(urls);
+        }
     }
 
     private void createColumn(String title, int width, java.util.function.Function<ServicePortEntry, String> mapper) {
@@ -125,7 +194,7 @@ public class PortAllocationGroup extends AEvoGroup {
     }
 
     @Override
-    protected void refreshUI() {
+    public void refreshUI() {
         if (portTableViewer != null && !portTableViewer.getControl().isDisposed()) {
             PortAllocationManager pam = PortAllocationManager.getInstance();
             ServerManager sm = ServerManager.getInstance();
