@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import java.io.File;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -461,8 +462,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         }
                         if (s.getRemoteModel() != null) finalOrch.setRemoteModel(s.getRemoteModel());
                         finalOrch.setDarwinMode(s.isDarwinMode());
-                    if (s.getTargetPath() != null) {
-                        // For Mediated Mode persistence
+                    if (s.getTargetPath() != null && !s.getTargetPath().isBlank()) {
+                        File targetFile = new File(s.getTargetPath().trim());
+                        if (targetFile.exists()) {
+                            request.setProjectRoot(targetFile);
+                        }
                     }
 
                         // Sync session flags to PromptInstructions
@@ -487,6 +491,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     if (session instanceof SessionContext) {
                         ((SessionContext)session).setTaskContext(context);
                     }
+                } else if (request.getProjectRoot() != null && !request.getProjectRoot().equals(context.getProjectRoot())) {
+                    context.setProjectRoot(request.getProjectRoot());
                 }
                 context.getMetadata().put("sessionContext", session);
 

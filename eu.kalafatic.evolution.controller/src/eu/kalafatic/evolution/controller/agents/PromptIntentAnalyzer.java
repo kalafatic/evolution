@@ -114,7 +114,16 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
             prompt, contextHint
         );
 
-        // 3. Call LLM
+        // 3. Call LLM safely
+        if (aiService == null) {
+            context.log("[INTENT] AiService unavailable for prompt intent analysis. Direct keyword/heuristic fallback.");
+            String lowerPrompt = prompt.toLowerCase();
+            if (lowerPrompt.contains("discover intent") || lowerPrompt.contains("intent") || lowerPrompt.contains("reconstruct")) {
+                return new IntentResult(IntentCategory.TASK, 0.9, "Intent discovery keywords detected", PlatformType.INTENT_RECONSTRUCTION.name(), null);
+            }
+            return new IntentResult(IntentCategory.TASK, 0.7, "AiService unavailable; defaulting to task", null, null);
+        }
+
         String systemPrompt = getAgentInstructions() + "\n\n" + getFooterInstructions();
         String response = aiService.sendRequest(
             context.getOrchestrator(),
