@@ -65,7 +65,7 @@ public class SettingsGroup extends AToolGroup {
         authenticateCheck.setToolTipText("If unchecked, authentication is bypassed for local API calls (useful for debugging internal browser issues).");
 
         Composite btnComp = toolkit.createComposite(group);
-        btnComp.setLayout(new GridLayout(3, false));
+        btnComp.setLayout(new GridLayout(5, false));
         btnComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         Button startBtn = GUIFactory.INSTANCE.createButton(btnComp, "Start");
@@ -108,6 +108,22 @@ public class SettingsGroup extends AToolGroup {
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
+            }
+        });
+
+        Button openWebPagesBtn = GUIFactory.INSTANCE.createButton(btnComp, "Open All EVO Web Pages");
+        openWebPagesBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                openAllEvoWebPages();
+            }
+        });
+
+        Button openAllPortsBtn = GUIFactory.INSTANCE.createButton(btnComp, "Open All EVO Ports");
+        openAllPortsBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                openAllEvoPorts();
             }
         });
 
@@ -192,6 +208,51 @@ public class SettingsGroup extends AToolGroup {
                 return super.getForeground(element);
             }
         });
+    }
+
+    public void openAllEvoWebPages() {
+        int primary = 28080;
+        try {
+            primary = Integer.parseInt(portText.getText());
+        } catch (Exception ignored) {}
+
+        int mcp = 28280;
+        if (orchestrator != null && orchestrator.getServerSettings() != null) {
+            mcp = orchestrator.getServerSettings().getMcpPort();
+        }
+
+        List<String> urls = new ArrayList<>();
+        urls.add("http://localhost:" + primary + "/");
+        urls.add("http://localhost:" + primary + "/experimental/chat?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/dashboard.html?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/develop?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/mutation?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/experimental/forge?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/experimental/architecture?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/teip.html?runtime=SWT");
+        urls.add("http://localhost:" + primary + "/admin.html?runtime=SWT");
+        urls.add("http://localhost:" + mcp + "/");
+
+        if (editor != null) {
+            editor.showBrowserPage(urls);
+        }
+    }
+
+    public void openAllEvoPorts() {
+        eu.kalafatic.evolution.controller.resource.PortAllocationManager pam =
+                eu.kalafatic.evolution.controller.resource.PortAllocationManager.getInstance();
+        List<String> urls = new ArrayList<>();
+        for (eu.kalafatic.evolution.controller.resource.PortRegistry reg : eu.kalafatic.evolution.controller.resource.PortRegistry.values()) {
+            if ("TCP".equalsIgnoreCase(reg.getProtocol())) {
+                continue;
+            }
+            eu.kalafatic.evolution.controller.resource.PortConfiguration cfg = pam.getConfiguration(reg.getServiceId());
+            int assignedPort = (cfg != null) ? cfg.getAssignedPort() : reg.getDefaultPort();
+            urls.add("http://localhost:" + assignedPort + "/");
+        }
+        if (editor != null) {
+            editor.showBrowserPage(urls);
+        }
     }
 
     private static class ServerStatus {

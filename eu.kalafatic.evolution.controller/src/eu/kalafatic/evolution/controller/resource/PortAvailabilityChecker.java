@@ -181,13 +181,35 @@ public class PortAvailabilityChecker {
     }
 
     private static Long findPidOnUnix(int port) {
-        // Try lsof first
+        // Try lsof first with LISTEN filtering to avoid capturing outgoing client connections
+        try {
+            Process process = new ProcessBuilder("lsof", "-t", "-iTCP:" + port, "-sTCP:LISTEN").start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty()) {
+                        try {
+                            return Long.parseLong(line);
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Fallback: lsof -t -i:port without LISTEN filter
         try {
             Process process = new ProcessBuilder("lsof", "-t", "-i:" + port).start();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line = reader.readLine();
-                if (line != null && !line.trim().isEmpty()) {
-                    return Long.parseLong(line.trim());
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty()) {
+                        try {
+                            return Long.parseLong(line);
+                        } catch (NumberFormatException ignored) {}
+                    }
                 }
             }
         } catch (Exception ignored) {

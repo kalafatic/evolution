@@ -650,6 +650,30 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		setActivePageByControl(peerReviewPage);
 	}
 
+	public void showBrowserPage() {
+		if (browserPage != null) {
+			setActivePageByControl(browserPage);
+		}
+	}
+
+	public void showBrowserPage(String url) {
+		if (browserPage != null) {
+			setActivePageByControl(browserPage);
+			if (url != null && !url.trim().isEmpty()) {
+				browserPage.openTab(url);
+			}
+		}
+	}
+
+	public void showBrowserPage(java.util.List<String> urls) {
+		if (browserPage != null) {
+			setActivePageByControl(browserPage);
+			if (urls != null) {
+				browserPage.openTabs(urls);
+			}
+		}
+	}
+
 	public void runTaskInChat(Task task) {
 		try {
 			if (aiChatPage != null) {

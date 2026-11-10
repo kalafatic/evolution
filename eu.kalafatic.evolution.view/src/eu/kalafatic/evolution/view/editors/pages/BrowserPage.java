@@ -179,6 +179,27 @@ public class BrowserPage extends Composite {
         return btn;
     }
 
+    public void openTab(String url) {
+        if (url == null || url.trim().isEmpty()) return;
+        // Check if a tab with the same URL is already open
+        for (CTabItem item : tabFolder.getItems()) {
+            Browser b = (Browser) item.getControl();
+            if (b != null && !b.isDisposed() && url.equalsIgnoreCase(b.getUrl())) {
+                tabFolder.setSelection(item);
+                updateUrlFromActiveTab();
+                return;
+            }
+        }
+        createNewTab(url);
+    }
+
+    public void openTabs(List<String> urls) {
+        if (urls == null) return;
+        for (String url : urls) {
+            openTab(url);
+        }
+    }
+
     private void createNewTab(String url) {
         CTabItem item = new CTabItem(tabFolder, SWT.NONE);
         item.setText("Loading...");
