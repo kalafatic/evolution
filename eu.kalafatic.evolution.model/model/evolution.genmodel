@@ -61,6 +61,8 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/MEDIATED"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/INTENT"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/FORGE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/DREAM"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/DEVELOPER"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SelfDevStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/RUNNING"/>

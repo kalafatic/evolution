@@ -317,6 +317,8 @@
     <eLiterals name="MEDIATED" value="4" literal="Mediated"/>
     <eLiterals name="INTENT" value="5" literal="Intent"/>
     <eLiterals name="FORGE" value="6" literal="Forge"/>
+    <eLiterals name="DREAM" value="7" literal="Dream"/>
+    <eLiterals name="DEVELOPER" value="8" literal="Developer"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="SelfDevStatus">
     <eLiterals name="RUNNING"/>

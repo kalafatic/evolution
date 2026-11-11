@@ -184,7 +184,7 @@ public class FunctionalityInventoryGroup {
         btnRefresh.addListener(SWT.Selection, e -> handleRefreshInventory());
 
         GUIFactory.INSTANCE.createLabel(actionsGroup, "AI Mode:");
-        modeCombo = GUIFactory.INSTANCE.createCombo(actionsGroup, new String[] { "SELF_DEV_MODE", "MEDIATED_MODE", "INTENT_MODE", "DARWIN_MODE", "DREAM_MODE" });
+        modeCombo = GUIFactory.INSTANCE.createCombo(actionsGroup, new String[] { "SELF_DEV_MODE", "DEVELOPER_MODE", "MEDIATED_MODE", "INTENT_MODE", "DARWIN_MODE", "DREAM_MODE" });
         modeCombo.select(0);
 
         btnAnalyze = new Button(actionsGroup, SWT.PUSH);
@@ -571,6 +571,8 @@ public class FunctionalityInventoryGroup {
             normalizedMode = "dream";
         } else if (normalizedMode.contains("darwin")) {
             normalizedMode = "darwin";
+        } else if (normalizedMode.contains("developer") || normalizedMode.contains("dev")) {
+            normalizedMode = "developer";
         } else {
             normalizedMode = "self-dev";
         }

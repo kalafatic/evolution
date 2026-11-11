@@ -108,6 +108,15 @@ public class ModeRouter {
 				}
 				return createForgeMode();
 			}
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.DEVELOPER) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.DEVELOPER);
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createDeveloperMode();
+			}
 			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
 					&& orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
 				return createSelfDevMode();
@@ -209,6 +218,15 @@ public class ModeRouter {
 					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
 				}
 				return createForgeMode();
+			}
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.DEVELOPER) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.DEVELOPER);
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createDeveloperMode();
 			}
 			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
 					&& orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {

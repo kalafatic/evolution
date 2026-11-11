@@ -77,9 +77,10 @@ public class DeveloperEngine extends CodingEngine {
 
 	/**
 	 * Resolves development target from session configuration or project root.
+	 * Enforces explicit validation: never silently substitutes another directory or project root.
 	 */
-	protected File resolveDevelopmentTarget() {
-		File targetRoot = context.getProjectRoot();
+	public File resolveDevelopmentTarget() {
+		File targetRoot = null;
 		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
 			String sessionId = context.getSessionId();
 			ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
@@ -87,14 +88,28 @@ public class DeveloperEngine extends CodingEngine {
 					.findFirst().orElse(null);
 			if (session != null && session.getTargetPath() != null && !session.getTargetPath().trim().isEmpty()) {
 				File configuredTarget = new File(session.getTargetPath().trim());
-				if (configuredTarget.exists()) {
-					targetRoot = configuredTarget;
-					context.setProjectRoot(targetRoot);
-					context.log("[DEVELOPER] Resolved target from session configuration: " + targetRoot.getAbsolutePath()
-							+ " (Type: " + session.getTargetType() + ")");
+				if (!configuredTarget.exists()) {
+					throw new IllegalStateException("Developer Target does not exist: " + configuredTarget.getAbsolutePath());
 				}
+				if (!configuredTarget.canRead()) {
+					throw new IllegalStateException("Developer Target is not readable: " + configuredTarget.getAbsolutePath());
+				}
+				targetRoot = configuredTarget;
+				context.setProjectRoot(targetRoot);
+				context.log("[DEVELOPER] Resolved target from session configuration: " + targetRoot.getAbsolutePath()
+						+ " (Type: " + session.getTargetType() + ")");
 			}
 		}
+
+		if (targetRoot == null) {
+			targetRoot = context.getProjectRoot();
+		}
+
+		if (targetRoot == null || !targetRoot.exists()) {
+			throw new IllegalStateException("No valid development target configured or target does not exist: "
+					+ (targetRoot != null ? targetRoot.getAbsolutePath() : "null"));
+		}
+
 		return targetRoot;
 	}
 
@@ -157,21 +172,32 @@ public class DeveloperEngine extends CodingEngine {
 			EvaluationResult buildTestResult = manager.getFitnessEngine().evaluate(targetRoot, context,
 					eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel.HEAVY);
 			if (buildTestResult != null && !buildTestResult.isSuccess()) {
-				context.log("[DEVELOPER][PHASE-4] Verification found build or test issues: "
-						+ String.join("; ", buildTestResult.getErrors()));
+				String failureMsg = String.join("; ", buildTestResult.getErrors());
+				context.log("[DEVELOPER][PHASE-4] Verification found build or test issues: " + failureMsg);
 				if (evalResult != null) {
 					evalResult.getErrors().addAll(buildTestResult.getErrors());
 					evalResult.setSuccess(false);
+					evalResult.setDecision(eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE);
+				}
+				// Feed verification failure directly back into the Darwin context for repair in next iteration
+				context.getOrchestrationState().getMetadata().put("lastVerificationFailure", failureMsg);
+				if (context.getOrchestrator() != null && context.getOrchestrator().getTasks() != null) {
+					for (eu.kalafatic.evolution.model.orchestration.Task t : context.getOrchestrator().getTasks()) {
+						if (t != null) {
+							t.setFeedback("Verification failure requiring repair: " + failureMsg);
+						}
+					}
 				}
 			} else {
 				context.log("[DEVELOPER][PHASE-4] Verification passed successfully.");
+				context.getOrchestrationState().getMetadata().remove("lastVerificationFailure");
 			}
 		} catch (Throwable t) {
 			context.log("[DEVELOPER][PHASE-4] Warning during verification: " + t.getMessage());
 		}
 
 		// -----------------------------------------------------------------
-		// PHASE 5: COMPLETE - Report actual changes
+		// PHASE 5: COMPLETE - Report actual changes & preserve Git state
 		// -----------------------------------------------------------------
 		context.log("[DEVELOPER][PHASE-5] Completed development iteration.");
 		return evalResult;
@@ -211,26 +237,35 @@ public class DeveloperEngine extends CodingEngine {
 			File exportPackage = exportManager.createUnifiedExport(model, MediatedExportManager.ExportProfile.FULL,
 					request, targetRoot, outputPath, sessionId);
 
-			String relativeZip = targetRoot.toPath().relativize(exportPackage.toPath()).toString().replace('\\', '/');
-			context.getFileChangeTracker().recordChange(relativeZip, FileChangeTracker.ChangeType.NEW);
+			if (exportPackage != null && exportPackage.exists()) {
+				try {
+					String relativeZip = targetRoot.toPath().relativize(exportPackage.toPath()).toString().replace('\\', '/');
+					context.getFileChangeTracker().recordChange(relativeZip, FileChangeTracker.ChangeType.NEW);
+				} catch (Exception ex) {
+					// External output directory on different root/drive: use canonical file name
+					context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);
+				}
 
-			// Register active review session in PeerReviewService so Diff View & ComparePage are populated immediately
-			try {
-				PeerReviewService.getInstance().createSession(targetRoot, "HEAD");
-			} catch (Throwable t) {
-				// Non-git or standalone fallback
+				// Register active review session in PeerReviewService so Diff View & ComparePage are populated immediately
+				try {
+					PeerReviewService.getInstance().createSession(targetRoot, "HEAD");
+				} catch (Throwable t) {
+					// Non-git or standalone fallback
+				}
+
+				// Refresh workspace resources if available
+				try {
+					org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot()
+							.refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+				} catch (Throwable t) {
+					// Non-OSGi / headless environment
+				}
+
+				context.log("[DEVELOPER] Output published: " + exportPackage.getAbsolutePath()
+						+ " (" + changes.size() + " modified files tracked)");
+			} else {
+				throw new IllegalStateException("Mediated export package creation returned null or unmaterialized file.");
 			}
-
-			// Refresh workspace resources if available
-			try {
-				org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot()
-						.refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
-			} catch (Throwable t) {
-				// Non-OSGi / headless environment
-			}
-
-			context.log("[DEVELOPER] Output published: " + exportPackage.getAbsolutePath()
-					+ " (" + changes.size() + " modified files tracked)");
 		} catch (Exception e) {
 			context.log("[DEVELOPER] Warning during Mediated output publishing: " + e.getMessage());
 		}
@@ -238,25 +273,21 @@ public class DeveloperEngine extends CodingEngine {
 
 	@Override
 	public String getAgentInstructions() {
-		return "Role: Darwin Autonomous Developer.\n"
-				+ "MANDATE & ENGINEERING BEHAVIOR:\n"
-				+ "1. BEFORE MODIFYING CODE:\n"
-				+ "   - Understand the requested objective and scope before proposing any code changes.\n"
-				+ "   - Inspect relevant existing implementation and directory structure before proposing changes.\n"
-				+ "   - Use available Java/Eclipse tools to verify classes, methods, signatures, references, callers, and dependencies.\n"
-				+ "   - Prefer existing project architecture, services, utilities, and coding conventions.\n"
-				+ "   - Verify assumptions using available tools; avoid hallucinating APIs or structures.\n"
-				+ "2. DURING IMPLEMENTATION:\n"
-				+ "   - Make minimal, targeted changes directly addressing the goal.\n"
-				+ "   - Preserve existing behavior and public contracts unless explicitly instructed otherwise.\n"
-				+ "   - Avoid inventing classes, methods, signatures, APIs, or introducing unnecessary dependencies.\n"
-				+ "   - Consider the impact of changes on dependent components and call hierarchies.\n"
-				+ "   - Preserve unrelated pre-existing user changes and maintain strict Git safety.\n"
-				+ "3. AFTER IMPLEMENTATION:\n"
-				+ "   - Retrieve fresh compiler diagnostics after modifying Java code.\n"
-				+ "   - Correct errors or compilation warnings introduced by the implementation.\n"
-				+ "   - Use existing project build mechanisms and relevant tests for verification.\n"
-				+ "   - Clearly distinguish verified facts from assumptions in reports.\n"
-				+ "   - Report exactly what changed and publish changes to the shared change tracking and review pipeline.";
+		return "Role: Professional Autonomous Software Development Engineer (Developer Mode).\n"
+				+ "MANDATE & CORE WORKING METHODOLOGY:\n"
+				+ "1. Understand the user's actual requirement before editing.\n"
+				+ "2. Inspect the selected target rather than assume its architecture.\n"
+				+ "3. Discover relevant classes, methods, dependencies and configuration.\n"
+				+ "4. Understand existing implementation patterns and conventions.\n"
+				+ "5. Identify the smallest correct implementation strategy.\n"
+				+ "6. Reuse existing APIs and infrastructure.\n"
+				+ "7. Preserve public contracts and unrelated functionality.\n"
+				+ "8. Avoid unnecessary redesign and duplicate abstractions.\n"
+				+ "9. Implement changes in the selected target.\n"
+				+ "10. Use available tools to inspect and verify your work.\n"
+				+ "11. Run relevant builds and tests.\n"
+				+ "12. Analyze compiler errors and test failures.\n"
+				+ "13. Correct your own implementation when verification fails.\n"
+				+ "14. Report actual results rather than claim success without evidence.";
 	}
 }
