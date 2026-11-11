@@ -16,6 +16,7 @@ public class LlmRouter {
     }
 
     private ILlmProvider ollamaProvider = new OllamaProvider();
+    private ILlmProvider nativeEvoProvider = new NativeEvoProvider();
 
     public void setLocalProvider(ILlmProvider provider) {
         this.ollamaProvider = provider;
@@ -23,6 +24,14 @@ public class LlmRouter {
 
     public ILlmProvider getLocalProvider() {
         return ollamaProvider;
+    }
+
+    public void setNativeEvoProvider(ILlmProvider provider) {
+        this.nativeEvoProvider = provider;
+    }
+
+    public ILlmProvider getNativeEvoProvider() {
+        return nativeEvoProvider;
     }
 
     private final ILlmProvider openAiProvider = new OpenAIProvider();
@@ -92,8 +101,40 @@ public class LlmRouter {
         return response.getContent();
     }
 
+    public String sendNativeEvoRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        return nativeEvoProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    }
+
     public String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        String model = resolveModelName(orchestrator, context);
+        if (isNativeEvoModel(model)) {
+            return sendNativeEvoRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        }
         return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    }
+
+    public static boolean isNativeEvoModel(String model) {
+        if (model == null) return false;
+        String m = model.toLowerCase().trim();
+        return m.endsWith(".evo") || m.equals("evo") || m.startsWith("evo:") || m.contains("native") || m.contains("forge");
+    }
+
+    private static String resolveModelName(Orchestrator orchestrator, TaskContext context) {
+        if (context != null && context.getMetadata() != null) {
+            String m = (String) context.getMetadata().get("model");
+            if (m != null && !m.trim().isEmpty()) {
+                return m;
+            }
+        }
+        if (orchestrator != null) {
+            if (orchestrator.getLocalModel() != null && !orchestrator.getLocalModel().trim().isEmpty()) {
+                return orchestrator.getLocalModel();
+            }
+            if (orchestrator.getOllama() != null && orchestrator.getOllama().getModel() != null && !orchestrator.getOllama().getModel().trim().isEmpty()) {
+                return orchestrator.getOllama().getModel();
+            }
+        }
+        return "local";
     }
 
     public String sendRemoteRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {

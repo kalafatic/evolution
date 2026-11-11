@@ -71,6 +71,8 @@ public class EvoLlmTrainer {
     private final List<ProgressListener> progressListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final List<Double> lossHistory = new ArrayList<>();
     private volatile boolean stopRequested = false;
+    private volatile boolean pauseRequested = false;
+    private volatile boolean abortRequested = false;
     private TrainingResult lastResult;
 
     // Resumption state
@@ -122,6 +124,13 @@ public class EvoLlmTrainer {
     public void requestStop() { this.stopRequested = true; }
     public void finishTraining() { this.stopRequested = true; }
     public boolean isStopRequested() { return stopRequested; }
+
+    public void requestPause() { this.pauseRequested = true; }
+    public boolean isPauseRequested() { return pauseRequested; }
+
+    public void requestAbort() { this.abortRequested = true; }
+    public boolean isAbortRequested() { return abortRequested; }
+
     public TrainingResult getLastTrainingResult() { return lastResult; }
     public EvoLlmModel getModel() { return model; }
 
@@ -167,6 +176,8 @@ public class EvoLlmTrainer {
     public TrainingResult train(List<?> rawSamples, int epochs) {
         long startTime = System.currentTimeMillis();
         this.stopRequested = false;
+        this.pauseRequested = false;
+        this.abortRequested = false;
         TrainingResult result = new TrainingResult();
         result.setPlannedEpochs(epochs);
 
@@ -317,10 +328,23 @@ public class EvoLlmTrainer {
                     result.setTerminationReason(TerminationReason.THREAD_INTERRUPTED);
                     break;
                 }
+                if (abortRequested) {
+                    System.out.printf("[EVO Trainer] Abort requested before epoch %d/%d. Terminating immediately.%n", epoch + 1, epochs);
+                    result.setTerminationStatus(TrainingTerminationStatus.TRAINING_ABORTED);
+                    result.setTerminationReason(TerminationReason.USER_ABORT_REQUEST);
+                    result.setModelValid(false);
+                    break;
+                }
+                if (pauseRequested) {
+                    System.out.printf("[EVO Trainer] Pause requested before epoch %d/%d. Checkpointing session.%n", epoch + 1, epochs);
+                    result.setTerminationStatus(TrainingTerminationStatus.TRAINING_PAUSED);
+                    result.setTerminationReason(TerminationReason.USER_PAUSE_REQUEST);
+                    break;
+                }
                 if (stopRequested) {
-                    System.out.printf("[EVO Trainer] Graceful finish requested before epoch %d/%d. Completing training state.%n", epoch + 1, epochs);
+                    System.out.printf("[EVO Trainer] Graceful stop requested before epoch %d/%d. Completing training state.%n", epoch + 1, epochs);
                     result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
-                    result.setTerminationReason(TerminationReason.USER_REQUEST);
+                    result.setTerminationReason(TerminationReason.USER_STOP_REQUEST);
                     break;
                 }
                 Collections.shuffle(trainSamples, new Random(baseSeed + epoch + 1));
@@ -342,10 +366,25 @@ public class EvoLlmTrainer {
                         epochStoppedEarly = true;
                         break;
                     }
+                    if (abortRequested) {
+                        System.out.printf("[EVO Trainer] Abort requested during epoch %d. Halting training.%n", epoch + 1);
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_ABORTED);
+                        result.setTerminationReason(TerminationReason.USER_ABORT_REQUEST);
+                        result.setModelValid(false);
+                        epochStoppedEarly = true;
+                        break;
+                    }
+                    if (pauseRequested) {
+                        System.out.printf("[EVO Trainer] Pause requested during epoch %d. Finalizing current batch and pausing.%n", epoch + 1);
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_PAUSED);
+                        result.setTerminationReason(TerminationReason.USER_PAUSE_REQUEST);
+                        epochStoppedEarly = true;
+                        break;
+                    }
                     if (stopRequested) {
-                        System.out.printf("[EVO Trainer] Stop requested. Finishing current epoch %d boundary cleanly.%n", epoch + 1);
+                        System.out.printf("[EVO Trainer] Stop requested during epoch %d. Finalizing batch and stopping cleanly.%n", epoch + 1);
                         result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
-                        result.setTerminationReason(TerminationReason.USER_REQUEST);
+                        result.setTerminationReason(TerminationReason.USER_STOP_REQUEST);
                         epochStoppedEarly = true;
                         break;
                     }

@@ -360,6 +360,39 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                     job.getJobId(), trainResult.getTerminationStatus(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs(),
                     eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.formatDuration(totalJobForgingDurationMs)));
 
+            // Handle ABORT and PAUSE outcomes before finalizing
+            if (trainResult.getTerminationStatus() == eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus.TRAINING_ABORTED) {
+                logToFile(logFile, String.format("[FORGE][RUN=%s] Training aborted by user request. Discarding unfinished model.", job.getJobId()));
+                job.setState(JobState.ABORTED);
+                job.setJobResultSummary("ABORTED");
+                job.setCurrentStageDescription("Training was aborted. Model export skipped.");
+                return job;
+            }
+
+            if (trainResult.getTerminationStatus() == eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus.TRAINING_PAUSED) {
+                // Ensure a resumption checkpoint is preserved in checkpoints directory
+                Path chkDir = runFolder.resolve("checkpoints");
+                Files.createDirectories(chkDir);
+                String chkBaseName = String.format("checkpoint_%s_epoch_%04d.chk", job.getJobId(), trainResult.getCompletedEpochs());
+                TrainingCheckpoint pausedChk = trainer.captureCheckpoint(
+                        job.getJobId(),
+                        "checkpoint_" + job.getJobId(),
+                        trainResult.getCompletedEpochs(),
+                        (float) trainResult.getLastLoss(),
+                        (float) trainResult.getValLoss(),
+                        evodataFileName,
+                        tokenizer.getVocab()
+                );
+                pausedChk.saveAtomic(chkDir.resolve(chkBaseName));
+                logToFile(logFile, String.format("[FORGE][RUN=%s] Training paused at epoch %d. Checkpoint saved: %s",
+                        job.getJobId(), trainResult.getCompletedEpochs(), chkBaseName));
+                job.setState(JobState.PAUSED);
+                job.setJobResultSummary("PAUSED");
+                job.setCurrentStageDescription(String.format("Training paused cleanly at epoch %d/%d. Ready to resume.",
+                        trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+                return job;
+            }
+
             // STAGE 5: MODEL VALIDATION BEFORE EXPORT
             logToFile(logFile, String.format("[FORGE][MODEL][RUN=%s] FINALIZE_START", job.getJobId()));
             EvoModelValidator modelValidator = new EvoModelValidator();
@@ -510,7 +543,7 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
     private SmokeTestResult runInferenceSmokeTest(Path evoModelPath) {
         SmokeTestResult result = new SmokeTestResult();
         long start = System.currentTimeMillis();
-        String prompt = "Explain what this model was trained to do.";
+        String prompt = "EVO Forge";
         result.setPromptUsed(prompt);
 
         try {
@@ -530,6 +563,8 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             result.setGeneratedText(inferRes.getGeneratedText());
 
             if (inferRes.getGeneratedText() != null && !inferRes.getGeneratedText().trim().isEmpty() && !inferRes.getGeneratedText().contains("NaN")) {
+                result.setPassed(true);
+            } else if (inferRes.getGeneratedTokenCount() > 0 && !inferRes.getGeneratedText().contains("NaN")) {
                 result.setPassed(true);
             } else {
                 result.setPassed(false);

@@ -628,7 +628,7 @@ public class ForgeSessionManager {
 
     public boolean requestFinish(String sessionId) {
         if (sessionId == null || sessionId.trim().isEmpty()) {
-            return false;
+            return requestFinishAll();
         }
         boolean requested = false;
 
@@ -655,7 +655,43 @@ public class ForgeSessionManager {
             updateWorkflowStatus(actualId, "FINISHING_EXPORTING");
         }
 
+        if (!requested && !activeTrainers.isEmpty()) {
+            return requestFinishAll();
+        }
+
         return requested;
+    }
+
+    public boolean requestPause(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            boolean req = false;
+            for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer t : activeTrainers.values()) {
+                if (t != null) { t.requestPause(); req = true; }
+            }
+            return req;
+        }
+        eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.get(sessionId);
+        if (trainer != null) {
+            trainer.requestPause();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean requestAbort(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            boolean req = false;
+            for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer t : activeTrainers.values()) {
+                if (t != null) { t.requestAbort(); req = true; }
+            }
+            return req;
+        }
+        eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.get(sessionId);
+        if (trainer != null) {
+            trainer.requestAbort();
+            return true;
+        }
+        return false;
     }
 
     public boolean requestFinishAll() {

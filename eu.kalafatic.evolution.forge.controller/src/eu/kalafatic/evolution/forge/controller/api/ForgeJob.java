@@ -20,6 +20,8 @@ public class ForgeJob {
         VALIDATING,
         COMPLETED,
         STOPPED,
+        PAUSED,
+        ABORTED,
         FAILED,
         CANCELLED
     }

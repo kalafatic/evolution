@@ -66,5 +66,15 @@ public class AiProviders {
                 true,
                 "llama3.1"
         ));
+
+        // EVO NATIVE provider (independent of external runtimes)
+        PROVIDERS.put("native_evo", new ProviderConfig(
+                "native_evo",
+                "evo://native",
+                null,
+                "native_evo",
+                true,
+                "evo"
+        ));
     }
 }
