@@ -10,6 +10,7 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
+import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
@@ -36,6 +37,8 @@ public class IntentReconstructionEngine extends ADarwinEngine {
             Comparator.comparingDouble(ExplorationNode::getScore).reversed());
     private final AIContextTool contextTool = new AIContextTool();
     private final MetadataAgent metadataAgent = new MetadataAgent();
+    private final eu.kalafatic.evolution.controller.orchestration.intent.IntentUnderstandingService intentUnderstandingService =
+            new eu.kalafatic.evolution.controller.orchestration.intent.IntentUnderstandingService();
 
     public IntentReconstructionEngine(TaskContext context, IterationMemoryService memoryService,
                                      SystemStateSignalProvider stateProvider) {
@@ -43,14 +46,37 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         this.designModel.setName("Reconstructed Design Model - " + context.getSessionId());
     }
 
+    public eu.kalafatic.evolution.controller.orchestration.intent.IntentUnderstandingService getIntentUnderstandingService() {
+        return intentUnderstandingService;
+    }
+
     @Override
     public EvaluationResult runDarwinIteration(TaskContext context, IterationManager manager) throws Exception {
-        context.log("[INTENT_RECONSTRUCTION] Starting Curiosity-Driven Surgeon iteration...");
+        context.log("[INTENT_RECONSTRUCTION] Starting Intent Understanding & Reconstruction iteration...");
+
+        String rawInput = context.getOrchestrationState() != null ? context.getOrchestrationState().getRawInput() : "";
+        if (rawInput == null) rawInput = "";
+
+        // 1. Core Intent Understanding & Reconstruction
+        eu.kalafatic.evolution.controller.orchestration.intent.model.ReconstructedIntent reconstructedIntent =
+                intentUnderstandingService.reconstructIntent(rawInput, context);
+        if (context.getOrchestrationState() != null) {
+            context.getOrchestrationState().getMetadata().put("reconstructedIntent", reconstructedIntent);
+            context.getOrchestrationState().getMetadata().put("reconstructedIntentJson", reconstructedIntent.toJsonObject().toString());
+        }
+
+        context.log("[INTENT_RECONSTRUCTION] Reconstructed Intent Action: " + reconstructedIntent.getActionType()
+                + ", Primary Objective: " + reconstructedIntent.getPrimaryObjective()
+                + ", Recommended Mode: " + reconstructedIntent.getRecommendedExecutionMode()
+                + ", Branches: " + reconstructedIntent.getCandidateBranches().size());
 
         if (context.getProjectRoot() == null || !context.getProjectRoot().exists()) {
-            context.log("[INTENT_RECONSTRUCTION] [ERROR] Target path is invalid or unresolvable: " + context.getProjectRoot());
+            context.log("[INTENT_RECONSTRUCTION] Target path does not exist on filesystem: " + context.getProjectRoot());
+            if (context.getOrchestrationState() != null) {
+                context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+            }
             EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(false);
+            res.setSuccess(true);
             res.setDecision(SelfDevDecision.STOP);
             return res;
         }
@@ -77,6 +103,28 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         String targetSummary = buildTargetSummary();
         context.getOrchestrationState().getMetadata().put("reconstructedDesignModel", designModel);
         context.getOrchestrationState().getMetadata().put("intentTargetSummary", targetSummary);
+
+        // 4. Handle Ambiguity & Clarification Needs
+        if (reconstructedIntent.isClarificationRequired()) {
+            context.log("[INTENT_RECONSTRUCTION] Ambiguity detected in user request. Requesting clarification: "
+                    + reconstructedIntent.getClarificationQuestion());
+            context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+            if (manager != null) {
+                manager.transition(SystemState.WAITING_FOR_USER_DECISION, context);
+            } else {
+                eu.kalafatic.evolution.controller.orchestration.TransitionToken token = context.getTransitionToken();
+                if (token == null) {
+                    token = new eu.kalafatic.evolution.controller.orchestration.TransitionToken("Intent-Wait-" + System.currentTimeMillis());
+                    context.setTransitionToken(token);
+                }
+                context.getStateHolder().applyTransition(token, SystemState.WAITING_FOR_USER_DECISION);
+            }
+
+            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(true);
+            res.setDecision(SelfDevDecision.STOP);
+            return res;
+        }
 
         boolean converged = checkTermination();
         if (converged) {
