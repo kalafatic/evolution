@@ -5011,6 +5011,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(aiModeEEnum, AiMode.MEDIATED);
 		addEEnumLiteral(aiModeEEnum, AiMode.INTENT);
 		addEEnumLiteral(aiModeEEnum, AiMode.FORGE);
+		addEEnumLiteral(aiModeEEnum, AiMode.DREAM);
+		addEEnumLiteral(aiModeEEnum, AiMode.DEVELOPER);
 
 		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);

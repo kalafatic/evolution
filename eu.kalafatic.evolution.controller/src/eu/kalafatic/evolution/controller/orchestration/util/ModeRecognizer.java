@@ -150,7 +150,8 @@ public class ModeRecognizer {
 
 	public static boolean isDeveloperMode(TaskContext context) {
 		if (context == null) return false;
-		return (context.getPlatformMode() != null && PlatformType.DEVELOPER.equals(context.getPlatformMode().getType()));
+		return (context.getOrchestrator() != null && AiMode.DEVELOPER.equals(context.getOrchestrator().getAiMode()))
+				|| (context.getPlatformMode() != null && PlatformType.DEVELOPER.equals(context.getPlatformMode().getType()));
 	}
 
 	public static boolean isSelfDevMode(TaskContext context) {

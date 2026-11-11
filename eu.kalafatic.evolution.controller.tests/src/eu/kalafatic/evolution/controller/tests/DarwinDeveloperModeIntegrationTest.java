@@ -148,11 +148,48 @@ public class DarwinDeveloperModeIntegrationTest {
         DeveloperEngine devEngine = new DeveloperEngine(context, memoryService, null);
         String instructions = devEngine.getAgentInstructions();
         assertNotNull("Instructions should not be null", instructions);
-        assertTrue("Should contain role", instructions.contains("Darwin Autonomous Developer"));
-        assertTrue("Should instruct to understand before modifying", instructions.contains("Understand the requested objective"));
-        assertTrue("Should instruct to inspect implementation", instructions.contains("Inspect relevant existing implementation"));
-        assertTrue("Should instruct to retrieve fresh compiler diagnostics", instructions.contains("Retrieve fresh compiler diagnostics"));
-        assertTrue("Should instruct minimal targeted changes", instructions.contains("Make minimal, targeted changes"));
+        assertTrue("Should contain role", instructions.contains("Autonomous Software Development Engineer"));
+        assertTrue("Should instruct to understand before editing", instructions.contains("Understand the user's actual requirement before editing"));
+        assertTrue("Should instruct to inspect target", instructions.contains("Inspect the selected target rather than assume its architecture"));
+        assertTrue("Should instruct to analyze errors", instructions.contains("Analyze compiler errors and test failures"));
+        assertTrue("Should instruct to correct implementation", instructions.contains("Correct your own implementation when verification fails"));
+    }
+
+    @Test
+    public void testAiModeDeveloperPersistenceAndSelection() {
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.DEVELOPER);
+        assertEquals("AiMode should be DEVELOPER", eu.kalafatic.evolution.model.orchestration.AiMode.DEVELOPER, orchestrator.getAiMode());
+
+        ChatSession session = orchestrator.getAiChat().getSessions().get(0);
+        session.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.DEVELOPER);
+        assertEquals("Session AiMode should be DEVELOPER", eu.kalafatic.evolution.model.orchestration.AiMode.DEVELOPER, session.getAiMode());
+
+        PlatformMode mode = modeRouter.route("Refactor calculator", orchestrator, null);
+        assertNotNull("Routed mode should not be null", mode);
+        assertEquals("PlatformType should be DEVELOPER when AiMode.DEVELOPER is selected", PlatformType.DEVELOPER, mode.getType());
+    }
+
+    @Test
+    public void testTargetValidationAndGitSafety() {
+        IterationMemoryService memoryService = new IterationMemoryService(tempDir);
+        DeveloperEngine devEngine = new DeveloperEngine(context, memoryService, null);
+
+        // 1. Valid target resolution
+        File target = devEngine.resolveDevelopmentTarget();
+        assertNotNull(target);
+        assertEquals(repoDir.getAbsolutePath(), target.getAbsolutePath());
+
+        // 2. Invalid target throws explicit user-visible error
+        ChatSession session = orchestrator.getAiChat().getSessions().get(0);
+        session.setTargetPath(new File(tempDir, "non-existent-directory-xyz").getAbsolutePath());
+        boolean thrown = false;
+        try {
+            devEngine.resolveDevelopmentTarget();
+        } catch (IllegalStateException e) {
+            thrown = true;
+            assertTrue(e.getMessage().contains("does not exist"));
+        }
+        assertTrue("Should have thrown IllegalStateException for non-existent target", thrown);
     }
 
     @Test

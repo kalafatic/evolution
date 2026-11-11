@@ -94,7 +94,17 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	DREAM(7, "DREAM", "Dream");
+	DREAM(7, "DREAM", "Dream"),
+
+	/**
+	 * The '<em><b>DEVELOPER</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #DEVELOPER_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	DEVELOPER(8, "DEVELOPER", "Developer");
 
 	/**
 	 * The '<em><b>LOCAL</b></em>' literal value.
@@ -185,6 +195,17 @@ public enum AiMode implements Enumerator {
 	public static final int DREAM_VALUE = 7;
 
 	/**
+	 * The '<em><b>DEVELOPER</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #DEVELOPER
+	 * @model literal="Developer"
+	 * @generated
+	 * @ordered
+	 */
+	public static final int DEVELOPER_VALUE = 8;
+
+	/**
 	 * An array of all the '<em><b>Ai Mode</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -200,6 +221,7 @@ public enum AiMode implements Enumerator {
 			INTENT,
 			FORGE,
 			DREAM,
+			DEVELOPER,
 		};
 
 	/**
@@ -264,6 +286,7 @@ public enum AiMode implements Enumerator {
 			case INTENT_VALUE: return INTENT;
 			case FORGE_VALUE: return FORGE;
 			case DREAM_VALUE: return DREAM;
+			case DEVELOPER_VALUE: return DEVELOPER;
 		}
 		return null;
 	}

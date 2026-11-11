@@ -318,7 +318,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                     List<String> rawModels;
                     if (mode == AiMode.PROXY) {
                         rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
-                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT) {
+                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT || mode == AiMode.DEVELOPER) {
                         rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, mode);
                     } else {
                         rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL, AiMode.HYBRID);
@@ -403,7 +403,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                     List<String> rawModels;
                     if (mode == AiMode.PROXY) {
                         rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
-                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT) {
+                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT || mode == AiMode.DEVELOPER) {
                         rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, mode);
                     } else {
                         rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,

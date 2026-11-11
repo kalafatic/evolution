@@ -124,6 +124,16 @@ public class ContextBuilder {
         }
         pkg.setConstraints(constraints);
 
+        // Developer Mode Target & Tool Context Injection
+        if (context != null && eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer.isDeveloperMode(context)) {
+            Object devContextObj = context.getOrchestrationState().getMetadata().get("projectStructure");
+            if (devContextObj instanceof String && !((String) devContextObj).trim().isEmpty()) {
+                String existingAttach = pkg.getAttachmentContext() != null ? pkg.getAttachmentContext() : "";
+                pkg.setAttachmentContext(existingAttach + "\n\n" + (String) devContextObj);
+                state.addDiagnostic("ContextBuilder: Injected progressive Developer target context.");
+            }
+        }
+
         // Enrichment: Authoritative Attachment Injection
         if (context != null && context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
             String combined = "";

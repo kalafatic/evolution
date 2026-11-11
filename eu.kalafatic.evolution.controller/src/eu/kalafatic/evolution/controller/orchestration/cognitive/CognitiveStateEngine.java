@@ -28,6 +28,8 @@ public class CognitiveStateEngine {
                 signal = new CapabilitySignal(CapabilityType.FORGE, 10.0, 1.0, SessionIntent.EVOLVING, null, "EXPLICIT_UI_FORGE");
             } else if (uiMode == AiMode.INTENT) {
                 signal = new CapabilitySignal(CapabilityType.INTENT_RECONSTRUCTION, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_INTENT");
+            } else if (uiMode == AiMode.DEVELOPER) {
+                signal = new CapabilitySignal(CapabilityType.DEVELOPER, 10.0, 1.0, SessionIntent.BUILDING, null, "EXPLICIT_UI_DEVELOPER");
             } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT && !isSimpleGreeting(prompt)) {
                 // If Darwin is on but prompt looks like chat, escalate to EVOLUTION unless it is a simple greeting
                 signal = new CapabilitySignal(CapabilityType.EVOLUTION, 5.0, 0.8, signal.getIntent(), null, "EXPLICIT_UI_DARWIN");

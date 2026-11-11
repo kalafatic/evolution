@@ -127,10 +127,38 @@ public class DeveloperContextProvider {
         // Optional: INTENT reality integration (if already established in context)
         appendOptionalIntentContext(context, sb);
 
+        // Progressive Relevant Components & Tools Context
+        appendProgressiveToolsAndComponents(targetRoot, context, request, sb);
+
         // Optional: Genome & Functionality inventory (if available in context / project)
         appendOptionalGenomeContext(targetRoot, context, sb);
 
         return sb.toString();
+    }
+
+    /**
+     * Progressively loads relevant classes, methods, dependencies, and tool execution results.
+     */
+    private void appendProgressiveToolsAndComponents(File targetRoot, TaskContext context, String request, StringBuilder sb) {
+        sb.append("\n--- AVAILABLE DEVELOPMENT TOOLS ---\n");
+        sb.append("You have access to Darwin Java & project tools:\n");
+        sb.append("- java.get_project_structure : Discovers packages, source roots, and class inventory.\n");
+        sb.append("- java.get_dependencies      : Inspects Maven dependencies and OSGi Require-Bundle headers.\n");
+        sb.append("- java.inspect_class         : Inspects class structure, fields, methods, interfaces, and signatures.\n");
+        sb.append("- java.inspect_method        : Inspects method signature and body implementation.\n");
+        sb.append("- java.find_references       : Searches references across Java source files.\n");
+        sb.append("- java.find_callers          : Identifies methods that invoke a specific method.\n");
+        sb.append("- java.find_implementations  : Discovers classes implementing an interface or extending a class.\n");
+        sb.append("- java.get_diagnostics       : Retrieves compiler errors and warnings.\n");
+        sb.append("- java.format                : Normalizes Java source formatting.\n\n");
+
+        // If compiler diagnostics exist in metadata, append them
+        if (context != null && context.getOrchestrationState() != null) {
+            Object diag = context.getOrchestrationState().getMetadata().get("latestCompilerDiagnostics");
+            if (diag instanceof String && !((String) diag).trim().isEmpty()) {
+                sb.append("--- LATEST COMPILER DIAGNOSTICS ---\n").append(diag).append("\n\n");
+            }
+        }
     }
 
     /**

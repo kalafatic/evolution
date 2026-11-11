@@ -442,6 +442,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 					if (AiMode.MEDIATED.equals(aiMode)) return "MEDIATED";
 					if (AiMode.INTENT.equals(aiMode)) return "INTENT";
 					if (AiMode.DREAM.equals(aiMode)) return "DREAM";
+					if (AiMode.DEVELOPER.equals(aiMode)) return "DEVELOPER";
 				}
 			}
 			return currentMode;
