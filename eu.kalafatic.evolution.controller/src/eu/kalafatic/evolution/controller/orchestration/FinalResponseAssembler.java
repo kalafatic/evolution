@@ -121,6 +121,49 @@ public class FinalResponseAssembler {
             }
         }
 
+        // B2. Reconstructed Intent & Candidate Execution Branches (for INTENT mode or when reconstructedIntent is present)
+        Object reconObj = state.getMetadata().get("reconstructedIntent");
+        if (reconObj instanceof eu.kalafatic.evolution.controller.orchestration.intent.model.ReconstructedIntent) {
+            eu.kalafatic.evolution.controller.orchestration.intent.model.ReconstructedIntent recon =
+                    (eu.kalafatic.evolution.controller.orchestration.intent.model.ReconstructedIntent) reconObj;
+            sb.append("\n\n---\n### 🎯 Reconstructed Intent & Execution Branches\n");
+            sb.append("**Primary Objective:** ").append(recon.getPrimaryObjective()).append("\n");
+            sb.append("**Action Type:** ").append(recon.getActionType()).append("\n");
+            if (recon.getTargetPath() != null && !recon.getTargetPath().isEmpty()) {
+                sb.append("**Target Path:** `").append(recon.getTargetPath()).append("` (").append(recon.getTargetRole()).append(")\n");
+            }
+            if (recon.getExpectedResult() != null && !recon.getExpectedResult().isEmpty()) {
+                sb.append("**Expected Outcome:** ").append(recon.getExpectedResult()).append("\n");
+            }
+
+            if (!recon.getCandidateBranches().isEmpty()) {
+                sb.append("\n#### Candidate Darwin Execution Branches:\n");
+                for (eu.kalafatic.evolution.controller.orchestration.intent.model.ExecutionBranch b : recon.getCandidateBranches()) {
+                    String marker = b.isSelected() ? " ✓ **[SELECTED] " : " • **";
+                    sb.append(marker).append(b.getName()).append("** (Mode: `").append(b.getProposedMode()).append("`, Confidence: ")
+                      .append(String.format(java.util.Locale.US, "%.2f", b.getConfidence())).append(")\n");
+                    sb.append("   - Interpretation: ").append(b.getInterpretation()).append("\n");
+                    if (!b.getAdvantages().isEmpty()) {
+                        sb.append("   - Advantages: ").append(String.join("; ", b.getAdvantages())).append("\n");
+                    }
+                    if (!b.getLimitations().isEmpty()) {
+                        sb.append("   - Limitations: ").append(String.join("; ", b.getLimitations())).append("\n");
+                    }
+                }
+            }
+
+            if (recon.getSelectedBranch() != null) {
+                sb.append("\n**Selected Execution Direction:** `").append(recon.getSelectedBranch().getProposedMode()).append("` - ")
+                  .append(recon.getSelectedBranch().getName()).append("\n");
+            }
+            if (recon.getDecisionRationale() != null && !recon.getDecisionRationale().isEmpty()) {
+                sb.append("**Decision Rationale:** ").append(recon.getDecisionRationale()).append("\n");
+            }
+            if (recon.isClarificationRequired() && recon.getClarificationQuestion() != null) {
+                sb.append("\n⚠️ **Clarification Question:** ").append(recon.getClarificationQuestion()).append("\n");
+            }
+        }
+
         // C. COMPREHENSIVE EVOLUTIONARY REPORTING
         final eu.kalafatic.evolution.controller.kernel.EvolutionProfile finalProfile = profile;
         if (finalProfile.shouldShowEvolutionSummary() || !isChat) {

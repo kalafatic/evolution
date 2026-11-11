@@ -147,6 +147,11 @@ public class ModeRouter {
 		if (lower.contains("analyze target"))
 			return createHybridManualExportMode();
 
+		// 3b. Dynamic Intent Transition: Specific Programming Requests route to DEVELOPER mode
+		if (isSpecificProgrammingRequest(prompt)) {
+			return createDeveloperMode();
+		}
+
 		// 4. Use the cognitive pipeline for evidence-based detection
 		CognitiveAnalysisPipeline pipeline = new CognitiveAnalysisPipeline();
 		CapabilityAnalysis analysis = pipeline.analyze(prompt);
@@ -243,6 +248,15 @@ public class ModeRouter {
 		// Trajectory)
 		String sessionId = (orchestrator != null) ? orchestrator.getId() : null;
 		SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+
+		// 3b. Dynamic Intent Transition: Specific Programming Requests route to DEVELOPER mode
+		if (isSpecificProgrammingRequest(prompt)) {
+			if (session != null) {
+				session.getCognitiveState().setCurrentCapability(CapabilityType.DEVELOPER);
+				new CognitiveStatePublisher().publish(null, session.getCognitiveState());
+			}
+			return createDeveloperMode();
+		}
 		if (session != null) {
 			SessionCognitiveState cogState = session.getCognitiveState();
 
@@ -326,6 +340,15 @@ public class ModeRouter {
 
 	private PlatformMode createForgeMode() {
 		return new PlatformMode(PlatformType.FORGE, AutonomyLevel.MEDIUM, 3, false);
+	}
+
+	private boolean isSpecificProgrammingRequest(String prompt) {
+		if (prompt == null) return false;
+		String lower = prompt.toLowerCase().trim();
+		return (lower.contains("http connections") || lower.contains("connection pool")
+				|| lower.contains("manages http") || lower.contains("manage http")
+				|| lower.contains("implement a rest client") || lower.contains("implement rest client")
+				|| lower.startsWith("write a java") || lower.startsWith("implement a java class"));
 	}
 
 }
