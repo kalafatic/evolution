@@ -2111,15 +2111,74 @@ public class ForgeSettingsDialog extends Dialog {
 
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
-        Button finishBtn = createButton(parent, 1001, "🏁 Finish Training", false);
-        finishBtn.setToolTipText("Gracefully finish training at current state/epoch and export all model files");
+        Button finishBtn = createButton(parent, 1001, "⏹ Stop & Finalize", false);
+        finishBtn.setToolTipText("Gracefully stop training at current state/epoch and export valid .evo model files");
         finishBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handleFinishTraining(finishBtn);
             }
         });
+
+        Button pauseBtn = createButton(parent, 1002, "⏸ Pause", false);
+        pauseBtn.setToolTipText("Pause training at current batch and save resumption checkpoint");
+        pauseBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handlePauseTraining(pauseBtn);
+            }
+        });
+
+        Button abortBtn = createButton(parent, 1003, "✖ Abort", false);
+        abortBtn.setToolTipText("Immediately abort training and discard unfinished model");
+        abortBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAbortTraining(abortBtn);
+            }
+        });
+
         super.createButtonsForButtonBar(parent);
+    }
+
+    private void handlePauseTraining(Button btn) {
+        try {
+            Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            Object mgr = managerClass.getMethod("getInstance").invoke(null);
+            Boolean requested = (Boolean) managerClass.getMethod("requestPause", String.class).invoke(mgr, (Object) null);
+
+            if (Boolean.TRUE.equals(requested)) {
+                MessageDialog.openInformation(getShell(), "Pausing Training",
+                    "Training pause requested!\n\nThe trainer will pause at the current batch and save a resumption checkpoint.");
+            } else {
+                MessageDialog.openInformation(getShell(), "No Active Trainer",
+                    "No active training run detected in progress to pause.");
+            }
+        } catch (Exception ex) {
+            MessageDialog.openError(getShell(), "Error", "Failed to pause training: " + ex.getMessage());
+        }
+    }
+
+    private void handleAbortTraining(Button btn) {
+        try {
+            boolean confirm = MessageDialog.openConfirm(getShell(), "Confirm Abort",
+                    "Are you sure you want to abort training? All unfinalized progress will be discarded.");
+            if (!confirm) return;
+
+            Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            Object mgr = managerClass.getMethod("getInstance").invoke(null);
+            Boolean requested = (Boolean) managerClass.getMethod("requestAbort", String.class).invoke(mgr, (Object) null);
+
+            if (Boolean.TRUE.equals(requested)) {
+                MessageDialog.openInformation(getShell(), "Training Aborted",
+                    "Training abort requested. Running processes are halting.");
+            } else {
+                MessageDialog.openInformation(getShell(), "No Active Trainer",
+                    "No active training run detected in progress to abort.");
+            }
+        } catch (Exception ex) {
+            MessageDialog.openError(getShell(), "Error", "Failed to abort training: " + ex.getMessage());
+        }
     }
 
     private void handleFinishTraining(Button btn) {

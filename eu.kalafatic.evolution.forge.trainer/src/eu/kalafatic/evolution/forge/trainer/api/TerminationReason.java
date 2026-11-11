@@ -3,6 +3,9 @@ package eu.kalafatic.evolution.forge.trainer.api;
 public enum TerminationReason {
     PLANNED_COMPLETION,
     USER_REQUEST,
+    USER_STOP_REQUEST,
+    USER_PAUSE_REQUEST,
+    USER_ABORT_REQUEST,
     EARLY_STOPPING_CRITERIA,
     THREAD_INTERRUPTED,
     NAN_OR_INF_LOSS,
