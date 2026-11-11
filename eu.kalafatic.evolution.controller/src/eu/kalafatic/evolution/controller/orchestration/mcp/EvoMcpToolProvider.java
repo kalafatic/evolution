@@ -61,7 +61,102 @@ public class EvoMcpToolProvider {
         // 7. Server Processes
         registerProcessTools(registry);
 
+        // 8. Eclipse / Java Development Tools
+        registerJavaTools(registry);
+
         LOGGER.info("[MCP] Authoritative EVO Capability Tools registered successfully.");
+    }
+
+    private static void registerJavaTools(ToolRegistry registry) {
+        // java.inspect_class
+        Map<String, Object> inspectClassSchema = new HashMap<>();
+        inspectClassSchema.put("type", "object");
+        inspectClassSchema.put("properties", Map.of("className", Map.of("type", "string", "description", "Class name or file path to inspect")));
+        registry.register(new Tool("java.inspect_class", "Inspects class structure, fields, methods, and signatures", inspectClassSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.inspect_class").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.inspect_method
+        Map<String, Object> inspectMethodSchema = new HashMap<>();
+        inspectMethodSchema.put("type", "object");
+        inspectMethodSchema.put("properties", Map.of(
+            "className", Map.of("type", "string", "description", "Enclosing class name"),
+            "methodName", Map.of("type", "string", "description", "Method name to inspect")
+        ));
+        registry.register(new Tool("java.inspect_method", "Inspects method implementation and AST information", inspectMethodSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.inspect_method").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.find_references
+        Map<String, Object> findRefsSchema = new HashMap<>();
+        findRefsSchema.put("type", "object");
+        findRefsSchema.put("properties", Map.of("target", Map.of("type", "string", "description", "Identifier or element to find references for")));
+        registry.register(new Tool("java.find_references", "Finds references to a Java element", findRefsSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.find_references").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.find_callers
+        Map<String, Object> findCallersSchema = new HashMap<>();
+        findCallersSchema.put("type", "object");
+        findCallersSchema.put("properties", Map.of("methodName", Map.of("type", "string", "description", "Method name to find callers for")));
+        registry.register(new Tool("java.find_callers", "Identifies callers and call relationships for a method", findCallersSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.find_callers").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.find_implementations
+        Map<String, Object> findImplsSchema = new HashMap<>();
+        findImplsSchema.put("type", "object");
+        findImplsSchema.put("properties", Map.of("interfaceName", Map.of("type", "string", "description", "Interface or superclass name")));
+        registry.register(new Tool("java.find_implementations", "Finds interface and abstract class implementations", findImplsSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.find_implementations").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.get_diagnostics
+        Map<String, Object> diagSchema = new HashMap<>();
+        diagSchema.put("type", "object");
+        registry.register(new Tool("java.get_diagnostics", "Retrieves current Java compiler diagnostics and problem markers", diagSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.get_diagnostics").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.get_project_structure
+        Map<String, Object> projStructSchema = new HashMap<>();
+        projStructSchema.put("type", "object");
+        registry.register(new Tool("java.get_project_structure", "Inspects project packages, source roots, and compilation units", projStructSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.get_project_structure").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.get_dependencies
+        Map<String, Object> depsSchema = new HashMap<>();
+        depsSchema.put("type", "object");
+        registry.register(new Tool("java.get_dependencies", "Inspects Maven and OSGi dependencies", depsSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.get_dependencies").execute(cmd, resolveProjectRoot(), null);
+            });
+
+        // java.format
+        Map<String, Object> formatSchema = new HashMap<>();
+        formatSchema.put("type", "object");
+        formatSchema.put("properties", Map.of("path", Map.of("type", "string", "description", "Java file path to format")));
+        registry.register(new Tool("java.format", "Formats Java source using formatting rules", formatSchema),
+            (args, context) -> {
+                String cmd = args != null ? args.toString() : "";
+                return ToolFactory.getTool("java.format").execute(cmd, resolveProjectRoot(), null);
+            });
     }
 
     private static void registerProjectTools(ToolRegistry registry) {
