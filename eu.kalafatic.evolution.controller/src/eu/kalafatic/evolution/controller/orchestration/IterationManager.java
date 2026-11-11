@@ -1528,34 +1528,24 @@ public class IterationManager {
 					model.getInfluenceGraph().putAll((Map<String, Double>) influence);
 			}
 
-			File resourcesDir = new File(context.getProjectRoot(), "src/main/resources");
-			if (!resourcesDir.exists()) {
-				resourcesDir = new File(context.getProjectRoot(), "resources");
-			}
-			if (!resourcesDir.exists()) {
-				resourcesDir.mkdirs();
-			}
+			// Build comprehensive MediatedSpecification using Darwin Technical Reasoning
+			eu.kalafatic.evolution.controller.mediation.analysis.MediatedSpecificationEngine specEngine =
+					new eu.kalafatic.evolution.controller.mediation.analysis.MediatedSpecificationEngine();
+			eu.kalafatic.evolution.controller.mediation.analysis.MediatedSpecification spec =
+					specEngine.transform(request, snapshot, model, context, aiService);
 
-			File exportPackage = exportManager.createUnifiedExport(model, MediatedExportManager.ExportProfile.FULL,
-					request, context.getProjectRoot(), resourcesDir.getAbsolutePath(), context.getSessionId());
-
-			// Record as a change so it appears in Changes view with relative path
-			String relativeZipPath = context.getProjectRoot().toPath().relativize(exportPackage.toPath()).toString().replace('\\', '/');
-			context.getFileChangeTracker().recordChange(relativeZipPath, FileChangeTracker.ChangeType.NEW);
-
-			// Explicitly trigger workspace refresh using Eclipse Core Resources API
-			try {
-				org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
-			} catch (Throwable t) {
-				context.log("[KERNEL] Warning: Workspace refresh failed or not in OSGi environment: " + t.getMessage());
-			}
+			// Target read-only guarantee: Do NOT output into projectRoot!
+			// Output into configured outputPath, or external export directory outside the target project.
+			File exportPackage = exportManager.createStructuredMediatedPackage(
+					model, snapshot, spec, selectedPaths, context.getProjectRoot(), outputPath, context.getSessionId());
 
 			StringBuilder summaryBuilder = new StringBuilder();
 			summaryBuilder.append("### Mediated Darwin Evolution Analysis & Export\n\n");
 
 			String packageUri = exportPackage.toURI().toString();
-			summaryBuilder.append("📦 **Unified Export Package (ZIP):** [").append(exportPackage.getName()).append("](")
+			summaryBuilder.append("📦 **External AI Export Package (ZIP):** [").append(exportPackage.getName()).append("](")
 					.append(packageUri).append(")\n\n");
+			summaryBuilder.append("📂 **Package Location:** `").append(exportPackage.getAbsolutePath()).append("`\n\n");
 
 			summaryBuilder.append("#### 🏛️ Target & Architectural Analysis\n\n");
 			summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
@@ -1619,6 +1609,18 @@ public class IterationManager {
 
 			summaryBuilder.append("#### Evolutionary Lineage Analysis\n");
 			summaryBuilder.append(memoryService.getHistoryAnalysis()).append("\n\n");
+
+			summaryBuilder.append("#### 📋 Improved Engineering Specification\n\n");
+			if (spec != null) {
+				summaryBuilder.append("**Primary Objective:** ").append(spec.getPrimaryObjective()).append("\n\n");
+				if (!spec.getAcceptanceCriteria().isEmpty()) {
+					summaryBuilder.append("**Key Acceptance Criteria:**\n");
+					for (String ac : spec.getAcceptanceCriteria()) {
+						summaryBuilder.append("- ").append(ac).append("\n");
+					}
+					summaryBuilder.append("\n");
+				}
+			}
 
 			summaryBuilder.append("**Optimized Prompt Sample:**\n\n");
 			if (optimizedPrompt != null && optimizedPrompt.length() > 500) {

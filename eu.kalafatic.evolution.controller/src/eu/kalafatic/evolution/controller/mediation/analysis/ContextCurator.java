@@ -1,14 +1,17 @@
 package eu.kalafatic.evolution.controller.mediation.analysis;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.mediation.analysis.ManifestFileEntry.FileCategory;
 import eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
@@ -18,7 +21,8 @@ import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 
 /**
- * Selects high-value context while avoiding token floods.
+ * Selects high-value context while avoiding token floods and generates
+ * structured file manifests explaining why each file was included.
  */
 public class ContextCurator {
 
@@ -138,8 +142,14 @@ public class ContextCurator {
             if (node.getTags().contains("Annotated")) score += 10.0; // Components with metadata are significant
 
             // G. Build & Project Descriptors (Strongly prioritize for grounding)
-            if (path.endsWith("pom.xml") || path.endsWith("build.gradle") || path.endsWith("package.json") || path.endsWith("sloeber.ino")) {
+            if (path.endsWith("pom.xml") || path.endsWith("build.gradle") || path.endsWith("package.json") || path.endsWith("sloeber.ino")
+                    || path.endsWith("requirements.txt") || path.endsWith("CMakeLists.txt") || path.endsWith("Makefile")) {
                 score += 300.0;
+            }
+
+            // H. Existing Documentation & Architecture Guidance
+            if (path.endsWith("README.md") || path.endsWith("architecture.md") || path.startsWith("docs/") || path.contains("/docs/")) {
+                score += 40.0;
             }
 
             if (score > 0) {
@@ -218,6 +228,151 @@ public class ContextCurator {
         }
 
         return selected;
+    }
+
+    /**
+     * Builds a comprehensive FileManifest documenting all selected files with
+     * their categories, architectural roles, and selection rationales.
+     */
+    public FileManifest buildManifest(List<String> selectedPaths, TargetSnapshot snapshot,
+            TargetRealityModel realityModel, File projectRoot, String query) {
+
+        String rootPath = projectRoot != null ? projectRoot.getAbsolutePath() : (snapshot != null ? snapshot.getRootPath() : ".");
+        FileManifest manifest = new FileManifest(rootPath);
+        String lowerQuery = query != null ? query.toLowerCase(Locale.ROOT) : "";
+
+        for (String path : selectedPaths) {
+            String normPath = path.replace('\\', '/');
+            SemanticNode node = snapshot != null ? snapshot.getNodes().get(normPath) : null;
+            long size = 0;
+            if (projectRoot != null) {
+                File f = new File(projectRoot, normPath);
+                if (f.exists()) size = f.length();
+            }
+
+            FileCategory category = classifyFileCategory(normPath, node);
+            String role = (node != null && node.getAttributes().containsKey("role"))
+                    ? node.getAttributes().get("role")
+                    : inferArchitecturalRole(normPath, category);
+            String rationale = buildSelectionRationale(normPath, category, node, realityModel, lowerQuery);
+
+            ManifestFileEntry entry = new ManifestFileEntry(normPath, category, rationale, role, size);
+            manifest.addEntry(entry);
+        }
+
+        return manifest;
+    }
+
+    private FileCategory classifyFileCategory(String path, SemanticNode node) {
+        String lower = path.toLowerCase(Locale.ROOT);
+        if (lower.endsWith("pom.xml") || lower.endsWith("build.gradle") || lower.endsWith("package.json")
+                || lower.endsWith("cmakelists.txt") || lower.endsWith("makefile") || lower.endsWith("sloeber.ino")) {
+            return FileCategory.BUILD;
+        }
+        if (lower.endsWith(".json") || lower.endsWith(".yaml") || lower.endsWith(".yml")
+                || lower.endsWith(".xml") || lower.endsWith(".properties") || lower.endsWith(".ini")
+                || lower.endsWith(".toml")) {
+            return FileCategory.CONFIG;
+        }
+        if (lower.endsWith("readme.md") || lower.endsWith(".md") || lower.endsWith(".adoc")
+                || lower.endsWith(".txt") || lower.contains("/docs/") || lower.startsWith("docs/")) {
+            return FileCategory.DOCUMENTATION;
+        }
+        if (lower.contains("test") || lower.contains("spec") || lower.endsWith("test.java")
+                || lower.endsWith("tests.java")) {
+            return FileCategory.TEST;
+        }
+        if (lower.endsWith(".evo")) {
+            return FileCategory.MODEL;
+        }
+        if (lower.endsWith(".evodata") || lower.endsWith(".parquet")) {
+            return FileCategory.DATASET;
+        }
+        if (lower.endsWith(".java") || lower.endsWith(".py") || lower.endsWith(".ts")
+                || lower.endsWith(".js") || lower.endsWith(".c") || lower.endsWith(".cpp")
+                || lower.endsWith(".h") || lower.endsWith(".go") || lower.endsWith(".rs")) {
+            if (node != null && node.getStructures().stream().anyMatch(s -> s.toLowerCase().contains("interface "))) {
+                return FileCategory.INTERFACE;
+            }
+            return FileCategory.SOURCE;
+        }
+        return FileCategory.OTHER;
+    }
+
+    private String inferArchitecturalRole(String path, FileCategory category) {
+        switch (category) {
+            case BUILD:
+                return "Project build descriptor and dependency definition";
+            case CONFIG:
+                return "System configuration and runtime properties";
+            case DOCUMENTATION:
+                return "Architectural and developer documentation";
+            case TEST:
+                return "Verification suite and behavioral regression testing";
+            case INTERFACE:
+                return "Architectural contract / interface abstraction";
+            case MODEL:
+                return "Native model weight artifact";
+            case DATASET:
+                return "Training dataset container";
+            case SOURCE:
+            default:
+                if (path.contains("Controller") || path.contains("Manager") || path.contains("Engine") || path.contains("Service")) {
+                    return "Core coordination and business logic component";
+                }
+                return "Primary application source implementation";
+        }
+    }
+
+    private String buildSelectionRationale(String path, FileCategory category, SemanticNode node,
+            TargetRealityModel realityModel, String lowerQuery) {
+
+        StringBuilder sb = new StringBuilder();
+        if (category == FileCategory.BUILD) {
+            return "Provides authoritative dependency coordinates, build targets, and compilation rules.";
+        }
+        if (category == FileCategory.DOCUMENTATION) {
+            return "Provides foundational project overview, usage guidelines, and domain conventions.";
+        }
+        if (category == FileCategory.CONFIG) {
+            return "Defines essential runtime parameters, environment profiles, and module boundaries.";
+        }
+        if (category == FileCategory.TEST) {
+            return "Illustrates expected component behavior and existing regression baselines.";
+        }
+
+        // Subsystem alignment
+        if (realityModel != null) {
+            for (Subsystem sub : realityModel.getSubsystems()) {
+                if (sub.getCriticalFiles().contains(path)) {
+                    sb.append("Critical file for subsystem '").append(sub.getName()).append("'. ");
+                }
+                if (sub.getBoundaries().contains(path)) {
+                    sb.append("Represents an architectural boundary for '").append(sub.getName()).append("'. ");
+                }
+            }
+        }
+
+        // Relevance overlap with user request
+        if (!lowerQuery.isEmpty()) {
+            String[] words = lowerQuery.split("\\s+");
+            for (String w : words) {
+                if (w.length() >= 4 && path.toLowerCase(Locale.ROOT).contains(w)) {
+                    sb.append("Directly matches task keyword '").append(w).append("'. ");
+                    break;
+                }
+            }
+        }
+
+        if (node != null && node.getTags().contains("Executory")) {
+            sb.append("Primary execution entry point. ");
+        }
+
+        if (sb.length() == 0) {
+            sb.append("High architectural authority and high connectivity to core execution pathways.");
+        }
+
+        return sb.toString().trim();
     }
 
     private long estimateTokens(SemanticNode node) {
