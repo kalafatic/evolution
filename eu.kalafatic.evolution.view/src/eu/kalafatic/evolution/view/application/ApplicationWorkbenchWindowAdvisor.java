@@ -205,8 +205,29 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		// Install Global EVO Context Menu Listener across all controls
 		eu.kalafatic.evolution.view.menu.EvoGlobalContextMenuManager.getInstance().install();
 
+		// Automatic Web Server & Application Startup on standard RCP launch
+		autoStartEvoServers();
+
 		// Post-Startup Process & Memory Monitoring Report
 		logPostStartupReport();
+	}
+
+	private void autoStartEvoServers() {
+		Job serverStartupJob = new Job("EVO Automatic Server Startup") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				try {
+					eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().autoStartAll().join();
+				} catch (Throwable t) {
+					Log.log("[AUTO_SERVER_STARTUP] Error during server startup: " + t.getMessage());
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		serverStartupJob.setSystem(true);
+		serverStartupJob.setUser(false);
+		serverStartupJob.setPriority(Job.SHORT);
+		serverStartupJob.schedule();
 	}
 
 	private void logPostStartupReport() {

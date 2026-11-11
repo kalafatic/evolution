@@ -1,8 +1,22 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
@@ -20,69 +34,95 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.ServerEntry;
+import eu.kalafatic.evolution.controller.orchestration.ServerLifecycleListener;
+import eu.kalafatic.evolution.controller.orchestration.ServerManager;
+import eu.kalafatic.evolution.controller.orchestration.ServerState;
+import eu.kalafatic.evolution.controller.orchestration.WebApplicationDescriptor;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
-public class BrowserPage extends Composite {
-    private Text urlText;
-    private CTabFolder tabFolder;
+/**
+ * Integrated internal EVO Browser page.
+ * Listens to ServerLifecycleListener to automatically open tabs for available EVO web apps,
+ * handle reload on server restart, show unavailable badges on stop, and provide context menu actions.
+ */
+public class BrowserPage extends Composite implements ServerLifecycleListener {
+
+    private final MultiPageEditor editor;
     private Orchestrator orchestrator;
 
-    private Button backBtn, forwardBtn, refreshBtn, stopBtn, homeBtn, addBookmarkBtn, bookmarksBtn, historyBtn, newTabBtn;
+    private Text urlText;
+    private Button backBtn;
+    private Button forwardBtn;
+    private Button refreshBtn;
+    private Button stopBtn;
+    private Button homeBtn;
+    private Button newTabBtn;
+    private Button addBookmarkBtn;
+    private Button bookmarksBtn;
+    private Button historyBtn;
+    private CTabFolder tabFolder;
 
-    private List<String> bookmarks = new ArrayList<>();
-    private List<String> history = new ArrayList<>();
+    private final List<String> bookmarks = new ArrayList<>();
+    private final List<String> history = new ArrayList<>();
+
+    // Tracks open tabs by app ID / URL key
+    private final Map<String, CTabItem> openTabsByKey = new ConcurrentHashMap<>();
 
     public BrowserPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.NONE);
+        this.editor = editor;
         this.orchestrator = orchestrator;
+
         loadBookmarks();
         createControl();
+
+        ServerManager.getInstance().addListener(this);
     }
 
     private void createControl() {
-        this.setLayout(new GridLayout(1, false));
+        setLayout(new GridLayout(1, false));
 
-        // Toolbar
-        Composite toolbar = new Composite(this, SWT.NONE);
-        toolbar.setLayout(new GridLayout(11, false));
-        toolbar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        // Navigation Bar
+        Composite navBar = new Composite(this, SWT.NONE);
+        navBar.setLayout(new GridLayout(10, false));
+        navBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        backBtn = createButton(toolbar, "\u2B05", "Back");
-        forwardBtn = createButton(toolbar, "\u27A1", "Forward");
-        refreshBtn = createButton(toolbar, "\uD83D\uDD04", "Refresh");
-        stopBtn = createButton(toolbar, "\u23F9", "Stop");
-        homeBtn = createButton(toolbar, "\uD83C\uDFE0", "Home");
+        backBtn = createButton(navBar, "◀", "Back");
+        forwardBtn = createButton(navBar, "▶", "Forward");
+        refreshBtn = createButton(navBar, "⟳", "Refresh");
+        stopBtn = createButton(navBar, "✕", "Stop");
+        homeBtn = createButton(navBar, "⌂", "Home");
 
-        urlText = new Text(toolbar, SWT.BORDER);
-        urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        urlText.setText("https://ollama.com");
+        urlText = new Text(navBar, SWT.BORDER);
+        urlText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        Button goButton = new Button(toolbar, SWT.PUSH);
-        goButton.setText("Go");
-
-        addBookmarkBtn = createButton(toolbar, "\u2B50", "Add Bookmark");
-        bookmarksBtn = createButton(toolbar, "\uD83D\uDCD6", "Bookmarks");
-        historyBtn = createButton(toolbar, "\uD83D\uDCC3", "History");
-        newTabBtn = createButton(toolbar, "\u2795", "New Tab");
+        Button goButton = createButton(navBar, "Go", "Navigate to URL");
+        newTabBtn = createButton(navBar, "+", "New Tab");
+        addBookmarkBtn = createButton(navBar, "★", "Add Bookmark");
+        bookmarksBtn = createButton(navBar, "Bookmarks", "View Bookmarks");
+        historyBtn = createButton(navBar, "History", "View History");
 
         // Tab Folder
         tabFolder = new CTabFolder(this, SWT.BORDER | SWT.CLOSE);
-        tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
+        tabFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         tabFolder.setSimple(false);
-        tabFolder.setUnselectedImageVisible(true);
         tabFolder.setUnselectedCloseVisible(true);
 
         tabFolder.addCTabFolder2Listener(new CTabFolder2Adapter() {
             @Override
             public void close(CTabFolderEvent event) {
                 CTabItem item = (CTabItem) event.item;
+                removeTrackedTab(item);
                 if (item.getControl() != null) {
                     item.getControl().dispose();
                 }
@@ -96,24 +136,19 @@ public class BrowserPage extends Composite {
             }
         });
 
-        // Initial tab
-        createNewTab("https://ollama.com");
-        createNewTab("https://huggingface.co/");
-        if (orchestrator.getOllama() != null) {
-            createNewTab(orchestrator.getOllama().getUrl());
+        // Tab context menu
+        createTabContextMenu();
+
+        // Standard default tab
+        createNewTab("https://ollama.com", "Ollama");
+
+        // Open tabs for any web applications already running
+        for (WebApplicationDescriptor webApp : ServerManager.getInstance().getWebApplications()) {
+            if (ServerManager.getInstance().isPortRunning(webApp.getServerPort())) {
+                openOrReloadAppTab(webApp);
+            }
         }
 
-        int port = 28080;
-        int mcpPort = 28280;
-        if (orchestrator.getServerSettings() != null) {
-            port = orchestrator.getServerSettings().getPort();
-            mcpPort = orchestrator.getServerSettings().getMcpPort();
-        }
-
-        createNewTab("http://localhost:" + port + "/experimental/chat?runtime=SWT");
-        createNewTab("http://localhost:" + port + "/dashboard.html?runtime=SWT");
-        createNewTab("http://localhost:" + port + "/develop?runtime=SWT");
-        createNewTab("http://localhost:" + mcpPort + "/");
         // Listeners
         goButton.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { navigateTo(urlText.getText()); }
@@ -156,7 +191,7 @@ public class BrowserPage extends Composite {
         });
 
         newTabBtn.addSelectionListener(new SelectionAdapter() {
-            @Override public void widgetSelected(SelectionEvent e) { createNewTab("https://ollama.com"); }
+            @Override public void widgetSelected(SelectionEvent e) { createNewTab("https://ollama.com", "New Tab"); }
         });
 
         addBookmarkBtn.addSelectionListener(new SelectionAdapter() {
@@ -172,6 +207,125 @@ public class BrowserPage extends Composite {
         });
     }
 
+    private void createTabContextMenu() {
+        MenuManager menuMgr = new MenuManager("#BrowserTabPopupMenu");
+        menuMgr.setRemoveAllWhenShown(true);
+        menuMgr.addMenuListener(new IMenuListener() {
+            @Override
+            public void menuAboutToShow(IMenuManager manager) {
+                fillTabContextMenu(manager);
+            }
+        });
+        Menu menu = menuMgr.createContextMenu(tabFolder);
+        tabFolder.setMenu(menu);
+    }
+
+    private void fillTabContextMenu(IMenuManager manager) {
+        CTabItem activeItem = tabFolder.getSelection();
+        if (activeItem == null || activeItem.isDisposed()) {
+            return;
+        }
+
+        Browser browser = (Browser) activeItem.getControl();
+        String currentUrl = (browser != null && !browser.isDisposed()) ? browser.getUrl() : "";
+
+        // 1. Reload
+        Action reloadAction = new Action("Reload") {
+            @Override
+            public void run() {
+                if (browser != null && !browser.isDisposed()) {
+                    browser.refresh();
+                }
+            }
+        };
+        manager.add(reloadAction);
+
+        // Associate with server if internal EVO endpoint
+        ServerEntry associatedServer = findServerForUrl(currentUrl);
+        if (associatedServer != null) {
+            int port = associatedServer.getPort();
+            ServerState state = associatedServer.getState();
+
+            // 2. Stop Server
+            Action stopServerAction = new Action("Stop Server (" + associatedServer.getName() + ")") {
+                @Override
+                public void run() {
+                    executeServerJob("Stopping " + associatedServer.getName(), () -> {
+                        ServerManager.getInstance().stop(port);
+                    });
+                }
+            };
+            stopServerAction.setEnabled(associatedServer.canStop());
+            manager.add(stopServerAction);
+
+            // 3. Restart Server
+            Action restartServerAction = new Action("Restart Server (" + associatedServer.getName() + ")") {
+                @Override
+                public void run() {
+                    executeServerJob("Restarting " + associatedServer.getName(), () -> {
+                        try {
+                            ServerManager.getInstance().restart(port);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
+            };
+            restartServerAction.setEnabled(associatedServer.canRestart());
+            manager.add(restartServerAction);
+        }
+
+        manager.add(new Separator());
+
+        // 4. Open URL
+        Action openUrlAction = new Action("Copy URL") {
+            @Override
+            public void run() {
+                if (currentUrl != null && !currentUrl.isEmpty()) {
+                    org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(getDisplay());
+                    cb.setContents(new Object[] { currentUrl }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+                    cb.dispose();
+                }
+            }
+        };
+        manager.add(openUrlAction);
+
+        manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+    }
+
+    private ServerEntry findServerForUrl(String url) {
+        if (url == null || url.isEmpty()) return null;
+        try {
+            URI uri = URI.create(url);
+            int port = uri.getPort();
+            if (port > 0) {
+                return ServerManager.getInstance().getServerEntry(port);
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private void executeServerJob(String taskName, Runnable task) {
+        Job job = new Job(taskName) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                task.run();
+                return Status.OK_STATUS;
+            }
+        };
+        job.setUser(true);
+        job.schedule();
+    }
+
+    private void removeTrackedTab(CTabItem item) {
+        for (Map.Entry<String, CTabItem> entry : openTabsByKey.entrySet()) {
+            if (entry.getValue() == item) {
+                openTabsByKey.remove(entry.getKey());
+                break;
+            }
+        }
+    }
+
     private Button createButton(Composite parent, String text, String tooltip) {
         Button btn = new Button(parent, SWT.PUSH | SWT.FLAT);
         btn.setText(text);
@@ -180,17 +334,31 @@ public class BrowserPage extends Composite {
     }
 
     public void openTab(String url) {
+        openTab(url, null);
+    }
+
+    public void openTab(String url, String preferredTitle) {
         if (url == null || url.trim().isEmpty()) return;
-        // Check if a tab with the same URL is already open
+
+        // Normalize URL key to prevent duplicates
+        String key = normalizeUrlKey(url);
+        CTabItem existingItem = openTabsByKey.get(key);
+        if (existingItem != null && !existingItem.isDisposed()) {
+            tabFolder.setSelection(existingItem);
+            updateUrlFromActiveTab();
+            return;
+        }
+
         for (CTabItem item : tabFolder.getItems()) {
             Browser b = (Browser) item.getControl();
-            if (b != null && !b.isDisposed() && url.equalsIgnoreCase(b.getUrl())) {
+            if (b != null && !b.isDisposed() && isSameUrl(url, b.getUrl())) {
+                openTabsByKey.put(key, item);
                 tabFolder.setSelection(item);
                 updateUrlFromActiveTab();
                 return;
             }
         }
-        createNewTab(url);
+        createNewTab(url, preferredTitle != null ? preferredTitle : "Loading...");
     }
 
     public void openTabs(List<String> urls) {
@@ -200,13 +368,65 @@ public class BrowserPage extends Composite {
         }
     }
 
-    private void createNewTab(String url) {
+    private void openOrReloadAppTab(WebApplicationDescriptor webApp) {
+        String url = webApp.getFullUrl();
+        String key = webApp.getId();
+
+        CTabItem existingItem = openTabsByKey.get(key);
+        if (existingItem != null && !existingItem.isDisposed()) {
+            // Already open -> reload existing tab
+            existingItem.setText(webApp.getName());
+            Browser browser = (Browser) existingItem.getControl();
+            if (browser != null && !browser.isDisposed()) {
+                browser.setUrl(url);
+            }
+            return;
+        }
+
+        // Check if any tab matches URL
+        for (CTabItem item : tabFolder.getItems()) {
+            Browser b = (Browser) item.getControl();
+            if (b != null && !b.isDisposed() && isSameUrl(url, b.getUrl())) {
+                openTabsByKey.put(key, item);
+                item.setText(webApp.getName());
+                b.setUrl(url);
+                return;
+            }
+        }
+
+        createNewTabForApp(webApp);
+    }
+
+    private void createNewTabForApp(WebApplicationDescriptor webApp) {
         CTabItem item = new CTabItem(tabFolder, SWT.NONE);
-        item.setText("Loading...");
+        item.setText(webApp.getName());
+        openTabsByKey.put(webApp.getId(), item);
 
         Browser browser = new Browser(tabFolder, SWT.NONE);
         item.setControl(browser);
 
+        configureBrowser(browser, item, webApp.getName());
+        browser.setUrl(webApp.getFullUrl());
+        tabFolder.setSelection(item);
+        updateUrlFromActiveTab();
+    }
+
+    private void createNewTab(String url, String title) {
+        CTabItem item = new CTabItem(tabFolder, SWT.NONE);
+        item.setText(title != null ? title : "Loading...");
+        String key = normalizeUrlKey(url);
+        openTabsByKey.put(key, item);
+
+        Browser browser = new Browser(tabFolder, SWT.NONE);
+        item.setControl(browser);
+
+        configureBrowser(browser, item, title);
+        browser.setUrl(url);
+        tabFolder.setSelection(item);
+        updateUrlFromActiveTab();
+    }
+
+    private void configureBrowser(Browser browser, CTabItem item, String fallbackTitle) {
         browser.addLocationListener(new LocationAdapter() {
             @Override
             public void changed(LocationEvent event) {
@@ -221,13 +441,17 @@ public class BrowserPage extends Composite {
         browser.addProgressListener(new ProgressAdapter() {
             @Override
             public void completed(ProgressEvent event) {
-                String title = (String) browser.evaluate("return document.title;");
-                if (title == null || title.isEmpty()) title = browser.getUrl();
-                item.setText(title);
+                try {
+                    String title = (String) browser.evaluate("return document.title;");
+                    if (title != null && !title.trim().isEmpty()) {
+                        item.setText(title);
+                    } else if (fallbackTitle != null) {
+                        item.setText(fallbackTitle);
+                    }
+                } catch (Exception ignored) {}
             }
         });
 
-        // Register bridge functions to allow web pages to detect SWT environment
         new BrowserFunction(browser, "JavaLog") {
             @Override
             public Object function(Object[] args) {
@@ -241,14 +465,21 @@ public class BrowserPage extends Composite {
         new BrowserFunction(browser, "JavaHandler") {
             @Override
             public Object function(Object[] args) {
-                // Basic handler to satisfy isSWTBrowser() detection
                 return null;
             }
         };
+    }
 
-        browser.setUrl(url);
-        tabFolder.setSelection(item);
-        updateUrlFromActiveTab();
+    private String normalizeUrlKey(String url) {
+        if (url == null) return "";
+        return url.trim().toLowerCase().replaceAll("\\?runtime=SWT", "");
+    }
+
+    private boolean isSameUrl(String u1, String u2) {
+        if (u1 == null || u2 == null) return false;
+        String n1 = normalizeUrlKey(u1);
+        String n2 = normalizeUrlKey(u2);
+        return n1.equalsIgnoreCase(n2);
     }
 
     private Browser getActiveBrowser() {
@@ -264,13 +495,13 @@ public class BrowserPage extends Composite {
         if (browser != null) {
             browser.setUrl(url);
         } else {
-            createNewTab(url);
+            createNewTab(url, null);
         }
     }
 
     private void updateUrlFromActiveTab() {
         Browser browser = getActiveBrowser();
-        if (browser != null) {
+        if (browser != null && !browser.isDisposed()) {
             urlText.setText(browser.getUrl());
             updateNavButtons(browser);
         }
@@ -345,7 +576,7 @@ public class BrowserPage extends Composite {
                         bookmarks.add(array.getString(i));
                     }
                 }
-            } catch (Exception e) {}
+            } catch (Exception ignored) {}
         }
     }
 
@@ -356,11 +587,77 @@ public class BrowserPage extends Composite {
             JSONObject json = (sharedMem == null || sharedMem.isEmpty()) ? new JSONObject() : new JSONObject(sharedMem);
             json.put("browser_bookmarks", new JSONArray(bookmarks));
             orchestrator.setSharedMemory(json.toString());
-        } catch (Exception e) {}
+        } catch (Exception ignored) {}
     }
 
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
         loadBookmarks();
+    }
+
+    @Override
+    public void onServerStateChanged(ServerEntry entry) {
+        if (isDisposed()) return;
+        Display.getDefault().asyncExec(() -> {
+            if (isDisposed()) return;
+            if (entry.getState() == ServerState.RUNNING) {
+                // If this server just came up, reload or open its web apps
+                for (WebApplicationDescriptor webApp : ServerManager.getInstance().getWebApplications()) {
+                    if (webApp.getServerPort() == entry.getPort()) {
+                        openOrReloadAppTab(webApp);
+                    }
+                }
+            } else if (entry.getState() == ServerState.STOPPED || entry.getState() == ServerState.FAILED) {
+                // Clearly indicate service unavailable in tab title without closing unrelated tabs
+                for (WebApplicationDescriptor webApp : ServerManager.getInstance().getWebApplications()) {
+                    if (webApp.getServerPort() == entry.getPort()) {
+                        CTabItem item = openTabsByKey.get(webApp.getId());
+                        if (item != null && !item.isDisposed()) {
+                            item.setText(webApp.getName() + " (Unavailable)");
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onAllServersStarted(List<ServerEntry> servers) {
+        if (isDisposed()) return;
+        Display.getDefault().asyncExec(() -> {
+            if (isDisposed()) return;
+            for (WebApplicationDescriptor webApp : ServerManager.getInstance().getWebApplications()) {
+                if (ServerManager.getInstance().isPortRunning(webApp.getServerPort())) {
+                    openOrReloadAppTab(webApp);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onWebApplicationReady(WebApplicationDescriptor webApp) {
+        if (isDisposed()) return;
+        Display.getDefault().asyncExec(() -> {
+            if (isDisposed()) return;
+            openOrReloadAppTab(webApp);
+        });
+    }
+
+    @Override
+    public void onWebApplicationUnavailable(WebApplicationDescriptor webApp) {
+        if (isDisposed()) return;
+        Display.getDefault().asyncExec(() -> {
+            if (isDisposed()) return;
+            CTabItem item = openTabsByKey.get(webApp.getId());
+            if (item != null && !item.isDisposed()) {
+                item.setText(webApp.getName() + " (Unavailable)");
+            }
+        });
+    }
+
+    @Override
+    public void dispose() {
+        ServerManager.getInstance().removeListener(this);
+        super.dispose();
     }
 }
