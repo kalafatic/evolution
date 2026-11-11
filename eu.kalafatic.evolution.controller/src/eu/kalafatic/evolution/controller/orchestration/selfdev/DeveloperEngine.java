@@ -38,11 +38,16 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 public class DeveloperEngine extends CodingEngine {
 
 	private final GitVersionControlProvider gitVcsProvider = new GitVersionControlProvider();
+	private final DeveloperContextProvider contextProvider = new DeveloperContextProvider();
 
 	public DeveloperEngine(TaskContext context, IterationMemoryService memoryService,
 			SystemStateSignalProvider stateProvider) {
 		super(context, memoryService, stateProvider);
 		this.platformType = PlatformType.DEVELOPER;
+	}
+
+	public DeveloperContextProvider getContextProvider() {
+		return contextProvider;
 	}
 
 	@Override
@@ -54,7 +59,12 @@ public class DeveloperEngine extends CodingEngine {
 	public OrchestratorResponse evolve(String request, IterationManager iterationManager,
 			EvolutionAssessment initialAssessment) throws Exception {
 		context.log("[DEVELOPER] Starting autonomous developer evolution for request: " + request);
-		resolveDevelopmentTarget();
+		File targetRoot = resolveDevelopmentTarget();
+
+		// Inject progressive task-oriented context
+		String devContext = contextProvider.buildInitialContext(targetRoot, context, request);
+		context.getOrchestrationState().getMetadata().put("projectStructure", devContext);
+		context.log("[DEVELOPER] Injected progressive target context:\n" + devContext);
 
 		// Execute core Darwin evolutionary loop
 		OrchestratorResponse response = super.evolve(request, iterationManager, initialAssessment);
@@ -128,10 +138,22 @@ public class DeveloperEngine extends CodingEngine {
 		EvaluationResult evalResult = super.runDarwinIteration(context, manager);
 
 		// -----------------------------------------------------------------
-		// PHASE 4: VERIFY - Compile and run relevant tests
+		// PHASE 4: VERIFY - Retrieve fresh diagnostics and run relevant checks
 		// -----------------------------------------------------------------
-		context.log("[DEVELOPER][PHASE-4] Verifying implementation via build and tests...");
+		context.log("[DEVELOPER][PHASE-4] Verifying implementation via compiler diagnostics & tests...");
 		try {
+			// Retrieve fresh Java compiler diagnostics post-modification
+			eu.kalafatic.evolution.controller.tools.ITool diagTool = eu.kalafatic.evolution.controller.tools.ToolFactory.getTool("java.get_diagnostics");
+			if (diagTool != null) {
+				try {
+					String diagOut = diagTool.execute("", targetRoot, context);
+					context.log("[DEVELOPER][PHASE-4] Fresh compiler diagnostics retrieved: " + diagOut);
+					context.getOrchestrationState().getMetadata().put("latestCompilerDiagnostics", diagOut);
+				} catch (Throwable dt) {
+					context.log("[DEVELOPER][PHASE-4] Note: compiler diagnostics check: " + dt.getMessage());
+				}
+			}
+
 			EvaluationResult buildTestResult = manager.getFitnessEngine().evaluate(targetRoot, context,
 					eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel.HEAVY);
 			if (buildTestResult != null && !buildTestResult.isSuccess()) {
@@ -139,6 +161,7 @@ public class DeveloperEngine extends CodingEngine {
 						+ String.join("; ", buildTestResult.getErrors()));
 				if (evalResult != null) {
 					evalResult.getErrors().addAll(buildTestResult.getErrors());
+					evalResult.setSuccess(false);
 				}
 			} else {
 				context.log("[DEVELOPER][PHASE-4] Verification passed successfully.");
@@ -214,13 +237,26 @@ public class DeveloperEngine extends CodingEngine {
 	}
 
 	@Override
-	protected String getAgentInstructions() {
+	public String getAgentInstructions() {
 		return "Role: Darwin Autonomous Developer.\n"
-				+ "MANDATE:\n"
-				+ "- Work directly on the selected target (Git repository, project, or folder).\n"
-				+ "- Autonomously inspect structure, understand requirements, modify code, and create files.\n"
-				+ "- Build and execute tests using the existing build system.\n"
-				+ "- Preserve unrelated user changes and maintain Git safety.\n"
-				+ "- Publish all artifacts to the shared Mediated change and export pipeline.";
+				+ "MANDATE & ENGINEERING BEHAVIOR:\n"
+				+ "1. BEFORE MODIFYING CODE:\n"
+				+ "   - Understand the requested objective and scope before proposing any code changes.\n"
+				+ "   - Inspect relevant existing implementation and directory structure before proposing changes.\n"
+				+ "   - Use available Java/Eclipse tools to verify classes, methods, signatures, references, callers, and dependencies.\n"
+				+ "   - Prefer existing project architecture, services, utilities, and coding conventions.\n"
+				+ "   - Verify assumptions using available tools; avoid hallucinating APIs or structures.\n"
+				+ "2. DURING IMPLEMENTATION:\n"
+				+ "   - Make minimal, targeted changes directly addressing the goal.\n"
+				+ "   - Preserve existing behavior and public contracts unless explicitly instructed otherwise.\n"
+				+ "   - Avoid inventing classes, methods, signatures, APIs, or introducing unnecessary dependencies.\n"
+				+ "   - Consider the impact of changes on dependent components and call hierarchies.\n"
+				+ "   - Preserve unrelated pre-existing user changes and maintain strict Git safety.\n"
+				+ "3. AFTER IMPLEMENTATION:\n"
+				+ "   - Retrieve fresh compiler diagnostics after modifying Java code.\n"
+				+ "   - Correct errors or compilation warnings introduced by the implementation.\n"
+				+ "   - Use existing project build mechanisms and relevant tests for verification.\n"
+				+ "   - Clearly distinguish verified facts from assumptions in reports.\n"
+				+ "   - Report exactly what changed and publish changes to the shared change tracking and review pipeline.";
 	}
 }

@@ -29,6 +29,17 @@ public class ToolFactory {
         registerTool(EvolutionConstants.TOOL_CPP, new CppTool());
         registerTool(EvolutionConstants.TOOL_DATABASE, new DatabaseTool());
         registerTool(DatasetAcquisitionTool.NAME, new DatasetAcquisitionTool());
+
+        // Eclipse / Java Development Tools
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.InspectClassTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.InspectClassTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.InspectMethodTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.InspectMethodTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FindReferencesTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FindReferencesTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FindCallersTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FindCallersTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FindImplementationsTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FindImplementationsTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetDiagnosticsTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetDiagnosticsTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetProjectStructureTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetProjectStructureTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetDependenciesTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetDependenciesTool());
+        registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FormatTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FormatTool());
     }
 
     /**
