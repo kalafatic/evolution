@@ -1,36 +1,53 @@
 package eu.kalafatic.evolution.view.editors.pages.server;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
+import eu.kalafatic.evolution.controller.orchestration.ServerEntry;
+import eu.kalafatic.evolution.controller.orchestration.ServerLifecycleListener;
 import eu.kalafatic.evolution.controller.orchestration.ServerManager;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.ServerState;
+import eu.kalafatic.evolution.controller.orchestration.WebApplicationDescriptor;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.tools.AToolGroup;
 import eu.kalafatic.utils.factories.GUIFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-public class SettingsGroup extends AToolGroup {
+public class SettingsGroup extends AToolGroup implements ServerLifecycleListener {
 
     private Text portText;
     private Button autoStartCheck;
@@ -42,11 +59,28 @@ public class SettingsGroup extends AToolGroup {
         super(editor, orchestrator, successColor);
         this.onStateChange = onStateChange;
         createControl(toolkit, parent);
+        ServerManager.getInstance().addListener(this);
+    }
+
+    public void addModifyListener(ModifyListener listener) {
+        if (portText != null) portText.addModifyListener(listener);
+        if (autoStartCheck != null) autoStartCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                listener.modifyText(null);
+            }
+        });
+        if (authenticateCheck != null) authenticateCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                listener.modifyText(null);
+            }
+        });
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
         Section section = toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
-        section.setText("Server Settings");
+        section.setText("Server Settings & Instances");
         section.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         group = toolkit.createComposite(section);
@@ -57,62 +91,38 @@ public class SettingsGroup extends AToolGroup {
         portText = toolkit.createText(group, "28080");
         portText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        toolkit.createLabel(group, "Auto-start with UI:");
-        autoStartCheck = toolkit.createButton(group, "", SWT.CHECK);
+        autoStartCheck = toolkit.createButton(group, "Auto-start Server on Startup", SWT.CHECK);
+        autoStartCheck.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
-        toolkit.createLabel(group, "Enable API Authentication:");
-        authenticateCheck = toolkit.createButton(group, "", SWT.CHECK);
-        authenticateCheck.setToolTipText("If unchecked, authentication is bypassed for local API calls (useful for debugging internal browser issues).");
+        authenticateCheck = toolkit.createButton(group, "Enable API Authentication", SWT.CHECK);
+        authenticateCheck.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         Composite btnComp = toolkit.createComposite(group);
-        btnComp.setLayout(new GridLayout(5, false));
+        btnComp.setLayout(new GridLayout(4, false));
         btnComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
-        Button startBtn = GUIFactory.INSTANCE.createButton(btnComp, "Start");
+        Button startBtn = GUIFactory.INSTANCE.createButton(btnComp, "Start All Servers");
         startBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                try {
-                    int port = Integer.parseInt(portText.getText());
-                    ServerManager.getInstance().start(port);
-                    if (onStateChange != null) onStateChange.run();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+                ServerManager.getInstance().autoStartAll();
+                if (onStateChange != null) onStateChange.run();
+                refreshUI();
             }
         });
 
-        Button stopBtn = GUIFactory.INSTANCE.createButton(btnComp, "Stop");
+        Button stopBtn = GUIFactory.INSTANCE.createButton(btnComp, "Stop All Servers");
         stopBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                try {
-                    int port = Integer.parseInt(portText.getText());
-                    ServerManager.getInstance().stop(port);
-                    if (onStateChange != null) onStateChange.run();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+                ServerManager.getInstance().stopAll();
+                if (onStateChange != null) onStateChange.run();
+                refreshUI();
             }
         });
 
-        Button restartBtn = GUIFactory.INSTANCE.createButton(btnComp, "Restart");
-        restartBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                try {
-                    int port = Integer.parseInt(portText.getText());
-                    ServerManager.getInstance().restart(port);
-                    if (onStateChange != null) onStateChange.run();
-                    refreshUI();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-
-        Button openWebPagesBtn = GUIFactory.INSTANCE.createButton(btnComp, "Open All EVO Web Pages");
-        openWebPagesBtn.addSelectionListener(new SelectionAdapter() {
+        Button openAllWebPagesBtn = GUIFactory.INSTANCE.createButton(btnComp, "Open All EVO Web Pages");
+        openAllWebPagesBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 openAllEvoWebPages();
@@ -127,80 +137,174 @@ public class SettingsGroup extends AToolGroup {
             }
         });
 
-        toolkit.createLabel(group, "Active Servers:");
+        toolkit.createLabel(group, "Configured Server Instances & Runtime State:");
         serverViewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
         Table table = serverViewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         GridData tableGd = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
-        tableGd.heightHint = 150;
+        tableGd.heightHint = 160;
         table.setLayoutData(tableGd);
 
-        createServerColumn("Action", 100, s -> "");
-        createServerColumn("State", 80, s -> s.running ? "RUNNING" : "STOPPED");
-        createServerColumn("Address", 150, s -> "localhost:" + s.port);
-        createServerColumn("Note", 200, s -> {
-            int primary = 28080;
-            try { primary = Integer.parseInt(portText.getText()); } catch(Exception e) {}
-            if (s.port == primary) return "EVO Primary HTTP / REST Server";
-            if (s.port == 28180 || s.port == primary + 100) return "EVO Portal / AI Chat Server";
-
-            int mcp = 28280;
-            if (orchestrator != null && orchestrator.getServerSettings() != null) {
-                mcp = orchestrator.getServerSettings().getMcpPort();
-            }
-            if (s.port == mcp) return "Model Context Protocol";
-            if (s.port == 28480 || s.port == 8480 || s.port == 8089) return "Self-Dev Supervisor REST";
-            if (s.port == 28580 || s.port == 8580) return "Supervisor Control TCP";
-            if (s.port == 28380 || s.port == 8380) return "EVO Autonomous Coding Agent";
-            if (s.port == 28680 || s.port == 8680) return "EVO Auxiliary Network Service";
-            return "Evolution Node";
-        });
-
-        // Tooltips for columns
-        serverViewer.getTable().getColumn(0).setToolTipText("Click 'Start' or 'Stop' in this column to manage the server lifecycle.");
-        serverViewer.getTable().getColumn(1).setToolTipText("Current execution state of the Evolution server instance.");
-        serverViewer.getTable().getColumn(2).setToolTipText("Local network address and port for connecting to this instance.");
-        serverViewer.getTable().getColumn(3).setToolTipText("Functional role or specific identification note for this server.");
+        createServerColumn("Action", 80, s -> s.getState() == ServerState.RUNNING ? "Stop" : "Start");
+        createServerColumn("Runtime State", 95, s -> s.getState().name());
+        createServerColumn("Port", 65, s -> String.valueOf(s.getPort()));
+        createServerColumn("Address / Endpoint", 200, ServerEntry::getEndpointUrl);
+        createServerColumn("Service / Description", 230, ServerEntry::getName);
 
         serverViewer.setContentProvider(ArrayContentProvider.getInstance());
 
-        // Add button listener for the "Action" column
+        // Context menu
+        createContextMenu();
+
+        // Mouse click on "Action" column
         table.addListener(SWT.MouseDown, event -> {
             org.eclipse.swt.widgets.TableItem item = table.getItem(new org.eclipse.swt.graphics.Point(event.x, event.y));
             if (item != null) {
-                ServerStatus s = (ServerStatus) item.getData();
-                if (event.x < 100) { // Action column
-                    try {
-                        if (s.running) {
-                            ServerManager.getInstance().stop(s.port);
-                        } else {
-                            ServerManager.getInstance().start(s.port);
+                ServerEntry entry = (ServerEntry) item.getData();
+                if (event.x < 80) { // Action column
+                    executeServerJob((entry.getState() == ServerState.RUNNING ? "Stopping " : "Starting ") + entry.getName(), () -> {
+                        try {
+                            if (entry.getState() == ServerState.RUNNING) {
+                                ServerManager.getInstance().stop(entry.getPort());
+                            } else {
+                                ServerManager.getInstance().start(entry.getPort());
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
                         }
-                        if (onStateChange != null) onStateChange.run();
-                        refreshUI();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+                    });
                 }
             }
         });
+
+        refreshUI();
     }
 
-    private void createServerColumn(String title, int width, java.util.function.Function<ServerStatus, String> mapper) {
+    private void createContextMenu() {
+        MenuManager menuMgr = new MenuManager("#SettingsServerPopupMenu");
+        menuMgr.setRemoveAllWhenShown(true);
+        menuMgr.addMenuListener(new IMenuListener() {
+            @Override
+            public void menuAboutToShow(IMenuManager manager) {
+                fillContextMenu(manager);
+            }
+        });
+        Menu menu = menuMgr.createContextMenu(serverViewer.getControl());
+        serverViewer.getControl().setMenu(menu);
+    }
+
+    private void fillContextMenu(IMenuManager manager) {
+        IStructuredSelection sel = (IStructuredSelection) serverViewer.getSelection();
+        if (sel == null || sel.isEmpty()) {
+            return;
+        }
+
+        ServerEntry entry = (ServerEntry) sel.getFirstElement();
+        ServerState state = entry.getState();
+        int port = entry.getPort();
+
+        Action startAction = new Action("Start") {
+            @Override
+            public void run() {
+                executeServerJob("Starting " + entry.getName(), () -> {
+                    try {
+                        ServerManager.getInstance().start(port);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        };
+        startAction.setEnabled(entry.canStart());
+        manager.add(startAction);
+
+        Action stopAction = new Action("Stop") {
+            @Override
+            public void run() {
+                executeServerJob("Stopping " + entry.getName(), () -> {
+                    ServerManager.getInstance().stop(port);
+                });
+            }
+        };
+        stopAction.setEnabled(entry.canStop());
+        manager.add(stopAction);
+
+        Action restartAction = new Action("Restart") {
+            @Override
+            public void run() {
+                executeServerJob("Restarting " + entry.getName(), () -> {
+                    try {
+                        ServerManager.getInstance().restart(port);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        };
+        restartAction.setEnabled(entry.canRestart());
+        manager.add(restartAction);
+
+        manager.add(new Separator());
+
+        Action openInBrowserAction = new Action("Open in Browser") {
+            @Override
+            public void run() {
+                if (editor != null && entry.getEndpointUrl() != null) {
+                    editor.showBrowserPage(entry.getEndpointUrl());
+                }
+            }
+        };
+        openInBrowserAction.setEnabled(entry.canOpenInBrowser() && state == ServerState.RUNNING);
+        manager.add(openInBrowserAction);
+
+        manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+    }
+
+    private void executeServerJob(String taskName, Runnable task) {
+        Job job = new Job(taskName) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    task.run();
+                } finally {
+                    Display.getDefault().asyncExec(() -> {
+                        if (onStateChange != null) onStateChange.run();
+                        refreshUI();
+                    });
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        job.setUser(true);
+        job.schedule();
+    }
+
+    private void createServerColumn(String title, int width, java.util.function.Function<ServerEntry, String> mapper) {
         TableViewerColumn col = new TableViewerColumn(serverViewer, SWT.NONE);
         col.getColumn().setText(title);
         col.getColumn().setWidth(width);
         col.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return mapper.apply((ServerStatus) element);
+                return mapper.apply((ServerEntry) element);
             }
             @Override
             public Color getForeground(Object element) {
-                if ("State".equals(title)) {
-                    ServerStatus s = (ServerStatus) element;
-                    return s.running ? group.getDisplay().getSystemColor(SWT.COLOR_DARK_GREEN) : group.getDisplay().getSystemColor(SWT.COLOR_RED);
+                if ("Runtime State".equals(title)) {
+                    ServerEntry e = (ServerEntry) element;
+                    switch (e.getState()) {
+                        case RUNNING:
+                            return group.getDisplay().getSystemColor(SWT.COLOR_DARK_GREEN);
+                        case STARTING:
+                        case STOPPING:
+                            return group.getDisplay().getSystemColor(SWT.COLOR_DARK_YELLOW);
+                        case FAILED:
+                            return group.getDisplay().getSystemColor(SWT.COLOR_RED);
+                        case STOPPED:
+                        default:
+                            return group.getDisplay().getSystemColor(SWT.COLOR_GRAY);
+                    }
                 }
                 if ("Action".equals(title)) {
                     return group.getDisplay().getSystemColor(SWT.COLOR_BLUE);
@@ -211,54 +315,26 @@ public class SettingsGroup extends AToolGroup {
     }
 
     public void openAllEvoWebPages() {
-        int primary = 28080;
-        try {
-            primary = Integer.parseInt(portText.getText());
-        } catch (Exception ignored) {}
-
-        int mcp = 28280;
-        if (orchestrator != null && orchestrator.getServerSettings() != null) {
-            mcp = orchestrator.getServerSettings().getMcpPort();
-        }
-
         List<String> urls = new ArrayList<>();
-        urls.add("http://localhost:" + primary + "/");
-        urls.add("http://localhost:" + primary + "/experimental/chat?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/dashboard.html?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/develop?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/mutation?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/experimental/forge?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/experimental/architecture?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/teip.html?runtime=SWT");
-        urls.add("http://localhost:" + primary + "/admin.html?runtime=SWT");
-        urls.add("http://localhost:" + mcp + "/");
-
+        for (WebApplicationDescriptor app : ServerManager.getInstance().getWebApplications()) {
+            urls.add(app.getFullUrl());
+        }
         if (editor != null) {
             editor.showBrowserPage(urls);
         }
     }
 
     public void openAllEvoPorts() {
-        eu.kalafatic.evolution.controller.resource.PortAllocationManager pam =
-                eu.kalafatic.evolution.controller.resource.PortAllocationManager.getInstance();
         List<String> urls = new ArrayList<>();
-        for (eu.kalafatic.evolution.controller.resource.PortRegistry reg : eu.kalafatic.evolution.controller.resource.PortRegistry.values()) {
-            if ("TCP".equalsIgnoreCase(reg.getProtocol())) {
+        for (ServerEntry entry : ServerManager.getInstance().getServerEntries()) {
+            if ("TCP".equalsIgnoreCase(entry.getServerType())) {
                 continue;
             }
-            eu.kalafatic.evolution.controller.resource.PortConfiguration cfg = pam.getConfiguration(reg.getServiceId());
-            int assignedPort = (cfg != null) ? cfg.getAssignedPort() : reg.getDefaultPort();
-            urls.add("http://localhost:" + assignedPort + "/");
+            urls.add("http://127.0.0.1:" + entry.getPort() + "/");
         }
         if (editor != null) {
             editor.showBrowserPage(urls);
         }
-    }
-
-    private static class ServerStatus {
-        int port;
-        boolean running;
-        ServerStatus(int p, boolean r) { this.port = p; this.running = r; }
     }
 
     @Override
@@ -272,43 +348,39 @@ public class SettingsGroup extends AToolGroup {
         }
 
         if (serverViewer != null && !serverViewer.getControl().isDisposed()) {
-            Map<Integer, Boolean> statuses = ServerManager.getInstance().getServerStatuses();
-            List<ServerStatus> list = new ArrayList<>();
-            statuses.forEach((p, r) -> list.add(new ServerStatus(p, r)));
-
-            // Ensure primary, secondary, MCP, and Supervisor ports are in the list even if not running
-            int primary = 28080;
-            try { primary = Integer.parseInt(portText.getText()); } catch(Exception e) {}
-            final int finalPrimary = primary;
-            if (list.stream().noneMatch(s -> s.port == finalPrimary)) {
-                list.add(new ServerStatus(finalPrimary, false));
-            }
-            int secondary = 28180;
-            if (list.stream().noneMatch(s -> s.port == secondary)) {
-                list.add(new ServerStatus(secondary, false));
-            }
-
-            int mcp = 28280;
-            if (orchestrator != null && orchestrator.getServerSettings() != null) {
-                mcp = orchestrator.getServerSettings().getMcpPort();
-            }
-            final int finalMcp = mcp;
-            if (list.stream().noneMatch(s -> s.port == finalMcp)) {
-                list.add(new ServerStatus(finalMcp, false));
-            }
-
-            int supervisorPort = 28480;
-            if (list.stream().noneMatch(s -> s.port == supervisorPort)) {
-                list.add(new ServerStatus(supervisorPort, false));
-            }
-
-            int supervisorControlPort = 28580;
-            if (list.stream().noneMatch(s -> s.port == supervisorControlPort)) {
-                list.add(new ServerStatus(supervisorControlPort, false));
-            }
-
-            serverViewer.setInput(list);
+            List<ServerEntry> entries = ServerManager.getInstance().getServerEntries();
+            serverViewer.setInput(entries);
         }
+    }
+
+    @Override
+    public void onServerStateChanged(ServerEntry entry) {
+        if (group != null && !group.isDisposed()) {
+            group.getDisplay().asyncExec(() -> {
+                if (onStateChange != null) onStateChange.run();
+                refreshUI();
+            });
+        }
+    }
+
+    @Override
+    public void onAllServersStarted(List<ServerEntry> servers) {
+        if (group != null && !group.isDisposed()) {
+            group.getDisplay().asyncExec(() -> {
+                if (onStateChange != null) onStateChange.run();
+                refreshUI();
+            });
+        }
+    }
+
+    @Override
+    public void onWebApplicationReady(WebApplicationDescriptor webApp) {
+        // Handled by state changes
+    }
+
+    @Override
+    public void onWebApplicationUnavailable(WebApplicationDescriptor webApp) {
+        // Handled by state changes
     }
 
     @Override
@@ -342,5 +414,11 @@ public class SettingsGroup extends AToolGroup {
 
     @Override
     protected void clearTestStatus() {
+    }
+
+    @Override
+    public void dispose() {
+        ServerManager.getInstance().removeListener(this);
+        super.dispose();
     }
 }

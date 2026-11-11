@@ -17,4 +17,14 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 	public String getInitialWindowPerspectiveId() {
 		return PERSPECTIVE_ID;
 	}
+
+    @Override
+    public boolean preShutdown() {
+        try {
+            eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().stopAll();
+        } catch (Throwable t) {
+            System.err.println("[ApplicationWorkbenchAdvisor] Error stopping servers on workbench shutdown: " + t.getMessage());
+        }
+        return super.preShutdown();
+    }
 }
