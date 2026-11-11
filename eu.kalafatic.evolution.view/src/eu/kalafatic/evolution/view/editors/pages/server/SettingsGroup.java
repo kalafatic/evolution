@@ -146,11 +146,13 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
         tableGd.heightHint = 160;
         table.setLayoutData(tableGd);
 
-        createServerColumn("Action", 80, s -> s.getState() == ServerState.RUNNING ? "Stop" : "Start");
+        createServerColumn("Action", 75, s -> s.getState() == ServerState.RUNNING ? "Stop" : "Start");
         createServerColumn("Runtime State", 95, s -> s.getState().name());
-        createServerColumn("Port", 65, s -> String.valueOf(s.getPort()));
-        createServerColumn("Address / Endpoint", 200, ServerEntry::getEndpointUrl);
-        createServerColumn("Service / Description", 230, ServerEntry::getName);
+        createServerColumn("Port", 60, s -> String.valueOf(s.getPort()));
+        createServerColumn("Bind Address", 95, ServerEntry::getBindAddress);
+        createServerColumn("LAN Access URL", 200, ServerEntry::getLanUrl);
+        createServerColumn("Advertised URL", 200, ServerEntry::getAdvertisedUrl);
+        createServerColumn("Service / Description", 200, ServerEntry::getName);
 
         serverViewer.setContentProvider(ArrayContentProvider.getInstance());
 
