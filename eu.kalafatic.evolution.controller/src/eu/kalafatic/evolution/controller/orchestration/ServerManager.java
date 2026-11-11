@@ -82,12 +82,12 @@ public class ServerManager {
         int supervisorApi = getPortForService(PortRegistry.EVO_SUPERVISOR_API);
         int supervisorControl = getPortForService(PortRegistry.EVO_SUPERVISOR_CONTROL);
 
-        registerServerEntry(primary, PortRegistry.EVO_HTTP_PRIMARY.getServiceId(), PortRegistry.EVO_HTTP_PRIMARY.getServiceName(), "HTTP", "http://127.0.0.1:" + primary + "/");
-        registerServerEntry(secondary, PortRegistry.EVO_HTTP_SECONDARY.getServiceId(), PortRegistry.EVO_HTTP_SECONDARY.getServiceName(), "HTTP", "http://127.0.0.1:" + secondary + "/dashboard.html");
-        registerServerEntry(mcp, PortRegistry.EVO_MCP.getServiceId(), PortRegistry.EVO_MCP.getServiceName(), "HTTP", "http://127.0.0.1:" + mcp + "/");
-        registerServerEntry(develop, PortRegistry.EVO_DEVELOP.getServiceId(), PortRegistry.EVO_DEVELOP.getServiceName(), "HTTP", "http://127.0.0.1:" + develop + "/develop");
-        registerServerEntry(supervisorApi, PortRegistry.EVO_SUPERVISOR_API.getServiceId(), PortRegistry.EVO_SUPERVISOR_API.getServiceName(), "HTTP", "http://127.0.0.1:" + supervisorApi + "/ping");
-        registerServerEntry(supervisorControl, PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId(), PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceName(), "HTTP/TCP", "http://127.0.0.1:" + supervisorControl + "/");
+        registerServerEntry(primary, PortRegistry.EVO_HTTP_PRIMARY, "/");
+        registerServerEntry(secondary, PortRegistry.EVO_HTTP_SECONDARY, "/dashboard.html");
+        registerServerEntry(mcp, PortRegistry.EVO_MCP, "/");
+        registerServerEntry(develop, PortRegistry.EVO_DEVELOP, "/develop");
+        registerServerEntry(supervisorApi, PortRegistry.EVO_SUPERVISOR_API, "/ping");
+        registerServerEntry(supervisorControl, PortRegistry.EVO_SUPERVISOR_CONTROL, "/");
     }
 
     private int getPortForService(PortRegistry reg) {
@@ -95,8 +95,16 @@ public class ServerManager {
         return (assigned > 0) ? assigned : reg.getDefaultPort();
     }
 
-    private void registerServerEntry(int port, String id, String name, String type, String endpointUrl) {
-        ServerEntry entry = new ServerEntry(id, name, type, port, "127.0.0.1", endpointUrl, ServerState.STOPPED);
+    private void registerServerEntry(int port, PortRegistry reg, String path) {
+        String serviceId = reg.getServiceId();
+        String name = reg.getServiceName();
+        String type = reg.getPortProtocol().name();
+        String bindAddress = eu.kalafatic.evolution.controller.resource.NetworkInterfaceHelper.resolveBindAddress(serviceId, reg.getDefaultHost());
+        String localUrl = "http://127.0.0.1:" + port + path;
+        String lanUrl = eu.kalafatic.evolution.controller.resource.NetworkInterfaceHelper.getLanUrl(port, path);
+        String advertisedUrl = eu.kalafatic.evolution.controller.resource.NetworkInterfaceHelper.getAdvertisedBaseUrl(port) + path;
+
+        ServerEntry entry = new ServerEntry(serviceId, name, type, port, bindAddress, localUrl, lanUrl, advertisedUrl, ServerState.STOPPED, null);
         serverEntries.put(port, entry);
     }
 
@@ -327,6 +335,14 @@ public class ServerManager {
             return;
         }
 
+        String bindAddress = eu.kalafatic.evolution.controller.resource.NetworkInterfaceHelper.resolveBindAddress(
+                (isDevelop ? PortRegistry.EVO_DEVELOP.getServiceId() :
+                 isMcp ? PortRegistry.EVO_MCP.getServiceId() :
+                 isSecondary ? PortRegistry.EVO_HTTP_SECONDARY.getServiceId() :
+                 PortRegistry.EVO_HTTP_PRIMARY.getServiceId()), "127.0.0.1");
+
+        String probeHost = ("0.0.0.0".equals(bindAddress)) ? "127.0.0.1" : bindAddress;
+
         if (isDevelop) {
             // Develop endpoint is served by the Primary EvolutionServer, or if separate port requested:
             if (port != primary) {
@@ -334,14 +350,14 @@ public class ServerManager {
                 if (!activeServers.containsKey(port) || !activeServers.get(port).isAlive()) {
                     PortAvailabilityChecker.ConflictReport report = PortAvailabilityChecker.inspectPort(port, "Autonomous Develop Server");
                     if (!report.isInUse()) {
-                        EvolutionServer devServer = new EvolutionServer(port);
+                        EvolutionServer devServer = new EvolutionServer(bindAddress, port);
                         devServer.startServer();
                         activeServers.put(port, devServer);
                     }
                 }
             }
-            boolean ready = verifyHttpEndpoint("http://127.0.0.1:" + port + "/develop", 2000) || isPortRunning(port);
-            updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "Develop endpoint unreachable");
+            boolean ready = verifyHttpEndpoint("http://" + probeHost + ":" + port + "/develop", 2000) || verifySocketConnection(probeHost, port, 1000) || isPortRunning(port);
+            updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "Develop endpoint unreachable on " + probeHost);
             return;
         }
 
@@ -349,9 +365,9 @@ public class ServerManager {
             try {
                 eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().setPort(port);
                 eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
-                boolean ready = verifySocketConnection("127.0.0.1", port, 2000);
-                updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "MCP server port unreachable");
-                System.out.println("Started MCP server on authoritative port " + port);
+                boolean ready = verifySocketConnection(probeHost, port, 2000) || verifySocketConnection("127.0.0.1", port, 1000);
+                updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "MCP server port unreachable on " + probeHost);
+                System.out.println("Started MCP server on authoritative port " + port + " (bound to " + bindAddress + ")");
             } catch (Exception e) {
                 updateState(port, ServerState.FAILED, e.getMessage());
                 throw (e instanceof IOException) ? (IOException) e : new IOException(e);
@@ -372,12 +388,12 @@ public class ServerManager {
                     throw new IOException(report.toString());
                 }
 
-                eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(port);
+                eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(bindAddress, port);
                 secondaryServer.startServer();
                 activeSecondaryServers.put(port, secondaryServer);
-                boolean ready = verifySocketConnection("127.0.0.1", port, 2000);
-                updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "Secondary server port unreachable");
-                System.out.println("Started secondary Evolution server (AI Chat / Portal) on authoritative port " + port);
+                boolean ready = verifySocketConnection(probeHost, port, 2000) || verifySocketConnection("127.0.0.1", port, 1000);
+                updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "Secondary server port unreachable on " + probeHost);
+                System.out.println("Started secondary Evolution server (AI Chat / Portal) on authoritative port " + port + " (bound to " + bindAddress + ")");
             } catch (Exception e) {
                 updateState(port, ServerState.FAILED, e.getMessage());
                 throw (e instanceof IOException) ? (IOException) e : new IOException(e);
@@ -404,7 +420,7 @@ public class ServerManager {
                 throw new IOException(report.toString());
             }
 
-            EvolutionServer server = new EvolutionServer(port);
+            EvolutionServer server = new EvolutionServer(bindAddress, port);
 
             // Wire Forge Controllers
             SessionController sc = new SessionControllerImpl(null);
@@ -428,9 +444,11 @@ public class ServerManager {
                 java.nio.file.Files.write(rf.toPath(), String.valueOf(System.currentTimeMillis()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             } catch (Exception ignored) {}
 
-            boolean ready = verifyHttpEndpoint("http://127.0.0.1:" + port + "/server/status", 2500) || verifySocketConnection("127.0.0.1", port, 2000);
-            updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "Server did not answer readiness probe");
-            System.out.println("Started primary Evolution server on authoritative port " + port);
+            boolean ready = verifyHttpEndpoint("http://" + probeHost + ":" + port + "/server/status", 2500)
+                         || verifySocketConnection(probeHost, port, 2000)
+                         || (("0.0.0.0".equals(bindAddress)) && verifySocketConnection("127.0.0.1", port, 2000));
+            updateState(port, ready ? ServerState.RUNNING : ServerState.FAILED, ready ? null : "Server did not answer readiness probe on " + probeHost);
+            System.out.println("Started primary Evolution server on authoritative port " + port + " (bound to " + bindAddress + ")");
 
             // If Develop port equals primary port, mark Develop as RUNNING too
             if (developPort == port) {
@@ -600,6 +618,9 @@ public class ServerManager {
      * Re-evaluates live readiness of all registered servers and synchronizes server entries.
      */
     public synchronized void refreshRuntimeStates() {
+        // Re-read canonical entries in case network mode or IP changed
+        initializeCanonicalEntries();
+
         for (ServerEntry entry : serverEntries.values()) {
             boolean alive = isRunning(entry.getPort());
             if (alive) {

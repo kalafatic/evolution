@@ -38,7 +38,11 @@ public class EvolutionServer extends NanoHTTPD {
     private DemoDocumentationProvider demoDocumentationProvider;
 
     public EvolutionServer(int port) {
-        super(port);
+        this(null, port);
+    }
+
+    public EvolutionServer(String hostname, int port) {
+        super(hostname, port);
         if (port == 28580 || port == 8580) {
             throw new IllegalArgumentException("Cannot assign TCP control port " + port + " to NanoHTTPD EvolutionServer");
         }

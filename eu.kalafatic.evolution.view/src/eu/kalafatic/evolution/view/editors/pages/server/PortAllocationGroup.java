@@ -100,12 +100,14 @@ public class PortAllocationGroup extends AEvoGroup implements ServerLifecycleLis
         tableGd.heightHint = 200;
         table.setLayoutData(tableGd);
 
-        createColumn("Service ID", 130, ServerEntry::getServiceId);
-        createColumn("Service Name", 230, ServerEntry::getName);
-        createColumn("Type", 75, ServerEntry::getServerType);
-        createColumn("Port", 65, e -> String.valueOf(e.getPort()));
-        createColumn("Address / Endpoint", 200, ServerEntry::getEndpointUrl);
-        createColumn("Runtime State", 100, e -> e.getState().name());
+        createColumn("Service ID", 120, ServerEntry::getServiceId);
+        createColumn("Service Name", 200, ServerEntry::getName);
+        createColumn("Type", 65, ServerEntry::getServerType);
+        createColumn("Port", 60, e -> String.valueOf(e.getPort()));
+        createColumn("Bind Address", 95, ServerEntry::getBindAddress);
+        createColumn("LAN Access URL", 200, ServerEntry::getLanUrl);
+        createColumn("Advertised URL", 200, ServerEntry::getAdvertisedUrl);
+        createColumn("Runtime State", 95, e -> e.getState().name());
 
         portTableViewer.addDoubleClickListener(event -> openSelected());
 

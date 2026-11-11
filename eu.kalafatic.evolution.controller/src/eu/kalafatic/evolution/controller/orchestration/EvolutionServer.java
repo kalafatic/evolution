@@ -86,7 +86,11 @@ public class EvolutionServer extends NanoHTTPD {
     private SelfEvoForgingService selfEvoService = new SelfEvoForgingServiceImpl();
 
     public EvolutionServer(int port) {
-        super(port);
+        this(null, port);
+    }
+
+    public EvolutionServer(String hostname, int port) {
+        super(hostname, port);
         DatabaseManager dbManager = new DatabaseManager();
         this.userRepository = new UserRepository(dbManager);
         this.sessionRepository = new SessionRepository(dbManager);
@@ -2895,12 +2899,16 @@ public class EvolutionServer extends NanoHTTPD {
         int port = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
         if (args.length > 0) port = Integer.parseInt(args[0]);
 
-        EvolutionServer server = new EvolutionServer(port);
+        String bindAddress = eu.kalafatic.evolution.controller.resource.NetworkInterfaceHelper.resolveBindAddress(
+                eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getServiceId(),
+                eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultHost());
+
+        EvolutionServer server = new EvolutionServer(bindAddress, port);
         try {
             server.startServer();
-            System.out.println("Evolution Server started on port " + port);
+            System.out.println("Evolution Server started on " + bindAddress + ":" + port);
         } catch (IOException e) {
-            System.err.println("Could not start server:\n" + e);
+            System.err.println("Could not start server on " + bindAddress + ":" + port + ":\n" + e);
         }
     }
 }

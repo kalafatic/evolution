@@ -39,9 +39,12 @@ public class McpDemoServerManager {
             throw new IOException(report.toString());
         }
 
+        String bindAddress = eu.kalafatic.evolution.controller.resource.NetworkInterfaceHelper.resolveBindAddress(
+                PortRegistry.EVO_MCP.getServiceId(), PortRegistry.EVO_MCP.getDefaultHost());
+
         DemoConfiguration config = new DemoConfiguration();
         config.setPort(effectivePort);
-        config.setHost("localhost");
+        config.setHost(bindAddress);
         config.setDocsFolder("docs");
         config.setEnabled(true);
 
