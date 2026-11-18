@@ -187,7 +187,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
         
-        GUIFactory.INSTANCE.createLabel(compositeLocal, "Engine:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "Provider:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         inferenceEngineCombo = selectEngine(compositeLocal);
         ((GridData)inferenceEngineCombo.getLayoutData()).widthHint = 100;
         ((GridData)inferenceEngineCombo.getLayoutData()).horizontalSpan = 3;
@@ -305,7 +305,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private Combo selectEngine(Composite parent) {
-        Combo combo = GUIFactory.INSTANCE.createCombo(parent, new String[] { "Ollama", "LLAMA-CPP", "EVO Native" });
+        Combo combo = GUIFactory.INSTANCE.createCombo(parent, new String[] { "Ollama", "LLAMA-CPP", "ENR-EVO Native" });
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
             if (index >= 0) {
@@ -537,7 +537,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         // Defaults
         if (currentSize == null || currentSize.isEmpty()) currentSize = "SMALL";
-        if (currentEpochs <= 0) currentEpochs = 32;
+        if (currentEpochs <= 0) currentEpochs = 4;
         if (currentLossThresh == null || currentLossThresh.isEmpty()) currentLossThresh = "Epoch 16-30: Loss 2-5 → Learning phrases";
         if (currentDesiredLoss <= 0.0) currentDesiredLoss = 1.0;
 

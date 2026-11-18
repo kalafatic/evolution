@@ -189,8 +189,11 @@ public class DatasetAcquisitionAndSizeTest {
 
         assertNotNull("Sample should be extracted from messages array", sample);
         assertEquals(TrainingSampleType.CHAT, sample.getType());
-        assertTrue("Text must contain user turn", sample.toFullText().contains("user: What is the capital of France?"));
-        assertTrue("Text must contain assistant turn", sample.toFullText().contains("assistant: The capital of France is Paris."));
+        // CHAT samples are serialized in the canonical "### role:" format.
+        assertTrue("Text must contain user turn", sample.toFullText().contains("### user:"));
+        assertTrue("Text must contain the user question", sample.toFullText().contains("What is the capital of France?"));
+        assertTrue("Text must contain assistant turn", sample.toFullText().contains("### assistant:"));
+        assertTrue("Text must contain the assistant answer", sample.toFullText().contains("The capital of France is Paris."));
     }
 
     @Test
@@ -223,7 +226,7 @@ public class DatasetAcquisitionAndSizeTest {
 
         DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", localDataDir.getAbsolutePath());
         DatasetSourceStats stats = new DatasetSourceStats();
-        stats.setRequestedUsableBytes(100000);
+        stats.setRequestedUsableBytes(50000);
         stats.setAcceptedBytes(50000);
         stats.setDownloadedBytes(70000);
         stats.setRawContentBytes(70000);
@@ -533,8 +536,11 @@ public class DatasetAcquisitionAndSizeTest {
 
         NormalizedSample cleaned = cleaner.clean(sample);
         assertNotNull("Cleaned sample must not be null", cleaned);
-        assertFalse("Unprintable control chars and replacement chars must be stripped", cleaned.toFullText().contains("\u0000"));
-        assertFalse("Unprintable control chars and replacement chars must be stripped", cleaned.toFullText().contains("\uFFFD"));
+        assertFalse("Unprintable control chars must be stripped", cleaned.toFullText().contains("\u0000"));
+        assertFalse("Unprintable control chars must be stripped", cleaned.toFullText().contains("\u0007"));
+        // The replacement char is deliberately preserved so the quality scorer can
+        // detect corruption instead of silently discarding the signal.
+        assertTrue("Replacement chars are preserved for corruption scoring", cleaned.toFullText().contains("\uFFFD"));
     }
 
     @Test

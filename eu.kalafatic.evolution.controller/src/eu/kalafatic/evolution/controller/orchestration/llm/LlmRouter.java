@@ -17,6 +17,7 @@ public class LlmRouter {
 
     private ILlmProvider ollamaProvider = new OllamaProvider();
     private ILlmProvider nativeEvoProvider = new NativeEvoProvider();
+    private volatile ILlmProvider enrProvider;
 
     public void setLocalProvider(ILlmProvider provider) {
         this.ollamaProvider = provider;
@@ -32,6 +33,23 @@ public class LlmRouter {
 
     public ILlmProvider getNativeEvoProvider() {
         return nativeEvoProvider;
+    }
+
+    /**
+     * Optional ENR (Evolution Neural Runtime) provider bridge, registered by the ENR bundle
+     * when present (Phase 6). When configured, ENR becomes the default local inference path;
+     * the direct Ollama/native providers remain available as fallbacks.
+     */
+    public void setEnrProvider(ILlmProvider provider) {
+        this.enrProvider = provider;
+    }
+
+    public ILlmProvider getEnrProvider() {
+        return enrProvider;
+    }
+
+    public boolean isEnrAvailable() {
+        return enrProvider != null;
     }
 
     private final ILlmProvider openAiProvider = new OpenAIProvider();
@@ -106,11 +124,43 @@ public class LlmRouter {
     }
 
     public String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        if (enrProvider != null && isEnrRequested(orchestrator, context)) {
+            return sendEnrRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        }
         String model = resolveModelName(orchestrator, context);
         if (isNativeEvoModel(model)) {
             return sendNativeEvoRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
         return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    }
+
+    /**
+     * Routes the request through the ENR inference runtime (Phase 6). ENR unifies the local
+     * Ollama, llama.cpp and native EVO engines behind one stable inference contract.
+     */
+    public String sendEnrRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        if (enrProvider == null) {
+            throw new IllegalStateException("ENR provider is not registered (ENR bundle not present)");
+        }
+        return enrProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    }
+
+    private static boolean isEnrRequested(Orchestrator orchestrator, TaskContext context) {
+        if (context != null && context.getMetadata() != null) {
+            Object provider = context.getMetadata().get("provider");
+            if ("enr".equalsIgnoreCase(String.valueOf(provider))) {
+                return true;
+            }
+            Object engine = context.getMetadata().get("engine");
+            if ("enr".equalsIgnoreCase(String.valueOf(engine))) {
+                return true;
+            }
+            String model = resolveModelName(orchestrator, context);
+            if (model != null && model.toLowerCase().startsWith("enr:")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isNativeEvoModel(String model) {

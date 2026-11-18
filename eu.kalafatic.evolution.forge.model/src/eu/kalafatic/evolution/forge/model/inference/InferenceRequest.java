@@ -15,6 +15,7 @@ public class InferenceRequest {
     private final float frequencyPenalty;
     private final float presencePenalty;
     private final Set<Integer> stopTokenIds;
+    private final java.util.concurrent.atomic.AtomicBoolean cancellationFlag;
 
     private InferenceRequest(Builder builder) {
         this.prompt = builder.prompt;
@@ -27,6 +28,7 @@ public class InferenceRequest {
         this.frequencyPenalty = builder.frequencyPenalty;
         this.presencePenalty = builder.presencePenalty;
         this.stopTokenIds = Collections.unmodifiableSet(new HashSet<>(builder.stopTokenIds));
+        this.cancellationFlag = builder.cancellationFlag != null ? builder.cancellationFlag : new java.util.concurrent.atomic.AtomicBoolean(false);
     }
 
     public String getPrompt() {
@@ -69,6 +71,18 @@ public class InferenceRequest {
         return stopTokenIds;
     }
 
+    /**
+     * Shared cancellation flag: the generation loop stops promptly when this
+     * flag is set (and also honors thread interruption).
+     */
+    public java.util.concurrent.atomic.AtomicBoolean getCancellationFlag() {
+        return cancellationFlag;
+    }
+
+    public boolean isCancellationRequested() {
+        return cancellationFlag.get();
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -84,6 +98,7 @@ public class InferenceRequest {
         private float frequencyPenalty = 0.0f;
         private float presencePenalty = 0.0f;
         private Set<Integer> stopTokenIds = new HashSet<>();
+        private java.util.concurrent.atomic.AtomicBoolean cancellationFlag;
 
         public Builder prompt(String prompt) {
             this.prompt = prompt != null ? prompt : "";
@@ -139,6 +154,11 @@ public class InferenceRequest {
             if (stopTokenIds != null) {
                 this.stopTokenIds.addAll(stopTokenIds);
             }
+            return this;
+        }
+
+        public Builder cancellationFlag(java.util.concurrent.atomic.AtomicBoolean flag) {
+            this.cancellationFlag = flag;
             return this;
         }
 

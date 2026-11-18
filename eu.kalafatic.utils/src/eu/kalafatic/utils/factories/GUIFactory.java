@@ -1757,44 +1757,75 @@ public class GUIFactory {
 		return createExpandableGroup(toolkit, parent, title, columns, expanded, false);
 	}
 
-	public Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
-			boolean expanded, boolean fillBoth) {
-		int style = Section.TITLE_BAR | Section.TWISTIE;
-		if (expanded) {
-			style |= Section.EXPANDED;
-		}
+	public Composite createExpandableGroup(
+	        FormToolkit toolkit,
+	        Composite parent,
+	        String title,
+	        int columns,
+	        boolean expanded,
+	        boolean fillBoth) {
 
-		final Section section = new Section(parent, style);
-		GridData gd = new GridData(fillBoth ? GridData.FILL_BOTH : GridData.FILL_HORIZONTAL);
-		if (fillBoth && !expanded) {
-			gd.grabExcessVerticalSpace = false;
-			gd.verticalAlignment = GridData.BEGINNING;
-		}
-		section.setLayoutData(gd);
-		section.setText(title);
+	    int style = Section.TITLE_BAR | Section.TWISTIE;
 
-		section.addExpansionListener(new ExpansionAdapter() {
-			@Override
-			public void expansionStateChanged(ExpansionEvent e) {
-				if (fillBoth) {
-					GridData gd = (GridData) section.getLayoutData();
-					gd.grabExcessVerticalSpace = e.getState();
-					gd.verticalAlignment = e.getState() ? GridData.FILL : GridData.BEGINNING;
-				}
-				reflow(parent);
-			}
-		});
+	    if (expanded) {
+	        style |= Section.EXPANDED;
+	    }
 
-		Button maxBtn = createMaximizeButton(parent, section, true);
-		section.setTextClient(maxBtn);
+	    final Section section = new Section(parent, style);
 
-		Composite client = new Composite(section, SWT.NONE);
-		client.setLayout(new GridLayout(columns, false));
-		section.setClient(client);
+	    // GridData is valid only for GridLayout parents.
+	    if (!(parent instanceof SashForm)) {
+	        GridData gd = new GridData(
+	                fillBoth ? GridData.FILL_BOTH : GridData.FILL_HORIZONTAL);
 
-		return client;
+	        gd.grabExcessVerticalSpace = fillBoth && expanded;
+	        gd.verticalAlignment = fillBoth && expanded
+	                ? GridData.FILL
+	                : GridData.BEGINNING;
+
+	        section.setLayoutData(gd);
+	    }
+
+	    section.setText(title);
+
+	    Composite client = new Composite(section, SWT.NONE);
+
+	    GridLayout layout = new GridLayout(columns, false);
+	    layout.verticalSpacing = 8;
+	    layout.marginWidth = 5;
+	    layout.marginHeight = 5;
+
+	    client.setLayout(layout);
+
+	    section.setClient(client);
+
+	    Button maxBtn = createMaximizeButton(parent, section, true);
+	    section.setTextClient(maxBtn);
+
+	    section.addExpansionListener(new ExpansionAdapter() {
+
+	        @Override
+	        public void expansionStateChanged(ExpansionEvent e) {
+
+	            boolean isExpanded = e.getState();
+
+	            if (fillBoth
+	                    && section.getLayoutData() instanceof GridData gd) {
+
+	                // Keep the section itself in the layout.
+	                gd.grabExcessVerticalSpace = isExpanded;
+
+	                gd.verticalAlignment = isExpanded
+	                        ? GridData.FILL
+	                        : GridData.BEGINNING;
+	            }
+
+	            reflow(parent);
+	        }
+	    });
+
+	    return client;
 	}
-
 	public Button createMaximizeButton(Composite parent, final Section section, boolean single) {
 		// Maximize Button
 		Button maxBtn = new Button(single ? section : parent, SWT.PUSH | SWT.FLAT);
@@ -1808,12 +1839,12 @@ public class GUIFactory {
 		maxBtn.setBackground(section.getDisplay().getSystemColor(SWT.COLOR_BLUE));
 		maxBtn.setForeground(section.getDisplay().getSystemColor(SWT.COLOR_WHITE));
 
-		section.addExpansionListener(new ExpansionAdapter() {
-			@Override
-			public void expansionStateChanged(ExpansionEvent e) {
-				reflow(parent);
-			}
-		});
+//		section.addExpansionListener(new ExpansionAdapter() {
+//			@Override
+//			public void expansionStateChanged(ExpansionEvent e) {
+//				reflow(parent);
+//			}
+//		});
 
 		maxBtn.addSelectionListener(new SelectionAdapter() {
 			@Override

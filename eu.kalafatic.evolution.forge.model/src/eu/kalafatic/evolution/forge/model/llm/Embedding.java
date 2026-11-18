@@ -8,11 +8,19 @@ public class Embedding {
     private final Tensor weights;
     private final int vocabSize;
     private final int embeddingDim;
+    private final int unkTokenId;
     private int[] lastTokenIds;
 
     public Embedding(int vocabSize, int embeddingDim) {
+        this(vocabSize, embeddingDim, 0);
+    }
+
+    public Embedding(int vocabSize, int embeddingDim, int unkTokenId) {
         this.vocabSize = vocabSize;
         this.embeddingDim = embeddingDim;
+        // The EVO tokenizer convention assigns id 0 to <unk>; never fall back to id 1
+        // (which is BOS) unless the caller explicitly configures it.
+        this.unkTokenId = unkTokenId;
         this.weights = new SimpleTensor(vocabSize, embeddingDim);
         initialize();
     }
@@ -39,7 +47,7 @@ public class Embedding {
         
         for (int i = 0; i < seqLen; i++) {
             int tokenId = tokenIds[i];
-            if (tokenId < 0 || tokenId >= vocabSize) tokenId = 1; // UNK
+            if (tokenId < 0 || tokenId >= vocabSize) tokenId = unkTokenId;
             System.arraycopy(wData, tokenId * embeddingDim, resData, i * embeddingDim, embeddingDim);
         }
         return result;
@@ -52,7 +60,7 @@ public class Embedding {
         int seqLen = lastTokenIds.length;
         for (int i = 0; i < seqLen; i++) {
             int tokenId = lastTokenIds[i];
-            if (tokenId < 0 || tokenId >= vocabSize) tokenId = 1;
+            if (tokenId < 0 || tokenId >= vocabSize) tokenId = unkTokenId;
             for (int j = 0; j < embeddingDim; j++) {
                 wGrad[tokenId * embeddingDim + j] += dOutData[i * embeddingDim + j];
             }

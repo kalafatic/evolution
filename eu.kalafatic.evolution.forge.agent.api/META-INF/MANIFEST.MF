@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Forge Agent API
 Bundle-SymbolicName: eu.kalafatic.evolution.forge.agent.api
-Bundle-Version: 2.6.5.qualifier
+Bundle-Version: 2.6.11.qualifier
 Export-Package: eu.kalafatic.evolution.forge.agent.export,
  eu.kalafatic.evolution.forge.agent.gguf
 Require-Bundle: eu.kalafatic.evolution.forge.model,

@@ -37,7 +37,7 @@ public class TychoEvoRcpBuilderTest {
         // Create root pom.xml for eu.kalafatic.evolution.aggregator
         File rootPom = new File(mockRepoRoot, "pom.xml");
         try (FileWriter fw = new FileWriter(rootPom)) {
-            fw.write("<project><modelVersion>4.0.0</modelVersion><groupId>eu.kalafatic.evolution</groupId><artifactId>eu.kalafatic.evolution.aggregator</artifactId><version>2.6.5-SNAPSHOT</version><packaging>pom</packaging></project>");
+            fw.write("<project><modelVersion>4.0.0</modelVersion><groupId>eu.kalafatic.evolution</groupId><artifactId>eu.kalafatic.evolution.aggregator</artifactId><version>2.6.11-SNAPSHOT</version><packaging>pom</packaging></project>");
         }
 
         // Create eu.kalafatic.evolution.repository module and evolution.product
@@ -253,15 +253,15 @@ public class TychoEvoRcpBuilderTest {
 
     private void createDummyCoreBundles(File plugins) throws IOException {
         plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.model_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.servers_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.evolution.forge.agent_2.6.5.jar").createNewFile();
-        new File(plugins, "eu.kalafatic.utils_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.controller_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.model_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.servers_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.forge.agent_2.6.11.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.utils_2.6.11.jar").createNewFile();
     }
 
     @Test
@@ -320,15 +320,15 @@ public class TychoEvoRcpBuilderTest {
 
         File plugins = new File(dir, "plugins");
         plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.controller_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.model_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.servers_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.forge.agent_2.6.5").mkdirs();
-        new File(plugins, "eu.kalafatic.utils_2.6.5").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.controller_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.model_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.servers_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.controller_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.model_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.data_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.forge.agent_2.6.11").mkdirs();
+        new File(plugins, "eu.kalafatic.utils_2.6.11").mkdirs();
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -353,7 +353,7 @@ public class TychoEvoRcpBuilderTest {
 
         File plugins = new File(dir, "plugins");
         plugins.mkdirs();
-        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.11.jar").createNewFile();
 
         File config = new File(dir, "configuration");
         config.mkdirs();
@@ -390,14 +390,14 @@ public class TychoEvoRcpBuilderTest {
         };
 
         for (String b : bundles) {
-            File bundleDir = new File(plugins, b + "_2.6.5");
+            File bundleDir = new File(plugins, b + "_2.6.11");
             File metaInf = new File(bundleDir, "META-INF");
             metaInf.mkdirs();
             File mf = new File(metaInf, "MANIFEST.MF");
             try (FileWriter fw = new FileWriter(mf)) {
                 fw.write("Manifest-Version: 1.0\n");
                 fw.write("Bundle-SymbolicName: " + b + ";singleton:=true\n");
-                fw.write("Bundle-Version: 2.6.5\n");
+                fw.write("Bundle-Version: 2.6.11\n");
             }
         }
 

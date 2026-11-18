@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>eu.kalafatic.evolution</groupId>
 		<artifactId>eu.kalafatic.evolution.aggregator</artifactId>
-		<version>2.6.5-SNAPSHOT</version>
+		<version>2.6.11-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>eu.kalafatic.evolution.forge.agent</artifactId>
-	<version>2.6.5-SNAPSHOT</version>
+	<version>2.6.11-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<build>

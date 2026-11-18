@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Forge Model
 Bundle-SymbolicName: eu.kalafatic.evolution.forge.model
-Bundle-Version: 2.6.5.qualifier
+Bundle-Version: 2.6.11.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.eclipse.emf.ecore,
  eu.kalafatic.evolution.forge.math,
@@ -13,7 +13,8 @@ Export-Package: eu.kalafatic.evolution.forge.model,
  eu.kalafatic.evolution.forge.model.llm,
  eu.kalafatic.evolution.forge.model.protocol,
  eu.kalafatic.evolution.forge.model.source,
- eu.kalafatic.evolution.forge.model.target
+ eu.kalafatic.evolution.forge.model.target,
+ fi.iki.elonen
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
  lib/jackson-annotations-2.17.0.jar,

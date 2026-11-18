@@ -35,7 +35,7 @@ public class ExportAndStartEvoEndpointTest {
         Assert.assertTrue(customExport.exists());
 
         // Create a dummy jar inside customExport
-        File dummyJar = new File(customExport, "eu.kalafatic.evolution.controller-2.6.5-SNAPSHOT.jar");
+        File dummyJar = new File(customExport, "eu.kalafatic.evolution.controller-2.6.11-SNAPSHOT.jar");
         dummyJar.createNewFile();
 
         // Create dummy executable
@@ -71,8 +71,8 @@ public class ExportAndStartEvoEndpointTest {
         customExport.mkdirs();
 
         // Create modular jars
-        File jar1 = new File(customExport, "eu.kalafatic.evolution.controller-2.6.5-SNAPSHOT.jar");
-        File jar2 = new File(customExport, "eu.kalafatic.evolution.servers-2.6.5-SNAPSHOT.jar");
+        File jar1 = new File(customExport, "eu.kalafatic.evolution.controller-2.6.11-SNAPSHOT.jar");
+        File jar2 = new File(customExport, "eu.kalafatic.evolution.servers-2.6.11-SNAPSHOT.jar");
         jar1.createNewFile();
         jar2.createNewFile();
 

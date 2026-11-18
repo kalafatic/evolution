@@ -1,9 +1,13 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -13,6 +17,18 @@ public class SelfDevOrchestrator {
     private final EvoRcpLifecycle evoLifecycle;
     private final SupervisorLifecycle supervisorLifecycle;
     private final Map<String, SelfDevTask> taskRegistry = new HashMap<>();
+    private final List<String> graphValidationErrors = new ArrayList<>();
+
+    /**
+     * Task IDs whose cached SUCCESS may be reused without re-execution:
+     * pure, side-effect-free checks. Process-affecting, build, export, deploy,
+     * start/stop and rollback tasks must always re-verify.
+     */
+    private static final Set<String> REUSABLE_CHECK_TASKS = Set.of(
+            "GIT", "GIT_EVO", "GIT_SUPERVISOR", "LLM", "PERMISSIONS", "SUPERVISOR");
+
+    private volatile SelfDevPreflightResult lastPreflightResult;
+    private volatile boolean preflightAttempted;
 
     public SelfDevOrchestrator(File projectRoot, Orchestrator orchestrator) {
         this.context = new SelfDevContext(projectRoot, orchestrator);
@@ -20,6 +36,7 @@ public class SelfDevOrchestrator {
         this.supervisorLifecycle = new DefaultSupervisorLifecycle();
 
         registerTasks();
+        validateTaskGraph();
     }
 
     public SelfDevOrchestrator(SelfDevContext context,
@@ -30,6 +47,7 @@ public class SelfDevOrchestrator {
         this.supervisorLifecycle = supervisorLifecycle != null ? supervisorLifecycle : new DefaultSupervisorLifecycle();
 
         registerTasks();
+        validateTaskGraph();
     }
 
     public SelfDevPreflightResult executePreflight() {
@@ -39,128 +57,193 @@ public class SelfDevOrchestrator {
     private SelfDevPreflightResult executePreflightInternal() {
         SelfDevPreflight preflight = new SelfDevPreflight();
         SelfDevPreflightResult res = preflight.executePreflight(context, this);
-        if (res.getResolvedResources() != null) {
+        if (res.isSuccess() && res.getResolvedResources() != null) {
             context.setResolvedResources(res.getResolvedResources());
+        } else {
+            System.out.println("[SelfDevOrchestrator] Preflight " + res.getStatus()
+                    + ": resolved resource snapshot NOT installed; tasks remain blocked until preflight succeeds.");
         }
+        this.lastPreflightResult = res;
+        this.preflightAttempted = true;
         return res;
     }
 
+    /**
+     * Orchestrator-level preflight gate: every task execution entry point must have a
+     * valid resolved resource snapshot for the current run. In production the snapshot
+     * can only be installed by a successful preflight (WP1 gating); when absent, the
+     * gate runs preflight automatically on first use.
+     *
+     * @return null when the gate passes; otherwise the failed preflight result.
+     */
+    private SelfDevPreflightResult ensurePreflightGate() {
+        if (context.getResolvedResources() != null) {
+            return null;
+        }
+        if (!preflightAttempted) {
+            synchronized (this) {
+                if (!preflightAttempted) {
+                    executePreflightInternal();
+                }
+            }
+        }
+        SelfDevPreflightResult res = lastPreflightResult;
+        if (res == null || !res.isSuccess()) {
+            return res;
+        }
+        return null;
+    }
+
+    /**
+     * Registers a task with duplicate-ID detection.
+     */
+    private void register(SelfDevTask task) {
+        if (task == null || task.getId() == null) {
+            throw new IllegalStateException("Cannot register null task.");
+        }
+        String taskId = task.getId().trim().toUpperCase();
+        if (taskRegistry.containsKey(taskId)) {
+            throw new IllegalStateException("Duplicate task registration detected for ID: " + taskId);
+        }
+        taskRegistry.put(taskId, task);
+    }
+
+    /**
+     * Static DAG validation: unknown dependencies, self-dependencies and cycles.
+     * Errors are recorded and exposed for preflight.
+     */
+    private void validateTaskGraph() {
+        graphValidationErrors.clear();
+        for (SelfDevTask task : taskRegistry.values()) {
+            String taskId = task.getId();
+            for (String depId : task.getDependencies()) {
+                if (depId.equalsIgnoreCase(taskId)) {
+                    graphValidationErrors.add("Self-dependency detected: task [" + taskId + "] depends on itself.");
+                } else if (!taskRegistry.containsKey(depId)) {
+                    graphValidationErrors.add("Unknown dependency: task [" + taskId + "] depends on unregistered task [" + depId + "].");
+                }
+            }
+        }
+        for (String taskId : taskRegistry.keySet()) {
+            if (hasCycle(taskId, new HashSet<>(), new HashSet<>())) {
+                graphValidationErrors.add("Cycle detected in task graph involving task [" + taskId + "].");
+            }
+        }
+        if (!graphValidationErrors.isEmpty()) {
+            System.err.println("[SelfDevOrchestrator] TASK GRAPH VALIDATION FAILED:");
+            for (String err : graphValidationErrors) {
+                System.err.println("  - " + err);
+            }
+        }
+    }
+
+    private boolean hasCycle(String taskId, Set<String> visiting, Set<String> visited) {
+        if (visiting.contains(taskId)) {
+            return true;
+        }
+        if (visited.contains(taskId)) {
+            return false;
+        }
+        visiting.add(taskId);
+        SelfDevTask task = taskRegistry.get(taskId);
+        if (task != null) {
+            for (String depId : task.getDependencies()) {
+                if (hasCycle(depId, visiting, visited)) {
+                    visiting.remove(taskId);
+                    return true;
+                }
+            }
+        }
+        visiting.remove(taskId);
+        visited.add(taskId);
+        return false;
+    }
+
+    public List<String> getGraphValidationErrors() {
+        return Collections.unmodifiableList(graphValidationErrors);
+    }
+
     private void registerTasks() {
-        SelfDevTask git = new GitCheckTask("GIT");
-        SelfDevTask gitEvo = new GitCheckTask("GIT_EVO");
-        SelfDevTask gitSuper = new GitCheckTask("GIT_SUPERVISOR");
+        register(new GitCheckTask("GIT"));
+        register(new GitCheckTask("GIT_EVO"));
+        register(new GitCheckTask("GIT_SUPERVISOR"));
 
-        SelfDevTask copy = new CopySourceTask("COPY");
-        SelfDevTask copySuper = new CopySourceTask("COPY_SUPERVISOR");
+        register(new CopySourceTask("COPY"));
+        register(new CopySourceTask("COPY_SUPERVISOR"));
 
-        SelfDevTask build = new BuildEvoTask("BUILD");
-        build.addDependency("COPY");
+        // Canonical build/export/deploy IDs only; alias IDs (BUILD, MAVEN, EXPORT, DEPLOY)
+        // were removed after confirming no production consumers depend on them.
         SelfDevTask buildEvo = new BuildEvoTask("BUILD_EVO");
         buildEvo.addDependency("COPY");
-        SelfDevTask maven = new BuildEvoTask("MAVEN");
-        maven.addDependency("COPY");
+        register(buildEvo);
         SelfDevTask mavenEvo = new BuildEvoTask("MAVEN_EVO");
         mavenEvo.addDependency("COPY");
+        register(mavenEvo);
 
         SelfDevTask buildSuperLocal = new BuildSupervisorTask("BUILD_SUPERVISOR_LOCAL");
         buildSuperLocal.addDependency("COPY_SUPERVISOR");
+        register(buildSuperLocal);
         SelfDevTask buildSuper = new BuildSupervisorTask("BUILD_SUPERVISOR");
         buildSuper.addDependency("BUILD_SUPERVISOR_LOCAL");
-        SelfDevTask mavenSuper = new BuildSupervisorTask("MAVEN_SUPERVISOR");
+        register(buildSuper);
+        register(new BuildSupervisorTask("MAVEN_SUPERVISOR"));
 
-        SelfDevTask export = new ExportEvoTask("EXPORT");
-        export.addDependency("BUILD_EVO");
         SelfDevTask exportEvo = new ExportEvoTask("EXPORT_EVO");
         exportEvo.addDependency("BUILD_EVO");
+        register(exportEvo);
         SelfDevTask exportSuper = new ExportSupervisorTask("EXPORT_SUPERVISOR");
         exportSuper.addDependency("BUILD_SUPERVISOR_LOCAL");
+        register(exportSuper);
 
         SelfDevTask deployEvo = new DeployEvoTask("DEPLOY_EVO");
         deployEvo.addDependency("EXPORT_EVO");
-        SelfDevTask deploy = new DeployEvoTask("DEPLOY");
-        deploy.addDependency("EXPORT_EVO");
+        register(deployEvo);
 
         SelfDevTask startEvo = new StartEvoTask("START_EVO");
         startEvo.addDependency("DEPLOY_EVO");
-        SelfDevTask stopEvo = new StopEvoTask("STOP_EVO");
+        register(startEvo);
+        register(new StopEvoTask("STOP_EVO"));
 
         SelfDevTask startSuper = new StartSupervisorTask("START_SUPERVISOR");
         startSuper.addDependency("EXPORT_SUPERVISOR");
+        register(startSuper);
         SelfDevTask startEvoSuper = new StartSupervisorTask("START_EVO_SUPERVISOR");
         startEvoSuper.addDependency("START_SUPERVISOR");
         startEvoSuper.addDependency("DEPLOY_EVO");
-        SelfDevTask stopSuper = new StopSupervisorTask("STOP_SUPERVISOR");
-        SelfDevTask stopEvoSuper = new StopSupervisorTask("STOP_EVO_SUPERVISOR");
+        register(startEvoSuper);
+        register(new StopSupervisorTask("STOP_SUPERVISOR"));
+        register(new StopSupervisorTask("STOP_EVO_SUPERVISOR"));
 
         SelfDevTask supervisorCheck = new SupervisorCheckTask("SUPERVISOR");
         supervisorCheck.addDependency("START_SUPERVISOR");
+        register(supervisorCheck);
 
-        SelfDevTask genome = new GenomeCheckTask("GENOME");
-        SelfDevTask permissions = new PermissionsCheckTask("PERMISSIONS");
+        register(new GenomeCheckTask("GENOME"));
+        register(new PermissionsCheckTask("PERMISSIONS"));
 
         SelfDevTask createProject = new CreateEvoProjectTask("CREATE_EVO_PROJECT");
         createProject.addDependency("START_EVO");
+        register(createProject);
 
         SelfDevTask createInference = new CreateInferenceTask("CREATE_INFERENCE_TASK");
         createInference.addDependency("CREATE_EVO_PROJECT");
+        register(createInference);
 
         SelfDevTask analyticChat = new AnalyticChatValidationTask("ANALYTIC_CHAT_VALIDATION");
         analyticChat.addDependency("CREATE_INFERENCE_TASK");
-
-        SelfDevTask llm = new LlmCheckTask("LLM");
-        SelfDevTask supervisorLoop = new SupervisorLoopTask("SUPERVISOR_LOOP");
-        supervisorLoop.addDependency("START_SUPERVISOR");
-        SelfDevTask selfDevLoop = new SelfDevLoopTask("SELF_DEV_LOOP");
-
-        taskRegistry.put("GIT", git);
-        taskRegistry.put("GIT_EVO", gitEvo);
-        taskRegistry.put("GIT_SUPERVISOR", gitSuper);
-
-        taskRegistry.put("COPY", copy);
-        taskRegistry.put("COPY_SUPERVISOR", copySuper);
-
-        taskRegistry.put("BUILD", build);
-        taskRegistry.put("BUILD_EVO", buildEvo);
-        taskRegistry.put("MAVEN", maven);
-        taskRegistry.put("MAVEN_EVO", mavenEvo);
-
-        taskRegistry.put("BUILD_SUPERVISOR", buildSuper);
-        taskRegistry.put("BUILD_SUPERVISOR_LOCAL", buildSuperLocal);
-        taskRegistry.put("MAVEN_SUPERVISOR", mavenSuper);
-
-        taskRegistry.put("EXPORT", export);
-        taskRegistry.put("EXPORT_EVO", exportEvo);
-        taskRegistry.put("EXPORT_SUPERVISOR", exportSuper);
-
-        taskRegistry.put("DEPLOY", deploy);
-        taskRegistry.put("DEPLOY_EVO", deployEvo);
-
-        taskRegistry.put("START_EVO", startEvo);
-        taskRegistry.put("STOP_EVO", stopEvo);
-        taskRegistry.put("START_SUPERVISOR", startSuper);
-        taskRegistry.put("START_EVO_SUPERVISOR", startEvoSuper);
-        taskRegistry.put("STOP_SUPERVISOR", stopSuper);
-        taskRegistry.put("STOP_EVO_SUPERVISOR", stopEvoSuper);
-
-        taskRegistry.put("SUPERVISOR", supervisorCheck);
-        taskRegistry.put("GENOME", genome);
-        taskRegistry.put("PERMISSIONS", permissions);
-
-        taskRegistry.put("CREATE_EVO_PROJECT", createProject);
-        taskRegistry.put("CREATE_INFERENCE_TASK", createInference);
-        taskRegistry.put("ANALYTIC_CHAT_VALIDATION", analyticChat);
+        register(analyticChat);
 
         SelfDevTask promote = new PromoteTask("PROMOTE");
         promote.addDependency("START_EVO");
+        register(promote);
 
-        SelfDevTask rollback = new RollbackTask("ROLLBACK");
+        register(new RollbackTask("ROLLBACK"));
 
-        taskRegistry.put("PROMOTE", promote);
-        taskRegistry.put("ROLLBACK", rollback);
-
-        taskRegistry.put("LLM", llm);
-        taskRegistry.put("SUPERVISOR_LOOP", supervisorLoop);
-        taskRegistry.put("SELF_DEV_LOOP", selfDevLoop);
+        register(new LlmCheckTask("LLM"));
+        SelfDevTask supervisorLoop = new SupervisorLoopTask("SUPERVISOR_LOOP");
+        supervisorLoop.addDependency("START_SUPERVISOR");
+        register(supervisorLoop);
+        register(new SelfDevLoopTask("SELF_DEV_LOOP"));
     }
 
     public Map<String, SelfDevTask> getTaskRegistry() {
@@ -183,7 +266,19 @@ public class SelfDevOrchestrator {
         if (taskId == null || taskId.trim().isEmpty()) {
             return TaskResult.failure("unknown", "Task ID is null or empty", null);
         }
-        return executeTaskWithDependenciesInternal(taskId.trim().toUpperCase(), new java.util.HashSet<>());
+        String normalizedId = taskId.trim().toUpperCase();
+
+        // Preflight gate: every execution entry point must pass a successful preflight
+        // for the current run before any task executes (D-39).
+        SelfDevPreflightResult gateFailure = ensurePreflightGate();
+        if (gateFailure != null) {
+            String msg = "BLOCKED: self-dev preflight gate failed (status: " + gateFailure.getStatus()
+                    + "). Correct the configuration and re-run preflight before executing task " + normalizedId + ".";
+            System.err.println("[SelfDevOrchestrator] " + msg);
+            return TaskResult.blocked(normalizedId, msg);
+        }
+
+        return executeTaskWithDependenciesInternal(normalizedId, new java.util.HashSet<>());
     }
 
     private TaskResult executeTaskWithDependenciesInternal(String taskId, java.util.Set<String> visitingStack) {
@@ -192,10 +287,12 @@ public class SelfDevOrchestrator {
             return TaskResult.failure(taskId, "Unknown task ID: " + taskId, null);
         }
 
-        // Check if task was already executed successfully in context
+        // Cached-result reuse is permitted ONLY for pure, side-effect-free checks.
+        // Process-affecting, build, export, deploy, start/stop and rollback tasks
+        // always re-verify (D-01 class of false-success defects).
         TaskResult existingResult = context.getTaskResult(taskId);
-        if (existingResult != null && existingResult.isSuccess()) {
-            System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] already executed successfully. Reusing result.");
+        if (existingResult != null && existingResult.isSuccess() && REUSABLE_CHECK_TASKS.contains(taskId)) {
+            System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] is a pure check and already succeeded. Reusing result.");
             return existingResult;
         }
 
@@ -217,16 +314,6 @@ public class SelfDevOrchestrator {
             for (String depId : task.getDependencies()) {
                 System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] requires dependency [" + depId + "]. Evaluating...");
                 TaskResult depRes = context.getTaskResult(depId);
-
-                // Fallback check: If dependency is START_EVO, check if START_EVO_SUPERVISOR succeeded
-        if ((depRes == null || !depRes.isSuccess()) && "START_EVO".equalsIgnoreCase(depId)) {
-                    TaskResult superEvoRes = context.getTaskResult("START_EVO_SUPERVISOR");
-                    if (superEvoRes != null && superEvoRes.isSuccess()) {
-                        System.out.println("[SelfDevOrchestrator] Dependency START_EVO satisfied via START_EVO_SUPERVISOR success.");
-                        depRes = superEvoRes;
-                        context.recordTaskResult(TaskResult.success("START_EVO", "EVO RCP started via START_EVO_SUPERVISOR"));
-                    }
-                }
 
                 if (depRes == null) {
                     System.out.println("[SelfDevOrchestrator] Dependency [" + depId + "] for task [" + taskId + "] not yet executed. Executing dependency...");

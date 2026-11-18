@@ -159,6 +159,28 @@ public class ContextBuilder {
             if (context != null) context.log("ContextBuilder: Could not assemble memory context: " + e.getMessage());
         }
 
+        // 5c. COGNITIVE SERVICES CONTEXT (native integration, additive)
+        // Darwin consumes the shared cognitive infrastructure directly through
+        // the native services - never through the MCP server. Ordering of the
+        // prompt (see CognitiveContextBridge) keeps explicit instructions
+        // above historical/inferred information. Failure never breaks the
+        // existing pipeline.
+        try {
+            String cognitiveContext = eu.kalafatic.evolution.controller.cognitive.CognitiveContextBridge
+                    .buildCognitiveContext(task, context, pkg);
+            if (cognitiveContext != null && !cognitiveContext.isEmpty()) {
+                String existingMemory = pkg.getMemoryContext();
+                pkg.setMemoryContext((existingMemory != null && !existingMemory.isEmpty()
+                        ? existingMemory + "\n\n" : "") + cognitiveContext);
+                state.addDiagnostic("ContextBuilder: Injected cognitive platform context.");
+            } else {
+                state.addDiagnostic("ContextBuilder: Cognitive platform returned no relevant context (empty store or unavailable).");
+            }
+        } catch (Exception e) {
+            state.addDiagnostic("ContextBuilder: Cognitive platform context unavailable, continuing with local context: " + e.getMessage());
+            if (context != null) context.log("ContextBuilder: Cognitive platform context unavailable: " + e.getMessage());
+        }
+
         // 6. ASSEMBLY (Handled in buildPrompt)
         ArchitectureContext arch = new ArchitectureContext();
         arch.getKeyRules().add("Single Transition Authority: ONLY IterationManager may change system state");

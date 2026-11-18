@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,7 @@ public class ForgeSessionManager {
         public double stepsPerSec;
         public double ramMb;
         public double cpuPct;
+        public double learningRate = -1.0;
 
         public JSONObject toJsonObject() {
             JSONObject json = new JSONObject();
@@ -43,7 +45,23 @@ public class ForgeSessionManager {
             json.put("stepsPerSec", Math.round(stepsPerSec * 100.0) / 100.0);
             json.put("ramMb", Math.round(ramMb));
             json.put("cpuPct", Math.round(cpuPct * 10.0) / 10.0);
+            json.put("learningRate", learningRate);
             return json;
+        }
+
+        public static MetricSample fromJsonObject(JSONObject json) {
+            MetricSample s = new MetricSample();
+            s.timestamp = json.optLong("timestamp", 0);
+            s.epoch = json.optInt("epoch", 0);
+            s.step = json.optInt("step", 0);
+            s.loss = json.optDouble("loss", 0.0);
+            s.valLoss = json.optDouble("valLoss", 0.0);
+            s.tokensPerSec = json.optDouble("tokensPerSec", 0.0);
+            s.stepsPerSec = json.optDouble("stepsPerSec", 0.0);
+            s.ramMb = json.optDouble("ramMb", 0.0);
+            s.cpuPct = json.optDouble("cpuPct", 0.0);
+            s.learningRate = json.optDouble("learningRate", -1.0);
+            return s;
         }
     }
 
@@ -68,36 +86,76 @@ public class ForgeSessionManager {
     }
 
     public static class TrainingTelemetry {
-        public String sessionId;
-        public String status = "IDLE";
-        public long startTimeMs = 0;
-        public long durationMs = 0;
-        public int currentEpoch = 0;
-        public int totalEpochs = 0;
-        public int currentStep = 0;
-        public int totalSteps = 0;
-        public long processedTokens = 0;
-        public long totalTokens = 0;
-        public double currentLoss = 0.0;
-        public double valLoss = 0.0;
-        public double bestValLoss = Double.MAX_VALUE;
-        public double tokensPerSec = 0.0;
-        public double stepsPerSec = 0.0;
-        public double estimatedRemainingSeconds = 0.0;
-        public double ramUsedMb = 0.0;
-        public double ramTotalMb = 0.0;
-        public double cpuPercent = 0.0;
-        public String gpuStatus = "N/A (CPU Mode)";
-        public String lastEventMessage = "Ready";
+        public final String sessionId;
+        // Scalar metrics are written by the trainer thread and read by HTTP and
+        // SWT threads: volatile for visibility, with updates applied atomically
+        // through updateMetrics() so readers never observe half-updated state.
+        public volatile String status = "IDLE";
+        public volatile long startTimeMs = 0;
+        public volatile long durationMs = 0;
+        public volatile int currentEpoch = 0;
+        public volatile int totalEpochs = 0;
+        public volatile int currentStep = 0;
+        public volatile int totalSteps = 0;
+        public volatile long processedTokens = 0;
+        public volatile long totalTokens = 0;
+        public volatile double currentLoss = 0.0;
+        public volatile double valLoss = 0.0;
+        public volatile double bestValLoss = Double.MAX_VALUE;
+        public volatile double tokensPerSec = 0.0;
+        public volatile double stepsPerSec = 0.0;
+        public volatile double estimatedRemainingSeconds = 0.0;
+        public volatile double ramUsedMb = 0.0;
+        public volatile double ramTotalMb = 0.0;
+        public volatile double cpuPercent = 0.0;
+        public volatile String gpuStatus = "N/A (CPU Mode)";
+        public volatile String lastEventMessage = "Ready";
+        public volatile double learningRate = -1.0;
 
         public final List<MetricSample> history = Collections.synchronizedList(new ArrayList<>());
         public final List<DiagnosticEvent> logStream = Collections.synchronizedList(new ArrayList<>());
+
+        // Real process CPU measurement: delta of total thread CPU time over wall
+        // time, normalized by available cores. Sampled at most once per second to
+        // avoid ThreadMXBean enumeration cost on every optimizer step.
+        private long lastCpuWallMs = 0;
+        private long lastCpuThreadNs = -1;
 
         public TrainingTelemetry(String sessionId) {
             this.sessionId = sessionId;
             Runtime runtime = Runtime.getRuntime();
             this.ramTotalMb = runtime.totalMemory() / (1024.0 * 1024.0);
             this.ramUsedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0);
+        }
+
+        private void refreshCpuPercent() {
+            long now = System.currentTimeMillis();
+            if (now - lastCpuWallMs < 1000) return;
+            try {
+                java.lang.management.ThreadMXBean bean = java.lang.management.ManagementFactory.getThreadMXBean();
+                if (bean == null || !bean.isThreadCpuTimeEnabled()) {
+                    lastCpuWallMs = now;
+                    return;
+                }
+                long totalNs = 0;
+                long[] ids = bean.getAllThreadIds();
+                for (long id : ids) {
+                    long t = bean.getThreadCpuTime(id);
+                    if (t > 0) totalNs += t;
+                }
+                if (lastCpuThreadNs >= 0 && totalNs >= lastCpuThreadNs) {
+                    long wallNs = (now - lastCpuWallMs) * 1_000_000L;
+                    if (wallNs > 0) {
+                        int cores = Math.max(1, Runtime.getRuntime().availableProcessors());
+                        double load = (double) (totalNs - lastCpuThreadNs) / (double) wallNs;
+                        this.cpuPercent = Math.max(0.0, Math.min(100.0, load * 100.0 / cores));
+                    }
+                }
+                lastCpuThreadNs = totalNs;
+                lastCpuWallMs = now;
+            } catch (Exception ignored) {
+                lastCpuWallMs = now;
+            }
         }
 
         public void addSample(MetricSample sample) {
@@ -115,8 +173,52 @@ public class ForgeSessionManager {
                 if (logStream.size() > 200) {
                     logStream.remove(0);
                 }
+                this.lastEventMessage = msg;
             }
-            this.lastEventMessage = msg;
+        }
+
+        public void setStatus(String newStatus, String logMessage) {
+            synchronized (logStream) {
+                this.status = newStatus;
+                if (logMessage != null) {
+                    this.lastEventMessage = logMessage;
+                }
+            }
+        }
+
+        public void updateMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                   long processedTokens, long totalTokens,
+                                   double tokensPerSec, double stepsPerSec,
+                                   double estimatedRemainingSeconds, double currentLoss,
+                                   double valLoss, double learningRate) {
+            // Single atomic publication point for all metrics: readers of any
+            // scalar see either the previous or the next complete sample, never
+            // a mix (volatile field writes are individually visible; the update
+            // order here makes the epoch/step pair monotonic).
+            this.currentEpoch = epoch;
+            this.totalEpochs = totalEpochs;
+            this.currentStep = currentStep;
+            this.totalSteps = totalSteps;
+            this.processedTokens = processedTokens;
+            this.totalTokens = totalTokens;
+            this.tokensPerSec = tokensPerSec;
+            this.stepsPerSec = stepsPerSec;
+            this.estimatedRemainingSeconds = estimatedRemainingSeconds;
+            this.currentLoss = currentLoss;
+            if (valLoss > 0.0) {
+                this.valLoss = valLoss;
+                if (valLoss < this.bestValLoss) {
+                    this.bestValLoss = valLoss;
+                }
+            }
+            if (learningRate > 0.0) {
+                this.learningRate = learningRate;
+            }
+
+            Runtime runtime = Runtime.getRuntime();
+            this.ramUsedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0);
+            this.ramTotalMb = runtime.totalMemory() / (1024.0 * 1024.0);
+            refreshCpuPercent();
         }
 
         public JSONObject toJsonObject() {
@@ -124,7 +226,9 @@ public class ForgeSessionManager {
             json.put("sessionId", sessionId);
             json.put("status", status);
             json.put("startTimeMs", startTimeMs);
-            json.put("durationMs", durationMs > 0 ? durationMs : (startTimeMs > 0 ? System.currentTimeMillis() - startTimeMs : 0));
+            long durationNow = durationMs > 0 ? durationMs : (startTimeMs > 0 ? System.currentTimeMillis() - startTimeMs : 0);
+            json.put("durationMs", durationNow);
+            json.put("elapsedMillis", durationNow);
             json.put("currentEpoch", currentEpoch);
             json.put("totalEpochs", totalEpochs);
             json.put("currentStep", currentStep);
@@ -142,6 +246,25 @@ public class ForgeSessionManager {
             json.put("cpuPercent", Math.round(cpuPercent * 10.0) / 10.0);
             json.put("gpuStatus", gpuStatus);
             json.put("lastEventMessage", lastEventMessage);
+
+            // Derived progress percentage: real when step/token counters exist,
+            // otherwise an explicit -1 (unavailable) so clients render an honest '—'.
+            int progressPercent = -1;
+            if (totalSteps > 0) {
+                progressPercent = (int) Math.min(100, Math.max(0, (100.0 * currentStep / totalSteps)));
+            } else if (totalTokens > 0) {
+                progressPercent = (int) Math.min(100, Math.max(0, (100.0 * processedTokens / totalTokens)));
+            }
+            json.put("progressPercent", progressPercent);
+
+            // UI-compatible aliases (renderer.js field names) derived from the same measured values.
+            json.put("trainingLoss", Math.round(currentLoss * 10000.0) / 10000.0);
+            json.put("validationLoss", Math.round(valLoss * 10000.0) / 10000.0);
+            json.put("stepsPerSecond", Math.round(stepsPerSec * 100.0) / 100.0);
+            json.put("estimatedRemainingMillis", Math.round(estimatedRemainingSeconds * 1000.0));
+            // learningRate is reported only when the optimizer has published it;
+            // otherwise an honest -1 (unavailable) marker.
+            json.put("learningRate", learningRate);
 
             org.json.JSONArray histArr = new org.json.JSONArray();
             synchronized (history) {
@@ -168,7 +291,30 @@ public class ForgeSessionManager {
     private final java.util.Map<String, List<RuntimeEvent>> eventBuffer = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer> activeTrainers = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, TrainingTelemetry> telemetryMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.util.List<eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener>> trainerListeners = new java.util.concurrent.ConcurrentHashMap<>();
     private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
+    private volatile boolean recoveredFromRestart = false;
+
+    private static volatile java.nio.file.Path forgeStateDirOverride = null;
+
+    /**
+     * Test seam: overrides the directory used for persisted forge session state.
+     * Production code never calls this.
+     */
+    public static void setForgeStateDirectory(java.nio.file.Path dir) {
+        forgeStateDirOverride = dir;
+    }
+
+    public static java.nio.file.Path getForgeStateDirectory() {
+        if (forgeStateDirOverride != null) {
+            return forgeStateDirOverride;
+        }
+        String codebase = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        if (codebase != null && !codebase.trim().isEmpty()) {
+            return java.nio.file.Paths.get(codebase, "workspace", "forge-state");
+        }
+        return java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "evo-forge-state");
+    }
 
     private ForgeSessionManager() {}
 
@@ -202,6 +348,161 @@ public class ForgeSessionManager {
         this.orchestrator = orchestrator;
         if (orchestrator != null && orchestrator.getForgeSessions().isEmpty()) {
             seedDefaultSessions();
+        }
+        recoverFromRestart();
+    }
+
+    /**
+     * Persists the last known execution state of a forge session so that after
+     * an application restart the UI can reconstruct the correct session state
+     * from persisted information instead of assuming IDLE. Called on every
+     * state transition (training start, terminal states, failure updates).
+     */
+    public void persistSessionState(String sessionId) {
+        if (sessionId == null) return;
+        ForgeSession s = findSessionById(sessionId);
+        if (s == null) s = findSession(sessionId);
+        String key = s != null ? s.getSessionId() : sessionId;
+
+        JSONObject state = new JSONObject();
+        state.put("sessionId", key);
+        if (s != null) {
+            state.put("sessionName", s.getName() != null ? s.getName() : "");
+            state.put("modelType", s.getSelectedModelType() != null ? s.getSelectedModelType() : "");
+            state.put("emfStatus", s.getStatus() != null ? s.getStatus().getName() : "IDLE");
+            state.put("createdAt", s.getCreatedAt());
+        }
+        state.put("workflowStatus", getUiState(key).optString("forge.workflow.status", ""));
+
+        TrainingTelemetry telemetry = telemetryMap.get(key);
+        if (telemetry == null && !key.equals(sessionId)) {
+            telemetry = telemetryMap.get(sessionId);
+        }
+        if (telemetry != null) {
+            state.put("status", telemetry.status);
+            state.put("startTimeMs", telemetry.startTimeMs);
+            state.put("durationMs", telemetry.durationMs);
+            state.put("currentEpoch", telemetry.currentEpoch);
+            state.put("totalEpochs", telemetry.totalEpochs);
+            state.put("currentStep", telemetry.currentStep);
+            state.put("totalSteps", telemetry.totalSteps);
+            state.put("processedTokens", telemetry.processedTokens);
+            state.put("totalTokens", telemetry.totalTokens);
+            state.put("currentLoss", telemetry.currentLoss);
+            state.put("valLoss", telemetry.valLoss);
+            state.put("learningRate", telemetry.learningRate);
+            state.put("lastEventMessage", telemetry.lastEventMessage != null ? telemetry.lastEventMessage : "");
+
+            // Persist a bounded portion of the timestamped metric history so
+            // graphs can be reconstructed after an application restart.
+            org.json.JSONArray histArr = new org.json.JSONArray();
+            List<MetricSample> histCopy;
+            synchronized (telemetry.history) {
+                histCopy = new ArrayList<>(telemetry.history);
+            }
+            int start = Math.max(0, histCopy.size() - 500);
+            for (int i = start; i < histCopy.size(); i++) {
+                histArr.put(histCopy.get(i).toJsonObject());
+            }
+            state.put("history", histArr);
+        } else {
+            state.put("status", "UNKNOWN");
+        }
+        state.put("persistedAt", System.currentTimeMillis());
+
+        java.nio.file.Path dir = getForgeStateDirectory();
+        try {
+            Files.createDirectories(dir);
+            java.nio.file.Path target = dir.resolve(key + ".json");
+            java.nio.file.Path tmp = dir.resolve(key + ".json.tmp");
+            Files.writeString(tmp, state.toString());
+            try {
+                Files.move(tmp, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception e) {
+            System.err.println("[FORGE][STATE][WARN] Could not persist forge session state for '" + key + "': " + e.getMessage());
+        }
+    }
+
+    /**
+     * Restores persisted session state after an application restart. A session
+     * whose persisted state was active (RUNNING/TRAINING/PAUSED) when the
+     * application terminated is honestly marked INTERRUPTED: the trainer no
+     * longer exists, but checkpoints survive in the stable run folder and a new
+     * training run resumes from them.
+     */
+    public void recoverFromRestart() {
+        if (recoveredFromRestart) return;
+        recoveredFromRestart = true;
+
+        java.nio.file.Path dir = getForgeStateDirectory();
+        if (!Files.isDirectory(dir)) return;
+
+        try (java.util.stream.Stream<java.nio.file.Path> stream = Files.list(dir)) {
+            for (java.nio.file.Path f : stream.filter(p -> p.getFileName().toString().endsWith(".json")).collect(java.util.stream.Collectors.toList())) {
+                try {
+                    JSONObject state = new JSONObject(Files.readString(f));
+                    String sessionId = state.optString("sessionId", "");
+                    String persistedStatus = state.optString("status", "UNKNOWN");
+                    if (sessionId.isEmpty()) continue;
+
+                    if ("RUNNING".equals(persistedStatus) || "TRAINING".equals(persistedStatus) || "PAUSED".equals(persistedStatus)) {
+                        ForgeSession s = findSessionById(sessionId);
+                        if (s != null) {
+                            s.setStatus(ForgeStatus.IDLE);
+                            TrainingTelemetry telemetry = getTelemetry(sessionId);
+                            telemetry.setStatus("INTERRUPTED", "Training interrupted by application restart; resume by starting the forge session again (checkpoints are preserved).");
+                            telemetry.currentEpoch = state.optInt("currentEpoch", 0);
+                            telemetry.totalEpochs = state.optInt("totalEpochs", 0);
+                            telemetry.currentStep = state.optInt("currentStep", 0);
+                            telemetry.totalSteps = state.optInt("totalSteps", 0);
+                            telemetry.currentLoss = state.optDouble("currentLoss", 0.0);
+                            telemetry.valLoss = state.optDouble("valLoss", 0.0);
+                            telemetry.learningRate = state.optDouble("learningRate", -1.0);
+                            restorePersistedHistory(telemetry, state);
+                            updateWorkflowStatus(sessionId, "RECOVERED_INTERRUPTED");
+                            publishEvent(s, RuntimeEventType.FORGE_TRAINING_FAILED, "RECOVERED_INTERRUPTED");
+                            System.out.println("[FORGE][STATE] Recovered session '" + sessionId + "' from persisted state: " + persistedStatus + " -> INTERRUPTED");
+                        }
+                    } else if (!"UNKNOWN".equals(persistedStatus) && !"IDLE".equals(persistedStatus)) {
+                        // Terminal states survive the restart as-is (e.g. COMPLETED/FAILED
+                        // history remains visible in telemetry without re-running).
+                        TrainingTelemetry telemetry = getTelemetry(sessionId);
+                        if ("IDLE".equals(telemetry.status)) {
+                            telemetry.setStatus(persistedStatus, "Recovered from persisted session state.");
+                            telemetry.currentEpoch = state.optInt("currentEpoch", 0);
+                            telemetry.totalEpochs = state.optInt("totalEpochs", 0);
+                            telemetry.currentLoss = state.optDouble("currentLoss", 0.0);
+                            telemetry.valLoss = state.optDouble("valLoss", 0.0);
+                            telemetry.learningRate = state.optDouble("learningRate", -1.0);
+                            restorePersistedHistory(telemetry, state);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("[FORGE][STATE][WARN] Could not restore forge session state from '" + f.getFileName() + "': " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("[FORGE][STATE][WARN] Could not scan forge state directory: " + e.getMessage());
+        }
+    }
+
+    private void restorePersistedHistory(TrainingTelemetry telemetry, JSONObject state) {
+        org.json.JSONArray histArr = state.optJSONArray("history");
+        if (histArr == null || telemetry == null) return;
+        synchronized (telemetry.history) {
+            telemetry.history.clear();
+            int start = Math.max(0, histArr.length() - 1000);
+            for (int i = start; i < histArr.length(); i++) {
+                try {
+                    JSONObject obj = histArr.optJSONObject(i);
+                    if (obj != null) {
+                        telemetry.history.add(MetricSample.fromJsonObject(obj));
+                    }
+                } catch (Exception ignored) {}
+            }
         }
     }
 
@@ -330,14 +631,30 @@ public class ForgeSessionManager {
             if (!resolvedId.equals(sessionId)) {
                 activeTrainers.remove(sessionId);
             }
+            java.util.List<eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener> removedListeners = trainerListeners.remove(resolvedId);
+            if (trainer != null && removedListeners != null) {
+                for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener l : removedListeners) {
+                    trainer.removeProgressListener(l);
+                }
+            }
+            if (!resolvedId.equals(sessionId)) {
+                trainerListeners.remove(sessionId);
+            }
 
-            // Clean up event buffer for deleted session
+            // Publish the deletion notification (so live subscribers are informed),
+            // THEN clean up the event buffer for the deleted session: the buffer
+            // must be empty for the deleted session afterwards.
+            publishEvent(toRemove, RuntimeEventType.VIEW_UPDATED, "SESSION_DELETED");
+
             eventBuffer.remove(resolvedId);
             if (!resolvedId.equals(sessionId)) {
                 eventBuffer.remove(sessionId);
             }
 
-            publishEvent(toRemove, RuntimeEventType.VIEW_UPDATED, "SESSION_DELETED");
+            telemetryMap.remove(resolvedId);
+            if (!resolvedId.equals(sessionId)) {
+                telemetryMap.remove(sessionId);
+            }
             return true;
         }
         return false;
@@ -511,6 +828,16 @@ public class ForgeSessionManager {
     }
 
     public void registerActiveTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer) {
+        registerActiveTrainer(sessionId, trainer, false);
+    }
+
+    /**
+     * Registers a running trainer with the session telemetry. When freshStart
+     * is true (a genuinely new run, not a checkpoint resume), the previous
+     * run's metric history and log stream are cleared so graphs never mix
+     * measurements from different training runs of the same session.
+     */
+    public void registerActiveTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer, boolean freshStart) {
         if (sessionId == null || trainer == null) return;
 
         ForgeSession s = findSessionById(sessionId);
@@ -521,10 +848,26 @@ public class ForgeSessionManager {
         if (!key.equals(sessionId)) activeTrainers.put(sessionId, trainer);
 
         TrainingTelemetry telemetry = getTelemetry(key);
-        telemetry.status = "RUNNING";
+        if (freshStart) {
+            synchronized (telemetry.history) {
+                telemetry.history.clear();
+            }
+            synchronized (telemetry.logStream) {
+                telemetry.logStream.clear();
+            }
+            telemetry.bestValLoss = Double.MAX_VALUE;
+            telemetry.learningRate = -1.0;
+            telemetry.currentLoss = 0.0;
+            telemetry.valLoss = 0.0;
+            telemetry.processedTokens = 0;
+            telemetry.totalTokens = 0;
+            telemetry.tokensPerSec = 0.0;
+            telemetry.stepsPerSec = 0.0;
+            telemetry.estimatedRemainingSeconds = 0.0;
+        }
+        telemetry.setStatus("RUNNING", "Training session attached to EvoLlmTrainer.");
         telemetry.startTimeMs = System.currentTimeMillis();
         telemetry.durationMs = 0;
-        telemetry.addLog("INFO", "Training session attached to EvoLlmTrainer.");
 
         if (s != null) {
             s.setStatus(ForgeStatus.TRAINING);
@@ -532,7 +875,9 @@ public class ForgeSessionManager {
             publishEvent(s, RuntimeEventType.FORGE_TRAINING_STARTED, "TRAINING_STARTED");
         }
 
-        trainer.addProgressListener(new eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener() {
+        final String telemetryKey = key;
+        eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener listener =
+                new eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener() {
             private long lastSampleTime = 0;
 
             @Override
@@ -542,6 +887,10 @@ public class ForgeSessionManager {
 
             @Override
             public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+                telemetry.updateMetrics(epoch, totalEpochs, telemetry.currentStep, telemetry.totalSteps,
+                        telemetry.processedTokens, telemetry.totalTokens,
+                        telemetry.tokensPerSec, telemetry.stepsPerSec,
+                        telemetry.estimatedRemainingSeconds, trainLoss, valLoss, telemetry.learningRate);
                 telemetry.addLog("INFO", String.format("Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
                         epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
             }
@@ -551,20 +900,19 @@ public class ForgeSessionManager {
                                            long processedTokens, long totalTokens,
                                            double tokensPerSec, double stepsPerSec,
                                            double estimatedRemainingSeconds, double currentLoss) {
-                telemetry.currentEpoch = epoch + 1;
-                telemetry.totalEpochs = totalEpochs;
-                telemetry.currentStep = currentStep;
-                telemetry.totalSteps = totalSteps;
-                telemetry.processedTokens = processedTokens;
-                telemetry.totalTokens = totalTokens;
-                telemetry.tokensPerSec = tokensPerSec;
-                telemetry.stepsPerSec = stepsPerSec;
-                telemetry.estimatedRemainingSeconds = estimatedRemainingSeconds;
-                telemetry.currentLoss = currentLoss;
+                onProgressMetrics(epoch, totalEpochs, currentStep, totalSteps, processedTokens, totalTokens,
+                        tokensPerSec, stepsPerSec, estimatedRemainingSeconds, currentLoss, -1.0);
+            }
 
-                Runtime runtime = Runtime.getRuntime();
-                telemetry.ramUsedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024.0 * 1024.0);
-                telemetry.ramTotalMb = runtime.totalMemory() / (1024.0 * 1024.0);
+            @Override
+            public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                           long processedTokens, long totalTokens,
+                                           double tokensPerSec, double stepsPerSec,
+                                           double estimatedRemainingSeconds, double currentLoss,
+                                           double learningRate) {
+                telemetry.updateMetrics(epoch + 1, totalEpochs, currentStep, totalSteps,
+                        processedTokens, totalTokens, tokensPerSec, stepsPerSec,
+                        estimatedRemainingSeconds, currentLoss, telemetry.valLoss, learningRate);
 
                 long now = System.currentTimeMillis();
                 if (now - lastSampleTime >= 800 || currentStep == totalSteps) {
@@ -579,6 +927,7 @@ public class ForgeSessionManager {
                     sample.stepsPerSec = stepsPerSec;
                     sample.ramMb = telemetry.ramUsedMb;
                     sample.cpuPct = telemetry.cpuPercent;
+                    sample.learningRate = learningRate > 0.0 ? learningRate : telemetry.learningRate;
                     telemetry.addSample(sample);
 
                     if (currentStep % Math.max(1, totalSteps / 10) == 0 || currentStep == totalSteps) {
@@ -587,7 +936,14 @@ public class ForgeSessionManager {
                     }
                 }
             }
-        });
+        };
+        trainer.addProgressListener(listener);
+        // Keep the listener reference so it can be detached when the trainer is
+        // unregistered; without removal, the trainer would retain the telemetry
+        // reference chain for its whole lifetime.
+        trainerListeners.computeIfAbsent(key, k -> new ArrayList<>()).add(listener);
+
+        persistSessionState(key);
     }
 
     public void unregisterActiveTrainer(String sessionId) {
@@ -596,34 +952,89 @@ public class ForgeSessionManager {
 
     public void unregisterActiveTrainer(String sessionId, boolean sessionComplete) {
         if (sessionId == null) return;
-        activeTrainers.remove(sessionId);
+        completeActiveTrainer(sessionId, sessionComplete ? "COMPLETED" : "DETACHED");
+    }
+
+    /**
+     * Terminates the training association for a forge session with the REAL
+     * terminal status produced by the backend: COMPLETED, STOPPED, PAUSED,
+     * ABORTED, INTERRUPTED or FAILED. This is the single place where the
+     * authoritative telemetry status is derived from actual backend state.
+     */
+    public void completeActiveTrainer(String sessionId, String terminalStatus) {
+        if (sessionId == null) return;
+        String status = (terminalStatus == null || terminalStatus.trim().isEmpty()) ? "COMPLETED" : terminalStatus.trim().toUpperCase();
+
         ForgeSession s = findSessionById(sessionId);
         if (s == null) s = findSession(sessionId);
         String key = s != null ? s.getSessionId() : sessionId;
-        if (!key.equals(sessionId)) activeTrainers.remove(key);
 
-        TrainingTelemetry telemetry = telemetryMap.get(key);
-        if (telemetry == null && !key.equals(sessionId)) {
-            telemetry = telemetryMap.get(sessionId);
+        // Detach the progress listeners from the trainer BEFORE removing it from
+        // the active map, so the trainer never retains the telemetry reference
+        // chain after unregistration.
+        java.util.List<eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener> listeners = trainerListeners.remove(key);
+        eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer = activeTrainers.remove(key);
+        if (trainer == null) trainer = activeTrainers.remove(sessionId);
+        if (trainer != null && listeners != null) {
+            for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener l : listeners) {
+                trainer.removeProgressListener(l);
+            }
         }
+        trainerListeners.remove(sessionId);
 
-        if (sessionComplete) {
-            if (telemetry != null) {
-                telemetry.status = "COMPLETED";
+        TrainingTelemetry telemetry = getTelemetry(key);
+        if (telemetry != null) {
+            telemetry.setStatus(status, "Training terminated: " + status);
+            if (telemetry.startTimeMs > 0) {
                 telemetry.durationMs = System.currentTimeMillis() - telemetry.startTimeMs;
-                telemetry.addLog("INFO", "Training session completed.");
-            }
-
-            if (s != null) {
-                s.setStatus(ForgeStatus.IDLE);
-                updateWorkflowStatus(s.getSessionId(), "TRAINING_COMPLETED");
-                publishEvent(s, RuntimeEventType.FORGE_TRAINING_STOPPED, "TRAINING_STOPPED");
-            }
-        } else {
-            if (telemetry != null) {
-                telemetry.addLog("INFO", "Active trainer detached.");
             }
         }
+
+        if (s != null) {
+            // The EMF enum only carries IDLE/TRAINING/RUNNING/ERROR; any
+            // terminal state maps back to IDLE while the richer status lives in
+            // telemetry + the workflow status uiState.
+            s.setStatus("FAILED".equals(status) || "ABORTED".equals(status) || "INTERRUPTED".equals(status)
+                    ? ForgeStatus.ERROR : ForgeStatus.IDLE);
+            updateWorkflowStatus(s.getSessionId(), "TRAINING_" + status);
+            if ("FAILED".equals(status) || "ABORTED".equals(status) || "INTERRUPTED".equals(status)) {
+                publishEvent(s, RuntimeEventType.FORGE_TRAINING_FAILED, "TRAINING_" + status);
+            } else {
+                publishEvent(s, RuntimeEventType.FORGE_TRAINING_STOPPED, "TRAINING_" + status);
+            }
+        }
+
+        persistSessionState(key);
+    }
+
+    /**
+     * Updates the terminal status of an already-detached training (e.g. when a
+     * completed training run later fails model validation or export). Does not
+     * touch the active trainer map.
+     */
+    public void updateSessionTerminalStatus(String sessionId, String terminalStatus) {
+        if (sessionId == null) return;
+        String status = (terminalStatus == null || terminalStatus.trim().isEmpty()) ? "COMPLETED" : terminalStatus.trim().toUpperCase();
+        ForgeSession s = findSessionById(sessionId);
+        if (s == null) s = findSession(sessionId);
+        String key = s != null ? s.getSessionId() : sessionId;
+
+        TrainingTelemetry telemetry = getTelemetry(key);
+        if (telemetry != null) {
+            telemetry.setStatus(status, "Training terminated: " + status);
+            if (telemetry.startTimeMs > 0 && telemetry.durationMs == 0) {
+                telemetry.durationMs = System.currentTimeMillis() - telemetry.startTimeMs;
+            }
+        }
+        if (s != null) {
+            s.setStatus("FAILED".equals(status) || "ABORTED".equals(status) || "INTERRUPTED".equals(status)
+                    ? ForgeStatus.ERROR : ForgeStatus.IDLE);
+            updateWorkflowStatus(s.getSessionId(), "TRAINING_" + status);
+            if ("FAILED".equals(status) || "ABORTED".equals(status) || "INTERRUPTED".equals(status)) {
+                publishEvent(s, RuntimeEventType.FORGE_TRAINING_FAILED, "TRAINING_" + status);
+            }
+        }
+        persistSessionState(key);
     }
 
     public boolean requestFinish(String sessionId) {
@@ -655,10 +1066,8 @@ public class ForgeSessionManager {
             updateWorkflowStatus(actualId, "FINISHING_EXPORTING");
         }
 
-        if (!requested && !activeTrainers.isEmpty()) {
-            return requestFinishAll();
-        }
-
+        // Session-scoped control: a finish request for a session with no active
+        // trainer must NOT stop other sessions' trainings.
         return requested;
     }
 
@@ -760,74 +1169,19 @@ public class ForgeSessionManager {
         }
         if (session == null) return;
 
-        final String targetSessionId = session.getSessionId();
-
-        Thread demoThread = new Thread(() -> {
-            try {
-                ForgeSession current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 1. Initializing Architecture
-                String type = current.getSelectedModelType() != null ? current.getSelectedModelType() : "MLP";
-                generateArchitecture(current, type);
-                publishEvent(current, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
-                Thread.sleep(1500);
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 2. Loading Data
-                publishEvent(current, RuntimeEventType.FORGE_DATASET_IMPORTED, "DEMO_DATA_LOADED");
-                Thread.sleep(1500);
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 3. Training
-                publishEvent(current, RuntimeEventType.FORGE_TRAINING_STARTED, "DEMO_TRAINING_STARTED");
-                for (int i = 0; i < 5; i++) {
-                    Thread.sleep(1000);
-                    current = findSessionById(targetSessionId);
-                    if (current == null) return;
-                    publishEvent(current, RuntimeEventType.EVOLUTION_PROGRESS, "DEMO_TRAINING_PROGRESS_" + i);
-                }
-
-                // 4. Exporting
-                String modelDir = "./forge-lab/forge-model/src/main/resources/model/demo/";
-                File dir = new File(modelDir);
-                if (!dir.exists()) dir.mkdirs();
-
-                File modelFile = new File(dir, "demo_transformer.gguf");
-                try (FileWriter writer = new FileWriter(modelFile)) {
-                    writer.write("DUMMY OLLAMA MODEL CONTENT FOR DEMO");
-                } catch (IOException e) {
-                    System.err.println("[FORGE_DEMO] Failed to write demo model artifact: " + e.getMessage());
-                }
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                publishEvent(current, RuntimeEventType.EXPORT_READY, modelFile.getAbsolutePath());
-                Thread.sleep(2000);
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 5. Finalizing
-                publishEvent(current, RuntimeEventType.VIEW_UPDATED, "DEMO_COMPLETED");
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("[FORGE_DEMO] Demo task interrupted for session: " + targetSessionId);
-            }
-        }, "Forge-E2E-Demo-" + targetSessionId);
-
-        demoThread.setDaemon(true);
-        demoThread.start();
+        // The legacy demo simulated training progress with sleeps and wrote a
+        // placeholder .gguf file containing dummy bytes. Telemetry honesty forbids
+        // simulated progress and fabricated artifacts, so the demo now reports the
+        // truth: the real pipeline is the authoritative forging flow.
+        publishEvent(session, RuntimeEventType.VIEW_UPDATED,
+                "E2E demo replaced: use the real forging flow (POST /forge/session/{id}/forging/start). No simulated training or placeholder model files are produced.");
     }
 
     public List<RuntimeEvent> getRecentEvents(String sessionId) {
-        return eventBuffer.getOrDefault(sessionId, new ArrayList<>());
+        List<RuntimeEvent> buffer = eventBuffer.getOrDefault(sessionId, Collections.emptyList());
+        synchronized (buffer) {
+            return new ArrayList<>(buffer);
+        }
     }
 
     private void publishEvent(ForgeSession session, RuntimeEventType type, String action) {
@@ -844,8 +1198,10 @@ public class ForgeSessionManager {
         }
 
         List<RuntimeEvent> buffer = eventBuffer.computeIfAbsent(session.getSessionId(), k -> Collections.synchronizedList(new ArrayList<>()));
-        buffer.add(event);
-        if (buffer.size() > 50) buffer.remove(0);
+        synchronized (buffer) {
+            buffer.add(event);
+            if (buffer.size() > 50) buffer.remove(0);
+        }
 
         SessionContainer container = SessionManager.getInstance().getSession(orch.getId());
         if (container != null) {

@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ENR - Evolution Neural Runtime
+Bundle-SymbolicName: eu.kalafatic.evolution.enr;singleton:=true
+Bundle-Version: 2.6.11.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: eu.kalafatic.evolution.enr
+Require-Bundle: eu.kalafatic.evolution.controller;bundle-version="2.6.11",
+ eu.kalafatic.evolution.servers;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.model;bundle-version="2.6.11",
+ eu.kalafatic.utils;bundle-version="2.6.11"
+Bundle-Activator: eu.kalafatic.evolution.enr.EnrActivator
+Import-Package: org.osgi.framework;version="1.10.0",
+ org.json,
+ fi.iki.elonen
+Export-Package: eu.kalafatic.evolution.enr

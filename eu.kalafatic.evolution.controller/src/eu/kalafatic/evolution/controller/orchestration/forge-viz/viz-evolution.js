@@ -19,8 +19,8 @@ window.renderEvolutionViz = function(snapshots) {
                 <h4>Snapshot Info</h4>
                 <p>ID: ${s.id}</p>
                 <p>Generation: ${s.generation || 0}</p>
-                <p>Model Type: MLP</p>
-                <p>Loss: 0.42</p>
+                <p>Model Type: ${s.modelType || '—'}</p>
+                <p>Loss: ${s.loss !== undefined && s.loss !== null ? s.loss : '—'}</p>
                 <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
                     <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
                     <button class="btn btn-sm btn-primary" style="width:100%" onclick="exportSnapshot('${s.id}')">EXPORT FOR OLLAMA</button>

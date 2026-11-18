@@ -8,10 +8,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * Isolated GPU training process execution manager.
- * Operates in its own dedicated work/output directories with independent logging.
- * Produces native .evo model artifacts matching the EVO Native Model Protocol v2.
- * Strictly distinguishes host CPU execution from native GPU CUDA acceleration.
+ * Isolated GPU capability verification process.
+ *
+ * Native CUDA training kernels are NOT implemented in this module. Per the EVO
+ * development rules (no fake GPU execution, no fake training progress), this
+ * process never simulates training and never produces a model artifact from a
+ * fabricated loop. It performs real GPU/CUDA diagnostics and reports the
+ * truthful execution capability: the only available training backend today is
+ * the Darwin Forge CPU trainer (EvoLlmTrainer).
  */
 public class GpuTrainingProcess {
 
@@ -24,6 +28,9 @@ public class GpuTrainingProcess {
         private long durationMs;
         private String modelArtifactPath;
         private String logFilePath;
+        private boolean nativeTrainingExecuted;
+        private String gpuDeviceName = "";
+        private String cudaVerificationLabel = "";
 
         public boolean isCompleted() { return completed; }
         public void setCompleted(boolean completed) { this.completed = completed; }
@@ -48,8 +55,22 @@ public class GpuTrainingProcess {
 
         public String getLogFilePath() { return logFilePath; }
         public void setLogFilePath(String logFilePath) { this.logFilePath = logFilePath; }
+
+        public boolean isNativeTrainingExecuted() { return nativeTrainingExecuted; }
+        public void setNativeTrainingExecuted(boolean nativeTrainingExecuted) { this.nativeTrainingExecuted = nativeTrainingExecuted; }
+
+        public String getGpuDeviceName() { return gpuDeviceName; }
+        public void setGpuDeviceName(String gpuDeviceName) { this.gpuDeviceName = gpuDeviceName; }
+
+        public String getCudaVerificationLabel() { return cudaVerificationLabel; }
+        public void setCudaVerificationLabel(String cudaVerificationLabel) { this.cudaVerificationLabel = cudaVerificationLabel; }
     }
 
+    /**
+     * Runs GPU capability diagnostics. Training is never executed: no native
+     * CUDA training backend exists yet, so no model artifact is produced and
+     * no simulated loss/epoch progression is reported.
+     */
     public TrainingStatus executeTraining(GpuTrainerConfig config) throws IOException {
         long startTime = System.currentTimeMillis();
         TrainingStatus status = new TrainingStatus();
@@ -59,20 +80,16 @@ public class GpuTrainingProcess {
         if (!workDir.exists()) workDir.mkdirs();
         if (!outDir.exists()) outDir.mkdirs();
 
-        File logFile = new File(outDir, "gpu_training_execution.log");
+        File logFile = new File(outDir, "gpu_diagnostics.log");
         status.setLogFilePath(logFile.getAbsolutePath());
 
         try (FileWriter logWriter = new FileWriter(logFile, false)) {
             log(logWriter, "=========================================================");
-            log(logWriter, "         EVO ISOLATED GPU MODEL TRAINING PROCESS         ");
+            log(logWriter, "        EVO GPU CAPABILITY DIAGNOSTICS PROCESS           ");
             log(logWriter, "=========================================================");
             log(logWriter, "Model Name : " + config.getModelName());
             log(logWriter, "Work Dir   : " + workDir.getAbsolutePath());
             log(logWriter, "Output Dir : " + outDir.getAbsolutePath());
-            log(logWriter, "Epochs     : " + config.getEpochs());
-            log(logWriter, "Batch Size : " + config.getBatchSize());
-            log(logWriter, "Embed Dim  : " + config.getEmbedDim());
-            log(logWriter, "Vocab Size : " + config.getVocabSize());
 
             NvidiaGpuDetector detector = new NvidiaGpuDetector();
             NvidiaGpuDetector.GpuDeviceInfo gpuDev = detector.detectGpu();
@@ -80,92 +97,46 @@ public class GpuTrainingProcess {
             CudaComputeVerifier verifier = new CudaComputeVerifier();
             CudaComputeVerifier.CudaComputeInfo cudaComp = verifier.verifyCudaCompute();
 
-            String deviceType = "CPU_HOST_JAVA";
-            String techNote = "";
+            status.setGpuDeviceName(gpuDev.isAvailable() ? gpuDev.getDeviceName() : "NONE");
+            status.setCudaVerificationLabel(cudaComp.getComputeDeviceType());
 
-            if (config.isPreferCuda() && gpuDev.isAvailable() && cudaComp.isComputeCapable()) {
-                deviceType = "CPU_HOST_JAVA (CUDA DETECTED)";
-                techNote = "NVIDIA GPU device (" + gpuDev.getDeviceName() + ") and CUDA driver API verified. However, pure Java bytecode training loop executes on host CPU threads. Full GPU matrix acceleration requires compiling C++/CUDA PTX kernels and binding them via Java 21 FFM API.";
-                log(logWriter, "\n[COMPUTE DEVICE] " + deviceType);
-                log(logWriter, "[TECHNICAL NOTE] " + techNote);
+            String deviceType = "CPU_HOST_JAVA";
+            StringBuilder note = new StringBuilder();
+
+            if (gpuDev.isAvailable() && cudaComp.isComputeCapable()) {
+                deviceType = "CPU_HOST_JAVA (CUDA DRIVER PRESENT)";
+                note.append("NVIDIA GPU device (").append(gpuDev.getDeviceName())
+                        .append(") detected and CUDA driver libraries located. ")
+                        .append("Native CUDA training kernels are NOT implemented in this module; ")
+                        .append("no training was executed and no model artifact was produced. ")
+                        .append("Use the Darwin Forge CPU trainer (EvoLlmTrainer) for actual training.");
             } else {
                 deviceType = "CPU_FALLBACK";
-                techNote = "NVIDIA GPU or CUDA driver libraries unavailable. Process running in CPU Fallback mode.";
-                log(logWriter, "\n[COMPUTE DEVICE] " + deviceType);
+                note.append("NVIDIA GPU or CUDA driver libraries unavailable. ");
                 if (!gpuDev.isAvailable()) {
-                    log(logWriter, "  Reason: NVIDIA GPU device was not detected via nvidia-smi.");
-                } else if (!cudaComp.isComputeCapable()) {
-                    log(logWriter, "  Reason: CUDA compute driver/runtime interface libraries not verified.");
+                    note.append("Reason: NVIDIA GPU device was not detected via nvidia-smi. ");
+                } else {
+                    note.append("Reason: CUDA driver libraries not located. ");
                 }
+                note.append("No training was executed and no model artifact was produced.");
             }
 
             status.setComputeDeviceUsed(deviceType);
-            status.setTechnicalNote(techNote);
-
-            log(logWriter, "\n[TRAINING LOOP START]");
-            java.util.Random rand = new java.util.Random(42);
-
-            int embedSize = config.getVocabSize() * config.getEmbedDim();
-            float[] embedWeights = new float[embedSize];
-            for (int i = 0; i < embedSize; i++) {
-                embedWeights[i] = (float) (rand.nextGaussian() * 0.02);
-            }
-
-            float[] finalNormScale = new float[config.getEmbedDim()];
-            for (int i = 0; i < config.getEmbedDim(); i++) {
-                finalNormScale[i] = 1.0f;
-            }
-
-            float loss = 4.5f;
-            for (int epoch = 1; epoch <= config.getEpochs(); epoch++) {
-                long epochStart = System.currentTimeMillis();
-
-                for (int i = 0; i < embedWeights.length; i++) {
-                    embedWeights[i] *= (1.0f - (0.001f * config.getLearningRate()));
-                }
-                loss *= 0.85f;
-
-                long epochDur = System.currentTimeMillis() - epochStart;
-                log(logWriter, String.format("Epoch %d/%d completed | Loss: %.4f | Duration: %d ms | Device: %s",
-                        epoch, config.getEpochs(), loss, epochDur, deviceType));
-            }
-
-            status.setTotalEpochsCompleted(config.getEpochs());
-            status.setFinalLoss(loss);
-
-            log(logWriter, "\n[SERIALIZATION] Saving trained EVO native model artifact v2 (.evo)...");
-
-            EvoGpuModelSerializer serializer = new EvoGpuModelSerializer();
-            EvoGpuModelSerializer.ModelContainer container = new EvoGpuModelSerializer.ModelContainer();
-
-            container.setModelName(config.getModelName());
-            container.setArchitectureJson(String.format("{\"embed_dim\":%d,\"num_layers\":%d,\"num_heads\":%d,\"vocab_size\":%d}",
-                    config.getEmbedDim(), config.getNumLayers(), config.getNumHeads(), config.getVocabSize()));
-            container.setTokenizerJson(String.format("{\"type\":\"bpe\",\"vocab_size\":%d}", config.getVocabSize()));
-
-            for (int v = 0; v < config.getVocabSize(); v++) {
-                container.getTokenToId().put("tok_" + v, v);
-            }
-
-            container.getMetadata().put("trained_by", "EVO Isolated GPU Process");
-            container.getMetadata().put("compute_device", deviceType);
-            container.getMetadata().put("technical_note", techNote);
-            container.getMetadata().put("epochs", String.valueOf(config.getEpochs()));
-            container.getMetadata().put("final_loss", String.valueOf(loss));
-
-            container.addTensor("tok_embeddings.weight", new long[]{config.getVocabSize(), config.getEmbedDim()}, embedWeights);
-            container.addTensor("norm_final.scale", new long[]{config.getEmbedDim()}, finalNormScale);
-
-            File modelFile = new File(outDir, config.getModelName() + ".evo");
-            serializer.writeModel(modelFile.toPath(), container);
-
-            status.setModelArtifactPath(modelFile.getAbsolutePath());
-            log(logWriter, "Model artifact saved successfully to: " + modelFile.getAbsolutePath());
-
-            status.setDurationMs(System.currentTimeMillis() - startTime);
+            status.setTechnicalNote(note.toString());
+            status.setTotalEpochsCompleted(0);
+            status.setFinalLoss(0.0f);
+            status.setNativeTrainingExecuted(false);
+            status.setModelArtifactPath("");
             status.setCompleted(true);
 
-            log(logWriter, "\n[STATUS] Training process completed successfully in " + status.getDurationMs() + " ms.");
+            log(logWriter, "\n[COMPUTE DEVICE] " + deviceType);
+            log(logWriter, "[GPU DEVICE] " + status.getGpuDeviceName());
+            log(logWriter, "[CUDA VERIFICATION] " + status.getCudaVerificationLabel());
+            log(logWriter, "[TECHNICAL NOTE] " + note);
+            log(logWriter, "\n[RESULT] Diagnostics completed. Native training NOT executed (kernels not implemented).");
+
+            status.setDurationMs(System.currentTimeMillis() - startTime);
+            log(logWriter, "\n[STATUS] Diagnostics process completed in " + status.getDurationMs() + " ms.");
         }
 
         return status;

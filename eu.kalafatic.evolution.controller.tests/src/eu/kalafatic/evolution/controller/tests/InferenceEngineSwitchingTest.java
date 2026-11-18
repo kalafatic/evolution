@@ -68,30 +68,53 @@ public class InferenceEngineSwitchingTest {
     }
 
     @Test
-    public void testFilterModelsByInferenceEngine() {
-        List<String> inputModels = Arrays.asList(
-                "evo-generic-v128",
-                "forging-1724653200",
-                "evo",
-                "evo.gguf",
-                "evo-model.gguf",
-                "llama3.2:3b",
-                "gemma:2b",
-                "demo/custom.gguf"
-        );
+    public void testFilterModelsByInferenceEngine() throws Exception {
+        // Hermetic artifact resolution: the "evo native" rule resolves evo/forging
+        // names against real model directories; the test overrides the resolver
+        // with a temp-dir-backed one so it never depends on user filesystem state.
+        org.junit.rules.TemporaryFolder tf = new org.junit.rules.TemporaryFolder();
+        tf.create();
+        try {
+            File nativeDir = tf.newFolder("native-models");
+            File evoGeneric = new File(nativeDir, "evo-generic-v128.evo");
+            File forging = new File(nativeDir, "forging-1724653200.evo");
+            assertTrue(evoGeneric.createNewFile());
+            assertTrue(forging.createNewFile());
 
-        ProjectModelManager pmm = ProjectModelManager.getInstance();
+            ProjectModelManager.setArtifactPathResolver(name -> {
+                String lower = name == null ? "" : name.toLowerCase();
+                if (lower.contains("evo-generic")) return evoGeneric;
+                if (lower.contains("forging")) return forging;
+                return null;
+            });
 
-        // 1. evo native -> all evo models (evo only, non-gguf)
-        List<String> nativeModels = pmm.filterModelsByEngine(inputModels, "evo native");
-        assertEquals(Arrays.asList("evo-generic-v128", "forging-1724653200"), nativeModels);
+            List<String> inputModels = Arrays.asList(
+                    "evo-generic-v128",
+                    "forging-1724653200",
+                    "evo",
+                    "evo.gguf",
+                    "evo-model.gguf",
+                    "llama3.2:3b",
+                    "gemma:2b",
+                    "demo/custom.gguf"
+            );
 
-        // 2. llama-cpp -> all evo gguf models (evo only)
-        List<String> llamaCppModels = pmm.filterModelsByEngine(inputModels, "llama-cpp");
-        assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf"), llamaCppModels);
+            ProjectModelManager pmm = ProjectModelManager.getInstance();
 
-        // 3. ollama -> all ollama compatible models
-        List<String> ollamaModels = pmm.filterModelsByEngine(inputModels, "ollama");
-        assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf", "llama3.2:3b", "gemma:2b", "demo/custom.gguf"), ollamaModels);
+            // 1. evo native -> resolved canonical .evo artifact names
+            List<String> nativeModels = pmm.filterModelsByEngine(inputModels, "evo native");
+            assertEquals(Arrays.asList("evo-generic-v128.evo", "forging-1724653200.evo"), nativeModels);
+
+            // 2. llama-cpp -> all evo gguf models (evo only)
+            List<String> llamaCppModels = pmm.filterModelsByEngine(inputModels, "llama-cpp");
+            assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf"), llamaCppModels);
+
+            // 3. ollama -> all ollama compatible models
+            List<String> ollamaModels = pmm.filterModelsByEngine(inputModels, "ollama");
+            assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf", "llama3.2:3b", "gemma:2b", "demo/custom.gguf"), ollamaModels);
+        } finally {
+            ProjectModelManager.resetArtifactPathResolver();
+            tf.delete();
+        }
     }
 }

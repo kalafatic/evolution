@@ -13,9 +13,17 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 public class LlamaServiceTest {
 
     @Test
-    public void testResolveEvoModelPathForNonexistent() {
-        File file = LlamaService.resolveEvoModelPath("nonexistent-test-model-12345");
-        assertNull("Path resolution for non-existent model should return null", file);
+    public void testResolveEvoModelPathForNonexistent() throws Exception {
+        // Hermetic: resolve against an isolated empty model dir so stale fixtures
+        // in real user model directories cannot influence the result.
+        File isolated = java.nio.file.Files.createTempDirectory("test-evo-models-nonexistent-").toFile();
+        System.setProperty("evo.test.modelDirsOverride", isolated.getAbsolutePath());
+        try {
+            File file = LlamaService.resolveEvoModelPath("nonexistent-test-model-12345");
+            assertNull("Path resolution for non-existent model should return null", file);
+        } finally {
+            System.clearProperty("evo.test.modelDirsOverride");
+        }
     }
 
     @Test
@@ -55,11 +63,15 @@ public class LlamaServiceTest {
         File tempEvoPkg = new File(tempDir, "test-evo-models-unit.evo");
         java.nio.file.Files.writeString(tempEvoPkg.toPath(), "EVO-PACKAGE-BYTES");
 
+        // Hermetic model-dir override: fixture copies must never reach real user
+        // model directories (workspace/controller checkouts).
+        File isolatedModelsDir = java.nio.file.Files.createTempDirectory("test-evo-models-isolated-").toFile();
+        System.setProperty("evo.test.modelDirsOverride", isolatedModelsDir.getAbsolutePath());
         try {
             boolean copySuccess = LlamaService.copyToModelsDir(tempGguf.toPath(), "test-evo-models-unit");
             assertTrue("copyToModelsDir must return true on successful copy", copySuccess);
 
-            File modelsDir = LlamaService.resolveControllerModelsDir();
+            File modelsDir = isolatedModelsDir;
             File targetNamed = new File(modelsDir, "test-evo-models-unit.gguf");
             File targetEvo = new File(modelsDir, "evo.gguf");
             File targetModelfile = new File(modelsDir, "Modelfile");
@@ -81,17 +93,8 @@ public class LlamaServiceTest {
             File resolved = LlamaService.resolveEvoModelPath("test-evo-models-unit");
             assertNotNull("resolveEvoModelPath must locate copied model in models folder", resolved);
             assertTrue("Resolved file must exist", resolved.exists());
-
-            // Cleanup
-            if (targetNamed.exists()) targetNamed.delete();
-            if (targetEvo.exists()) targetEvo.delete();
-            if (targetModelfile.exists()) targetModelfile.delete();
-            if (targetWeights.exists()) targetWeights.delete();
-            if (targetConfig.exists()) targetConfig.delete();
-            if (targetTokenizer.exists()) targetTokenizer.delete();
-            if (targetEvoPkg.exists()) targetEvoPkg.delete();
-            if (targetEvoDefaultPkg.exists()) targetEvoDefaultPkg.delete();
         } finally {
+            System.clearProperty("evo.test.modelDirsOverride");
             if (tempGguf.exists()) tempGguf.delete();
             if (tempModelfile.exists()) tempModelfile.delete();
             if (tempWeights.exists()) tempWeights.delete();

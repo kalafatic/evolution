@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class TeipExecutionRequest {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String requestId;
     private String correlationId;
     private String idempotencyKey;
@@ -18,6 +18,7 @@ public class TeipExecutionRequest {
     private Map<String, Object> caller = new HashMap<>();
     private String capability;
     private String mode;
+    private String model;
     private String instruction;
     private Map<String, Object> parameters = new HashMap<>();
     private List<String> grantedToolScopes = new ArrayList<>();
@@ -63,4 +64,7 @@ public class TeipExecutionRequest {
 
     public List<Map<String, Object>> getContextReferences() { return contextReferences; }
     public void setContextReferences(List<Map<String, Object>> contextReferences) { this.contextReferences = contextReferences != null ? contextReferences : new ArrayList<>(); }
+
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model; }
 }

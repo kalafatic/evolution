@@ -37,7 +37,9 @@ public class SupervisorClient {
         if (service != null && service.getUrl() != null) {
             return service.getUrl();
         }
-        return "http://127.0.0.1:28480";
+        // WP7 (D-28): centralized default port instead of a hardcoded literal.
+        int defaultPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
+        return "http://127.0.0.1:" + defaultPort;
     }
 
     public String getBaseUrl() {

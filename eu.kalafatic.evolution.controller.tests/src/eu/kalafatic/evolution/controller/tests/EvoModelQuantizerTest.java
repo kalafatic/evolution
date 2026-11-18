@@ -100,23 +100,17 @@ public class EvoModelQuantizerTest {
     }
 
     @Test
-    public void testInt4Quantization() throws Exception {
+    public void testInt4Quantization() {
+        // INT4 requires packed nibble storage, which is not implemented. The quantizer
+        // must refuse honestly instead of emitting a fake "quantized" F32 artifact.
         EvoModelQuantizer quantizer = new EvoModelQuantizer();
         QuantizationConfig config = new QuantizationConfig(QuantizationConfig.QuantizationScheme.INT4);
 
-        EvoModelQuantizer.QuantizationResult result = quantizer.quantizeArtifact(sourceArtifact, config);
-
-        assertNotNull(result);
-        assertTrue(result.getQuantizedSize() < result.getOriginalSize());
-        assertEquals(0.125, result.getCompressionRatio(), 0.05);
-
-        EvoModelArtifact quantArtifact = result.getQuantizedArtifact();
-        assertEquals("INT4", quantArtifact.getMetadata().get("quantization_scheme"));
-
-        Path savePath = tempFolder.newFile("model-int4.evo").toPath();
-        quantArtifact.save(savePath);
-
-        EvoModelArtifact reloaded = EvoModelArtifact.load(savePath);
-        assertNotNull(reloaded);
+        try {
+            quantizer.quantizeArtifact(sourceArtifact, config);
+            fail("INT4 quantization must be rejected until packed nibble storage is implemented");
+        } catch (UnsupportedOperationException expected) {
+            assertTrue(expected.getMessage().contains("INT4"));
+        }
     }
 }

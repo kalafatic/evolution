@@ -1,13 +1,20 @@
 package eu.kalafatic.evolution.controller.memory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Represents a single persistent user or project memory entry.
+ * Represents a single persistent memory entry of the unified cognitive memory
+ * model. Extends the legacy user-memory record with scoping (user/application/
+ * project/session/task), validity, versioning, provenance and relationships.
+ * Serialization remains backward compatible: legacy JSON without the new
+ * fields loads with safe defaults.
  */
 public class MemoryEntry {
     private String id;
@@ -21,6 +28,19 @@ public class MemoryEntry {
     private long updatedAt;
     private String associatedId;
     private Map<String, String> metadata;
+
+    // Unified model extensions
+    private String userId;
+    private String applicationId;
+    private String projectRef;
+    private String sessionRef;
+    private String taskRef;
+    private MemoryValidity validity = MemoryValidity.VALID;
+    private MemoryInformationStatus informationStatus = MemoryInformationStatus.CONFIRMED;
+    private int version = 1;
+    private long lastVerifiedAt;
+    private List<MemoryRelationship> relationships = new ArrayList<>();
+    private List<String> provenanceChain = new ArrayList<>();
 
     public MemoryEntry() {
         this.id = UUID.randomUUID().toString();
@@ -102,7 +122,7 @@ public class MemoryEntry {
     }
 
     public void setConfidence(double confidence) {
-        this.confidence = confidence;
+        this.confidence = Math.max(0.0, Math.min(1.0, confidence));
         this.updatedAt = System.currentTimeMillis();
     }
 
@@ -141,6 +161,133 @@ public class MemoryEntry {
         this.metadata = metadata;
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
+    }
+
+    public String getProjectRef() {
+        return projectRef;
+    }
+
+    public void setProjectRef(String projectRef) {
+        this.projectRef = projectRef;
+    }
+
+    public String getSessionRef() {
+        return sessionRef;
+    }
+
+    public void setSessionRef(String sessionRef) {
+        this.sessionRef = sessionRef;
+    }
+
+    public String getTaskRef() {
+        return taskRef;
+    }
+
+    public void setTaskRef(String taskRef) {
+        this.taskRef = taskRef;
+    }
+
+    public MemoryValidity getValidity() {
+        return validity != null ? validity : MemoryValidity.VALID;
+    }
+
+    public void setValidity(MemoryValidity validity) {
+        this.validity = validity != null ? validity : MemoryValidity.VALID;
+        this.updatedAt = System.currentTimeMillis();
+    }
+
+    public MemoryInformationStatus getInformationStatus() {
+        if (informationStatus == null) {
+            return deriveInformationStatus();
+        }
+        return informationStatus;
+    }
+
+    public void setInformationStatus(MemoryInformationStatus informationStatus) {
+        this.informationStatus = informationStatus;
+    }
+
+    /**
+     * Derives the epistemic status when not explicitly stored: inferred
+     * sources become INFERRED, dream/unverified provenance becomes
+     * ASSUMPTION, expired temporary metadata becomes TEMPORARY, otherwise
+     * CONFIRMED.
+     */
+    public MemoryInformationStatus deriveInformationStatus() {
+        if (source != null && (source == MemorySource.INFERENCE || source == MemorySource.TRAINING)) {
+            return MemoryInformationStatus.INFERRED;
+        }
+        String provenance = getMetadata().get("provenance");
+        if (provenance != null && provenance.contains("UNVERIFIED")) {
+            return MemoryInformationStatus.ASSUMPTION;
+        }
+        if (getMetadata().containsKey("temporary") && "true".equalsIgnoreCase(getMetadata().get("temporary"))) {
+            return MemoryInformationStatus.TEMPORARY;
+        }
+        if (validity == MemoryValidity.OUTDATED || validity == MemoryValidity.SUPERSEDED) {
+            return MemoryInformationStatus.HISTORICAL;
+        }
+        return MemoryInformationStatus.CONFIRMED;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public long getLastVerifiedAt() {
+        return lastVerifiedAt;
+    }
+
+    public void setLastVerifiedAt(long lastVerifiedAt) {
+        this.lastVerifiedAt = lastVerifiedAt;
+    }
+
+    /** Freshness in milliseconds: time since last verification (or update). */
+    public long getFreshnessMs() {
+        long anchor = lastVerifiedAt > 0 ? lastVerifiedAt : updatedAt;
+        return Math.max(0, System.currentTimeMillis() - anchor);
+    }
+
+    public List<MemoryRelationship> getRelationships() {
+        if (relationships == null) {
+            relationships = new ArrayList<>();
+        }
+        return relationships;
+    }
+
+    public void setRelationships(List<MemoryRelationship> relationships) {
+        this.relationships = relationships != null ? relationships : new ArrayList<>();
+    }
+
+    public List<String> getProvenanceChain() {
+        if (provenanceChain == null) {
+            provenanceChain = new ArrayList<>();
+        }
+        return provenanceChain;
+    }
+
+    public void setProvenanceChain(List<String> provenanceChain) {
+        this.provenanceChain = provenanceChain != null ? provenanceChain : new ArrayList<>();
+    }
+
     public JSONObject toJsonObject() {
         JSONObject json = new JSONObject();
         json.put("id", id);
@@ -157,6 +304,30 @@ public class MemoryEntry {
         }
         if (metadata != null && !metadata.isEmpty()) {
             json.put("metadata", new JSONObject(metadata));
+        }
+        // Unified model extensions
+        if (userId != null) json.put("userId", userId);
+        if (applicationId != null) json.put("applicationId", applicationId);
+        if (projectRef != null) json.put("projectRef", projectRef);
+        if (sessionRef != null) json.put("sessionRef", sessionRef);
+        if (taskRef != null) json.put("taskRef", taskRef);
+        json.put("validity", getValidity().name());
+        json.put("informationStatus", getInformationStatus().name());
+        json.put("version", version);
+        json.put("lastVerifiedAt", lastVerifiedAt);
+        if (!getRelationships().isEmpty()) {
+            JSONArray relArr = new JSONArray();
+            for (MemoryRelationship rel : getRelationships()) {
+                relArr.put(rel.toJsonObject());
+            }
+            json.put("relationships", relArr);
+        }
+        if (!getProvenanceChain().isEmpty()) {
+            JSONArray provArr = new JSONArray();
+            for (String p : getProvenanceChain()) {
+                provArr.put(p);
+            }
+            json.put("provenanceChain", provArr);
         }
         return json;
     }
@@ -190,6 +361,34 @@ public class MemoryEntry {
                 metaMap.put(key, metaObj.getString(key));
             }
             entry.setMetadata(metaMap);
+        }
+        if (json.has("userId")) entry.setUserId(json.optString("userId", null));
+        if (json.has("applicationId")) entry.setApplicationId(json.optString("applicationId", null));
+        if (json.has("projectRef")) entry.setProjectRef(json.optString("projectRef", null));
+        if (json.has("sessionRef")) entry.setSessionRef(json.optString("sessionRef", null));
+        if (json.has("taskRef")) entry.setTaskRef(json.optString("taskRef", null));
+        if (json.has("validity")) entry.setValidity(MemoryValidity.fromString(json.getString("validity")));
+        if (json.has("informationStatus")) {
+            entry.setInformationStatus(MemoryInformationStatus.fromString(json.getString("informationStatus")));
+        }
+        if (json.has("version")) entry.setVersion(json.getInt("version"));
+        if (json.has("lastVerifiedAt")) entry.setLastVerifiedAt(json.getLong("lastVerifiedAt"));
+        if (json.has("relationships")) {
+            List<MemoryRelationship> rels = new ArrayList<>();
+            JSONArray relArr = json.getJSONArray("relationships");
+            for (int i = 0; i < relArr.length(); i++) {
+                MemoryRelationship rel = MemoryRelationship.fromJsonObject(relArr.optJSONObject(i));
+                if (rel != null) rels.add(rel);
+            }
+            entry.setRelationships(rels);
+        }
+        if (json.has("provenanceChain")) {
+            List<String> chain = new ArrayList<>();
+            JSONArray provArr = json.getJSONArray("provenanceChain");
+            for (int i = 0; i < provArr.length(); i++) {
+                chain.add(provArr.getString(i));
+            }
+            entry.setProvenanceChain(chain);
         }
         return entry;
     }

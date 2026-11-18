@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public class TeipError {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String code;
     private String message;
     private String requestId;

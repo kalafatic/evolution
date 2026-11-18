@@ -376,6 +376,10 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetForgeSessions();
             } else if (Method.POST.equals(method) && "/forge/session".equals(uri)) {
                 return handleCreateForgeSession(session);
+            } else if (Method.GET.equals(method) && "/api/contextual/actions".equals(uri)) {
+                return handleContextualActions(session);
+            } else if (Method.POST.equals(method) && "/api/contextual/execute".equals(uri)) {
+                return handleContextualExecute(session);
             } else if (Method.POST.equals(method) && "/forge/llm/test".equals(uri)) {
                 return handleTestLlmModel(session);
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/session/") && uri.endsWith("/generate-architecture")) {
@@ -410,6 +414,9 @@ public class EvolutionServer extends NanoHTTPD {
                         if (subAction.startsWith("/uistate/")) return handleUpdateUiState(id, parts[2], session);
                         if (subAction.equals("/forging/start")) return handleStartForging(id);
                         if (subAction.equals("/forging/finish") || subAction.equals("/finish")) return handleForgeFinish(session, id);
+                        if (subAction.equals("/forging/pause") || subAction.equals("/pause")) return handleForgePause(id);
+                        if (subAction.equals("/forging/resume") || subAction.equals("/resume")) return handleForgeResume(id);
+                        if (subAction.equals("/forging/abort") || subAction.equals("/abort")) return handleForgeAbort(id);
                         if (subAction.equals("/demo")) return handleRunForgeDemo(id);
                         if (subAction.equals("/generate-architecture")) return handleGenerateArchitecture(id, session);
                         if (subAction.equals("/open-folder")) return handleOpenFolder(id);
@@ -926,7 +933,7 @@ public class EvolutionServer extends NanoHTTPD {
                 ));
             }
 
-            selfEvoService.startForging(sessionId, new File(".").toPath(), dataSources);
+            selfEvoService.startForging(sessionId, resolveForgeProjectPath(), dataSources);
 
             if (bus != null) {
                 new Thread(() -> {
@@ -2267,12 +2274,13 @@ public class EvolutionServer extends NanoHTTPD {
     private Response handleGetForgeSessions() {
         JSONArray array = new JSONArray();
         for (eu.kalafatic.evolution.model.orchestration.ForgeSession s : ForgeSessionManager.getInstance().getSessions()) {
+            if (s == null || s.getSessionId() == null) continue;
             JSONObject uiState = ForgeSessionManager.getInstance().getUiState(s.getSessionId());
             array.put(new JSONObject()
                 .put("id", s.getSessionId())
                 .put("name", s.getName())
                 .put("modelType", s.getSelectedModelType())
-                .put("status", s.getStatus().getName())
+                .put("status", s.getStatus() != null ? s.getStatus().getName() : "IDLE")
                 .put("lastModified", s.getLastModified())
                 .put("uiState", uiState));
         }
@@ -2308,6 +2316,23 @@ public class EvolutionServer extends NanoHTTPD {
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("id", s.getSessionId()).toString());
     }
 
+    /**
+     * Resolves the project root used for forge run folders. Prefers the
+     * authoritative codebase path (where model artifacts are mirrored) and only
+     * falls back to the process working directory when it is unavailable.
+     */
+    private java.nio.file.Path resolveForgeProjectPath() {
+        try {
+            String codebase = ProjectModelManager.getCodebasePath();
+            if (codebase != null && !codebase.trim().isEmpty()) {
+                return java.nio.file.Paths.get(codebase);
+            }
+        } catch (Exception e) {
+            System.err.println("[FORGE] Could not resolve codebase path for forging: " + e.getMessage());
+        }
+        return new File(".").toPath();
+    }
+
     private Response handleForgeFinish(IHTTPSession session, String sessionIdOverride) {
         try {
             String sessionId = sessionIdOverride;
@@ -2333,6 +2358,121 @@ public class EvolutionServer extends NanoHTTPD {
             res.put("status", "FINISHING");
             res.put("message", "Gracefully finishing current epoch and exporting all model files.");
             res.put("sessionId", sessionId != null ? sessionId : "active");
+            res.put("requested", requested);
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            JSONObject err = new JSONObject();
+            err.put("error", e.getMessage());
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", err.toString());
+        }
+    }
+
+    private Response handleContextualActions(IHTTPSession session) {
+        try {
+            Map<String, String> parms = session.getParms();
+            String type = parms != null ? parms.get("type") : null;
+            String id = parms != null ? parms.get("id") : null;
+            eu.kalafatic.evolution.controller.contextual.ContextualSelection selection =
+                    eu.kalafatic.evolution.controller.contextual.ContextualSelection
+                            .builder("EVO", "WEB", type == null ? "" : type)
+                            .object(id, parms != null ? parms.get("label") : null)
+                            .build();
+            eu.kalafatic.evolution.controller.contextual.ContextualActionRegistry registry =
+                    eu.kalafatic.evolution.controller.contextual.EvoContextualRegistry
+                            .getInstance();
+            JSONArray actions = new JSONArray();
+            for (eu.kalafatic.evolution.controller.contextual.ContextualAction action
+                    : registry.resolve(selection)) {
+                JSONObject entry = new JSONObject();
+                entry.put("actionId", action.actionId());
+                entry.put("label", action.descriptor().label());
+                entry.put("description", action.descriptor().description());
+                entry.put("group", action.descriptor().group());
+                entry.put("enabled", action.enabled());
+                entry.put("disabledReason", action.disabledReason());
+                entry.put("confirmation",
+                        action.descriptor().confirmation().name().toLowerCase());
+                entry.put("dangerous", action.descriptor().dangerous());
+                actions.put(entry);
+            }
+            JSONObject body = new JSONObject();
+            body.put("contractVersion",
+                    eu.kalafatic.evolution.controller.contextual.ContextualActionIds
+                            .CONTRACT_VERSION);
+            body.put("actions", actions);
+            return newFixedLengthResponse(Response.Status.OK, "application/json",
+                    body.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"ok\": false, \"error\": \"INTERNAL\", \"message\": \"" + e.getMessage()
+                            + "\"}");
+        }
+    }
+
+    private Response handleContextualExecute(IHTTPSession session) {
+        try {
+            Map<String, String> files = new HashMap<>();
+            session.parseBody(files);
+            String body = files.get("postData");
+            JSONObject request = new JSONObject(body != null ? body : "{}");
+            String actionId = request.optString("actionId", "");
+            String objectType = request.optString("objectType", "");
+            String objectId = request.optString("objectId", "");
+            String objectLabel = request.optString("objectLabel", "");
+
+            eu.kalafatic.evolution.controller.contextual.ContextualSelection selection =
+                    eu.kalafatic.evolution.controller.contextual.ContextualSelection
+                            .builder("EVO", "WEB", objectType)
+                            .object(objectId, objectLabel).build();
+            eu.kalafatic.evolution.controller.contextual.ContextualActionRegistry registry =
+                    eu.kalafatic.evolution.controller.contextual.EvoContextualRegistry
+                            .getInstance();
+            eu.kalafatic.evolution.controller.contextual.ContextualExecutionResult result =
+                    registry.execute(actionId, selection);
+            JSONObject response = new JSONObject();
+            response.put("ok", result.ok());
+            response.put("actionId", result.actionId());
+            response.put("message", result.message());
+            response.put("error", result.errorCode());
+            return newFixedLengthResponse(Response.Status.OK, "application/json",
+                    response.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"ok\": false, \"error\": \"INTERNAL\", \"message\": \"" + e.getMessage()
+                            + "\"}");
+        }
+    }
+
+    private Response handleForgePause(String sessionId) {
+        try {
+            boolean requested = ForgeSessionManager.getInstance().requestPause(sessionId);
+            JSONObject res = new JSONObject();
+            res.put("status", "PAUSING");
+            res.put("message", "Pause requested. The trainer finishes the current batch and saves a resumption checkpoint.");
+            res.put("sessionId", sessionId);
+            res.put("requested", requested);
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            JSONObject err = new JSONObject();
+            err.put("error", e.getMessage());
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", err.toString());
+        }
+    }
+
+    private Response handleForgeResume(String sessionId) {
+        // Resume = start forging again for the same session. The orchestrator
+        // discovers the fingerprint-matching checkpoint in the stable per-session
+        // run folder and continues from the recorded epoch/step.
+        return handleStartForging(sessionId);
+    }
+
+    private Response handleForgeAbort(String sessionId) {
+        try {
+            boolean requested = ForgeSessionManager.getInstance().requestAbort(sessionId);
+            JSONObject res = new JSONObject();
+            res.put("status", "ABORTING");
+            res.put("message", "Abort requested. Training terminates immediately; no model export is performed.");
+            res.put("sessionId", sessionId);
             res.put("requested", requested);
             return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
         } catch (Exception e) {

@@ -53,6 +53,14 @@ public class ProjectModelManager {
 
     private static final ProjectModelManager INSTANCE = new ProjectModelManager();
 
+    /**
+     * Artifact-path resolution seam for "evo native" model filtering. The default
+     * resolves against the production model directories; tests may override it
+     * with a hermetic resolver and restore the default via resetArtifactPathResolver().
+     */
+    private static volatile java.util.function.Function<String, File> artifactPathResolver =
+            OllamaProvider::resolveEvoArtifactPath;
+
     private final ResourceSet resourceSet;
     private final EvolutionRegistry evolutionRegistry = new EvolutionRegistry();
     private SourceDiscoveryResult cachedDiscoveryResult;
@@ -67,6 +75,14 @@ public class ProjectModelManager {
 
     public static ProjectModelManager getInstance() {
         return INSTANCE;
+    }
+
+    public static void setArtifactPathResolver(java.util.function.Function<String, File> resolver) {
+        artifactPathResolver = resolver;
+    }
+
+    public static void resetArtifactPathResolver() {
+        artifactPathResolver = OllamaProvider::resolveEvoArtifactPath;
     }
 
     public ResourceSet getResourceSet() {
@@ -470,7 +486,7 @@ public class ProjectModelManager {
                         filtered.add(model);
                     }
                 } else if ((lower.contains("evo") || lower.contains("forging")) && !lower.endsWith(".gguf")) {
-                    File resolved = OllamaProvider.resolveEvoArtifactPath(model);
+                    File resolved = artifactPathResolver != null ? artifactPathResolver.apply(model) : null;
                     if (resolved != null && resolved.isFile() && resolved.getName().toLowerCase().endsWith(".evo")) {
                         String evoName = resolved.getName();
                         if (!filtered.contains(evoName)) {

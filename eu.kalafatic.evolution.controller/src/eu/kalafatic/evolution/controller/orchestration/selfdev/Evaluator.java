@@ -258,13 +258,16 @@ public class Evaluator implements ICapability, IEvaluationContract {
 
                 if (passRate < 1.0) {
                     if (context != null) context.log("[EVALUATOR] Tests failed despite build success.");
-                    result.setDecision(SelfDevDecision.CONTINUE);
+                    // WP8 (D-51): test failure is TERMINAL unless an explicit
+                    // policy permits continuation.
+                    result.setDecision(resolveFailureDecision());
                     result.getErrors().add("Tests failed (Pass rate: " + passRate + ")");
                 } else {
                     result.setDecision(SelfDevDecision.CONTINUE);
                 }
             } else {
-                result.setDecision(SelfDevDecision.CONTINUE);
+                // WP8 (D-51): build failure is TERMINAL by default.
+                result.setDecision(resolveFailureDecision());
                 result.getErrors().add("Build failed.");
             }
 
@@ -284,6 +287,15 @@ public class Evaluator implements ICapability, IEvaluationContract {
         eval.result = result;
         eval.snapshot = snapshot;
         return eval;
+    }
+
+    /**
+     * WP8 (D-51): build/test failure decision. Terminal STOP by default;
+     * continuation requires the explicit property evo.iteration.allowContinueOnFailure=true.
+     */
+    private SelfDevDecision resolveFailureDecision() {
+        boolean allowContinue = Boolean.getBoolean("evo.iteration.allowContinueOnFailure");
+        return allowContinue ? SelfDevDecision.CONTINUE : SelfDevDecision.STOP;
     }
 
     private void emitSignal(EvaluationResult result, StateSnapshot snapshot) {

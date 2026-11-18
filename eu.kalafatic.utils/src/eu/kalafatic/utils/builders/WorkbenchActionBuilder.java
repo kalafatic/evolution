@@ -1622,6 +1622,8 @@ public class WorkbenchActionBuilder extends ActionBarAdvisor {
 					return "Check for Updates";
 				} else if ("org.eclipse.equinox.p2.ui.sdk.install".equals(commandId) || "eu.kalafatic.utils.p2.install".equals(commandId)) {
 					return "Install New Software...";
+				} else if ("org.eclipse.equinox.p2.ui.sdk.installationDetails".equals(commandId)) {
+					return "Installation Details...";
 				}
 				return super.getText();
 			}

@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Supervisor
 Bundle-SymbolicName: eu.kalafatic.evolution.supervisor
-Bundle-Version: 2.6.5.qualifier
+Bundle-Version: 2.6.11.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: eu.kalafatic.evolution.supervisor
-Require-Bundle: eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.5",
+Require-Bundle: eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.11",
  org.eclipse.swt;resolution:=optional,
  org.eclipse.equinox.app;resolution:=optional,
  org.eclipse.core.runtime;resolution:=optional,

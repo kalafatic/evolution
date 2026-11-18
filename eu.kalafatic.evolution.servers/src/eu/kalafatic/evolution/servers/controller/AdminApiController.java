@@ -17,6 +17,11 @@ import eu.kalafatic.evolution.servers.model.*;
 import eu.kalafatic.evolution.servers.repository.*;
 import eu.kalafatic.evolution.servers.security.BCryptUtils;
 import eu.kalafatic.evolution.servers.service.AuthorizationService;
+import eu.kalafatic.evolution.servers.service.CognitiveScopes;
+import eu.kalafatic.evolution.servers.service.IdentityService;
+import eu.kalafatic.evolution.servers.validation.ValidationCategory;
+import eu.kalafatic.evolution.servers.validation.ValidationMode;
+import eu.kalafatic.evolution.servers.validation.ValidationPolicyService;
 
 public class AdminApiController {
 
@@ -28,6 +33,8 @@ public class AdminApiController {
     private final ResourceAccessRepository resourceAccessRepository;
     private final AuditLogRepository auditLogRepository;
     private final SessionRepository sessionRepository;
+    private final IdentityService identityService;
+    private final ValidationPolicyService validationPolicyService;
 
     public AdminApiController(DatabaseManager dbManager) {
         this.authService = AuthorizationService.getInstance(dbManager);
@@ -38,6 +45,8 @@ public class AdminApiController {
         this.resourceAccessRepository = authService.getResourceAccessRepository();
         this.auditLogRepository = authService.getAuditLogRepository();
         this.sessionRepository = new SessionRepository(dbManager);
+        this.identityService = IdentityService.getInstance(dbManager);
+        this.validationPolicyService = ValidationPolicyService.getInstance(dbManager);
     }
 
     public Response handle(IHTTPSession session) {
@@ -97,6 +106,38 @@ public class AdminApiController {
                 return deletePolicy(policyId, actorUser);
             } else if (uri.equals("/api/admin/audit-logs") && Method.GET.equals(method)) {
                 return getAuditLogs();
+            } else if (uri.equals("/api/admin/applications") && Method.GET.equals(method)) {
+                return getApplications();
+            } else if (uri.equals("/api/admin/applications") && Method.POST.equals(method)) {
+                return createApplication(bodyJson, actorUser);
+            } else if (uri.endsWith("/tokens") && Method.GET.equals(method) && uri.startsWith("/api/admin/applications/")) {
+                String appIdentifier = uri.substring("/api/admin/applications/".length(), uri.length() - "/tokens".length());
+                return getApplicationTokens(appIdentifier);
+            } else if (uri.endsWith("/tokens") && Method.POST.equals(method) && uri.startsWith("/api/admin/applications/")) {
+                String appIdentifier = uri.substring("/api/admin/applications/".length(), uri.length() - "/tokens".length());
+                return issueApplicationToken(appIdentifier, bodyJson, actorUser);
+            } else if (uri.startsWith("/api/admin/applications/") && Method.PUT.equals(method)) {
+                Long appId = parseLongSuffix(uri, "/api/admin/applications/");
+                return updateApplication(appId, bodyJson, actorUser);
+            } else if (uri.startsWith("/api/admin/applications/") && Method.DELETE.equals(method)) {
+                Long appId = parseLongSuffix(uri, "/api/admin/applications/");
+                return deleteApplication(appId, actorUser);
+            } else if (uri.startsWith("/api/admin/tokens/") && Method.DELETE.equals(method)) {
+                Long tokenId = parseLongSuffix(uri, "/api/admin/tokens/");
+                return revokeApplicationToken(tokenId, actorUser);
+            } else if (uri.equals("/api/admin/validation") && Method.GET.equals(method)) {
+                return getValidationOverview();
+            } else if (uri.equals("/api/admin/validation/global") && Method.POST.equals(method)) {
+                return setValidationGlobal(bodyJson, actorUser);
+            } else if (uri.startsWith("/api/admin/validation/rules/") && Method.POST.equals(method)) {
+                String ruleId = uri.substring("/api/admin/validation/rules/".length());
+                return setValidationRule(ruleId, bodyJson, actorUser);
+            } else if (uri.equals("/api/admin/validation/history") && Method.GET.equals(method)) {
+                return getValidationHistory();
+            } else if (uri.equals("/api/admin/validation/reset") && Method.POST.equals(method)) {
+                return resetValidation(actorUser);
+            } else if (uri.equals("/api/admin/validation/check-all") && Method.POST.equals(method)) {
+                return runValidationChecks();
             }
 
             return jsonResponse(Response.Status.NOT_FOUND, new JSONObject().put("error", "Admin Endpoint Not Found"));
@@ -327,5 +368,193 @@ public class AdminApiController {
 
     private Response jsonResponse(Response.Status status, JSONObject json) {
         return NanoHTTPD.newFixedLengthResponse(status, "application/json", json.toString());
+    }
+
+    // ------------------------------------------------------------------
+    // Cognitive Services: Applications & Access
+    // ------------------------------------------------------------------
+
+    private Long parseLongSuffix(String uri, String prefix) {
+        return Long.parseLong(uri.substring(prefix.length()));
+    }
+
+    private Response getApplications() {
+        JSONArray array = new JSONArray();
+        for (ApplicationIdentity app : identityService.listApplications()) {
+            JSONObject obj = new JSONObject();
+            obj.put("id", app.getId());
+            obj.put("applicationId", app.getApplicationId());
+            obj.put("name", app.getName());
+            obj.put("kind", app.getKind() != null ? app.getKind() : "");
+            obj.put("ownerUserId", app.getOwnerUserId() != null ? app.getOwnerUserId() : JSONObject.NULL);
+            obj.put("enabled", app.isEnabled());
+            obj.put("createdAt", app.getCreatedAt() != null ? app.getCreatedAt() : "");
+            obj.put("updatedAt", app.getUpdatedAt() != null ? app.getUpdatedAt() : "");
+            obj.put("description", app.getDescription() != null ? app.getDescription() : "");
+            obj.put("tokens", identityService.listAccesses(app.getApplicationId()).size());
+            array.put(obj);
+        }
+        return jsonResponse(Response.Status.OK, new JSONObject().put("applications", array));
+    }
+
+    private Response createApplication(JSONObject json, String actor) {
+        try {
+            ApplicationIdentity app = identityService.registerApplication(
+                    json.getString("applicationId"),
+                    json.getString("name"),
+                    json.optString("kind", "EXTERNAL_MCP"),
+                    json.has("ownerUserId") && !json.isNull("ownerUserId") ? json.getLong("ownerUserId") : null,
+                    json.optString("description", ""));
+            authService.logAudit(null, actor, "APPLICATION_REGISTERED", "APPLICATION", app.getApplicationId(), "SUCCESS",
+                    "Registered application " + app.getApplicationId() + " by " + actor);
+            return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Application registered").put("id", app.getId()));
+        } catch (IllegalArgumentException e) {
+            return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", e.getMessage()));
+        }
+    }
+
+    private Response updateApplication(Long appId, JSONObject json, String actor) {
+        try {
+            identityService.updateApplication(appId,
+                    json.has("name") ? json.getString("name") : null,
+                    json.has("kind") ? json.getString("kind") : null,
+                    json.has("ownerUserId") && !json.isNull("ownerUserId") ? json.getLong("ownerUserId") : null,
+                    json.optBoolean("enabled", true),
+                    json.has("description") ? json.getString("description") : null);
+            authService.logAudit(null, actor, "APPLICATION_UPDATED", "APPLICATION", String.valueOf(appId), "SUCCESS", "Updated application by " + actor);
+            return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Application updated"));
+        } catch (IllegalArgumentException e) {
+            return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", e.getMessage()));
+        }
+    }
+
+    private Response deleteApplication(Long appId, String actor) {
+        try {
+            identityService.deleteApplication(appId);
+            authService.logAudit(null, actor, "APPLICATION_DELETED", "APPLICATION", String.valueOf(appId), "SUCCESS", "Deleted application by " + actor);
+            return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Application deleted"));
+        } catch (IllegalArgumentException e) {
+            return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", e.getMessage()));
+        }
+    }
+
+    private Response getApplicationTokens(String appIdentifier) {
+        JSONArray array = new JSONArray();
+        for (ApplicationAccess access : identityService.listAccesses(appIdentifier)) {
+            JSONObject obj = new JSONObject();
+            obj.put("id", access.getId());
+            obj.put("userId", access.getUserId());
+            obj.put("scopes", new JSONArray(access.getScopesJson()));
+            obj.put("revoked", access.isRevoked());
+            obj.put("issuedAt", access.getIssuedAt() != null ? access.getIssuedAt() : "");
+            obj.put("expiresAt", access.getExpiresAt() != null ? access.getExpiresAt() : "");
+            obj.put("lastUsedAt", access.getLastUsedAt() != null ? access.getLastUsedAt() : "");
+            obj.put("description", access.getDescription() != null ? access.getDescription() : "");
+            array.put(obj);
+        }
+        return jsonResponse(Response.Status.OK, new JSONObject().put("tokens", array));
+    }
+
+    private Response issueApplicationToken(String appIdentifier, JSONObject json, String actor) {
+        try {
+            List<String> scopes = new ArrayList<>();
+            if (json.has("scopes")) {
+                JSONArray arr = json.getJSONArray("scopes");
+                for (int i = 0; i < arr.length(); i++) {
+                    scopes.add(arr.getString(i));
+                }
+            } else {
+                scopes.addAll(CognitiveScopes.DEFAULT_FAMILY_SCOPES);
+            }
+            if (scopes.isEmpty()) {
+                return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", "At least one scope is required"));
+            }
+            Long userId = json.has("userId") && !json.isNull("userId") ? json.getLong("userId") : null;
+            if (userId == null) {
+                return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", "userId is required"));
+            }
+            String token = identityService.issueToken(appIdentifier, userId, scopes,
+                    json.has("expiresAt") && !json.isNull("expiresAt") ? json.getString("expiresAt") : null,
+                    json.optString("description", ""));
+            authService.logAudit(null, actor, "APPLICATION_TOKEN_ISSUED", "APPLICATION", appIdentifier, "SUCCESS",
+                    "Token issued for application " + appIdentifier + " to user " + userId + " by " + actor);
+            return jsonResponse(Response.Status.OK, new JSONObject()
+                    .put("message", "Token issued. Shown only once.")
+                    .put("token", token));
+        } catch (IllegalArgumentException e) {
+            return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", e.getMessage()));
+        }
+    }
+
+    private Response revokeApplicationToken(Long tokenId, String actor) {
+        identityService.revokeToken(tokenId, actor);
+        authService.logAudit(null, actor, "APPLICATION_TOKEN_REVOKED", "APPLICATION", String.valueOf(tokenId), "SUCCESS",
+                "Token revoked by " + actor);
+        return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Token revoked"));
+    }
+
+    // ------------------------------------------------------------------
+    // Cognitive Services: Validation Administration
+    // ------------------------------------------------------------------
+
+    private Response getValidationOverview() {
+        JSONObject result = new JSONObject();
+        result.put("globalStrict", validationPolicyService.isGlobalStrict());
+        JSONObject categories = new JSONObject();
+        for (Map.Entry<String, List<Map<String, Object>>> entry : validationPolicyService.getCategoryOverview().entrySet()) {
+            categories.put(entry.getKey(), new JSONArray(entry.getValue()));
+        }
+        result.put("categories", categories);
+        result.put("availableScopes", new JSONArray(CognitiveScopes.ALL_SCOPES));
+        return jsonResponse(Response.Status.OK, result);
+    }
+
+    private Response setValidationGlobal(JSONObject json, String actor) {
+        boolean strict = json.optBoolean("strict", false);
+        validationPolicyService.setGlobalStrict(strict, actor);
+        return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Global strict validation set to " + strict));
+    }
+
+    private Response setValidationRule(String ruleId, JSONObject json, String actor) {
+        try {
+            if (json.has("mode")) {
+                validationPolicyService.setRuleMode(ruleId, ValidationMode.fromString(json.getString("mode")), actor,
+                        json.optString("reason", "Administrative change"));
+            }
+            if (json.has("enabled")) {
+                validationPolicyService.setRuleEnabled(ruleId, json.getBoolean("enabled"), actor);
+            }
+            return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Validation rule updated"));
+        } catch (IllegalArgumentException e) {
+            return jsonResponse(Response.Status.BAD_REQUEST, new JSONObject().put("error", e.getMessage()));
+        }
+    }
+
+    private Response getValidationHistory() {
+        return jsonResponse(Response.Status.OK, new JSONObject().put("history", new JSONArray(validationPolicyService.getHistory(200))));
+    }
+
+    private Response resetValidation(String actor) {
+        validationPolicyService.resetDefaults(actor);
+        return jsonResponse(Response.Status.OK, new JSONObject().put("message", "Validation configuration reset to defaults"));
+    }
+
+    private Response runValidationChecks() {
+        Map<String, eu.kalafatic.evolution.servers.validation.ValidationResult> results = validationPolicyService.runAllChecks();
+        JSONArray array = new JSONArray();
+        for (Map.Entry<String, eu.kalafatic.evolution.servers.validation.ValidationResult> entry : results.entrySet()) {
+            JSONObject obj = new JSONObject();
+            obj.put("ruleId", entry.getKey());
+            obj.put("passed", entry.getValue().isPassed());
+            obj.put("message", entry.getValue().getMessage() != null ? entry.getValue().getMessage() : "");
+            obj.put("severity", entry.getValue().getSeverity());
+            obj.put("blocking", entry.getValue().isBlocking());
+            array.put(obj);
+        }
+        JSONObject result = new JSONObject();
+        result.put("results", array);
+        result.put("checkedRules", array.length());
+        result.put("totalRules", validationPolicyService.getRules().size());
+        return jsonResponse(Response.Status.OK, result);
     }
 }

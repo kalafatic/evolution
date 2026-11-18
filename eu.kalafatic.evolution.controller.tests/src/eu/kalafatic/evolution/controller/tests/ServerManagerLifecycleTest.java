@@ -73,6 +73,35 @@ public class ServerManagerLifecycleTest {
         assertTrue("Must include develop web application", hasDevelop);
         assertTrue("Must include mcp web application", hasMcp);
         assertTrue("Must include forge web application", hasForge);
+
+        // One default tab per EVO server port (platform +20000 standard: 28080 primary,
+        // 28180 portal, 28280 MCP, 28380 develop, 28480 supervisor REST, 28680 auxiliary,
+        // 28780 ENR; 28580 is the TCP control channel and intentionally has no tab).
+        assertTrue("Must include the primary EVO Home tab",
+                webApps.stream().anyMatch(a -> a.getId().equals("primary_home")
+                        && a.getServerPort() == PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort()));
+        assertTrue("Must include the Portal Server tab on the +100 offset port",
+                webApps.stream().anyMatch(a -> a.getId().equals("portal")
+                        && a.getServerPort() == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()));
+        assertTrue("Must include the MCP Documentation tab",
+                webApps.stream().anyMatch(a -> a.getId().equals("mcp_docs")
+                        && a.getServerPort() == PortRegistry.EVO_MCP.getDefaultPort()));
+        assertTrue("Must include the Develop Endpoint tab",
+                webApps.stream().anyMatch(a -> a.getId().equals("develop_endpoint")
+                        && a.getServerPort() == PortRegistry.EVO_DEVELOP.getDefaultPort()));
+        assertTrue("Must include the Supervisor REST API tab",
+                webApps.stream().anyMatch(a -> a.getId().equals("supervisor_api")
+                        && a.getServerPort() == PortRegistry.EVO_SUPERVISOR_API
+                                .getDefaultPort()));
+        assertTrue("Must include the Auxiliary Service tab",
+                webApps.stream().anyMatch(a -> a.getId().equals("auxiliary")
+                        && a.getServerPort() == PortRegistry.EVO_AUXILIARY.getDefaultPort()));
+        assertTrue("Must include the ENR Neural Runtime tab",
+                webApps.stream().anyMatch(a -> a.getId().equals("enr_runtime")
+                        && a.getServerPort() == PortRegistry.EVO_ENR.getDefaultPort()));
+        assertFalse("The TCP control port must not have a browser tab",
+                webApps.stream().anyMatch(a -> a.getServerPort()
+                        == PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort()));
     }
 
     @Test

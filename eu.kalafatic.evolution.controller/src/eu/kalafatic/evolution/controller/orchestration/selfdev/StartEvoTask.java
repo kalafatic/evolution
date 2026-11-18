@@ -52,32 +52,28 @@ public class StartEvoTask extends AbstractSelfDevTask {
     private java.io.File findEvoRcpProductFallback(SelfDevContext context) {
         if (context == null) return null;
 
+        // WP4 (D-10): the authoritative artifact is resolved through the per-run
+        // manifest store. Filesystem first-match scans are forbidden.
+        try {
+            BuildArtifact recorded = context.getArtifactManifestStore().resolve(ArtifactType.EVO_RCP);
+            if (recorded != null) {
+                return recorded.getPath();
+            }
+        } catch (Exception e) {
+            System.err.println("[StartEvoTask] Manifest artifact resolution failed: " + e.getMessage());
+            return null;
+        }
+
+        // Pre-manifest compatibility: an already deployed runtime product of the
+        // current run may be used when it exists (never an arbitrary archive scan).
         java.io.File evoRuntimeDir = new java.io.File(context.getRuntimeDirectory(), "evo");
         if (evoRuntimeDir.exists() && evoRuntimeDir.isDirectory()) {
             java.io.File[] files = evoRuntimeDir.listFiles();
             if (files != null && files.length > 0) return evoRuntimeDir;
         }
 
-        String productId = "evolution";
-        if (context.getResourceManager() != null && context.getResourceManager().getProductDefinition() != null) {
-            productId = context.getResourceManager().getProductDefinition().getProductId().toLowerCase();
-        }
-
-        final String reqProductId = productId;
-
-        if (context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-            java.io.File[] archives = context.getExportDirectory().listFiles((dir, name) -> {
-                String lname = name.toLowerCase();
-                boolean isArchive = lname.endsWith(".zip") || lname.endsWith(".tar.gz") || lname.endsWith(".tgz");
-                boolean matchesProduct = lname.startsWith(reqProductId + "-") || lname.startsWith(reqProductId + "_") || lname.equals(reqProductId + ".zip") || lname.equals(reqProductId + ".tar.gz");
-                return isArchive && matchesProduct;
-            });
-            if (archives != null && archives.length > 0) return archives[0];
-        }
-
-        java.io.File repoTarget = new java.io.File(context.getProjectRoot(), "eu.kalafatic.evolution.repository/target");
-        if (repoTarget.exists() && repoTarget.isDirectory()) return repoTarget;
-
+        // Run-scoped isolated reactor output only; the canonical repository is never
+        // consulted for artifacts.
         java.io.File reactorTarget = new java.io.File(context.getPreparedReactorDirectory(), "eu.kalafatic.evolution.repository/target");
         if (reactorTarget.exists() && reactorTarget.isDirectory()) return reactorTarget;
 

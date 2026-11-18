@@ -84,6 +84,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.aichat.ChatGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.ChatMgmtGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.FeedbackGroup;
+import eu.kalafatic.evolution.view.editors.pages.aichat.ForgeStatusGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.InstructionsGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.SystemStatusGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
@@ -108,6 +109,7 @@ public class AiCommanderPage extends AEvoPage {
 	private InstructionsGroup instructionsGroup;
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
+	private ForgeStatusGroup forgeStatusGroup;
 	private FeedbackGroup feedbackGroup;
 	
 	private ConversationOutputController outputController;
@@ -212,6 +214,13 @@ public class AiCommanderPage extends AEvoPage {
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
 
+		// Forge training status + actions, fed by the authoritative
+		// ForgeSessionManager state (real backend telemetry only).
+		forgeStatusGroup = new ForgeStatusGroup(toolkit, content, editor, orchestrator,
+				() -> {
+					if (chatMgmtGroup != null) chatMgmtGroup.openForgeSettingsDialog();
+				});
+
 		// Main horizontal split sash
 		SashForm horizontalSash = new SashForm(content, SWT.HORIZONTAL | SWT.SMOOTH);
 		GridData horizontalSashGd = new GridData(GridData.FILL_BOTH);
@@ -261,6 +270,9 @@ public class AiCommanderPage extends AEvoPage {
 							double progress = session.getStatusManager().getProgress(sid);
 							String status = session.getStatusManager().getStatus(sid);
 							systemStatusGroup.updateProgress(status, (int) (progress * 100));
+						}
+						if (forgeStatusGroup != null) {
+							forgeStatusGroup.updateForgeStatus();
 						}
 						Display.getDefault().timerExec(500, this);
 					}

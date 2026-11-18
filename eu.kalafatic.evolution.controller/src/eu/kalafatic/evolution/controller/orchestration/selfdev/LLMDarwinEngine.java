@@ -66,7 +66,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 	// Centralized model capacity profiles
 	public enum Profile {
-		SMALL(128, 4, 4, 64, 4, 4000), DEFAULT(256, 6, 8, 128, 8, 8000), LARGE(384, 8, 8, 256, 10, 16000);
+		SMALL(128, 4, 4, 64, 4, 4000), DEFAULT(256, 6, 8, 128, 4, 8000), LARGE(384, 8, 8, 256, 10, 16000);
 
 		public final int embeddingSize;
 		public final int layers;
@@ -85,7 +85,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 	}
 
-	// Configurable bounds on corpus files and sizes to prevent OutOfMemory
+	// Configurable bounds on corpus files and sizes to prevent OutOfMemory.
+	// Defaults are the documented production limits; they are overridable only
+	// through the existing configuration architecture (the forge session
+	// uiState keys maxCorpusChars / maxCorpusFiles / maxTokensLimit /
+	// maxTrainingSamples).
 	private static final int MAX_CORPUS_CHARS = 10_000_000;
 	private static final int MAX_CORPUS_FILES = 100;
 	private static final int MAX_TOKENS_LIMIT = 100_000;
@@ -443,6 +447,17 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		JSONObject uiState = eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance()
 				.getUiState(context.getSessionId());
 
+		// Documented dataset limits, overridable through the existing forge
+		// session configuration (uiState), defaulting to the production limits.
+		int maxCorpusChars = uiState.optInt("maxCorpusChars", MAX_CORPUS_CHARS);
+		if (maxCorpusChars <= 0) maxCorpusChars = MAX_CORPUS_CHARS;
+		int maxCorpusFiles = uiState.optInt("maxCorpusFiles", MAX_CORPUS_FILES);
+		if (maxCorpusFiles <= 0) maxCorpusFiles = MAX_CORPUS_FILES;
+		int maxTokensLimit = uiState.optInt("maxTokensLimit", MAX_TOKENS_LIMIT);
+		if (maxTokensLimit <= 0) maxTokensLimit = MAX_TOKENS_LIMIT;
+		int maxTrainingSamples = uiState.optInt("maxTrainingSamples", MAX_TRAINING_SAMPLES);
+		if (maxTrainingSamples <= 0) maxTrainingSamples = MAX_TRAINING_SAMPLES;
+
 		// Obtain selected datasetItems from Forge configuration as authoritative source of truth
 		List<eu.kalafatic.evolution.forge.data.api.source.DatasetItem> datasetItems = new ArrayList<>();
 		if (uiState.has("datasets")) {
@@ -475,7 +490,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		if (!normSamples.isEmpty()) {
 			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : normSamples) {
-				appendBounded(corpusBuilder, sample.toFullText(), MAX_CORPUS_CHARS);
+				appendBounded(corpusBuilder, sample.toFullText(), maxCorpusChars);
 			}
 		}
 
@@ -485,9 +500,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
 				try (Stream<Path> walk = Files.walk(fallbackDocs.toPath())) {
 					List<Path> files = walk.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".md") || p.toString().endsWith(".txt"))
-							.sorted().limit(MAX_CORPUS_FILES).collect(Collectors.toList());
+							.sorted().limit(maxCorpusFiles).collect(Collectors.toList());
 					for (Path f : files) {
-						appendBounded(corpusBuilder, Files.readString(f), MAX_CORPUS_CHARS);
+						appendBounded(corpusBuilder, Files.readString(f), maxCorpusChars);
 					}
 				}
 			}
@@ -496,7 +511,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 						"This is a simple EVO LLM training document.\nEvolution genome data management is personal, economical, and political.\n"
 								+ "personal: the joy of frontier creation and personal relevance.\neconomical: building priceless user and developer know-how.\n"
 								+ "political: independence and local control from centralized AI authorities.\n",
-						MAX_CORPUS_CHARS);
+						maxCorpusChars);
 			}
 		}
 
@@ -505,8 +520,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		String cleanCorpus = cleaner.clean(corpus);
 		corpus = null; // release immediately
 
-		if (cleanCorpus.length() > MAX_CORPUS_CHARS) {
-			cleanCorpus = cleanCorpus.substring(0, MAX_CORPUS_CHARS);
+		if (cleanCorpus.length() > maxCorpusChars) {
+			cleanCorpus = cleanCorpus.substring(0, maxCorpusChars);
 		}
 		context.log("[FORGE] Training Source Dataset built successfully. Clean corpus size: " + cleanCorpus.length()
 				+ " chars.");
@@ -520,6 +535,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 		if (generations <= 1) {
 			generations = 5; // default to 5 generations
+		}
+		// The Forge Settings dialog writes an explicit generations value; honor it.
+		if (uiState.has("generations") && uiState.optInt("generations", -1) > 0) {
+			generations = uiState.optInt("generations");
+			context.log("[FORGE] Generations configured from forge settings: " + generations);
 		}
 
 		boolean forceSolution = false;
@@ -578,14 +598,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		int pMaxSeqLen = selectedPreset.getMaxSeqLen() > 0 ? selectedPreset.getMaxSeqLen() : 128;
 
 		// Deterministic epoch resolution:
-		// Default Profile.SMALL specifies 4 epochs. Do not silently inherit 64 from unconfigured uiState.
+		// Default profiles specify their own epochs (SMALL=4, DEFAULT=4, LARGE=10).
+		// Do not silently inherit 64 from unconfigured uiState.
 		int defaultProfileEpochs;
 		if (selectedPreset == ModelSizePreset.Size.SMALL) {
 			defaultProfileEpochs = Profile.SMALL.epochs; // 4
 		} else if (selectedPreset == ModelSizePreset.Size.NANO || selectedPreset == ModelSizePreset.Size.MICRO) {
 			defaultProfileEpochs = 2;
 		} else if (selectedPreset == ModelSizePreset.Size.TINY) {
-			defaultProfileEpochs = Profile.DEFAULT.epochs; // 8
+			defaultProfileEpochs = Profile.DEFAULT.epochs; // 4
 		} else if (selectedPreset == ModelSizePreset.Size.MEDIUM) {
 			defaultProfileEpochs = Profile.LARGE.epochs; // 10
 		} else {
@@ -636,7 +657,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			candidates.add(fastConfig);
 		} else {
 			int expansionValue = getExpansionValue();
-			int branchingLimit = (expansionValue > 5) ? 2 : 1;
+			int branchingLimit = uiState.optInt("candidatesPerGeneration", -1) >= 2 ? 2 : ((expansionValue > 5) ? 2 : 1);
 			candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pDff, pMaxSeqLen, pEpochs));
 			if (branchingLimit >= 2) {
 				candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers + 1, pHeads, pDff, pMaxSeqLen, pEpochs));
@@ -1050,7 +1071,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				candidates = new ArrayList<>();
 				int expansionValue = getExpansionValue();
 				boolean seriousReason = (overallWinner != null && overallWinner.failed);
-				int currentBranchLimit = (expansionValue > 5 || seriousReason) ? 2 : 1;
+				int currentBranchLimit = uiState.optInt("candidatesPerGeneration", -1) >= 2 ? 2
+						: ((expansionValue > 5 || seriousReason) ? 2 : 1);
 
 				if (currentBranchLimit == 1) {
 					// Elite configuration is mutated directly to explore the space since we only
@@ -1108,15 +1130,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		// CPU execution safeguards: prevent multi-day stalls on large Parquet files (e.g. 5,630 samples * 1,024 seqLen)
 		boolean hasGpu = eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent.getInstance().isGpuAvailable();
 		int finalSeqLen = hasGpu ? overallWinner.config.maxSeqLen : Math.min(512, overallWinner.config.maxSeqLen);
-		int maxRefineSamples = hasGpu ? MAX_TRAINING_SAMPLES : Math.min(800, MAX_TRAINING_SAMPLES);
+		int maxRefineSamples = hasGpu ? maxTrainingSamples : Math.min(800, maxTrainingSamples);
 
 		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> samples;
 		if (normSamples != null && !normSamples.isEmpty()) {
 			samples = finalDatasetBuilder.buildTrainingSamples(normSamples, finalTokenizer, finalSeqLen, maxRefineSamples);
 		} else {
 			List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
-			if (allTokens.size() > MAX_TOKENS_LIMIT) {
-				allTokens = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
+			if (allTokens.size() > maxTokensLimit) {
+				allTokens = new ArrayList<>(allTokens.subList(0, maxTokensLimit));
 			}
 			int finalStride = Math.max(1, finalSeqLen / 2);
 			List<DatasetBuilder.Sample> slidingSamples = finalDatasetBuilder.buildSlidingWindow(allTokens, finalSeqLen, finalStride);
@@ -1186,15 +1208,23 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
 		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
 		try {
+			// NOTE: the trainer only invokes onProgressMetrics (per optimizer
+			// step); the legacy onProgress callback is a bridge that is never
+			// fired by the training loop, so progress must be consumed here.
 			trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
 				@Override
-				public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {
-					int logInterval = Math.max(1, Math.max(1, totalSamples / 10));
-					if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-						double pct = (double) sampleIndex / totalSamples * 100.0;
+				public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
+
+				@Override
+				public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+						long processedTokens, long totalTokens, double tokensPerSec, double stepsPerSec,
+						double estimatedRemainingSeconds, double currentLoss) {
+					int logInterval = Math.max(1, Math.max(1, totalSteps / 10));
+					if (currentStep % logInterval == 0 || currentStep == totalSteps) {
+						double pct = totalSteps > 0 ? (double) currentStep / totalSteps * 100.0 : 0.0;
 						context.log(String.format(
-								"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-								epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+								"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f | %.1f tok/s",
+								epoch + 1, totalEpochs, currentStep, totalSteps, pct, currentLoss, tokensPerSec));
 					}
 				}
 
@@ -1606,7 +1636,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			trainer = new EvoLlmTrainer(model);
 			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
-			double trainLoss = 2.5;
+			double trainLoss = Double.NaN;
 			try {
 				trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
 					@Override
@@ -1633,8 +1663,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			} finally {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
 			}
-			trainLoss = trainer.getLossHistory().isEmpty() ? 2.5
-					: trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+			// Honest failure handling: no measured loss without actual training; the
+			// caller assigns the documented safe-penalty score on exception.
+			if (trainer.getLossHistory().isEmpty()) {
+				throw new IllegalStateException("Candidate training produced no loss history (no training executed)");
+			}
+			trainLoss = trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
 
 			List<Double> candLossHist = trainer.getLossHistory();
 			if (candLossHist != null && !candLossHist.isEmpty()) {
@@ -1645,20 +1679,25 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
 			}
 
-			// Reuse EvoLlmTrainer's optimized validation evaluation
-			double valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : trainLoss;
-
 			if (Double.isNaN(trainLoss) || Double.isInfinite(trainLoss)) {
-				trainLoss = 10.0;
+				throw new IllegalStateException("Non-finite training loss for candidate (no penalty fabrication)");
 			}
+
+			// Validation loss: only measured when a validation split exists; NaN otherwise.
+			double valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : Double.NaN;
 			if (Double.isNaN(valLoss) || Double.isInfinite(valLoss)) {
-				valLoss = 10.0;
+				if (!valSamples.isEmpty()) {
+					throw new IllegalStateException("Non-finite validation loss for candidate");
+				}
 			}
 
 			// Combine validation loss (75%) and training loss (25%) with size penalty to
-			// prevent overfitting and encourage generalizability
+			// prevent overfitting and encourage generalizability. When no validation
+			// split exists, fitness degrades honestly to the training loss (documented).
 			double sizePenalty = paramCount * 0.00000001;
-			double fitness = (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty;
+			double fitness = !Double.isNaN(valLoss)
+					? (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty
+					: trainLoss + sizePenalty;
 
 			// Snapshot candidate-trained weights safely to preserve candidate independence and survive evaluation
 			List<float[]> weightSnapshot = new ArrayList<>();

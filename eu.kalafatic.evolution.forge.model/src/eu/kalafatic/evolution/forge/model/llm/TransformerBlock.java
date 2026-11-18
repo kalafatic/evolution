@@ -21,20 +21,24 @@ public class TransformerBlock {
     }
     
     public Tensor forward(Tensor x) {
+        return forward(x, null);
+    }
+
+    public Tensor forward(Tensor x, float[] attentionMask) {
         // Pre-norm architecture (standard LLaMA)
         // 1. Attention with residual
         Tensor norm1 = attnNorm.forward(x);
-        Tensor attnOut = attention.forward(norm1);
+        Tensor attnOut = attention.forward(norm1, attentionMask);
         this.attnOutput = attnOut;
-        
+
         // Add & Norm
         Tensor afterAttn = x.add(attnOut);
-        
+
         // 2. FFN with residual
         Tensor norm2 = ffnNorm.forward(afterAttn);
         Tensor ffnOut = ffn.forward(norm2);
         this.ffnOutput = ffnOut;
-        
+
         // Add & Norm
         return afterAttn.add(ffnOut);
     }

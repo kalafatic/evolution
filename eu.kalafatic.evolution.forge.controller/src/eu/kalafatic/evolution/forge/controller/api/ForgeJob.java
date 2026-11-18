@@ -151,7 +151,7 @@ public class ForgeJob {
 
     public static class TrainingConfig {
         private double learningRate = 0.01;
-        private int epochs = 32;
+        private int epochs = 4;
         private int batchSize = 16;
         private int warmupSteps = 10;
         private String forgeMode = "NEW_MODEL";
@@ -162,6 +162,10 @@ public class ForgeJob {
         private double targetLossThreshold = 1.0;
         private boolean filterQuality = true;
         private boolean saveEpochCheckpoints = true;
+        // Dataset limits: -1 disables the cap (only for compatibility; the
+        // production defaults are the documented 5,000 samples / 100,000 tokens).
+        private int maxSamples = 5_000;
+        private int maxTokens = 100_000;
 
         public double getLearningRate() { return learningRate; }
         public void setLearningRate(double learningRate) { this.learningRate = learningRate; }
@@ -198,6 +202,12 @@ public class ForgeJob {
 
         public boolean isSaveEpochCheckpoints() { return saveEpochCheckpoints; }
         public void setSaveEpochCheckpoints(boolean saveEpochCheckpoints) { this.saveEpochCheckpoints = saveEpochCheckpoints; }
+
+        public int getMaxSamples() { return maxSamples; }
+        public void setMaxSamples(int maxSamples) { this.maxSamples = maxSamples; }
+
+        public int getMaxTokens() { return maxTokens; }
+        public void setMaxTokens(int maxTokens) { this.maxTokens = maxTokens; }
     }
 
     public static class EvolutionConfig {
@@ -273,7 +283,10 @@ public class ForgeJob {
     }
 
     private final String jobId;
-    private JobState state = JobState.CREATED;
+    // Job state is written by the executor thread executing executeJob() and
+    // read by the stats poller threads (SelfEvoForgingServiceImpl) and HTTP
+    // handlers, so the mutable cross-thread fields are volatile.
+    private volatile JobState state = JobState.CREATED;
     private ModelObjective objective = ModelObjective.AUTO;
     private long requestedMinimumUsableBytes = 524_288_000L; // Default 500 MB
     private List<String> sourcePaths = new ArrayList<>();
@@ -286,13 +299,13 @@ public class ForgeJob {
     private PreflightResult preflightResult = new PreflightResult();
     private EvaluationResult evaluationResult = new EvaluationResult();
     private SmokeTestResult smokeTestResult = new SmokeTestResult();
-    private eu.kalafatic.evolution.forge.trainer.api.TrainingResult trainingResult;
+    private volatile eu.kalafatic.evolution.forge.trainer.api.TrainingResult trainingResult;
     private Path runDirectory;
     private String outputModelName;
     private String jobResultSummary = "";
     private String failureReason;
-    private int progressPercent = 0;
-    private String currentStageDescription = "";
+    private volatile int progressPercent = 0;
+    private volatile String currentStageDescription = "";
 
     public ForgeJob(String jobId) {
         this.jobId = jobId;

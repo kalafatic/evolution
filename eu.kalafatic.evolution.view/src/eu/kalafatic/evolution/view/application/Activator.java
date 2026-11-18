@@ -86,6 +86,10 @@ public class Activator extends AbstractUIPlugin {
 //		PreferenceInitializer.setUp();
 
 		registerP2Policy(bundleContext);
+
+		// Register the local update repository (<install>/updates) when
+		// present so standard Eclipse Check for Updates discovers updates.
+		eu.kalafatic.utils.eclipse.P2Utils.registerLocalUpdateRepository();
 	}
 
 	// ---------------------------------------------------------------

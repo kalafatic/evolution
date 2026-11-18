@@ -24,6 +24,7 @@ public class TrainingCheckpoint implements Serializable {
     private static final long serialVersionUID = 2L;
 
     public static final String CHECKPOINT_MAGIC = "EVO_CHK_V2";
+    private static final String CHECKPOINT_TRAILER_TAG = "EVO_CHK_TOK";
 
     private String runId;
     private String modelName;
@@ -35,6 +36,11 @@ public class TrainingCheckpoint implements Serializable {
     private long baseSeed;
     private String datasetFingerprint;
     private long timestamp;
+
+    // Exact processed-token counter at capture time (masked training tokens).
+    // 0 = unavailable (older checkpoints); resume then falls back to the
+    // completed-epochs approximation.
+    private long processedTokens = 0;
 
     // Architecture parameters
     private int vocabSize;
@@ -72,6 +78,25 @@ public class TrainingCheckpoint implements Serializable {
             Map<String, float[]> optimizerM,
             Map<String, float[]> optimizerV,
             Map<String, Integer> vocab) {
+        return capture(runId, modelName, model, completedEpochs, optimizerSteps, lastTrainLoss, lastValLoss,
+                currentLr, baseSeed, datasetFingerprint, optimizerM, optimizerV, vocab, 0L);
+    }
+
+    public static TrainingCheckpoint capture(
+            String runId,
+            String modelName,
+            EvoLlmModel model,
+            int completedEpochs,
+            long optimizerSteps,
+            float lastTrainLoss,
+            float lastValLoss,
+            float currentLr,
+            long baseSeed,
+            String datasetFingerprint,
+            Map<String, float[]> optimizerM,
+            Map<String, float[]> optimizerV,
+            Map<String, Integer> vocab,
+            long processedTokens) {
 
         Objects.requireNonNull(model, "EvoLlmModel cannot be null");
         TrainingCheckpoint chk = new TrainingCheckpoint();
@@ -85,6 +110,7 @@ public class TrainingCheckpoint implements Serializable {
         chk.baseSeed = baseSeed;
         chk.datasetFingerprint = datasetFingerprint != null ? datasetFingerprint : "";
         chk.timestamp = System.currentTimeMillis();
+        chk.processedTokens = processedTokens > 0 ? processedTokens : 0L;
 
         chk.vocabSize = model.getVocabSize();
         chk.dModel = model.getDModel();
@@ -97,14 +123,22 @@ public class TrainingCheckpoint implements Serializable {
         for (int i = 0; i < params.size(); i++) {
             Tensor p = params.get(i);
             chk.modelWeights.add(p.getData().clone());
-            String paramKey = "p_" + i;
-            if (optimizerM != null && optimizerM.containsKey(paramKey)) {
-                chk.adamWMoments.add(optimizerM.get(paramKey).clone());
+
+            // Moment lookup: prefer canonical tensor names ("n_<name>"), fall back to
+            // legacy positional keys ("p_<i>") for old-style capture callers.
+            String canonicalKey = canonicalKeyFor(model, p, i);
+            String momentKey = (optimizerM != null && canonicalKey != null && optimizerM.containsKey(canonicalKey))
+                    ? canonicalKey : "p_" + i;
+            String varianceKey = (optimizerV != null && canonicalKey != null && optimizerV.containsKey(canonicalKey))
+                    ? canonicalKey : "p_" + i;
+
+            if (optimizerM != null && optimizerM.containsKey(momentKey)) {
+                chk.adamWMoments.add(optimizerM.get(momentKey).clone());
             } else {
                 chk.adamWMoments.add(new float[p.getData().length]);
             }
-            if (optimizerV != null && optimizerV.containsKey(paramKey)) {
-                chk.adamWVariances.add(optimizerV.get(paramKey).clone());
+            if (optimizerV != null && optimizerV.containsKey(varianceKey)) {
+                chk.adamWVariances.add(optimizerV.get(varianceKey).clone());
             } else {
                 chk.adamWVariances.add(new float[p.getData().length]);
             }
@@ -117,6 +151,20 @@ public class TrainingCheckpoint implements Serializable {
         return chk;
     }
 
+    private static String canonicalKeyFor(EvoLlmModel model, Tensor param, int index) {
+        try {
+            eu.kalafatic.evolution.forge.model.llm.ModelParameters registry = model.getModelParameters();
+            for (String name : registry.names()) {
+                if (registry.get(name).getData() == param.getData()) {
+                    return "n_" + name;
+                }
+            }
+        } catch (Exception ignored) {
+            // registry unavailable; caller will fall back to positional keys
+        }
+        return null;
+    }
+
     public void restoreInto(EvoLlmModel targetModel, Map<String, float[]> outM, Map<String, float[]> outV) {
         validateCompatibility(targetModel);
 
@@ -124,14 +172,25 @@ public class TrainingCheckpoint implements Serializable {
         for (int i = 0; i < params.size(); i++) {
             Tensor p = params.get(i);
             float[] savedData = modelWeights.get(i);
+            if (savedData.length != p.getData().length) {
+                throw new IllegalStateException(String.format(
+                        "Checkpoint weight size mismatch for parameter %d: saved %d, target %d",
+                        i, savedData.length, p.getData().length));
+            }
             System.arraycopy(savedData, 0, p.getData(), 0, savedData.length);
 
-            String paramKey = "p_" + i;
+            String canonicalKey = canonicalKeyFor(targetModel, p, i);
             if (outM != null && i < adamWMoments.size()) {
-                outM.put(paramKey, adamWMoments.get(i).clone());
+                if (canonicalKey != null) {
+                    outM.put(canonicalKey, adamWMoments.get(i).clone());
+                }
+                outM.put("p_" + i, adamWMoments.get(i).clone());
             }
             if (outV != null && i < adamWVariances.size()) {
-                outV.put(paramKey, adamWVariances.get(i).clone());
+                if (canonicalKey != null) {
+                    outV.put(canonicalKey, adamWVariances.get(i).clone());
+                }
+                outV.put("p_" + i, adamWVariances.get(i).clone());
             }
         }
 
@@ -147,13 +206,15 @@ public class TrainingCheckpoint implements Serializable {
             targetModel.getDModel() != dModel ||
             targetModel.getNumHeads() != numHeads ||
             targetModel.getNumBlocks() != numBlocks ||
-            targetModel.getDff() != dff) {
+            targetModel.getDff() != dff ||
+            targetModel.getMaxSeqLen() != maxSeqLen) {
             throw new IllegalStateException(String.format(
-                    "Incompatible checkpoint architecture: expected [vocab=%d, dModel=%d, heads=%d, blocks=%d, dff=%d], " +
-                    "but target model has [vocab=%d, dModel=%d, heads=%d, blocks=%d, dff=%d]",
-                    vocabSize, dModel, numHeads, numBlocks, dff,
+                    "Incompatible checkpoint architecture: expected [vocab=%d, dModel=%d, heads=%d, blocks=%d, dff=%d, maxSeqLen=%d], " +
+                    "but target model has [vocab=%d, dModel=%d, heads=%d, blocks=%d, dff=%d, maxSeqLen=%d]",
+                    vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen,
                     targetModel.getVocabSize(), targetModel.getDModel(),
-                    targetModel.getNumHeads(), targetModel.getNumBlocks(), targetModel.getDff()));
+                    targetModel.getNumHeads(), targetModel.getNumBlocks(), targetModel.getDff(),
+                    targetModel.getMaxSeqLen()));
         }
         if (modelWeights.size() != targetModel.parameters().size()) {
             throw new IllegalStateException(String.format(
@@ -215,6 +276,12 @@ public class TrainingCheckpoint implements Serializable {
                 dos.writeUTF(entry.getKey());
                 dos.writeInt(entry.getValue());
             }
+
+            // Extension trailer: exact processed-token counter. Written AFTER the
+            // legacy field block so pre-trailer readers (old checkpoints) can
+            // still be loaded: the load() path treats a missing trailer as 0.
+            dos.writeUTF(CHECKPOINT_TRAILER_TAG);
+            dos.writeLong(processedTokens);
 
             dos.flush();
         }
@@ -292,6 +359,17 @@ public class TrainingCheckpoint implements Serializable {
                 chk.tokenizerVocab.put(token, id);
             }
 
+            // Optional extension trailer; absent in pre-trailer checkpoint files
+            // (EOFException -> processedTokens stays 0).
+            try {
+                String trailer = dis.readUTF();
+                if (CHECKPOINT_TRAILER_TAG.equals(trailer)) {
+                    chk.processedTokens = dis.readLong();
+                }
+            } catch (EOFException legacyFormat) {
+                chk.processedTokens = 0L;
+            }
+
             return chk;
         }
     }
@@ -307,6 +385,8 @@ public class TrainingCheckpoint implements Serializable {
     public long getBaseSeed() { return baseSeed; }
     public String getDatasetFingerprint() { return datasetFingerprint; }
     public long getTimestamp() { return timestamp; }
+    public long getProcessedTokens() { return processedTokens; }
+    public void setProcessedTokens(long processedTokens) { this.processedTokens = processedTokens > 0 ? processedTokens : 0L; }
 
     public int getVocabSize() { return vocabSize; }
     public int getDModel() { return dModel; }

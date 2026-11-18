@@ -30,6 +30,8 @@ public class HeadlessApplication implements IApplication {
         }
 
         System.out.println("Evolution Headless Server starting on port " + port + "...");
+        // Register the local update repository (<install>/updates) when present.
+        eu.kalafatic.utils.eclipse.P2Utils.registerLocalUpdateRepository();
         ServerManager.getInstance().start(port);
         System.out.println("Evolution Headless Server started. Press Ctrl+C to stop.");
 

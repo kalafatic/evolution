@@ -306,6 +306,11 @@ public class DevelopmentPage extends AEvoPage {
 		createSelfDevContextMenu();
 
 		supervisorGroup = new SupervisorGroup(toolkit, container, editor, orchestrator);
+		// WP11 (D-62): share the page's controller/context with the supervisor
+		// controls so task results and process ownership are consistent.
+		if (bootstrapController != null) {
+			supervisorGroup.setSharedBootstrapController(bootstrapController);
+		}
 		vizGroup = new VizGroup(toolkit, container, editor, orchestrator, this);
 		String sessionId = (orchestrator != null && orchestrator.getSelfDevSession() != null)
 				? orchestrator.getSelfDevSession().getId()
@@ -332,8 +337,6 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void loadTableData() {
-		List<SelfDevRow> sdData = new ArrayList<>();
-
 		String localPath = (orchestrator != null && orchestrator.getGit() != null)
 				? orchestrator.getGit().getLocalPath()
 				: "";
@@ -358,42 +361,101 @@ public class DevelopmentPage extends AEvoPage {
 		String customSuperSrc = getSupervisorSourcePath();
 		String customSuperBin = getTargetPath();
 
+		// WP11 (D-29/D-57): task rows are derived from the authoritative task
+		// registry, not a hardcoded count. Effective (allocated) ports are shown
+		// instead of static defaults.
+		java.util.Map<String, SelfDevRow> templateById = buildRowTemplates(localPath, repoUrl, mvnPath,
+				llmModel, targetPath, exportPath, customSuperSrc, customSuperBin);
+
+		List<SelfDevRow> sdData = new ArrayList<>();
+		java.util.Set<String> registryIds = new java.util.LinkedHashSet<>();
+		if (bootstrapController != null && bootstrapController.getOrchestrator() != null) {
+			registryIds.addAll(bootstrapController.getOrchestrator().getTaskRegistry().keySet());
+		}
+		// Preserve the operator's established display order for known tasks and
+		// append any registry tasks that were previously hidden.
+		List<String> orderedIds = new ArrayList<>();
+		for (java.util.Map.Entry<String, SelfDevRow> t : templateById.entrySet()) {
+			orderedIds.add(t.getKey());
+		}
+		for (String registryId : registryIds) {
+			if (!orderedIds.contains(registryId)) {
+				orderedIds.add(registryId);
+			}
+		}
+		// Drop template rows whose task ID no longer exists in the registry.
+		List<String> finalIds = new ArrayList<>();
+		for (String id : orderedIds) {
+			if (registryIds.isEmpty() || registryIds.contains(id)) {
+				finalIds.add(id);
+			}
+		}
+
 		int row = 1;
-		sdData.add(new SelfDevRow(row++, "LLM", SelfDevRow.LLM_CHECK, "curl -s http://localhost:11434/api/tags", llmModel, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "GIT_EVO", SelfDevRow.GIT_CHECK_EVO, "git -C " + localPath + " fetch origin && git -C " + localPath + " pull", localPath, repoUrl, EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "MAVEN_EVO", SelfDevRow.MAVEN_CHECK_EVO, "mvn clean verify -DskipTests", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "COPY_SUPERVISOR", SelfDevRow.COPY_SUPERVISOR_SRC, "cp -r " + customSuperSrc + " " + targetPath, customSuperSrc, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "BUILD_SUPERVISOR_LOCAL", SelfDevRow.BUILD_SUPERVISOR_LOCAL, "mvn clean install -pl eu.kalafatic.evolution.supervisor -am -DskipTests", customSuperBin, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "SUPERVISOR", SelfDevRow.SUPERVISOR_CHECK, "java -jar " + customSuperBin + "/supervisor.jar --check", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "GIT_SUPERVISOR", SelfDevRow.GIT_CHECK_SUPERVISOR, "git -C " + localPath + " fetch origin && git -C " + localPath + " status", localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "MAVEN_SUPERVISOR", SelfDevRow.MAVEN_CHECK_SUPERVISOR, "mvn -v && mvn validate", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "GENOME", SelfDevRow.GENOME_CHECK, "mvn clean test -pl eu.kalafatic.evolution.selfdev.genome", "supervisor.genome", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "PERMISSIONS", SelfDevRow.PERM_CHECK, "chmod -R u+rwX " + targetPath, "supervisor.fs", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		String evoSourcePath = ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY).toString();
-		sdData.add(new SelfDevRow(row++, "COPY", SelfDevRow.COPY_SOURCE, "cp -r " + evoSourcePath + " " + targetPath, evoSourcePath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "BUILD_EVO", SelfDevRow.BUILD_PROJECT_EVO, "mvn clean verify -DskipTests -Plinux", targetPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "BUILD_SUPERVISOR", SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn clean install -pl eu.kalafatic.evolution.supervisor -DskipTests", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "EXPORT_EVO", SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "EXPORT_SUPERVISOR", SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "DEPLOY_EVO", SelfDevRow.DEPLOY_PRODUCT_EVO, "deploy exported product to runtime/evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		int defaultSupPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
-		int defaultServerPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
-		sdData.add(new SelfDevRow(row++, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port " + defaultSupPort, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "START_EVO", SelfDevRow.START_EVO, "./evo --port " + defaultServerPort, exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "CREATE_EVO_PROJECT", SelfDevRow.CREATE_EVO_PROJECT, "curl -X POST http://localhost:" + defaultServerPort + "/server/project/create -d '{\"name\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "CREATE_INFERENCE_TASK", SelfDevRow.CREATE_INFERENCE_TASK, "curl -X POST http://localhost:" + defaultServerPort + "/task -d '{\"prompt\":\"hi\",\"sessionId\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "ANALYTIC_CHAT_VALIDATION", SelfDevRow.ANALYTIC_CHAT_VALIDATION, "curl -s http://localhost:" + defaultServerPort + "/server/conversation/SelfDevProject", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "STOP_EVO", "STOP_EVO", "stop running EVO RCP product", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "PROMOTE", SelfDevRow.PROMOTE_PRODUCT, "promote candidate artifact after successful verification", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "ROLLBACK", SelfDevRow.ROLLBACK_PRODUCT, "rollback candidate artifact and restore previous state", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, "SUPERVISOR_LOOP", SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, "SELF_DEV_LOOP", SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		for (String taskId : finalIds) {
+			SelfDevRow template = templateById.get(taskId);
+			if (template != null) {
+				template.order = row;
+				sdData.add(template);
+			} else {
+				sdData.add(new SelfDevRow(row, taskId, taskId + " (registry)", "", EStatus.NA.name(),
+						EStatus.READY, EApp.EVO.name()));
+			}
+			row++;
+		}
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		updateRowOrders(sdData);
 		selfDevTable.setInput(sdData);
+	}
+
+	private java.util.Map<String, SelfDevRow> buildRowTemplates(String localPath, String repoUrl,
+			String mvnPath, String llmModel, String targetPath, String exportPath,
+			String customSuperSrc, String customSuperBin) {
+		java.util.Map<String, SelfDevRow> templates = new java.util.LinkedHashMap<>();
+		int defaultSupPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_API.getDefaultPort();
+		int defaultServerPort = eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_HTTP_PRIMARY.getDefaultPort();
+		int effServerPort = defaultServerPort;
+		int effSupPort = defaultSupPort;
+		if (bootstrapController != null && bootstrapController.getOrchestrator() != null) {
+			eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext ctx = bootstrapController
+					.getOrchestrator().getContext();
+			if (ctx != null) {
+				effServerPort = ctx.getEffectiveServerPort();
+				effSupPort = ctx.getEffectiveSupervisorPort();
+			}
+		}
+
+		templates.put("LLM", new SelfDevRow(0, "LLM", SelfDevRow.LLM_CHECK, "curl -s http://localhost:11434/api/tags", llmModel, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("GIT_EVO", new SelfDevRow(0, "GIT_EVO", SelfDevRow.GIT_CHECK_EVO, "git -C " + localPath + " fetch origin && git -C " + localPath + " pull", localPath, repoUrl, EStatus.READY, EApp.EVO.name()));
+		templates.put("MAVEN_EVO", new SelfDevRow(0, "MAVEN_EVO", SelfDevRow.MAVEN_CHECK_EVO, "mvnw validate clean verify -P<platform> (tests enabled by default; skip only via -Devo.build.skipTests)", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("COPY_SUPERVISOR", new SelfDevRow(0, "COPY_SUPERVISOR", SelfDevRow.COPY_SUPERVISOR_SRC, "cp -r " + customSuperSrc + " " + targetPath, customSuperSrc, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("BUILD_SUPERVISOR_LOCAL", new SelfDevRow(0, "BUILD_SUPERVISOR_LOCAL", SelfDevRow.BUILD_SUPERVISOR_LOCAL, "mvn clean install -pl eu.kalafatic.evolution.supervisor -am (isolated reactor)", customSuperBin, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("SUPERVISOR", new SelfDevRow(0, "SUPERVISOR", SelfDevRow.SUPERVISOR_CHECK, "HTTP ping on effective supervisor port " + effSupPort, "supervisor", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("GIT_SUPERVISOR", new SelfDevRow(0, "GIT_SUPERVISOR", SelfDevRow.GIT_CHECK_SUPERVISOR, "git -C " + localPath + " fetch origin && git -C " + localPath + " status", localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("MAVEN_SUPERVISOR", new SelfDevRow(0, "MAVEN_SUPERVISOR", SelfDevRow.MAVEN_CHECK_SUPERVISOR, "mvn -v && mvn validate", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("GENOME", new SelfDevRow(0, "GENOME", SelfDevRow.GENOME_CHECK, "mvn clean install -pl eu.kalafatic.evolution.selfdev.genome -am (isolated reactor)", "supervisor.genome", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("PERMISSIONS", new SelfDevRow(0, "PERMISSIONS", SelfDevRow.PERM_CHECK, "chmod -R u+rwX " + targetPath, "supervisor.fs", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		String evoSourcePath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_GIT_REPOSITORY).toString();
+		templates.put("COPY", new SelfDevRow(0, "COPY", SelfDevRow.COPY_SOURCE, "cp -r " + evoSourcePath + " " + targetPath, evoSourcePath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("BUILD_EVO", new SelfDevRow(0, "BUILD_EVO", SelfDevRow.BUILD_PROJECT_EVO, "mvnw validate clean verify -P<platform> (isolated reactor; tests enabled by default)", targetPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("BUILD_SUPERVISOR", new SelfDevRow(0, "BUILD_SUPERVISOR", SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn validate clean install -pl eu.kalafatic.evolution.supervisor -am (isolated reactor)", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("EXPORT_EVO", new SelfDevRow(0, "EXPORT_EVO", SelfDevRow.EXPORT_PRODUCT_EVO, "materialize exact BUILD_EVO product artifact to export dir (no implicit build)", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("EXPORT_SUPERVISOR", new SelfDevRow(0, "EXPORT_SUPERVISOR", SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "materialize exact BUILD_SUPERVISOR_Local artifact to export dir (no implicit build)", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("DEPLOY_EVO", new SelfDevRow(0, "DEPLOY_EVO", SelfDevRow.DEPLOY_PRODUCT_EVO, "deploy exported product to runtime/evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("START_SUPERVISOR", new SelfDevRow(0, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port " + effSupPort, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("START_EVO", new SelfDevRow(0, "START_EVO", SelfDevRow.START_EVO, "./evo --port " + effServerPort, exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("START_EVO_SUPERVISOR", new SelfDevRow(0, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("CREATE_EVO_PROJECT", new SelfDevRow(0, "CREATE_EVO_PROJECT", SelfDevRow.CREATE_EVO_PROJECT, "curl -X POST http://localhost:" + effServerPort + "/server/project/create -d '{\"name\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("CREATE_INFERENCE_TASK", new SelfDevRow(0, "CREATE_INFERENCE_TASK", SelfDevRow.CREATE_INFERENCE_TASK, "curl -X POST http://localhost:" + effServerPort + "/task -d '{\"prompt\":\"hi\",\"sessionId\":\"SelfDevProject\"}'", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("ANALYTIC_CHAT_VALIDATION", new SelfDevRow(0, "ANALYTIC_CHAT_VALIDATION", SelfDevRow.ANALYTIC_CHAT_VALIDATION, "curl -s http://localhost:" + effServerPort + "/server/conversation/SelfDevProject", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("STOP_EVO", new SelfDevRow(0, "STOP_EVO", "STOP_EVO", "stop running EVO RCP product", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("STOP_EVO_SUPERVISOR", new SelfDevRow(0, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("PROMOTE", new SelfDevRow(0, "PROMOTE", SelfDevRow.PROMOTE_PRODUCT, "promote candidate artifact after successful verification", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("ROLLBACK", new SelfDevRow(0, "ROLLBACK", SelfDevRow.ROLLBACK_PRODUCT, "rollback candidate artifact and restore previous state", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		templates.put("SUPERVISOR_LOOP", new SelfDevRow(0, "SUPERVISOR_LOOP", SelfDevRow.SUPERVISOR_LOOP, "bounded supervisor health verification (5 ping attempts)", "supervisor", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		templates.put("SELF_DEV_LOOP", new SelfDevRow(0, "SELF_DEV_LOOP", SelfDevRow.SELF_DEV_LOOP, "bounded self-dev health verification; autonomous loop via Darwin engine", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		return templates;
 	}
 
 	private void updateRowOrders(List<SelfDevRow> rows) {
@@ -541,12 +603,19 @@ public class DevelopmentPage extends AEvoPage {
 			if (status.contains("blocked")) {
 				return FUIConstants.LIGHT_BLUE;
 			}
+			if (status.contains("cancelled")) {
+				return lightOrangeColor;
+			}
 			if (status.contains("error") || status.contains("fail")) {
 				return FUIConstants.LIGHT_RED;
 			}
 			if (status.contains("checking") || status.contains("running") || status.contains("applying")
-					|| status.contains("building") || status.contains("starting")) {
+					|| status.contains("building") || status.contains("starting") || status.contains("in progress")
+					|| status.contains("in_progress")) {
 				return lightOrangeColor;
+			}
+			if (status.contains("skipped") || status.contains("stopped") || status.contains("pending")) {
+				return FUIConstants.LIGHT_BLUE;
 			}
 			if (status.contains("checked") || status.contains("success") || status.contains("ok")
 					|| status.contains("updated") || status.startsWith("ready:")) {
@@ -578,6 +647,12 @@ public class DevelopmentPage extends AEvoPage {
 
 	private void executeBackgroundTask(SelfDevRow row) {
 		if (row == null || row.taskId == null) return;
+		if (bootstrapController == null) {
+			row.status = "FAIL: Self-Dev bootstrap controller is not available (no project root configured).";
+			selfDevTable.refresh(row);
+			System.err.println("[DevelopmentPage] Cannot execute " + row.taskId + ": bootstrapController is null.");
+			return;
+		}
 		System.out.println("[DevelopmentPage] [BACKGROUND_TASK_START] Submitting execution for taskId: " + row.taskId + ", row: " + row.name);
 		row.status = "running";
 		selfDevTable.refresh(row);
@@ -595,7 +670,7 @@ public class DevelopmentPage extends AEvoPage {
 				eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
 				monitor.worked(80);
 
-				String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
+				String statusStr = formatTaskStatus(res);
 				long duration = System.currentTimeMillis() - startTime;
 				System.out.println("[SELF-DEV][END] Task=" + row.taskId + " Name=" + row.name + " DurationMs=" + duration + " Status=" + res.getStatus() + " Message=" + res.getMessage());
 
@@ -819,18 +894,66 @@ public class DevelopmentPage extends AEvoPage {
 		if (selfDevTable.getInput() instanceof List<?> rows) {
 			for (Object obj : rows) {
 				if (obj instanceof SelfDevRow row) {
-					row.status = "ready";
+					row.status = EStatus.READY.name();
 				}
 			}
 			selfDevTable.refresh();
 		}
 	}
 
+	/**
+	 * WP11: honest task-status rendering. SKIPPED/CANCELLED are real terminal
+	 * statuses with their reason; SUCCESS carries real execution data (run ID,
+	 * duration, exit code, readiness level, build/artifact identity).
+	 */
+	private String formatTaskStatus(eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res) {
+		eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus st = res.getStatus();
+		String base;
+		switch (st) {
+			case SUCCESS:
+				base = "SUCCESS";
+				break;
+			case BLOCKED:
+				base = "BLOCKED: " + res.getMessage();
+				break;
+			case SKIPPED:
+				base = "SKIPPED: " + res.getMessage();
+				break;
+			case CANCELLED:
+				base = "CANCELLED: " + res.getMessage();
+				break;
+			default:
+				base = "FAIL: " + res.getMessage();
+		}
+		StringBuilder sb = new StringBuilder(base);
+		if (res.getDuration() > 0) {
+			sb.append(" [").append(res.getDuration()).append("ms]");
+		}
+		if (res.getExitCode() != 0) {
+			sb.append(" [exit=").append(res.getExitCode()).append("]");
+		}
+		String readiness = res.getDiagnostic("readinessLevel", null);
+		if (readiness != null) {
+			sb.append(" [readiness=").append(readiness).append("]");
+		}
+		if (res.getArtifact() != null && res.getArtifact().getBuildId() != null) {
+			sb.append(" [build=").append(res.getArtifact().getBuildId()).append("]");
+		}
+		return sb.toString();
+	}
+
 	private void runDebug() {
 		System.out.println(
 				"[DevelopmentPage] [RUN_DEBUG_START] Resetting statuses and preparing to launch debug thread...");
 		resetAllStatuses();
+		// WP11: capture the shell on the UI thread before spawning the worker.
+		final org.eclipse.swt.widgets.Shell shell = getShell();
 		new Thread(() -> {
+			if (bootstrapController == null) {
+				Display.getDefault().asyncExec(() -> EvoDialogUtils.showErrorDialog(shell, "Self-Dev Unavailable",
+						"Self-Dev bootstrap controller is not available (no project root configured).", null));
+				return;
+			}
 			if (bootstrapController != null) {
 				System.out.println("[DevelopmentPage] [RUN_DEBUG] Executing Self-Dev Preflight check...");
 				eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult preflightRes = bootstrapController
@@ -838,8 +961,9 @@ public class DevelopmentPage extends AEvoPage {
 				if (!preflightRes.isSuccess()) {
 					System.err.println("[DevelopmentPage] [RUN_DEBUG] Preflight FAILED/BLOCKED:\n"
 							+ preflightRes.generateSummaryReport());
-					EvoDialogUtils.showErrorDialog(getShell(), "Self-Dev Preflight Failed",
-							"Self-Dev execution cannot proceed safely.\n\n" + preflightRes.generateSummaryReport(), null);
+					final String summary = preflightRes.generateSummaryReport();
+					Display.getDefault().asyncExec(() -> EvoDialogUtils.showErrorDialog(shell, "Self-Dev Preflight Failed",
+							"Self-Dev execution cannot proceed safely.\n\n" + summary, null));
 					return;
 				}
 				System.out
@@ -877,12 +1001,12 @@ public class DevelopmentPage extends AEvoPage {
 				try {
 					eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult taskRes = bootstrapController.runTask(row.taskId);
 					if (taskRes.isSuccess()) {
-						result = "SUCCESS";
+						result = formatTaskStatus(taskRes);
 					} else if (taskRes.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED) {
 						result = "BLOCKED: " + taskRes.getMessage();
 						failed = true;
 					} else {
-						result = "FAIL: " + taskRes.getMessage();
+						result = formatTaskStatus(taskRes);
 						failed = true;
 					}
 
@@ -970,6 +1094,10 @@ public class DevelopmentPage extends AEvoPage {
 
 	private void runSelected() {
 		if (!(selfDevTable.getInput() instanceof List<?> rows)) return;
+		if (bootstrapController == null) {
+			System.err.println("[DevelopmentPage] runSelected aborted: bootstrapController is null.");
+			return;
+		}
 		List<SelfDevRow> selectedRows = new ArrayList<>();
 		for (Object obj : rows) {
 			if (obj instanceof SelfDevRow row && row.selected) {
@@ -985,6 +1113,9 @@ public class DevelopmentPage extends AEvoPage {
 				monitor.beginTask("Running Selected Self-Dev Tasks", selectedRows.size() * 100);
 				String orchId = orchestrator != null ? orchestrator.getName() : "SelfDev";
 				System.out.println("[SELF-DEV][START_BATCH] Selected count=" + selectedRows.size());
+
+				int successCount = 0;
+				int failureCount = 0;
 
 				for (int i = 0; i < selectedRows.size(); i++) {
 					SelfDevRow row = selectedRows.get(i);
@@ -1005,7 +1136,12 @@ public class DevelopmentPage extends AEvoPage {
 					System.out.println("[SELF-DEV][STAGE] Step " + (i + 1) + "/" + selectedRows.size() + " Task=" + row.taskId + " Name=" + row.name);
 
 					eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
-					String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
+					String statusStr = formatTaskStatus(res);
+					if (res.isSuccess()) {
+						successCount++;
+					} else {
+						failureCount++;
+					}
 					long duration = System.currentTimeMillis() - startTime;
 					System.out.println("[SELF-DEV][STAGE_END] Step " + (i + 1) + "/" + selectedRows.size() + " Task=" + row.taskId + " DurationMs=" + duration + " Status=" + res.getStatus());
 
@@ -1018,28 +1154,49 @@ public class DevelopmentPage extends AEvoPage {
 					});
 				}
 
-				OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Batch Self-Dev Execution Complete");
+				// WP11 (D-07): the batch result is honest - the aggregate message
+				// reports real per-task outcomes, never an unconditional 100%.
+				int executed = successCount + failureCount;
+				double finalProgress = executed > 0 ? (double) successCount / executed : 0.0;
+				String summary = "Batch Self-Dev Execution Complete: " + successCount + " success, "
+						+ failureCount + " failed/blocked of " + executed + " executed";
+				OrchestrationStatusManager.getInstance().updateStatus(orchId, finalProgress, summary);
 				monitor.done();
-				return Status.OK_STATUS;
+				System.out.println("[SELF-DEV][END_BATCH] " + summary);
+				return failureCount == 0 ? Status.OK_STATUS
+						: new Status(IStatus.WARNING, "eu.kalafatic.evolution.view", summary);
 			}
 		};
 		job.schedule();
 	}
 
 	private void stopSelected() {
+		if (bootstrapController == null) {
+			System.err.println("[DevelopmentPage] stopSelected aborted: bootstrapController is null.");
+			return;
+		}
 		if (selfDevTable.getInput() instanceof List<?> rows) {
 			for (Object obj : rows) {
 				if (obj instanceof SelfDevRow row && row.selected) {
 					System.out.println("[DevelopmentPage] [STOP_SELECTED] Stopping selected row: " + row.name);
 					if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-						RuntimeProjection projection = ProjectionService.getInstance()
-								.getProjection(getCurrentSessionName());
-						if (projection.isRunning()) {
-							System.out.println("[DevelopmentPage] [STOP_SELECTED] Shutting down self-dev session: "
-									+ getCurrentSessionName());
-							OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
-						}
-						row.status = "ready";
+						// WP11: session shutdown must not run on the SWT UI thread.
+						final String sessionName = getCurrentSessionName();
+						Job shutdownJob = new Job("Self-Dev Session Shutdown") {
+							@Override
+							protected IStatus run(IProgressMonitor monitor) {
+								RuntimeProjection projection = ProjectionService.getInstance()
+										.getProjection(sessionName);
+								if (projection.isRunning()) {
+									System.out.println("[DevelopmentPage] [STOP_SELECTED] Shutting down self-dev session: "
+											+ sessionName);
+									OrchestratorServiceImpl.getInstance().shutdownSession(sessionName);
+								}
+								return Status.OK_STATUS;
+							}
+						};
+						shutdownJob.schedule();
+						row.status = EStatus.READY.name();
 					} else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
 						if (bootstrapController.isRunning()) {
 							System.out.println("[DevelopmentPage] [STOP_SELECTED] Stopping supervisor bootstrap...");
@@ -1048,7 +1205,7 @@ public class DevelopmentPage extends AEvoPage {
 						row.status = "STOPPED";
 					} else {
 						// Reset background check tasks
-						row.status = "ready";
+						row.status = EStatus.READY.name();
 					}
 					selfDevTable.refresh(row);
 				}

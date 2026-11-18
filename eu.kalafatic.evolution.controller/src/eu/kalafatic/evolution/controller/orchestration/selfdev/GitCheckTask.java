@@ -31,7 +31,7 @@ public class GitCheckTask extends AbstractSelfDevTask {
 
         File evolutionRepo = null;
         if (orchestrator != null && orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null && !orchestrator.getGit().getLocalPath().trim().isEmpty()) {
-            evolutionRepo = new File(orchestrator.getGit().getLocalPath().trim()).getAbsoluteFile();
+            evolutionRepo = resolveConfiguredRepository(rm, orchestrator.getGit().getLocalPath().trim());
         } else if (context != null && context.getRepositoryRoot() != null) {
             evolutionRepo = context.getRepositoryRoot().getAbsoluteFile();
         } else {
@@ -44,7 +44,7 @@ public class GitCheckTask extends AbstractSelfDevTask {
             if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
                 String supPath = orchestrator.getSupervisorSettings().getGit().getLocalPath();
                 if (supPath != null && !supPath.trim().isEmpty()) {
-                    supRepo = new File(supPath.trim()).getAbsoluteFile();
+                    supRepo = resolveConfiguredRepository(rm, supPath.trim());
                 }
             }
             if (supRepo == null || !supRepo.exists() || !new GitManager(supRepo).isGitRepository()) {
@@ -71,8 +71,8 @@ public class GitCheckTask extends AbstractSelfDevTask {
             if (orchestrator != null && orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
                 String supPath = orchestrator.getSupervisorSettings().getGit().getLocalPath();
                 if (supPath != null && !supPath.trim().isEmpty()) {
-                    File supRepo = new File(supPath.trim()).getAbsoluteFile();
-                    if (supRepo.exists() && new GitManager(supRepo).isGitRepository() && isValidSourceCandidate(supRepo, context)) {
+                    File supRepo = resolveConfiguredRepository(rm, supPath.trim());
+                    if (supRepo != null && supRepo.exists() && new GitManager(supRepo).isGitRepository() && isValidSourceCandidate(supRepo, context)) {
                         addRepositoryIfUnique("supervisor", supRepo);
                     }
                 }
@@ -80,14 +80,28 @@ public class GitCheckTask extends AbstractSelfDevTask {
             if (orchestrator != null && !orchestrator.getForgeSessions().isEmpty()) {
                 for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
                     if (fs.getGit() != null && fs.getGit().getLocalPath() != null && !fs.getGit().getLocalPath().trim().isEmpty()) {
-                        File llmRepo = new File(fs.getGit().getLocalPath().trim()).getAbsoluteFile();
-                        if (llmRepo.exists() && new GitManager(llmRepo).isGitRepository() && isValidSourceCandidate(llmRepo, context)) {
+                        File llmRepo = resolveConfiguredRepository(rm, fs.getGit().getLocalPath().trim());
+                        if (llmRepo != null && llmRepo.exists() && new GitManager(llmRepo).isGitRepository() && isValidSourceCandidate(llmRepo, context)) {
                             addRepositoryIfUnique("llm", llmRepo);
                         }
                         break;
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Resolves a configured repository path through ResourceManager semantics
+     * (variable expansion + canonical validation). Returns null when the configured
+     * path violates canonical filesystem rules instead of silently using it.
+     */
+    private File resolveConfiguredRepository(ResourceManager rm, String configuredPath) {
+        try {
+            return rm.resolvePath(EvoPath.EVO_ROOT, configuredPath).toFile();
+        } catch (IllegalArgumentException e) {
+            Log.log("[GitCheckTask] Rejected non-canonical configured repository path '" + configuredPath + "': " + e.getMessage());
+            return null;
         }
     }
 

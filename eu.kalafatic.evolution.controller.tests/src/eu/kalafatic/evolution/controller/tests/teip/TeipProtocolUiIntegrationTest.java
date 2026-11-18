@@ -46,7 +46,7 @@ public class TeipProtocolUiIntegrationTest {
         TeipHealthResponse health = TeipExecutionManager.getInstance().checkHealth();
         assertNotNull(health);
         assertEquals("TEIP", health.getProtocol());
-        assertEquals("1.0", health.getVersion());
+        assertEquals("1.1", health.getVersion());
         assertTrue(health.isReady());
         assertEquals("UP", health.getStatus());
 
@@ -76,7 +76,7 @@ public class TeipProtocolUiIntegrationTest {
         req.setInstruction("Integration test instruction");
         req.setCaller(Map.of("app", "TRYST", "operator", "jules"));
 
-        TeipAcceptedResponse accepted = TeipExecutionManager.getInstance().createExecution(req);
+        TeipAcceptedResponse accepted = TeipExecutionManager.getInstance().createExecution(req).response();
         assertNotNull(accepted);
         String execId = accepted.getExecutionId();
         assertNotNull(execId);
@@ -106,7 +106,7 @@ public class TeipProtocolUiIntegrationTest {
         req.setMode("DARWIN_MODE");
         req.setInstruction("Long-running task for cancellation");
 
-        TeipAcceptedResponse accepted = TeipExecutionManager.getInstance().createExecution(req);
+        TeipAcceptedResponse accepted = TeipExecutionManager.getInstance().createExecution(req).response();
         String execId = accepted.getExecutionId();
 
         boolean cancelled = TeipExecutionManager.getInstance().cancelExecution(execId, "Operator cancelled from UI");

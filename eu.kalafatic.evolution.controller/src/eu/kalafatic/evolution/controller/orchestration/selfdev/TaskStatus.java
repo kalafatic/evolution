@@ -6,5 +6,6 @@ public enum TaskStatus {
     SUCCESS,
     FAILED,
     BLOCKED,
-    SKIPPED
+    SKIPPED,
+    CANCELLED
 }

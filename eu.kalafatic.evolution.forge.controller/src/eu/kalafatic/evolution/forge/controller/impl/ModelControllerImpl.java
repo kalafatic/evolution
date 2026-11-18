@@ -16,7 +16,10 @@ public class ModelControllerImpl implements ModelController {
 
     @Override
     public String createModel(String sessionId, String modelType) {
-        if (modelService == null) return "mock-model-id";
+        if (modelService == null) {
+            throw new UnsupportedOperationException(
+                    "Model creation through the legacy forge controller is not supported; use the Darwin Forge orchestration flow");
+        }
         return modelService.createModel(sessionId, modelType);
     }
 
@@ -33,11 +36,7 @@ public class ModelControllerImpl implements ModelController {
     @Override
     public ModelInfo getActiveModel(String sessionId) {
         if (modelService == null) {
-             ModelInfo info = new ModelInfo();
-             info.setId("active-id");
-             info.setName("Active Model");
-             info.setType("Transformer");
-             return info;
+            return null;
         }
         return modelService.getActiveModel(sessionId);
     }
@@ -50,13 +49,16 @@ public class ModelControllerImpl implements ModelController {
 
     @Override
     public String getModelStructure(String sessionId) {
-        ModelInfo active = getActiveModel(sessionId);
-        String type = active != null ? active.getType() : "Real";
+        if (modelService == null) {
+            return "{\"available\":false,\"reason\":\"No model service is registered for this session\"}";
+        }
+        ModelInfo active = modelService.getActiveModel(sessionId);
+        String type = active != null && active.getType() != null ? active.getType() : "Unknown";
         return "{\"nodes\":[" +
-               "{\"id\":\"in\",\"name\":\"Input Real\",\"type\":\"DATA\"}," +
-               "{\"id\":\"emb\",\"name\":\"Embedding Real\",\"type\":\"LAYER\"}," +
-               "{\"id\":\"t1\",\"name\":\"" + type + " Block Real\",\"type\":\"TRANSFORMER\"}," +
-               "{\"id\":\"out\",\"name\":\"Output Head Real\",\"type\":\"LAYER\"}" +
+               "{\"id\":\"in\",\"name\":\"Input\",\"type\":\"DATA\"}," +
+               "{\"id\":\"emb\",\"name\":\"Embedding\",\"type\":\"LAYER\"}," +
+               "{\"id\":\"t1\",\"name\":\"" + type + " Block\",\"type\":\"TRANSFORMER\"}," +
+               "{\"id\":\"out\",\"name\":\"Output Head\",\"type\":\"LAYER\"}" +
                "],\"links\":[]}";
     }
 }

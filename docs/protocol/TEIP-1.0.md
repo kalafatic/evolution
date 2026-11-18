@@ -1,5 +1,14 @@
 # TEIP — TRYST–EVOLUTION Integration Protocol 1.0
-Normative Protocol Specification
+
+> **SUPERSEDED — historical reference only.**
+> This document is NOT normative. The canonical specification is
+> [`TEIP-1.1.md`](TEIP-1.1.md) (Tryst-Evolution-Integration-Protocol 1.1), which consolidates
+> this copy and the TRYST 1.0 copy and resolves their verified divergences (status codes, field
+> names, event cursor, payload shapes, error model, auth enforcement). The consolidation record
+> is the 1.0→1.1 changes table in `TEIP-1.1.md` §1. The claim in this document that the two 1.0
+> copies were "shared identically" was historically false and is superseded.
+
+Historical specification (superseded — the normative specification is [`TEIP-1.1.md`](TEIP-1.1.md))
 
 ## 1. Overview and Scope
 
@@ -17,7 +26,10 @@ TEIP 1.0 establishes:
 - Security and scoped authorization boundaries.
 - Model Context Protocol (MCP) tool integration over standard HTTP transport.
 
-The normative specification in this document is shared identically across TRYST and EVO implementations.
+The normative specification of TEIP is [`TEIP-1.1.md`](TEIP-1.1.md); this 1.0 copy is retained
+for historical reference only. The two 1.0 copies that existed in the EVO and TRYST
+repositories diverged materially (verified during the Phase 1/Phase 2 family audit) and are
+superseded by the consolidated 1.1 specification.
 
 ---
 

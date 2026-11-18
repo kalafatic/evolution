@@ -10,11 +10,14 @@ public class SimpleTensor implements Tensor {
     private final long size;
 
     public SimpleTensor(long... shape) {
-        this.shape = shape;
+        this.shape = validateShape(shape);
         this.rank = shape.length;
         long totalSize = 1;
         for (long dim : shape) {
             totalSize *= dim;
+        }
+        if (totalSize > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Tensor size exceeds supported maximum (" + Integer.MAX_VALUE + " elements): " + totalSize);
         }
         this.size = totalSize;
         this.data = new float[(int) size];
@@ -22,19 +25,46 @@ public class SimpleTensor implements Tensor {
     }
 
     public SimpleTensor(long[] shape, float[] data) {
-        this.shape = shape;
+        this.shape = validateShape(shape);
         this.rank = shape.length;
         this.data = data;
         this.size = data.length;
+        validateDataMatchesShape(data, shape);
         this.grad = new float[(int) size];
     }
 
     public SimpleTensor(long[] shape, float[] data, float[] grad) {
-        this.shape = shape;
+        this.shape = validateShape(shape);
         this.rank = shape.length;
         this.data = data;
         this.grad = grad;
         this.size = data.length;
+        validateDataMatchesShape(data, shape);
+        if (grad.length != data.length) {
+            throw new IllegalArgumentException("Gradient array length (" + grad.length + ") must match data length (" + data.length + ")");
+        }
+    }
+
+    private static long[] validateShape(long[] shape) {
+        if (shape == null || shape.length == 0) {
+            throw new IllegalArgumentException("Tensor shape must have at least one dimension");
+        }
+        for (long dim : shape) {
+            if (dim <= 0) {
+                throw new IllegalArgumentException("Tensor dimensions must be positive, found: " + java.util.Arrays.toString(shape));
+            }
+        }
+        return shape;
+    }
+
+    private static void validateDataMatchesShape(float[] data, long[] shape) {
+        long totalSize = 1;
+        for (long dim : shape) {
+            totalSize *= dim;
+        }
+        if (data.length != totalSize) {
+            throw new IllegalArgumentException("Data length (" + data.length + ") does not match shape product (" + totalSize + ") for shape " + java.util.Arrays.toString(shape));
+        }
     }
 
     @Override
@@ -175,17 +205,41 @@ public class SimpleTensor implements Tensor {
     }
 
     private int getFlatIndex(long... indices) {
+        if (indices == null || indices.length != rank) {
+            throw new IllegalArgumentException("Expected " + rank + " indices, got " + (indices == null ? 0 : indices.length));
+        }
         int index = 0;
         int multiplier = 1;
         for (int i = rank - 1; i >= 0; i--) {
-            index += indices[i] * multiplier;
+            long idx = indices[i];
+            if (idx < 0 || idx >= shape[i]) {
+                throw new IndexOutOfBoundsException("Index " + idx + " out of bounds for dimension " + i + " (size " + shape[i] + "), full indices: " + java.util.Arrays.toString(indices));
+            }
+            index += idx * multiplier;
             multiplier *= shape[i];
         }
         return index;
     }
 
+    private void validateElementwiseShape(Tensor other) {
+        long[] otherShape = other.getShape();
+        if (otherShape.length != rank) {
+            throw new IllegalArgumentException("Elementwise operation requires equal ranks: " + rank + " vs " + otherShape.length);
+        }
+        for (int i = 0; i < rank; i++) {
+            if (otherShape[i] != shape[i]) {
+                throw new IllegalArgumentException("Elementwise operation requires identical shapes, found "
+                        + java.util.Arrays.toString(shape) + " vs " + java.util.Arrays.toString(otherShape));
+            }
+        }
+        if (other.getData().length != data.length) {
+            throw new IllegalArgumentException("Operand data length (" + other.getData().length + ") does not match (" + data.length + ")");
+        }
+    }
+
     @Override
     public Tensor add(Tensor other) {
+        validateElementwiseShape(other);
         float[] resultData = new float[(int) size];
         float[] otherData = other.getData();
         for (int i = 0; i < size; i++) {
@@ -196,6 +250,7 @@ public class SimpleTensor implements Tensor {
 
     @Override
     public Tensor sub(Tensor other) {
+        validateElementwiseShape(other);
         float[] resultData = new float[(int) size];
         float[] otherData = other.getData();
         for (int i = 0; i < size; i++) {
@@ -206,6 +261,7 @@ public class SimpleTensor implements Tensor {
 
     @Override
     public Tensor mul(Tensor other) {
+        validateElementwiseShape(other);
         float[] resultData = new float[(int) size];
         float[] otherData = other.getData();
         for (int i = 0; i < size; i++) {
@@ -216,9 +272,13 @@ public class SimpleTensor implements Tensor {
 
     @Override
     public Tensor div(Tensor other) {
+        validateElementwiseShape(other);
         float[] resultData = new float[(int) size];
         float[] otherData = other.getData();
         for (int i = 0; i < size; i++) {
+            if (otherData[i] == 0.0f) {
+                throw new ArithmeticException("Division by zero at element " + i + " in tensor division");
+            }
             resultData[i] = this.data[i] / otherData[i];
         }
         return new SimpleTensor(shape, resultData);

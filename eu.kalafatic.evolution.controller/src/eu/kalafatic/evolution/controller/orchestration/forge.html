@@ -1053,8 +1053,10 @@
                 <h3>Training & Execution</h3>
                 <div style="display: flex; gap: 5px;">
                     <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
+                    <button id="pause-btn" class="btn btn-primary" style="flex: 1;" onclick="pauseTraining()" disabled data-guidance="Pause training after the current batch. A resumption checkpoint is saved so training can continue later.">PAUSE</button>
+                    <button id="resume-btn" class="btn btn-primary" style="flex: 1;" onclick="resumeTraining()" disabled data-guidance="Resume training from the last saved checkpoint.">RESUME</button>
                     <button id="finish-btn" class="btn btn-primary" style="flex: 1;" onclick="finishTraining()" disabled data-guidance="Gracefully finish training at the current epoch/state and export all model files (.evo, GGUF, report).">FINISH</button>
-                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Immediately halt the current training run. Current weights will be preserved but training progress will stop.">STOP</button>
+                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Request the backend to stop the current training run. The backend honors the request and reports its real final state.">STOP</button>
                 </div>
                 <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
             </div>
@@ -1380,6 +1382,9 @@
                 } else if (!isAutoCreating) {
                     autoCreateSession();
                 }
+
+                // Synchronize action buttons with the authoritative backend state.
+                updateLiveTrainingState();
             }
         }
 
@@ -1985,8 +1990,7 @@
             if (session && session.modelType === 'SELF_EVO') {
                 if (window.startForging) {
                     isTraining = true;
-                    document.getElementById('train-btn').disabled = true;
-                    document.getElementById('stop-btn').disabled = false;
+                    updateTrainingButtonStates('RUNNING');
 
                     await window.startForging();
                     await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
@@ -1999,8 +2003,7 @@
             }
 
             isTraining = true;
-            document.getElementById('train-btn').disabled = true;
-            document.getElementById('stop-btn').disabled = false;
+            updateTrainingButtonStates('RUNNING');
             document.getElementById('training-progress-container').style.display = 'block';
             log("Training started...");
 
@@ -2046,20 +2049,120 @@
 
         function stopTraining() {
             if (!activeSessionId) return;
-            isTraining = false;
-            document.getElementById('train-btn').disabled = false;
-            const finishBtn = document.getElementById('finish-btn');
-            if (finishBtn) {
-                finishBtn.disabled = true;
-                finishBtn.innerText = 'FINISH';
-            }
-            document.getElementById('stop-btn').disabled = true;
-            log("Training stopped.");
-            if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "IDLE" }));
+            // STOP must invoke the real backend stop path; a UI-only state flip
+            // would desynchronize the page from the actual training process.
+            log("Stop requested. Waiting for backend confirmation...");
+            fetch(getBaseUrl() + `/forge/session/${encodeURIComponent(activeSessionId)}/finish`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    log("Backend stop response: " + (data.message || JSON.stringify(data)));
+                    updateLiveTrainingState();
+                })
+                .catch(e => log("Error requesting stop: " + e.message));
+        }
 
-            const session = sessions.find(s => s.id === activeSessionId);
-            if (session) session.status = 'IDLE';
-            updateGuidance();
+        async function pauseTraining() {
+            if (!activeSessionId) return;
+            log("Pause requested. The trainer finishes the current batch and saves a checkpoint...");
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${encodeURIComponent(activeSessionId)}/forging/pause`, { method: 'POST' });
+                const data = await res.json();
+                log(data.message || ("Pause request accepted: " + JSON.stringify(data)));
+                updateLiveTrainingState();
+            } catch (e) {
+                log("Error requesting pause: " + e.message);
+            }
+        }
+
+        async function resumeTraining() {
+            if (!activeSessionId) return;
+            log("Resume requested. The forge pipeline resumes from the saved checkpoint...");
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${encodeURIComponent(activeSessionId)}/forging/resume`, { method: 'POST' });
+                const data = await res.json();
+                log(data.status ? ("Resume requested: " + data.status) : "Resume requested.");
+                isTraining = true;
+                document.getElementById('train-btn').disabled = true;
+                document.getElementById('training-progress-container').style.display = 'block';
+                updateLiveTrainingState();
+            } catch (e) {
+                log("Error requesting resume: " + e.message);
+            }
+        }
+
+        function updateTrainingButtonStates(status) {
+            const trainBtn = document.getElementById('train-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resumeBtn = document.getElementById('resume-btn');
+            const finishBtn = document.getElementById('finish-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            if (!trainBtn) return;
+            const s = (status || '').toUpperCase();
+            const running = s === 'RUNNING' || s === 'TRAINING';
+            const paused = s === 'PAUSED';
+            trainBtn.disabled = running || paused;
+            pauseBtn.disabled = !running;
+            resumeBtn.disabled = !paused;
+            finishBtn.disabled = !running;
+            stopBtn.disabled = !running && !paused;
+        }
+
+        let lastLiveMetricsUpdate = 0;
+        async function updateLiveTrainingState() {
+            if (!activeSessionId) return;
+            const now = Date.now();
+            if (now - lastLiveMetricsUpdate < 1000) return;
+            lastLiveMetricsUpdate = now;
+
+            let metrics = null;
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${encodeURIComponent(activeSessionId)}/training/metrics?runtime=SWT`);
+                if (res.ok) metrics = await res.json();
+            } catch (e) {
+                return;
+            }
+            if (!metrics) return;
+
+            const status = (metrics.status || '').toUpperCase();
+            updateTrainingButtonStates(status);
+
+            const progressContainer = document.getElementById('training-progress-container');
+            const progressBar = document.getElementById('training-progress-bar');
+            const progressText = document.getElementById('training-progress-text');
+            const lossSpan = document.getElementById('metric-loss');
+
+            if (status === 'RUNNING' || status === 'TRAINING') {
+                isTraining = true;
+                if (progressContainer) progressContainer.style.display = 'block';
+            }
+            if (metrics.progressPercent != null && metrics.progressPercent >= 0) {
+                if (progressContainer) progressContainer.style.display = 'block';
+                if (progressBar) progressBar.style.width = Math.min(100, metrics.progressPercent) + '%';
+                if (progressText) progressText.textContent = metrics.progressPercent + '%';
+            }
+            if (metrics.trainingLoss > 0 && lossSpan) {
+                lossSpan.textContent = metrics.trainingLoss.toFixed(4);
+                if (metrics.validationLoss > 0) {
+                    lossSpan.textContent = metrics.trainingLoss.toFixed(4) + ' / val ' + metrics.validationLoss.toFixed(4);
+                }
+            }
+
+            const session = sessions.find(s => s.id === activeSessionId || s.name === activeSessionId);
+            if (session) {
+                session.liveStatus = metrics.status;
+                session.currentEpoch = metrics.currentEpoch;
+                session.totalEpochs = metrics.totalEpochs;
+                session.currentLoss = metrics.trainingLoss;
+            }
+
+            if (currentViz === 'TRAINING') {
+                try {
+                    let events = [];
+                    const eventsRes = await fetch(getBaseUrl() + `/forge/session/${encodeURIComponent(activeSessionId)}/training/events?runtime=SWT`);
+                    if (eventsRes.ok) events = await eventsRes.json();
+                    renderTrainingViz(metrics, events);
+                } catch (e) {}
+            }
         }
 
         function createSessionSnapshot() {
@@ -2284,11 +2387,13 @@
         function renderDemoFallback() {
             const area = document.getElementById('viz-area');
             if (currentViz === 'TRAINING') {
-                renderTrainingViz({ loss: '0.2451', acc: '0.8920' }, ['Demo started', 'Data loaded', 'Batch 100 processing...']);
+                // Honest fallback: no fabricated loss/accuracy values are displayed
+                // when the backend is unreachable.
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Backend unreachable: training visualization is not available. No simulated metrics are shown.</div>`;
             } else if (currentViz === 'ARCHITECTURE') {
-                renderArchitectureViz(model);
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Backend unreachable: architecture visualization is not available.</div>`;
             } else if (currentViz === 'DATASET') {
-                renderDatasetViz({ size: 10000, vocab: 5000 }, { raw: "This is a demo sample text for visualization fallback.", tokens: [1, 4, 12, 5, 2] });
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Backend unreachable: dataset visualization is not available.</div>`;
             } else {
                 area.innerHTML = `<div style="padding:20px; color:var(--accent)">[DEMO MODE] Visualization simulation active.</div>`;
             }
@@ -2467,6 +2572,13 @@
                         updateDemoStep('step-final', 'active');
                     }, 2000);
                     break;
+                case 'FORGE_TRAINING_STOPPED':
+                case 'FORGE_TRAINING_FAILED':
+                    setLinksAnimating(false);
+                    log("Training terminal event received: " + (event.action || event.type));
+                    // Synchronize page state with the authoritative backend status.
+                    updateLiveTrainingState();
+                    break;
                 case 'VIEW_UPDATED':
                     if (event.action === 'DEMO_COMPLETED') {
                         updateDemoStep('step-final', 'completed');
@@ -2496,6 +2608,13 @@
                  lastProcessedEventTime = Date.now();
             }
         }, 1000);
+
+        // Real-time training state synchronization: every 2s the page reads the
+        // authoritative backend telemetry and updates progress, metrics and the
+        // state-aware action buttons. No simulated values are ever rendered.
+        setInterval(() => {
+            updateLiveTrainingState();
+        }, 2000);
 
         function showPaletteMenu(e) {
             e.preventDefault();

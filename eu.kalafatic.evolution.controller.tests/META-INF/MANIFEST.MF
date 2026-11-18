@@ -2,19 +2,20 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Controller Tests
 Bundle-SymbolicName: eu.kalafatic.evolution.controller.tests;singleton:=true
-Bundle-Version: 2.6.5.qualifier
+Bundle-Version: 2.6.11.qualifier
 Require-Bundle: org.eclipse.core.runtime,
- eu.kalafatic.evolution.controller;bundle-version="2.6.5";visibility:=reexport,
- eu.kalafatic.evolution.view;bundle-version="2.6.5",
- eu.kalafatic.evolution.model;bundle-version="2.6.5",
- eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.agent.api;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.model;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.math;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.trainer;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.tokenizer;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.data;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.controller;bundle-version="2.6.5",
+ eu.kalafatic.evolution.controller;bundle-version="2.6.11";visibility:=reexport,
+ eu.kalafatic.evolution.enr;bundle-version="2.6.11",
+ eu.kalafatic.evolution.view;bundle-version="2.6.11",
+ eu.kalafatic.evolution.model;bundle-version="2.6.11",
+ eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.agent.api;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.model;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.math;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.trainer;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.tokenizer;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.data;bundle-version="2.6.11",
+ eu.kalafatic.evolution.forge.controller;bundle-version="2.6.11",
  org.junit;bundle-version="4.13.2"
 Import-Package: eu.kalafatic.evolution.controller.orchestration.selfdev
 Bundle-RequiredExecutionEnvironment: JavaSE-21

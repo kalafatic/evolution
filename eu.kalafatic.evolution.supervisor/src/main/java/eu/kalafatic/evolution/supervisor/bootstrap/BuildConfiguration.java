@@ -8,7 +8,9 @@ public class BuildConfiguration {
     private final File workspacePath;
     private final List<String> goals = new ArrayList<>();
     private final List<String> profiles = new ArrayList<>();
-    private boolean skipTests = true;
+    // WP3: tests are enabled by default; skipping requires the explicit
+    // smoke-build escape hatch (-Devo.build.skipTests=true).
+    private boolean skipTests = Boolean.getBoolean("evo.build.skipTests");
 
     public BuildConfiguration(File workspacePath) {
         this.workspacePath = workspacePath;

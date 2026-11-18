@@ -200,7 +200,7 @@
                         <div style="display: flex; justify-content: space-between;"><span>5. Training:</span> <b style="color:${status === 'TRAINING' ? 'var(--accent)' : (['EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'var(--success)' : '#888')}">${status === 'TRAINING' ? 'ACTIVE' : (['EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'COMPLETE' : 'PENDING')}</b></div>
                         <div style="display: flex; justify-content: space-between;"><span>6. Verification:</span> <b style="color:${status === 'EXPORTING' || status === 'EXPORT_GGUF' ? 'var(--accent)' : (status === 'COMPLETE' ? 'var(--success)' : '#888')}">${status === 'EXPORTING' || status === 'EXPORT_GGUF' ? 'ACTIVE' : (status === 'COMPLETE' ? 'COMPLETE' : 'PENDING')}</b></div>
                         <div style="display: flex; justify-content: space-between;"><span>7. Evaluation:</span> <b style="color:${status === 'COMPLETE' ? 'var(--success)' : '#888'}">${status === 'COMPLETE' ? 'COMPLETE' : 'PENDING'}</b></div>
-                        <div style="display: flex; justify-content: space-between;"><span>8. Darwin Score:</span> <b style="color:var(--accent)">${status === 'COMPLETE' ? '0.85' : '---'}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>8. Darwin Score:</span> <b style="color:var(--accent)">N/A (no measured score source)</b></div>
                         <div style="display: flex; justify-content: space-between;"><span>9. Decision:</span> <b style="color:var(--success)">${status === 'COMPLETE' ? 'NEXT ITERATION' : 'PENDING'}</b></div>
                     </div>
                 </div>
@@ -239,7 +239,7 @@
                 </div>
                 ${status === 'COMPLETE' ? `
                     <div style="margin-top: 15px; padding: 10px; background: #f6fff6; border: 1px solid var(--success); border-radius: 4px; font-size: 0.8em; color: var(--success);">
-                        <b>Deployment Success:</b> The model has been registered in Ollama as 'evo'.
+                        <b>Forging completed.</b> Check the Ollama model list to verify whether a model was actually registered.
                     </div>
                 ` : ''}
             `;
@@ -434,14 +434,14 @@
                 `;
                 break;
             case 'train':
-                title.textContent = 'STAGE 3: FINE-TUNING (UNSLOTH)';
+                title.textContent = 'STAGE 3: FINE-TUNING (SIMULATION — values are illustrative, not measured)';
                 content.innerHTML = `
                     <div style="font-family:monospace; font-size:0.85em; color:#444;">
                         > Initializing LoRA adapters...<br>
                         > Training on 4-bit quantized base model...<br>
-                        > Loss: 1.2435 (Epoch 0.2)<br>
-                        > Loss: 0.8211 (Epoch 0.5)<br>
-                        > Loss: 0.4567 (Epoch 1.0)
+                        > [SIMULATED] Loss: 1.2435 (Epoch 0.2)<br>
+                        > [SIMULATED] Loss: 0.8211 (Epoch 0.5)<br>
+                        > [SIMULATED] Loss: 0.4567 (Epoch 1.0)
                     </div>
                 `;
                 break;

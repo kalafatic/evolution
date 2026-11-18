@@ -316,18 +316,26 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		MenuManager menu = new MenuManager("&Help", IWorkbenchActionConstants.M_HELP);
 		menu.add(new GroupMarker(IWorkbenchActionConstants.HELP_START));
 
-		// For RCPs, these often need specific bundles, but we add the markers and standard actions
+		// Check for Updates / Install New Software... are contributed by the
+		// standard Eclipse p2 UI (org.eclipse.equinox.p2.ui.sdk) into the
+		// additions group below.
 
 		menu.add(new Separator());
 
-		IAction updateAction = builder.createAction(window, "eu.kalafatic.utils.p2.update");
-		if (updateAction != null) {
-			menu.add(updateAction);
-		}
+		IAction sitesAction = new org.eclipse.jface.action.Action("Manage Software Sites...") {
+			@Override
+			public void run() {
+				org.eclipse.ui.dialogs.PreferencesUtil.createPreferenceDialogOn(window.getShell(),
+						"org.eclipse.equinox.internal.p2.ui.sdk.SitesPreferencePage", null, null)
+						.open();
+			}
+		};
+		menu.add(sitesAction);
 
-		IAction installAction = builder.createAction(window, "eu.kalafatic.utils.p2.install");
-		if (installAction != null) {
-			menu.add(installAction);
+		IAction installDetailsAction = builder.createAction(window,
+				"org.eclipse.equinox.p2.ui.sdk.installationDetails");
+		if (installDetailsAction != null) {
+			menu.add(installDetailsAction);
 		}
 
 		menu.add(new Separator());

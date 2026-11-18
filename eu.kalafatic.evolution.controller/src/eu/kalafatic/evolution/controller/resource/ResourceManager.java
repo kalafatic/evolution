@@ -330,7 +330,12 @@ public class ResourceManager {
         return validateCanonicalPath(resolved);
     }
 
-    private String expandVariables(String rawPath) {
+    /**
+     * Expands well-known path variables (${EVO_ROOT}, ${WORKSPACE}, ${USER_HOME}, ${user.home})
+     * in a configured path string. Public so that SelfDev path resolution shares the exact
+     * same expansion semantics as ResourceManager.
+     */
+    public String expandVariables(String rawPath) {
         if (rawPath == null) return "";
         String userHome = System.getProperty("user.home");
         String gitEvolution = Paths.get(userHome, "git", "evolution").toString();
@@ -474,6 +479,10 @@ public class ResourceManager {
         // 7. SUPERVISOR CONTROL Server (Dedicated TCP 28580)
         int controlPort = pam.getPort(PortRegistry.EVO_SUPERVISOR_CONTROL.getServiceId());
         services.add(new EvoService("SUPERVISOR_CONTROL", "Supervisor Control TCP Server", "127.0.0.1", controlPort, PortProtocol.TCP.getScheme(), "", true, "EMF.supervisorControlSettings"));
+
+        // 8. ENR Neural Runtime HTTP API (Phase 6, 28780)
+        int enrPort = pam.getPort(PortRegistry.EVO_ENR.getServiceId());
+        services.add(new EvoService("ENR", "ENR Neural Runtime HTTP API", "127.0.0.1", enrPort, true, "EMF.enrSettings"));
 
         return services;
     }

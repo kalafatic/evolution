@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BuildArtifact;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.MavenSupervisorBuilder;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevTask;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SupervisorRuntime;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult;
@@ -191,9 +192,15 @@ public class SelfDevPipelineHardeningTest {
         eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevTask copyTask = orchestrator.getTaskRegistry().get("COPY");
         assertNotNull(copyTask);
 
-        // Preflight already ran on orchestrator creation
-        assertNotNull(context.getResolvedResources());
-        assertEquals(repoRoot.getAbsoluteFile().toPath().normalize().toFile(), context.getResolvedResources().getRepositoryRoot());
+        // The resolved snapshot is installed ONLY when preflight succeeds (WP1 gating).
+        SelfDevPreflightResult preflight = orchestrator.executePreflight();
+        if (preflight.isSuccess()) {
+            assertNotNull(context.getResolvedResources());
+            assertEquals(repoRoot.getAbsoluteFile().toPath().normalize().toFile(), context.getResolvedResources().getRepositoryRoot());
+        } else {
+            assertNull("A BLOCKED/FAILED preflight must never install a resolved resource snapshot",
+                    context.getResolvedResources());
+        }
     }
 
     @Test
@@ -276,20 +283,22 @@ public class SelfDevPipelineHardeningTest {
         File repoRoot = new File(".").getAbsoluteFile();
         SelfDevContext context = new SelfDevContext(repoRoot, null);
 
-        // Test Promotion pre-validation blocks without START_EVO success
+        // Test Promotion pre-validation blocks without a candidate artifact
         eu.kalafatic.evolution.controller.orchestration.selfdev.PromoteTask promoteTask =
                 new eu.kalafatic.evolution.controller.orchestration.selfdev.PromoteTask("PROMOTE");
-        TaskResult prePromote = promoteTask.validate(context);
+        TaskResult prePromote = promoteTask.execute(context);
         assertEquals(TaskStatus.FAILED, prePromote.getStatus());
 
-        // Test Rollback execution
+        // Test scoped Rollback execution: PROCESS_ONLY without ownership is an
+        // honest no-op success with run-scoped diagnostics (WP10).
         eu.kalafatic.evolution.controller.orchestration.selfdev.RollbackTask rollbackTask =
-                new eu.kalafatic.evolution.controller.orchestration.selfdev.RollbackTask("ROLLBACK");
+                new eu.kalafatic.evolution.controller.orchestration.selfdev.RollbackTask("ROLLBACK",
+                        java.util.List.of(eu.kalafatic.evolution.controller.orchestration.selfdev.RollbackTask.RollbackScope.PROCESS_ONLY));
         TaskResult rollbackRes = rollbackTask.execute(context);
         assertEquals(TaskStatus.SUCCESS, rollbackRes.getStatus());
         assertNotNull(rollbackRes.getDiagnostic("currentRun", null));
-        assertNotNull(rollbackRes.getDiagnostic("deploymentState", null));
-        assertNotNull(rollbackRes.getDiagnostic("processOwnership", null));
+        assertNotNull(rollbackRes.getDiagnostic("scopes", null));
+        assertTrue(rollbackRes.getDiagnostic("scopes", "").contains("PROCESS_ONLY"));
     }
 
     private void deleteRecursively(File f) {

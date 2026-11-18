@@ -1,16 +1,35 @@
 package eu.kalafatic.evolution.forge.controller.service.impl.agents;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Specialized agent responsible for hardware inspection, dynamic model capacity sizing,
  * Transformer FLOPs-based training throughput calculation, recursive dataset sizing,
  * training duration estimation, and smart dataset scaling for target forging time budgets.
+ *
+ * Throughput policy: measured training runs are recorded (recordTrainingMeasurement) and
+ * preferred for all time estimates. When no measurement exists for the requested model
+ * size, a clearly-labeled ANALYTICAL PRELIMINARY estimate is returned instead — never a
+ * fabricated "measured" value.
  */
 public class ForgeTrainingEstimationAgent {
+
+    private static final int MAX_MEASUREMENTS_PER_SIZE = 50;
+    private static final String MEASUREMENT_FILE_NAME = "forge-throughput-measurements.json";
 
     public interface IDatasetTargetItem {
         boolean isChecked();
@@ -42,6 +61,45 @@ public class ForgeTrainingEstimationAgent {
 
         public int getUpdatedEpochs() {
             return updatedEpochs;
+        }
+    }
+
+    /**
+     * One measured training run. All values originate from real trainer execution
+     * (TrainingResult metadata), never from simulation.
+     */
+    public static class ThroughputMeasurement {
+        public final long recordedAtMs;
+        public final String modelSize;
+        public final double tokensPerSec;
+        public final double stepsPerSec;
+        public final long durationMs;
+
+        public ThroughputMeasurement(long recordedAtMs, String modelSize, double tokensPerSec, double stepsPerSec, long durationMs) {
+            this.recordedAtMs = recordedAtMs;
+            this.modelSize = modelSize == null ? "" : modelSize.trim().toUpperCase();
+            this.tokensPerSec = tokensPerSec;
+            this.stepsPerSec = stepsPerSec;
+            this.durationMs = durationMs;
+        }
+
+        public JSONObject toJsonObject() {
+            JSONObject json = new JSONObject();
+            json.put("recordedAtMs", recordedAtMs);
+            json.put("modelSize", modelSize);
+            json.put("tokensPerSec", Math.round(tokensPerSec * 100.0) / 100.0);
+            json.put("stepsPerSec", Math.round(stepsPerSec * 1000.0) / 1000.0);
+            json.put("durationMs", durationMs);
+            return json;
+        }
+
+        public static ThroughputMeasurement fromJsonObject(JSONObject json) {
+            return new ThroughputMeasurement(
+                    json.optLong("recordedAtMs", 0),
+                    json.optString("modelSize", ""),
+                    json.optDouble("tokensPerSec", 0.0),
+                    json.optDouble("stepsPerSec", 0.0),
+                    json.optLong("durationMs", 0));
         }
     }
 
@@ -78,8 +136,153 @@ public class ForgeTrainingEstimationAgent {
     private static final Pattern LEADING_NUMBER_PATTERN = Pattern.compile("^([0-9]+(?:\\.[0-9]+)?)");
     private static final ForgeTrainingEstimationAgent INSTANCE = new ForgeTrainingEstimationAgent();
 
+    // Measured throughput history, keyed by model size. Bounded per size; the
+    // most recent measurements are kept. Persisted to JSON so the knowledge
+    // survives application restarts.
+    private final Map<String, Deque<ThroughputMeasurement>> measurements = new LinkedHashMap<>();
+    private Path measurementsStoreDir = null;
+    private boolean measurementsLoaded = false;
+
     public static ForgeTrainingEstimationAgent getInstance() {
         return INSTANCE;
+    }
+
+    /**
+     * Configures the directory used for the persisted throughput measurement
+     * store. Called by the orchestrator (project workspace) and by the Forge
+     * Settings dialog (central workspace); both resolve to the same
+     * &lt;codebase&gt;/workspace/forge-state directory.
+     */
+    public synchronized void configureMeasurementsStore(Path storeDir) {
+        this.measurementsStoreDir = storeDir;
+        this.measurementsLoaded = false;
+        loadMeasurements();
+    }
+
+    private synchronized void loadMeasurements() {
+        if (measurementsLoaded) return;
+        measurementsLoaded = true;
+        Path dir = resolveMeasurementsDir();
+        if (dir == null) return;
+        Path file = dir.resolve(MEASUREMENT_FILE_NAME);
+        if (!Files.isRegularFile(file)) return;
+        try {
+            JSONObject root = new JSONObject(Files.readString(file));
+            JSONArray arr = root.optJSONArray("measurements");
+            if (arr != null) {
+                for (int i = 0; i < arr.length(); i++) {
+                    ThroughputMeasurement m = ThroughputMeasurement.fromJsonObject(arr.getJSONObject(i));
+                    if (m.tokensPerSec > 0.0) {
+                        addToMemory(m);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[FORGE][ESTIMATE][WARN] Could not load throughput measurements from " + file + ": " + e.getMessage());
+        }
+    }
+
+    private Path resolveMeasurementsDir() {
+        if (measurementsStoreDir != null) return measurementsStoreDir;
+        // Unconfigured fallback: user-home based store.
+        return java.nio.file.Paths.get(System.getProperty("user.home"), ".evo-forge");
+    }
+
+    private synchronized void addToMemory(ThroughputMeasurement m) {
+        if (m == null || m.tokensPerSec <= 0.0) return;
+        String key = normalizeSizeKey(m.modelSize);
+        Deque<ThroughputMeasurement> deque = measurements.computeIfAbsent(key, k -> new ArrayDeque<>());
+        deque.addLast(m);
+        while (deque.size() > MAX_MEASUREMENTS_PER_SIZE) {
+            deque.removeFirst();
+        }
+    }
+
+    private void persistMeasurements() {
+        Path dir = resolveMeasurementsDir();
+        try {
+            Files.createDirectories(dir);
+            JSONObject root = new JSONObject();
+            JSONArray arr = new JSONArray();
+            for (Deque<ThroughputMeasurement> deque : measurements.values()) {
+                for (ThroughputMeasurement m : deque) {
+                    arr.put(m.toJsonObject());
+                }
+            }
+            root.put("measurements", arr);
+            Path target = dir.resolve(MEASUREMENT_FILE_NAME);
+            Path tmp = dir.resolve(MEASUREMENT_FILE_NAME + ".tmp");
+            Files.writeString(tmp, root.toString());
+            try {
+                Files.move(tmp, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception e) {
+                Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception e) {
+            System.err.println("[FORGE][ESTIMATE][WARN] Could not persist throughput measurements: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Records a REAL completed training run's measured throughput. Values must
+     * come from actual trainer execution metadata.
+     */
+    public void recordTrainingMeasurement(String modelSize, double tokensPerSec, double stepsPerSec, long durationMs) {
+        if (Double.isNaN(tokensPerSec) || Double.isInfinite(tokensPerSec) || tokensPerSec <= 0.0) return;
+        ThroughputMeasurement m = new ThroughputMeasurement(System.currentTimeMillis(), modelSize, tokensPerSec, stepsPerSec, durationMs);
+        addToMemory(m);
+        persistMeasurements();
+    }
+
+    /**
+     * Returns the median measured tokens/sec for the given model size, or -1
+     * when no measurement exists. Never fabricates a value.
+     */
+    public synchronized double getMeasuredTokensPerSecond(String modelSize) {
+        loadMeasurements();
+        Deque<ThroughputMeasurement> deque = measurements.get(normalizeSizeKey(modelSize));
+        if (deque == null || deque.isEmpty()) return -1.0;
+        List<Double> values = new ArrayList<>();
+        for (ThroughputMeasurement m : deque) {
+            if (m.tokensPerSec > 0.0) values.add(m.tokensPerSec);
+        }
+        if (values.isEmpty()) return -1.0;
+        Collections.sort(values);
+        return values.get(values.size() / 2);
+    }
+
+    public synchronized int getMeasurementCount(String modelSize) {
+        loadMeasurements();
+        Deque<ThroughputMeasurement> deque = measurements.get(normalizeSizeKey(modelSize));
+        return deque == null ? 0 : deque.size();
+    }
+
+    /**
+     * Estimation quality 0..1: 1.0 = at least 3 real measurements exist for the
+     * model size; <1 = fewer measurements; 0 = analytical preliminary estimate only.
+     */
+    public synchronized double getThroughputConfidence(String modelSize) {
+        loadMeasurements();
+        Deque<ThroughputMeasurement> deque = measurements.get(normalizeSizeKey(modelSize));
+        int n = deque == null ? 0 : deque.size();
+        if (n <= 0) return 0.0;
+        if (n == 1) return 0.4;
+        if (n == 2) return 0.7;
+        return 1.0;
+    }
+
+    private static String normalizeSizeKey(String modelSize) {
+        if (modelSize == null || modelSize.trim().isEmpty()) return "UNKNOWN";
+        return modelSize.trim().toUpperCase();
+    }
+
+    /**
+     * Test seam: clears the in-memory measurement cache. Production code never
+     * calls this.
+     */
+    public synchronized void resetMeasurementsForTesting() {
+        measurements.clear();
+        measurementsLoaded = true;
     }
 
     public int getCpuCores() {
@@ -216,26 +419,42 @@ public class ForgeTrainingEstimationAgent {
         return 8.0;
     }
 
+    /**
+     * Fallback parameter-count table (used when the UI layer cannot resolve the
+     * authoritative ModelSizePreset). Values match the architecture-derived
+     * counts of ModelSizePreset.Size so the "SMALL (25M)" vs "Small (50M)"
+     * discrepancy no longer exists: SMALL is ~48.9M parameters everywhere.
+     */
     public double getModelParameterCount(String modelSize) {
         String s = modelSize != null ? modelSize.toUpperCase() : "SMALL";
-        if (s.contains("NANO")) return 500_000.0;
-        if (s.contains("MICRO")) return 2_000_000.0;
+        if (s.contains("NANO")) return 748_416.0;
+        if (s.contains("MICRO")) return 3_647_744.0;
+        if (s.contains("TINY")) return 16_765_824.0;
         if (s.contains("MINI")) return 8_000_000.0;
-        if (s.contains("SMALL")) return 25_000_000.0;
-        if (s.contains("MEDIUM")) return 75_000_000.0;
-        if (s.contains("LARGE") && !s.contains("XLARGE")) return 200_000_000.0;
+        if (s.contains("SMALL")) return 48_923_136.0;
+        if (s.contains("MEDIUM")) return 162_417_408.0;
+        if (s.contains("LARGE") && !s.contains("XLARGE")) return 370_869_248.0;
+        if (s.contains("GRANITE_PLUS")) return 10_140_717_056.0;
+        if (s.contains("GRANITE")) return 8_194_494_464.0;
         if (s.contains("XLARGE")) return 500_000_000.0;
-        return 25_000_000.0;
+        return 48_923_136.0;
     }
 
     public double getBaselineTokensPerSecond(String modelSize) {
-        double params = getModelParameterCount(modelSize);
+        return getBaselineTokensPerSecond(getModelParameterCount(modelSize));
+    }
+
+    /**
+     * Analytical preliminary throughput for an explicit parameter count:
+     * effective GFLOPs estimate of the pure-Java JVM trainer divided by
+     * ~6 FLOPs per trained token. Clearly a PRELIMINARY analytical estimate;
+     * measured values (recordTrainingMeasurement) take precedence in the UI.
+     */
+    public double getBaselineTokensPerSecond(double paramCount) {
         int cores = getCpuCores();
-        // JVM native pure-Java matrix backpropagation throughput FLOPs estimate.
-        // Effective ~0.5 GFLOPs/sec per core on JVM float array operations.
         double flopsPerCore = 500_000_000.0;
         double totalFlops = cores * flopsPerCore * Math.pow(cores, -0.2);
-        double flopsPerToken = 6.0 * params;
+        double flopsPerToken = 6.0 * paramCount;
         double estimatedTokPerSec = totalFlops / flopsPerToken;
         return Math.max(5.0, Math.min(25_000.0, estimatedTokPerSec));
     }
@@ -328,6 +547,23 @@ public class ForgeTrainingEstimationAgent {
         long estimatedDatasetTokens = Math.max(1L, datasetBytes / 4L);
         double totalTokensToTrain = (double) estimatedDatasetTokens * (double) Math.max(1, epochs);
         double tokPerSec = getBaselineTokensPerSecond(modelSize);
+        if (tokPerSec <= 0.0 || Double.isNaN(tokPerSec) || Double.isInfinite(tokPerSec)) {
+            return 0.0;
+        }
+        double seconds = totalTokensToTrain / tokPerSec;
+        return Double.isNaN(seconds) || Double.isInfinite(seconds) ? 0.0 : seconds;
+    }
+
+    /**
+     * Analytical preliminary training-duration estimate for an explicit model
+     * parameter count (used by the dialog with authoritative ModelSizePreset
+     * parameter counts).
+     */
+    public double calculateEstimatedForgingSecondsWithParams(double paramCount, int epochs, long datasetBytes) {
+        if (datasetBytes <= 0 || epochs <= 0 || paramCount <= 0.0) return 0.0;
+        long estimatedDatasetTokens = Math.max(1L, datasetBytes / 4L);
+        double totalTokensToTrain = (double) estimatedDatasetTokens * (double) Math.max(1, epochs);
+        double tokPerSec = getBaselineTokensPerSecond(paramCount);
         if (tokPerSec <= 0.0 || Double.isNaN(tokPerSec) || Double.isInfinite(tokPerSec)) {
             return 0.0;
         }

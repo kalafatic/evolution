@@ -245,7 +245,9 @@ window.renderTrainingViz = function(data, events) {
     }
     const metricAccEl = document.getElementById('metric-acc');
     if (metricAccEl) {
-        metricAccEl.textContent = valLoss > 0 ? (1.0 - valLoss).toFixed(4) : (currentLoss > 0 ? (1.0 - Math.min(1.0, currentLoss)).toFixed(4) : '--');
+        // Accuracy is not measured anywhere in the native pipeline; never present
+        // a derived value (e.g. 1-loss) as if it were measured accuracy.
+        metricAccEl.textContent = '--';
     }
     const progContainer = document.getElementById('training-progress-container');
     const progBar = document.getElementById('training-progress-bar');

@@ -73,7 +73,7 @@ public class EvoCodebaseDataSourceTest {
         Files.writeString(manifestFile,
             "Manifest-Version: 1.0\n" +
             "Bundle-SymbolicName: eu.kalafatic.core;singleton:=true\n" +
-            "Bundle-Version: 2.6.5.qualifier\n" +
+            "Bundle-Version: 2.6.11.qualifier\n" +
             "Require-Bundle: org.eclipse.core.runtime, eu.kalafatic.utils\n" +
             "Export-Package: eu.kalafatic.core\n");
 
@@ -93,7 +93,7 @@ public class EvoCodebaseDataSourceTest {
             "<project>\n" +
             "  <groupId>eu.kalafatic</groupId>\n" +
             "  <artifactId>eu.kalafatic.core</artifactId>\n" +
-            "  <version>2.6.5-SNAPSHOT</version>\n" +
+            "  <version>2.6.11-SNAPSHOT</version>\n" +
             "  <build><plugins><plugin><artifactId>tycho-maven-plugin</artifactId></plugin></plugins></build>\n" +
             "</project>");
 

@@ -1,8 +1,15 @@
 package eu.kalafatic.evolution.view.dialogs;
 
 import java.io.File;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -18,6 +25,7 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -27,6 +35,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -37,12 +46,29 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent;
 import eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
 import eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService;
 import eu.kalafatic.utils.factories.GUIFactory;
 
+/**
+ * FORGE Settings &amp; Live Training Control Center.
+ *
+ * Primary interactive Forge properties and monitoring interface:
+ * - left:  configuration (model, training, termination, checkpoint/export, hardware)
+ * - center: live training monitor (authoritative telemetry, loss trajectory,
+ *           capacity budget, progress & resource monitor)
+ * - right: datasets & input limits
+ * - bottom: tabbed monitoring graphs (Loss | LR | Throughput | Hardware | Memory | Timeline)
+ *
+ * Honesty policy: every displayed metric originates from the authoritative
+ * ForgeSessionManager telemetry or from the configured session state. Missing
+ * values render as N/A. Estimates are explicitly labeled ANALYTICAL PRELIMINARY
+ * until real measurements exist. No simulated progress, no fabricated metrics.
+ */
 public class ForgeSettingsDialog extends Dialog {
 
     public static class DatasetItem implements ForgeTrainingEstimationAgent.IDatasetTargetItem {
@@ -169,11 +195,11 @@ public class ForgeSettingsDialog extends Dialog {
     }
 
     public static double getModelParameterCount(String modelSize) {
-        return ForgeTrainingEstimationAgent.getInstance().getModelParameterCount(modelSize);
+        return ForgeTelemetrySnapshot.resolveParamCount(modelSize);
     }
 
     public static double getBaselineTokensPerSecond(String modelSize) {
-        return ForgeTrainingEstimationAgent.getInstance().getBaselineTokensPerSecond(modelSize);
+        return ForgeTrainingEstimationAgent.getInstance().getBaselineTokensPerSecond(getModelParameterCount(modelSize));
     }
 
     public static long calculatePathSize(String path) {
@@ -193,7 +219,8 @@ public class ForgeSettingsDialog extends Dialog {
     }
 
     public static double calculateEstimatedForgingSeconds(String modelSize, int epochs, long datasetBytes) {
-        return ForgeTrainingEstimationAgent.getInstance().calculateEstimatedForgingSeconds(modelSize, epochs, datasetBytes);
+        return ForgeTrainingEstimationAgent.getInstance()
+                .calculateEstimatedForgingSecondsWithParams(getModelParameterCount(modelSize), epochs, datasetBytes);
     }
 
     public static String formatDuration(double seconds) {
@@ -215,32 +242,57 @@ public class ForgeSettingsDialog extends Dialog {
     private Combo lossThresholdCombo;
     private Combo desiredLossCombo;
     private Combo targetTimeCombo;
+    private Combo refreshIntervalCombo;
     private org.eclipse.swt.widgets.Text maxDataSizeText;
     private org.eclipse.swt.widgets.Text maxSampleCountText;
+    private org.eclipse.swt.widgets.Text maxTokensLimitText;
     private org.eclipse.swt.widgets.Text maxSeqLenText;
     private org.eclipse.swt.widgets.Text valRatioText;
     private org.eclipse.swt.widgets.Text outputModelNameText;
     private Button qualityFilterCheck;
+    private Button earlyStoppingCheck;
     private Button saveEpochCheckpointsCheck;
     private Button quantizationCheck;
+    private Button autoRefreshCheck;
     private Combo quantizationSchemeCombo;
     private Label estTimeLabel;
     private Label hwProfileLabel;
     private Browser graphBrowser;
+    private Browser monitorBrowser;
     private Table datasetsTable;
 
+    // Live monitor widgets (SWT, authoritative telemetry driven)
+    private Label sessionStatusLabel;
+    private Label sessionNameLabel;
+    private Label phaseLabel;
+    private Label lastUpdatedLabel;
+    private Label staleLabel;
+    private ProgressBar liveProgressBar;
+    private Label liveMetricsLabel;
+    private Label liveEtaLabel;
+
+    private Button startTrainingBtn;
+    private Button pauseBtn;
+    private Button resumeBtn;
+    private Button cancelBtn;
+    private Button finishBtn;
+    private Button refreshBtn;
+    private Button reportBtn;
+
     private String selectedModelSize = "SMALL";
-    private int selectedEpochs = 32;
+    private int selectedEpochs = 4;
     private int selectedBatchSize = 16;
     private double selectedLearningRate = 0.01;
     private int selectedGenerations = 1;
     private int selectedCandidates = 1;
     private int selectedCheckpointFreq = 5;
     private long selectedMaxDataSizeMb = 500;
-    private long selectedMaxSampleCount = -1;
+    private long selectedMaxSampleCount = 5000;
+    private int selectedMaxTokensLimit = 100000;
     private int selectedMaxSeqLen = 1024;
     private double selectedValRatio = 0.15;
     private boolean selectedQualityFilter = true;
+    private boolean selectedEarlyStoppingEnabled = true;
     private boolean selectedSaveEpochCheckpoints = true;
     private boolean selectedQuantizationEnabled = true;
     private String selectedQuantizationScheme = "F16";
@@ -250,6 +302,18 @@ public class ForgeSettingsDialog extends Dialog {
     private double selectedTargetHours = 12.0;
     private double[] lossHistory = null;
     private List<DatasetItem> datasetItems = new ArrayList<>();
+
+    // Live monitoring state
+    private ForgeTelemetrySnapshot lastSnapshot = null;
+    private String lastCenterHtml = "";
+    private String lastMonitorHtml = "";
+    private long lastRefreshMs = 0;
+    private int autoRefreshIntervalMs = 3000;
+    private boolean disposedTimer = false;
+
+    // Reusable auto-refresh listeners for UI controls
+    private SelectionListener autoRefreshSelectionAdapter;
+    private ModifyListener autoRefreshModifyAdapter;
 
     private static final String[] EPOCH_OPTIONS = new String[] {
         "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024"
@@ -325,12 +389,22 @@ public class ForgeSettingsDialog extends Dialog {
     @Override
     protected void configureShell(Shell newShell) {
         super.configureShell(newShell);
-        newShell.setText("FORGE Settings & Loss Progress Graph");
+        newShell.setText("FORGE Settings & Live Training Control Center");
     }
 
     @Override
     protected Point getInitialSize() {
-        return new Point(1280, 780);
+        return new Point(1380, 900);
+    }
+
+    @Override
+    public boolean close() {
+        stopAutoRefresh();
+        return super.close();
+    }
+
+    private void stopAutoRefresh() {
+        disposedTimer = true;
     }
 
     @Override
@@ -338,27 +412,27 @@ public class ForgeSettingsDialog extends Dialog {
         Composite container = (Composite) super.createDialogArea(parent);
         container.setLayout(new GridLayout(1, true));
 
+        createTopStatusStrip(container);
+
         SashForm sashForm = new SashForm(container, SWT.HORIZONTAL | SWT.SMOOTH);
         sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         // Reusable auto-refresh listeners for UI controls
-        SelectionListener autoRefreshSelectionAdapter = new SelectionAdapter() {
+        autoRefreshSelectionAdapter = new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 readEffectiveSettingsFromUi();
-                updateHardwareAndTimeInfo();
-                updateGraphHtml();
+                scheduleGraphUpdate();
             }
         };
 
-        ModifyListener autoRefreshModifyAdapter = e -> {
+        autoRefreshModifyAdapter = e -> {
             readEffectiveSettingsFromUi();
-            updateHardwareAndTimeInfo();
-            updateGraphHtml();
+            scheduleGraphUpdate();
         };
 
         // Panel 1 (Left): Model & Hardware Settings Panel
-        Composite leftContainer = createPanelContainer(sashForm, "Model & Hardware Settings");
+        Composite leftContainer = createPanelContainer(sashForm, "Configuration & Hardware");
 
         ScrolledComposite leftScrolled = new ScrolledComposite(leftContainer, SWT.V_SCROLL | SWT.H_SCROLL);
         leftScrolled.setExpandHorizontal(true);
@@ -374,7 +448,172 @@ public class ForgeSettingsDialog extends Dialog {
             leftScrolled.setMinSize(size);
         });
 
-        // Presets Group
+        buildPresetGroup(settingsPanel);
+        buildModelTrainingGroup(settingsPanel);
+        buildTerminationGroup(settingsPanel);
+        buildCheckpointExportGroup(settingsPanel);
+        buildHardwareGroup(settingsPanel);
+
+        updateHardwareAndTimeInfo();
+
+        // Panel 2 (Center): Live Training Monitor
+        Composite middleContainer = createPanelContainer(sashForm, "Live Training Monitor");
+
+        Composite centerWrap = new Composite(middleContainer, SWT.NONE);
+        centerWrap.setLayout(new GridLayout(1, false));
+        centerWrap.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        buildLiveMonitorCards(centerWrap);
+
+        graphBrowser = new Browser(centerWrap, SWT.NONE);
+        GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        browserData.minimumHeight = 260;
+        graphBrowser.setLayoutData(browserData);
+
+        // Panel 3 (Right): Datasets & Input Limits
+        Composite rightContainer = createPanelContainer(sashForm, "Datasets & Input Limits");
+
+        ScrolledComposite rightScrolled = new ScrolledComposite(rightContainer, SWT.V_SCROLL | SWT.H_SCROLL);
+        rightScrolled.setExpandHorizontal(true);
+        rightScrolled.setExpandVertical(true);
+        rightScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        Composite rightPanel = new Composite(rightScrolled, SWT.NONE);
+        rightPanel.setLayout(new GridLayout(1, true));
+        rightScrolled.setContent(rightPanel);
+
+        rightPanel.addListener(SWT.Resize, event -> {
+            Point size = rightPanel.computeSize(rightScrolled.getClientArea().width, SWT.DEFAULT, true);
+            rightScrolled.setMinSize(size);
+        });
+
+        buildDatasetsGroup(rightPanel);
+
+        sashForm.setWeights(new int[] { 30, 44, 26 });
+
+        // Bottom: tabbed monitoring graphs
+        Group monitorGroup = new Group(container, SWT.NONE);
+        monitorGroup.setText("Monitoring Graphs (Loss | Learning Rate | Throughput | Hardware | Memory | Timeline)");
+        monitorGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        monitorGroup.setLayout(new GridLayout(1, true));
+
+        monitorBrowser = new Browser(monitorGroup, SWT.NONE);
+        GridData monitorData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        monitorData.heightHint = 300;
+        monitorBrowser.setLayoutData(monitorData);
+
+        // Initial HTML render
+        renderAll();
+
+        // Start the automatic refresh loop (UI-thread timer; never blocks SWT).
+        disposedTimer = false;
+        scheduleAutoRefresh();
+
+        return container;
+    }
+
+    // =====================================================================
+    // TOP STATUS STRIP + LIVE MONITOR CARDS (SWT)
+    // =====================================================================
+
+    private void createTopStatusStrip(Composite container) {
+        Group strip = new Group(container, SWT.NONE);
+        strip.setText("Session & Telemetry");
+        strip.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        strip.setLayout(new GridLayout(10, false));
+
+        GUIFactory.INSTANCE.createLabel(strip, "Session:");
+        sessionNameLabel = new Label(strip, SWT.NONE);
+        sessionNameLabel.setText("No forge session");
+        sessionNameLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        GUIFactory.INSTANCE.createLabel(strip, "Status:");
+        sessionStatusLabel = new Label(strip, SWT.NONE);
+        sessionStatusLabel.setText("UNKNOWN");
+        sessionStatusLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        GUIFactory.INSTANCE.createLabel(strip, "Phase:");
+        phaseLabel = new Label(strip, SWT.NONE);
+        phaseLabel.setText("—");
+        phaseLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        GUIFactory.INSTANCE.createLabel(strip, "Updated:");
+        lastUpdatedLabel = new Label(strip, SWT.NONE);
+        lastUpdatedLabel.setText("—");
+        lastUpdatedLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        staleLabel = new Label(strip, SWT.NONE);
+        staleLabel.setText("");
+        staleLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        autoRefreshCheck = GUIFactory.INSTANCE.createCheckButton(strip, "Auto Refresh");
+        autoRefreshCheck.setSelection(true);
+        autoRefreshCheck.setToolTipText("Automatically reload authoritative training telemetry while this dialog is open.");
+        autoRefreshCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                scheduleAutoRefresh();
+            }
+        });
+
+        refreshIntervalCombo = new Combo(strip, SWT.DROP_DOWN | SWT.READ_ONLY);
+        for (String opt : new String[] { "1 s", "2 s", "3 s", "5 s", "10 s" }) refreshIntervalCombo.add(opt);
+        refreshIntervalCombo.select(2);
+        refreshIntervalCombo.setToolTipText("Automatic refresh interval (2-5 s recommended).");
+        refreshIntervalCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                parseRefreshInterval();
+                scheduleAutoRefresh();
+            }
+        });
+
+        refreshBtn = GUIFactory.INSTANCE.createButton(strip, "Refresh Now");
+        refreshBtn.setToolTipText("Reload all session information, training state and graphs from the authoritative FORGE telemetry. Does not restart, reset or modify training.");
+        refreshBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleRefreshNow();
+            }
+        });
+    }
+
+    private void parseRefreshInterval() {
+        if (refreshIntervalCombo == null || refreshIntervalCombo.isDisposed()) return;
+        try {
+            String text = refreshIntervalCombo.getText().replaceAll("[^0-9]", "");
+            int sec = Integer.parseInt(text.isEmpty() ? "3" : text);
+            autoRefreshIntervalMs = Math.max(1000, Math.min(60_000, sec * 1000));
+        } catch (Exception ignored) {
+            autoRefreshIntervalMs = 3000;
+        }
+    }
+
+    private void buildLiveMonitorCards(Composite parent) {
+        Group cards = new Group(parent, SWT.NONE);
+        cards.setText("Training Status (authoritative telemetry)");
+        cards.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        cards.setLayout(new GridLayout(4, false));
+
+        liveProgressBar = new ProgressBar(cards, SWT.HORIZONTAL);
+        liveProgressBar.setMinimum(0);
+        liveProgressBar.setMaximum(100);
+        liveProgressBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1));
+
+        liveMetricsLabel = new Label(cards, SWT.WRAP);
+        liveMetricsLabel.setText("No training session data yet. Start training or press Refresh Now.");
+        liveMetricsLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+
+        liveEtaLabel = new Label(cards, SWT.WRAP);
+        liveEtaLabel.setText("ETA: N/A");
+        liveEtaLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+    }
+
+    // =====================================================================
+    // LEFT PANEL BUILDERS
+    // =====================================================================
+
+    private void buildPresetGroup(Composite settingsPanel) {
         Group presetGroup = new Group(settingsPanel, SWT.NONE);
         presetGroup.setText("Configuration Preset");
         presetGroup.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
@@ -408,17 +647,17 @@ public class ForgeSettingsDialog extends Dialog {
                     selectedCandidates = 1;
                 }
                 updateControlsFromFields();
-                updateHardwareAndTimeInfo();
-                updateGraphHtml();
+                scheduleGraphUpdate();
             }
         });
+    }
 
+    private void buildModelTrainingGroup(Composite settingsPanel) {
         Group settingsGroup = new Group(settingsPanel, SWT.NONE);
-        settingsGroup.setText("Forge Model & Training Configuration");
+        settingsGroup.setText("Model & Training Configuration");
         settingsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
         settingsGroup.setLayout(new GridLayout(4, false));
 
-        // 1. Preset Model Sizes Combo
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Preset Model Size:");
         modelSizeCombo = GUIFactory.INSTANCE.createCombo(settingsGroup);
         modelSizeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -443,12 +682,10 @@ public class ForgeSettingsDialog extends Dialog {
                 } else {
                     selectedModelSize = modelSizeCombo.getText();
                 }
-                updateHardwareAndTimeInfo();
-                updateGraphHtml();
+                scheduleGraphUpdate();
             }
         });
 
-        // 2. Epoch Count (With Tooltip)
         Label epochLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Epoch Count:");
         epochLabel.setToolTipText("Epochs: How many full passes the trainer makes through the training dataset for one model.");
         epochCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
@@ -461,7 +698,6 @@ public class ForgeSettingsDialog extends Dialog {
         epochCombo.addSelectionListener(autoRefreshSelectionAdapter);
         epochCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        // 3. Batch Size
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Batch Size:");
         batchSizeCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
         batchSizeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -470,7 +706,6 @@ public class ForgeSettingsDialog extends Dialog {
         batchSizeCombo.addSelectionListener(autoRefreshSelectionAdapter);
         batchSizeCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        // 4. Learning Rate
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Learning Rate:");
         learningRateCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
         learningRateCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -479,7 +714,20 @@ public class ForgeSettingsDialog extends Dialog {
         learningRateCombo.addSelectionListener(autoRefreshSelectionAdapter);
         learningRateCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        // 5. Evolutionary Generations (With Tooltip)
+        // Optimizer: the trainer uses the embedded AdamW (fixed architecture).
+        GUIFactory.INSTANCE.createLabel(settingsGroup, "Optimizer:");
+        Label optimizerLabel = new Label(settingsGroup, SWT.NONE);
+        optimizerLabel.setText("AdamW (embedded, fixed)");
+        optimizerLabel.setToolTipText("The EvoLlmTrainer uses its embedded AdamW optimizer (decoupled weight decay, bias correction, global L2 clipping). Not configurable.");
+        optimizerLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        GUIFactory.INSTANCE.createLabel(settingsGroup, "Sequence Length (tokens):");
+        maxSeqLenText = GUIFactory.INSTANCE.createText(settingsGroup);
+        maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
+        maxSeqLenText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        maxSeqLenText.setToolTipText("Maximum sequence length used for training samples.");
+        maxSeqLenText.addModifyListener(autoRefreshModifyAdapter);
+
         Label genLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Generations:");
         genLabel.setToolTipText("Generations: How many evolutionary rounds are executed.");
         generationsCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
@@ -490,7 +738,6 @@ public class ForgeSettingsDialog extends Dialog {
         generationsCombo.addSelectionListener(autoRefreshSelectionAdapter);
         generationsCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        // 6. Candidates Per Generation (With Tooltip)
         Label candLabel = GUIFactory.INSTANCE.createLabel(settingsGroup, "Candidates / Gen:");
         candLabel.setToolTipText("Candidates: How many model candidates are trained or evaluated in each evolutionary generation.");
         candidatesCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
@@ -501,32 +748,27 @@ public class ForgeSettingsDialog extends Dialog {
         candidatesCombo.addSelectionListener(autoRefreshSelectionAdapter);
         candidatesCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        // 7. Checkpoint Frequency
-        GUIFactory.INSTANCE.createLabel(settingsGroup, "Checkpoint Freq (Epochs):");
-        checkpointFreqCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
-        checkpointFreqCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        for (String cf : new String[] { "1", "2", "5", "10", "20" }) checkpointFreqCombo.add(cf);
-        checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
-        checkpointFreqCombo.addSelectionListener(autoRefreshSelectionAdapter);
-        checkpointFreqCombo.addModifyListener(autoRefreshModifyAdapter);
-
-        // 8. Output Model Name
         GUIFactory.INSTANCE.createLabel(settingsGroup, "Output Model Name:");
         outputModelNameText = GUIFactory.INSTANCE.createText(settingsGroup);
-        outputModelNameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        outputModelNameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
         outputModelNameText.setText(selectedOutputModelName != null ? selectedOutputModelName : "");
         outputModelNameText.addModifyListener(autoRefreshModifyAdapter);
+    }
 
-        // 3. Loss Threshold Stage Combo
-        GUIFactory.INSTANCE.createLabel(settingsGroup, "Loss Threshold Stage:");
-        lossThresholdCombo = GUIFactory.INSTANCE.createCombo(settingsGroup);
+    private void buildTerminationGroup(Composite settingsPanel) {
+        Group termGroup = new Group(settingsPanel, SWT.NONE);
+        termGroup.setText("Termination Criteria & Loss Targets");
+        termGroup.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
+        termGroup.setLayout(new GridLayout(2, false));
+
+        GUIFactory.INSTANCE.createLabel(termGroup, "Loss Stage Reference (visual only):");
+        lossThresholdCombo = GUIFactory.INSTANCE.createCombo(termGroup);
         lossThresholdCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
+        lossThresholdCombo.setToolTipText("Visual reference for the loss graph only; the backend early-stopping uses the Desired Finish Loss value.");
         for (String lossOpt : LOSS_THRESHOLD_OPTIONS) {
             lossThresholdCombo.add(lossOpt);
         }
-
-        int defaultLossIdx = 2; // "Epoch 16-30: Loss 2-5 → Learning phrases"
+        int defaultLossIdx = 2;
         for (int i = 0; i < LOSS_THRESHOLD_OPTIONS.length; i++) {
             if (LOSS_THRESHOLD_OPTIONS[i].toLowerCase().contains(selectedLossThreshold.toLowerCase()) ||
                 selectedLossThreshold.toLowerCase().contains(LOSS_THRESHOLD_OPTIONS[i].toLowerCase())) {
@@ -537,16 +779,15 @@ public class ForgeSettingsDialog extends Dialog {
         lossThresholdCombo.select(defaultLossIdx);
         lossThresholdCombo.addSelectionListener(autoRefreshSelectionAdapter);
 
-        // 4. Desired / Finish Threshold Combo (When loss < target finish forging)
-        GUIFactory.INSTANCE.createLabel(settingsGroup, "Desired Finish Loss:");
-        desiredLossCombo = new Combo(settingsGroup, SWT.DROP_DOWN);
+        Label desiredLossLabel = GUIFactory.INSTANCE.createLabel(termGroup, "Desired Finish Loss (Early Stop):");
+        desiredLossLabel.setToolTipText("Supported: when the measured loss drops below this target, the trainer stops early.");
+        desiredLossCombo = new Combo(termGroup, SWT.DROP_DOWN);
         desiredLossCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
+        desiredLossCombo.setToolTipText("Supported: when the measured loss drops below this target, the trainer stops early.");
         for (String opt : DESIRED_LOSS_OPTIONS) {
             desiredLossCombo.add(opt);
         }
-
-        int defaultDesiredIdx = 2; // "1.0"
+        int defaultDesiredIdx = 2;
         for (int i = 0; i < DESIRED_LOSS_OPTIONS.length; i++) {
             if (DESIRED_LOSS_OPTIONS[i].equals(String.format("%.2f", selectedDesiredLoss)) ||
                 DESIRED_LOSS_OPTIONS[i].equals(String.valueOf(selectedDesiredLoss))) {
@@ -561,35 +802,10 @@ public class ForgeSettingsDialog extends Dialog {
         desiredLossCombo.addSelectionListener(autoRefreshSelectionAdapter);
         desiredLossCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        // Help / Info label
-        Label helpLabel = new Label(settingsGroup, SWT.WRAP);
-        helpLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        helpLabel.setText(
-            "Loss / Stage Guidelines:\n" +
-            "• Epoch 1-5: Loss 8-10 → Learning letters (g, u, a)\n" +
-            "• Epoch 6-15: Loss 5-8 → Learning words (evolution, genome)\n" +
-            "• Epoch 16-30: Loss 2-5 → Learning phrases (\"evolution is\")\n" +
-            "• Epoch 31-50: Loss 0.5-2 → Learning sentences\n" +
-            "• Epoch 51-64: Loss < 1 → Understanding concepts\n" +
-            "• Desired Finish Loss: When actual loss drops below this target, forging stops early."
-        );
-
-        // Group 2: Hardware & Forging Time Controller Panel
-        Group hwGroup = new Group(settingsPanel, SWT.NONE);
-        hwGroup.setText("Hardware & Forging Time Controller");
-        hwGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-        hwGroup.setLayout(new GridLayout(2, false));
-
-        hwProfileLabel = new Label(hwGroup, SWT.NONE);
-        hwProfileLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
-
-        estTimeLabel = new Label(hwGroup, SWT.NONE);
-        estTimeLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
-
-        GUIFactory.INSTANCE.createLabel(hwGroup, "Target Forging Duration:");
-        targetTimeCombo = new Combo(hwGroup, SWT.DROP_DOWN);
+        GUIFactory.INSTANCE.createLabel(termGroup, "Target Forging Duration (Hard Budget):");
+        targetTimeCombo = new Combo(termGroup, SWT.DROP_DOWN);
         targetTimeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
+        targetTimeCombo.setToolTipText("Supported: hard wall-clock budget. The backend stops training cleanly when the budget is exceeded.");
         for (String opt : TARGET_TIME_OPTIONS) {
             targetTimeCombo.add(opt);
         }
@@ -598,12 +814,17 @@ public class ForgeSettingsDialog extends Dialog {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 selectedTargetHours = ForgeTrainingEstimationAgent.getInstance().parseHoursOption(targetTimeCombo.getText());
-                updateHardwareAndTimeInfo();
-                updateGraphHtml();
+                scheduleGraphUpdate();
             }
         });
 
-        Button smartScaleBtn = GUIFactory.INSTANCE.createButton(hwGroup, "Smart Scale Data for Target Time");
+        GUIFactory.INSTANCE.createLabel(termGroup, "");
+        earlyStoppingCheck = GUIFactory.INSTANCE.createCheckButton(termGroup, "Enable Early Stopping");
+        earlyStoppingCheck.setSelection(selectedEarlyStoppingEnabled);
+        earlyStoppingCheck.setToolTipText("Supported: stops training when the measured loss reaches the Desired Finish Loss.");
+        earlyStoppingCheck.addSelectionListener(autoRefreshSelectionAdapter);
+
+        Button smartScaleBtn = GUIFactory.INSTANCE.createButton(termGroup, "Smart Scale Data for Target Time");
         smartScaleBtn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
         smartScaleBtn.setToolTipText("Automatically scale dataset record limits and adjust epoch parameters to fit training within the target duration.");
         smartScaleBtn.addSelectionListener(new SelectionAdapter() {
@@ -612,61 +833,74 @@ public class ForgeSettingsDialog extends Dialog {
                 handleSmartScaling();
             }
         });
+    }
 
-        updateHardwareAndTimeInfo();
+    private void buildCheckpointExportGroup(Composite settingsPanel) {
+        Group cpGroup = new Group(settingsPanel, SWT.NONE);
+        cpGroup.setText("Checkpoint & Export Configuration");
+        cpGroup.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
+        cpGroup.setLayout(new GridLayout(2, false));
 
-        // Panel 2 (Middle): Training Performance & Capacity Visualizations Diagrams Panel
-        Composite middleContainer = createPanelContainer(sashForm, "Performance & Progress Visualizations");
+        GUIFactory.INSTANCE.createLabel(cpGroup, "Checkpoint Freq (Epochs):");
+        checkpointFreqCombo = new Combo(cpGroup, SWT.DROP_DOWN);
+        checkpointFreqCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        for (String cf : new String[] { "1", "2", "5", "10", "20" }) checkpointFreqCombo.add(cf);
+        checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
+        checkpointFreqCombo.addSelectionListener(autoRefreshSelectionAdapter);
+        checkpointFreqCombo.addModifyListener(autoRefreshModifyAdapter);
 
-        ScrolledComposite middleScrolled = new ScrolledComposite(middleContainer, SWT.V_SCROLL | SWT.H_SCROLL);
-        middleScrolled.setExpandHorizontal(true);
-        middleScrolled.setExpandVertical(true);
-        middleScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+        saveEpochCheckpointsCheck = GUIFactory.INSTANCE.createCheckButton(cpGroup, "Save Model Checkpoint After Each Epoch (.evo format)");
+        saveEpochCheckpointsCheck.setSelection(selectedSaveEpochCheckpoints);
+        saveEpochCheckpointsCheck.setToolTipText("Automatically save a timestamped .evo model checkpoint after each epoch for debugging training & forging progress.");
+        saveEpochCheckpointsCheck.addSelectionListener(autoRefreshSelectionAdapter);
+        GridData scData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
+        saveEpochCheckpointsCheck.setLayoutData(scData);
 
-        Composite middlePanel = new Composite(middleScrolled, SWT.NONE);
-        middlePanel.setLayout(new GridLayout(1, true));
-        middleScrolled.setContent(middlePanel);
+        quantizationCheck = GUIFactory.INSTANCE.createCheckButton(cpGroup, "Enable Model Quantization (.evo & GGUF export)");
+        quantizationCheck.setSelection(selectedQuantizationEnabled);
+        quantizationCheck.setToolTipText("Produce quantized model variants (F16, INT8, Q8_0, Q4_K_M) after forging completes. INT4 is honestly rejected by the backend.");
+        quantizationCheck.addSelectionListener(autoRefreshSelectionAdapter);
+        GridData qcData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
+        quantizationCheck.setLayoutData(qcData);
 
-        middlePanel.addListener(SWT.Resize, event -> {
-            Point size = middlePanel.computeSize(middleScrolled.getClientArea().width, SWT.DEFAULT, true);
-            middleScrolled.setMinSize(size);
-        });
+        GUIFactory.INSTANCE.createLabel(cpGroup, "Quantization Scheme:");
+        quantizationSchemeCombo = new Combo(cpGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+        for (String qOpt : new String[] { "F16", "INT8", "INT4", "Q8_0", "Q4_0", "Q4_K_M" }) {
+            quantizationSchemeCombo.add(qOpt);
+        }
+        quantizationSchemeCombo.setText(selectedQuantizationScheme);
+        quantizationSchemeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        quantizationSchemeCombo.addSelectionListener(autoRefreshSelectionAdapter);
+    }
 
-        Group graphGroup = new Group(middlePanel, SWT.NONE);
-        graphGroup.setText("Training Performance & Capacity Visualizations");
-        graphGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        graphGroup.setLayout(new GridLayout(1, true));
+    private void buildHardwareGroup(Composite settingsPanel) {
+        Group hwGroup = new Group(settingsPanel, SWT.NONE);
+        hwGroup.setText("Hardware, Backend & Time Estimation");
+        hwGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+        hwGroup.setLayout(new GridLayout(1, false));
 
-        graphBrowser = new Browser(graphGroup, SWT.NONE);
-        GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        browserData.minimumHeight = 1200;
-        browserData.heightHint = 1200;
-        graphBrowser.setLayoutData(browserData);
+        hwProfileLabel = new Label(hwGroup, SWT.WRAP);
+        hwProfileLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        // Panel 3 (Right): Training Datasets & Dataset Input Limits Panel
-        Composite rightContainer = createPanelContainer(sashForm, "Datasets & Input Limits");
+        estTimeLabel = new Label(hwGroup, SWT.WRAP);
+        estTimeLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        ScrolledComposite rightScrolled = new ScrolledComposite(rightContainer, SWT.V_SCROLL | SWT.H_SCROLL);
-        rightScrolled.setExpandHorizontal(true);
-        rightScrolled.setExpandVertical(true);
-        rightScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+        Label backendNote = new Label(hwGroup, SWT.WRAP);
+        backendNote.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        backendNote.setText("Backend: pure-Java JVM CPU trainer (float32). GPU acceleration is NOT active even when GPU hardware is detected; "
+                + "preliminary estimates are analytical and are replaced by measured values as training progresses.");
+    }
 
-        Composite rightPanel = new Composite(rightScrolled, SWT.NONE);
-        rightPanel.setLayout(new GridLayout(1, true));
-        rightScrolled.setContent(rightPanel);
+    // =====================================================================
+    // RIGHT PANEL: DATASETS
+    // =====================================================================
 
-        rightPanel.addListener(SWT.Resize, event -> {
-            Point size = rightPanel.computeSize(rightScrolled.getClientArea().width, SWT.DEFAULT, true);
-            rightScrolled.setMinSize(size);
-        });
-
-        // Group 3: Training Datasets (Ordered Target Data)
+    private void buildDatasetsGroup(Composite rightPanel) {
         Group datasetsGroup = new Group(rightPanel, SWT.NONE);
         datasetsGroup.setText("Training Datasets & Dataset Input Limits");
         datasetsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         datasetsGroup.setLayout(new GridLayout(2, false));
 
-        // Limits composite inside datasets group
         Composite datasetLimitsComp = new Composite(datasetsGroup, SWT.NONE);
         datasetLimitsComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
         datasetLimitsComp.setLayout(new GridLayout(4, false));
@@ -675,21 +909,22 @@ public class ForgeSettingsDialog extends Dialog {
         maxDataSizeText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
         maxDataSizeText.setText(String.valueOf(selectedMaxDataSizeMb));
         maxDataSizeText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        maxDataSizeText.setToolTipText("Maximum input dataset size limit in MB (-1 for unlimited). EVO compiles usable records into .evodata.");
+        maxDataSizeText.setToolTipText("Supported: target usable dataset size. EVO compiles usable records into .evodata until this target is reached.");
         maxDataSizeText.addModifyListener(autoRefreshModifyAdapter);
 
         GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Sample Count:");
         maxSampleCountText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
         maxSampleCountText.setText(String.valueOf(selectedMaxSampleCount));
         maxSampleCountText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        maxSampleCountText.setToolTipText("Maximum accepted training records/samples (-1 for unlimited).");
+        maxSampleCountText.setToolTipText("Supported: maximum training samples generated for the trainer (default cap: 5000).");
         maxSampleCountText.addModifyListener(autoRefreshModifyAdapter);
 
-        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Sequence Length:");
-        maxSeqLenText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
-        maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
-        maxSeqLenText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        maxSeqLenText.addModifyListener(autoRefreshModifyAdapter);
+        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Max Token Limit:");
+        maxTokensLimitText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
+        maxTokensLimitText.setText(String.valueOf(selectedMaxTokensLimit));
+        maxTokensLimitText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        maxTokensLimitText.setToolTipText("Supported: maximum encoded tokens used for training (default cap: 100000).");
+        maxTokensLimitText.addModifyListener(autoRefreshModifyAdapter);
 
         GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Validation Ratio (%):");
         valRatioText = GUIFactory.INSTANCE.createText(datasetLimitsComp);
@@ -697,34 +932,12 @@ public class ForgeSettingsDialog extends Dialog {
         valRatioText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         valRatioText.addModifyListener(autoRefreshModifyAdapter);
 
-        qualityFilterCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Enable Quality Filtering & Rejection");
+        qualityFilterCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Quality Filtering & Rejection (not yet applied by backend)");
         qualityFilterCheck.setSelection(selectedQualityFilter);
+        qualityFilterCheck.setToolTipText("Unsupported: this option is recorded in the configuration but the training engine does not consume it yet. The dataset preparation pipeline applies normalization and deduplication only.");
         qualityFilterCheck.addSelectionListener(autoRefreshSelectionAdapter);
         GridData qfData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
         qualityFilterCheck.setLayoutData(qfData);
-
-        saveEpochCheckpointsCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Save Model Checkpoint After Each Epoch (.evo format with timestamp)");
-        saveEpochCheckpointsCheck.setSelection(selectedSaveEpochCheckpoints);
-        saveEpochCheckpointsCheck.setToolTipText("Automatically save a timestamped .evo model checkpoint after each epoch for debugging training & forging progress.");
-        saveEpochCheckpointsCheck.addSelectionListener(autoRefreshSelectionAdapter);
-        GridData scData = new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1);
-        saveEpochCheckpointsCheck.setLayoutData(scData);
-
-        quantizationCheck = GUIFactory.INSTANCE.createCheckButton(datasetLimitsComp, "Enable Model Quantization (.evo & GGUF export)");
-        quantizationCheck.setSelection(selectedQuantizationEnabled);
-        quantizationCheck.setToolTipText("Produce quantized model variants (F16, INT8, INT4, Q8_0, Q4_K_M) after forging completes.");
-        quantizationCheck.addSelectionListener(autoRefreshSelectionAdapter);
-        GridData qcData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
-        quantizationCheck.setLayoutData(qcData);
-
-        GUIFactory.INSTANCE.createLabel(datasetLimitsComp, "Quantization Scheme:");
-        quantizationSchemeCombo = new Combo(datasetLimitsComp, SWT.DROP_DOWN | SWT.READ_ONLY);
-        for (String qOpt : new String[] { "F16", "INT8", "INT4", "Q8_0", "Q4_0", "Q4_K_M" }) {
-            quantizationSchemeCombo.add(qOpt);
-        }
-        quantizationSchemeCombo.setText(selectedQuantizationScheme);
-        quantizationSchemeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        quantizationSchemeCombo.addSelectionListener(autoRefreshSelectionAdapter);
 
         datasetsTable = new Table(datasetsGroup, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
         datasetsTable.setHeaderVisible(true);
@@ -751,8 +964,7 @@ public class ForgeSettingsDialog extends Dialog {
                 Object data = item.getData();
                 if (data instanceof DatasetItem) {
                     ((DatasetItem) data).setChecked(item.getChecked());
-                    updateHardwareAndTimeInfo();
-                    updateGraphHtml();
+                    scheduleGraphUpdate();
                 }
             }
         });
@@ -896,13 +1108,6 @@ public class ForgeSettingsDialog extends Dialog {
         });
 
         refreshDatasetsTable();
-
-        sashForm.setWeights(new int[] { 32, 36, 32 });
-
-        // Initial HTML render
-        updateGraphHtml();
-
-        return container;
     }
 
     private Composite createPanelContainer(SashForm sashForm, String titleText) {
@@ -942,7 +1147,7 @@ public class ForgeSettingsDialog extends Dialog {
                     if (lastWeights != null && lastWeights.length == 3) {
                         sashForm.setWeights(lastWeights);
                     } else {
-                        sashForm.setWeights(new int[] { 32, 36, 32 });
+                        sashForm.setWeights(new int[] { 30, 44, 26 });
                     }
                     maxBtn.setText("\uD83D\uDDD6"); // 🗖
                     maxBtn.setToolTipText("Maximize Panel");
@@ -958,6 +1163,254 @@ public class ForgeSettingsDialog extends Dialog {
 
         return panelContainer;
     }
+
+    // =====================================================================
+    // LIVE REFRESH
+    // =====================================================================
+
+    /**
+     * Manual Refresh Now: reloads ALL monitoring information from the
+     * authoritative ForgeSessionManager state. Does not restart training,
+     * does not modify configuration, does not clear history.
+     */
+    private void handleRefreshNow() {
+        captureAndRender(true);
+    }
+
+    private void scheduleAutoRefresh() {
+        if (getShell() == null || getShell().isDisposed() || disposedTimer) return;
+        parseRefreshInterval();
+        final boolean auto = autoRefreshCheck != null && !autoRefreshCheck.isDisposed() && autoRefreshCheck.getSelection();
+        getShell().getDisplay().timerExec(autoRefreshIntervalMs, () -> {
+            if (disposedTimer || getShell() == null || getShell().isDisposed()) return;
+            if (auto) {
+                captureAndRender(false);
+            }
+            scheduleAutoRefresh();
+        });
+    }
+
+    private void scheduleGraphUpdate() {
+        if (getShell() == null || getShell().isDisposed()) return;
+        getShell().getDisplay().timerExec(200, () -> {
+            if (disposedTimer || getShell() == null || getShell().isDisposed()) return;
+            captureAndRender(true);
+        });
+    }
+
+    /**
+     * Captures the authoritative snapshot and re-renders everything.
+     * All state reads are cheap (volatile scalars + bounded history copy) and
+     * run on the SWT UI thread; the refresh is safe during active training.
+     */
+    private void captureAndRender(boolean force) {
+        ForgeTelemetrySnapshot snap = captureSnapshot();
+        if (snap == null) return;
+        lastRefreshMs = System.currentTimeMillis();
+        boolean changed = force || lastSnapshot == null || !snap.fingerprint().equals(lastSnapshot.fingerprint());
+        lastSnapshot = snap;
+        updateLiveSwtWidgets(snap, changed);
+        if (changed) {
+            renderAll();
+        }
+    }
+
+    private ForgeTelemetrySnapshot captureSnapshot() {
+        ForgeSessionManager mgr = ForgeSessionManager.getInstance();
+        try {
+            ForgeTrainingEstimationAgent.getInstance().configureMeasurementsStore(
+                    java.nio.file.Paths.get(
+                            ProjectModelManager.getWorkspacePath() != null && !ProjectModelManager.getWorkspacePath().isEmpty()
+                                    ? ProjectModelManager.getWorkspacePath()
+                                    : System.getProperty("java.io.tmpdir"),
+                            "forge-state"));
+        } catch (Exception ignored) {}
+        return ForgeTelemetrySnapshot.capture(mgr, resolveForgeSessionId(), lossHistory, calculateTotalDatasetBytes());
+    }
+
+    private String resolveForgeSessionId() {
+        try {
+            ForgeSessionManager mgr = ForgeSessionManager.getInstance();
+            String active = mgr.getActiveTrainingSessionId();
+            if (active != null && !active.trim().isEmpty()) return active;
+            List<eu.kalafatic.evolution.model.orchestration.ForgeSession> sessions = mgr.getSessions();
+            for (eu.kalafatic.evolution.model.orchestration.ForgeSession s : sessions) {
+                if (s == null || s.getSessionId() == null) continue;
+                ForgeSessionManager.TrainingTelemetry t = mgr.getTelemetry(s.getSessionId());
+                if (t != null && t.status != null && !"IDLE".equals(t.status) && !"UNKNOWN".equals(t.status)) {
+                    return s.getSessionId();
+                }
+            }
+            if (!sessions.isEmpty() && sessions.get(0) != null) {
+                return sessions.get(0).getSessionId();
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private void updateLiveSwtWidgets(ForgeTelemetrySnapshot snap, boolean changed) {
+        if (sessionNameLabel != null && !sessionNameLabel.isDisposed()) {
+            String name = snap.sessionName != null && !snap.sessionName.isEmpty()
+                    ? snap.sessionName + " (" + shortId(snap.sessionId) + ")"
+                    : "No forge session";
+            sessionNameLabel.setText(name);
+        }
+        if (sessionStatusLabel != null && !sessionStatusLabel.isDisposed()) {
+            String text = snap.status;
+            if (snap.workflowStatus != null && !snap.workflowStatus.isEmpty()) {
+                text = snap.status + " · " + snap.workflowStatus;
+            }
+            sessionStatusLabel.setText(text);
+        }
+        if (phaseLabel != null && !phaseLabel.isDisposed()) {
+            phaseLabel.setText(phaseName(snap));
+        }
+        if (lastUpdatedLabel != null && !lastUpdatedLabel.isDisposed()) {
+            lastUpdatedLabel.setText(new SimpleDateFormat("HH:mm:ss").format(new Date(lastRefreshMs)));
+        }
+        if (staleLabel != null && !staleLabel.isDisposed()) {
+            staleLabel.setText(stalenessText(snap));
+        }
+
+        if (liveProgressBar != null && !liveProgressBar.isDisposed()) {
+            int pct = snap.overallProgress >= 0 ? (int) Math.round(snap.overallProgress * 100.0) : 0;
+            if (liveProgressBar.getSelection() != pct) {
+                liveProgressBar.setSelection(pct);
+            }
+        }
+        if (liveMetricsLabel != null && !liveMetricsLabel.isDisposed() && changed) {
+            liveMetricsLabel.setText(metricsText(snap));
+        }
+        if (liveEtaLabel != null && !liveEtaLabel.isDisposed() && changed) {
+            liveEtaLabel.setText(etaText(snap));
+        }
+        if (changed) {
+            updateActionButtonStates(snap);
+        }
+    }
+
+    private static String shortId(String id) {
+        if (id == null || id.isEmpty()) return "";
+        return id.length() <= 8 ? id : id.substring(0, 8);
+    }
+
+    private static String phaseName(ForgeTelemetrySnapshot snap) {
+        String status = snap.status != null ? snap.status.toUpperCase() : "UNKNOWN";
+        String workflow = snap.workflowStatus != null ? snap.workflowStatus : "";
+        if (workflow.contains("FINISHING") || workflow.contains("EXPORT")) return "EXPORTING";
+        if (workflow.contains("RECOVERED")) return "INTERRUPTED";
+        if ("RUNNING".equals(status) || "TRAINING".equals(status)) return "TRAINING";
+        if ("PAUSED".equals(status)) return "PAUSED";
+        if ("COMPLETED".equals(status)) return "COMPLETED";
+        if ("STOPPED".equals(status)) return "STOPPED";
+        if ("FAILED".equals(status)) return "FAILED";
+        if ("ABORTED".equals(status) || "CANCELLED".equals(status)) return "CANCELLED";
+        if ("INTERRUPTED".equals(status)) return "INTERRUPTED";
+        if ("IDLE".equals(status)) return "IDLE";
+        return "UNKNOWN";
+    }
+
+    private static String stalenessText(ForgeTelemetrySnapshot snap) {
+        if (!snap.isTrainingActive) return "";
+        long lastData = snap.capturedAtMs;
+        if (!snap.history.isEmpty()) {
+            lastData = snap.history.get(snap.history.size() - 1).timestamp;
+        } else if (snap.startTimeMs > 0) {
+            lastData = snap.startTimeMs;
+        }
+        long age = snap.capturedAtMs - lastData;
+        if (age > 8000) return "⚠ STALE DATA";
+        return "";
+    }
+
+    private static String metricsText(ForgeTelemetrySnapshot snap) {
+        StringBuilder sb = new StringBuilder();
+        if (snap.isTrainingActive || snap.totalEpochs > 0) {
+            sb.append("EPOCH ").append(snap.currentEpoch).append(" / ").append(snap.totalEpochs);
+            if (snap.epochProgress >= 0) {
+                sb.append(" – ").append(String.format("%.0f%%", snap.epochProgress * 100.0));
+            }
+            if (snap.totalSteps > 0) {
+                sb.append("  ·  Step ").append(snap.currentStep).append(" / ").append(snap.totalSteps);
+            }
+            sb.append("  ·  Batch/samples: N/A (not exposed by trainer telemetry)");
+            if (snap.currentLoss > 0) sb.append("  ·  Loss ").append(String.format("%.4f", snap.currentLoss));
+            if (snap.valLoss > 0) sb.append("  ·  Val ").append(String.format("%.4f", snap.valLoss));
+            if (snap.bestValLoss > 0) sb.append("  ·  Best Val ").append(String.format("%.4f", snap.bestValLoss));
+            if (snap.initialLoss > 0) sb.append("  ·  Initial ").append(String.format("%.4f", snap.initialLoss));
+            if (snap.learningRate > 0) sb.append("  ·  LR ").append(String.format("%.6f", snap.learningRate));
+            if (snap.totalTokens > 0) {
+                sb.append("  ·  Tokens ").append(fmtTokens(snap.processedTokens)).append(" / ").append(fmtTokens(snap.totalTokens));
+            }
+        } else {
+            sb.append("No training in progress. ").append(snap.status).append(".");
+        }
+        return sb.toString();
+    }
+
+    private static String etaText(ForgeTelemetrySnapshot snap) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Elapsed: ").append(formatDuration(snap.elapsedSeconds));
+        if (snap.estimatedRemainingSeconds >= 0.0) {
+            sb.append("  ·  ETA remaining: ").append(formatDuration(snap.estimatedRemainingSeconds));
+            long completion = (long) (System.currentTimeMillis() + snap.estimatedRemainingSeconds * 1000.0);
+            sb.append("  ·  Completion: ").append(new SimpleDateFormat("HH:mm:ss").format(new Date(completion)));
+            sb.append("  ·  Basis: ").append(describeEtaBasis(snap));
+            sb.append("  ·  Confidence: ").append(String.format("%.0f%%", snap.etaConfidence * 100.0));
+        } else if (snap.isTrainingActive) {
+            sb.append("  ·  ETA: N/A (insufficient measurements)");
+        } else {
+            sb.append("  ·  ETA: N/A");
+        }
+        return sb.toString();
+    }
+
+    private static String describeEtaBasis(ForgeTelemetrySnapshot snap) {
+        switch (snap.throughputBasis) {
+            case MEASURED_LIVE: return "measured live throughput";
+            case MEASURED_HISTORY: return "measured history";
+            case ANALYTICAL_PRELIMINARY: return "analytical preliminary";
+            default: return "unknown";
+        }
+    }
+
+    private static String fmtTokens(long tokens) {
+        if (tokens >= 1_000_000L) return String.format("%.2f M", tokens / 1_000_000.0);
+        if (tokens >= 1_000L) return String.format("%.1f k", tokens / 1_000.0);
+        return String.valueOf(tokens);
+    }
+
+    private void updateActionButtonStates(ForgeTelemetrySnapshot snap) {
+        boolean active = snap.isTrainingActive;
+        boolean paused = "PAUSED".equalsIgnoreCase(snap.status);
+        boolean interrupted = "INTERRUPTED".equalsIgnoreCase(snap.status);
+        boolean idle = !active && !paused;
+
+        if (startTrainingBtn != null && !startTrainingBtn.isDisposed()) startTrainingBtn.setEnabled(idle);
+        if (pauseBtn != null && !pauseBtn.isDisposed()) pauseBtn.setEnabled(active);
+        if (resumeBtn != null && !resumeBtn.isDisposed()) resumeBtn.setEnabled(paused || interrupted);
+        if (cancelBtn != null && !cancelBtn.isDisposed()) cancelBtn.setEnabled(active || paused);
+        if (finishBtn != null && !finishBtn.isDisposed()) finishBtn.setEnabled(active || paused);
+    }
+
+    private void renderAll() {
+        ForgeTelemetrySnapshot snap = lastSnapshot != null ? lastSnapshot : captureSnapshot();
+        if (snap == null) return;
+        String centerHtml = generateGraphHtml(snap);
+        if (graphBrowser != null && !graphBrowser.isDisposed() && !centerHtml.equals(lastCenterHtml)) {
+            lastCenterHtml = centerHtml;
+            graphBrowser.setText(centerHtml);
+        }
+        String monitorHtml = generateMonitoringGraphsHtml(snap);
+        if (monitorBrowser != null && !monitorBrowser.isDisposed() && !monitorHtml.equals(lastMonitorHtml)) {
+            lastMonitorHtml = monitorHtml;
+            monitorBrowser.setText(monitorHtml);
+        }
+    }
+
+    // =====================================================================
+    // CONFIG READING / WRITING
+    // =====================================================================
 
     private void readEffectiveSettingsFromUi() {
         if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
@@ -1046,6 +1499,13 @@ public class ForgeSettingsDialog extends Dialog {
             } catch (Exception ignored) {}
         }
 
+        if (maxTokensLimitText != null && !maxTokensLimitText.isDisposed()) {
+            try {
+                int parsed = Integer.parseInt(maxTokensLimitText.getText().trim());
+                if (parsed > 0) selectedMaxTokensLimit = parsed;
+            } catch (Exception ignored) {}
+        }
+
         if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
             try {
                 int parsed = Integer.parseInt(maxSeqLenText.getText().trim());
@@ -1062,6 +1522,10 @@ public class ForgeSettingsDialog extends Dialog {
 
         if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
             selectedQualityFilter = qualityFilterCheck.getSelection();
+        }
+
+        if (earlyStoppingCheck != null && !earlyStoppingCheck.isDisposed()) {
+            selectedEarlyStoppingEnabled = earlyStoppingCheck.getSelection();
         }
 
         if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
@@ -1086,656 +1550,1048 @@ public class ForgeSettingsDialog extends Dialog {
         }
     }
 
-    private void updateDesiredLossFromCombo() {
-        readEffectiveSettingsFromUi();
-    }
-
-    private void updateGraphHtml() {
-        if (graphBrowser != null && !graphBrowser.isDisposed()) {
-            readEffectiveSettingsFromUi();
-            String html = generateGraphHtml(selectedEpochs, selectedDesiredLoss, lossHistory);
-            graphBrowser.setText(html);
+    private void updateControlsFromFields() {
+        if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
+            for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
+                if (ModelSizePreset.Size.values()[i].name().equalsIgnoreCase(selectedModelSize) ||
+                    ModelSizePreset.Size.values()[i].getDisplayName().equalsIgnoreCase(selectedModelSize)) {
+                    modelSizeCombo.select(i);
+                    break;
+                }
+            }
+        }
+        if (epochCombo != null && !epochCombo.isDisposed()) {
+            epochCombo.setText(String.valueOf(selectedEpochs));
+        }
+        if (batchSizeCombo != null && !batchSizeCombo.isDisposed()) {
+            batchSizeCombo.setText(String.valueOf(selectedBatchSize));
+        }
+        if (learningRateCombo != null && !learningRateCombo.isDisposed()) {
+            learningRateCombo.setText(String.valueOf(selectedLearningRate));
+        }
+        if (generationsCombo != null && !generationsCombo.isDisposed()) {
+            generationsCombo.setText(String.valueOf(selectedGenerations));
+        }
+        if (candidatesCombo != null && !candidatesCombo.isDisposed()) {
+            candidatesCombo.setText(String.valueOf(selectedCandidates));
+        }
+        if (checkpointFreqCombo != null && !checkpointFreqCombo.isDisposed()) {
+            checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
+        }
+        if (outputModelNameText != null && !outputModelNameText.isDisposed()) {
+            outputModelNameText.setText(selectedOutputModelName != null ? selectedOutputModelName : "");
+        }
+        if (maxDataSizeText != null && !maxDataSizeText.isDisposed()) {
+            maxDataSizeText.setText(String.valueOf(selectedMaxDataSizeMb));
+        }
+        if (maxSampleCountText != null && !maxSampleCountText.isDisposed()) {
+            maxSampleCountText.setText(String.valueOf(selectedMaxSampleCount));
+        }
+        if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
+            maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
+        }
+        if (valRatioText != null && !valRatioText.isDisposed()) {
+            valRatioText.setText(String.valueOf((int) (selectedValRatio * 100)));
+        }
+        if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
+            qualityFilterCheck.setSelection(selectedQualityFilter);
+        }
+        if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
+            saveEpochCheckpointsCheck.setSelection(selectedSaveEpochCheckpoints);
         }
     }
 
-    public String generateGraphHtml(int maxEpochs, double targetFinishLoss, double[] history) {
-        long totalDataBytes = calculateTotalDatasetBytes();
-        double estSec = getEstimatedForgingSeconds();
-        double params = getModelParameterCount(selectedModelSize);
-        long totalTokens = estimateTotalTrainingTokens();
-        double budgetHours = selectedTargetHours;
-        double budgetSec = budgetHours * 3600.0;
-        boolean fitsBudget = estSec <= budgetSec;
+    private void refreshDatasetsTable() {
+        if (datasetsTable == null || datasetsTable.isDisposed()) return;
+        datasetsTable.removeAll();
+        for (DatasetItem item : datasetItems) {
+            TableItem tableItem = new TableItem(datasetsTable, SWT.NONE);
+            tableItem.setChecked(item.isChecked());
+            tableItem.setText(0, "");
+            String pathText = item.getPath();
+            if (item.getScaleRatio() < 0.99) {
+                pathText += String.format(" (Scaled: %.0f%%)", item.getScaleRatio() * 100.0);
+            }
+            tableItem.setText(1, pathText);
+            tableItem.setText(2, item.getType());
+            tableItem.setData(item);
+        }
+        updateHardwareAndTimeInfo();
+        scheduleGraphUpdate();
+    }
 
-        // Configuration summary HTML header
+    private void updateHardwareAndTimeInfo() {
+        if (hwProfileLabel != null && !hwProfileLabel.isDisposed()) {
+            hwProfileLabel.setText("Hardware Profile: " + getHardwareProfile());
+        }
+        if (estTimeLabel != null && !estTimeLabel.isDisposed()) {
+            double estSec = getEstimatedForgingSeconds();
+            long bytes = calculateTotalDatasetBytes();
+            long tokens = estimateTotalTrainingTokens();
+            double params = getModelParameterCount(selectedModelSize);
+            double measured = ForgeTrainingEstimationAgent.getInstance().getMeasuredTokensPerSecond(selectedModelSize);
+            String basis = measured > 0
+                    ? String.format("Measured history: %.1f tok/s", measured)
+                    : "ANALYTICAL PRELIMINARY (no measured runs yet)";
+            estTimeLabel.setText(String.format("Data: %.2f MB | Tokens: %.2f M | Model: %s (%.1fM params) | Preliminary Est. Time: %s | %s",
+                bytes / (1024.0 * 1024.0), tokens / 1_000_000.0, selectedModelSize, params / 1_000_000.0, formatDuration(estSec), basis));
+        }
+    }
+
+    // =====================================================================
+    // HTML GRAPHS (dark professional theme, real data only)
+    // =====================================================================
+
+    /** Legacy-compatible entry: config-only mode (no live telemetry). */
+    public String generateGraphHtml(int maxEpochs, double targetFinishLoss, double[] history) {
+        readEffectiveSettingsFromUiSafe();
+        ForgeTelemetrySnapshot snap = ForgeTelemetrySnapshot.configOnly(
+                selectedModelSize, maxEpochs, targetFinishLoss, selectedTargetHours,
+                selectedEarlyStoppingEnabled, history, calculateTotalDatasetBytes());
+        return generateGraphHtml(snap);
+    }
+
+    private void readEffectiveSettingsFromUiSafe() {
+        try {
+            readEffectiveSettingsFromUi();
+        } catch (Exception ignored) {}
+    }
+
+    /** Live center-panel HTML: summary + cards + GRAPH 1/2/3. */
+    public String generateGraphHtml(ForgeTelemetrySnapshot snap) {
+        if (snap == null) {
+            snap = ForgeTelemetrySnapshot.configOnly(selectedModelSize, selectedEpochs, selectedDesiredLoss,
+                    selectedTargetHours, selectedEarlyStoppingEnabled, lossHistory, calculateTotalDatasetBytes());
+        }
+
+        double params = ForgeTelemetrySnapshot.resolveParamCount(snap.configuredModelSize);
+        long totalDataBytes = snap.initialEstimateSeconds > 0 ? calculateTotalDatasetBytesSafe() : 0;
+        double estSec = snap.initialEstimateSeconds;
+        double budgetHours = snap.configuredTimeBudgetHours > 0 ? snap.configuredTimeBudgetHours : selectedTargetHours;
+        double budgetSec = budgetHours * 3600.0;
+        boolean fitsBudget = estSec > 0 && estSec <= budgetSec;
+        boolean budgetUnknown = estSec <= 0 && !snap.isTrainingActive;
+
+        String throughputText = throughputText(snap);
+        String lrText = snap.learningRate > 0 ? String.format("%.6f", snap.learningRate) : "N/A";
         String configSummaryHtml = String.format(
             "<div class=\"summary-bar\">" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Model Size:</span> <span class=\"summary-value\">%s (%.1fM)</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Epochs:</span> <span class=\"summary-value\">%d</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Batch Size:</span> <span class=\"summary-value\">%d</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Data Size:</span> <span class=\"summary-value\">%.2f MB</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Learning Rate:</span> <span class=\"summary-value\">%s</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Est. Time:</span> <span class=\"summary-value\">%s</span></div>" +
             "  <div class=\"summary-item\"><span class=\"summary-label\">Budget:</span> <span class=\"summary-value\">%.1f hrs (%s)</span></div>" +
+            "  <div class=\"summary-item\"><span class=\"summary-label\">Throughput:</span> <span class=\"summary-value\">%s</span></div>" +
             "</div>",
-            selectedModelSize, params / 1_000_000.0,
-            selectedEpochs, selectedBatchSize,
+            snap.configuredModelSize, params / 1_000_000.0,
+            snap.configuredEpochs, selectedBatchSize,
             totalDataBytes / (1024.0 * 1024.0),
-            formatDuration(estSec),
-            selectedTargetHours,
-            fitsBudget ? "FEASIBLE" : "EXCEEDS BUDGET"
+            lrText,
+            estSec > 0 ? formatDuration(estSec) : "N/A",
+            budgetHours,
+            budgetUnknown ? "UNKNOWN" : (fitsBudget ? "FEASIBLE" : "EXCEEDS BUDGET"),
+            throughputText
         );
 
-        // --- GRAPH 1: LOSS / EPOCH RELATION GRAPH ---
-        int width1 = 720;
-        int height1 = 320;
-        int paddingLeft1 = 60;
-        int paddingRight1 = 35;
-        int paddingTop1 = 40;
-        int paddingBottom1 = 50;
+        String svg1 = buildLossTrajectorySvg(snap);
+        String svg2 = buildCapacityBudgetSvg(snap, budgetHours, estSec);
+        String svg3 = buildResourceMonitorSvg(snap);
 
-        int plotWidth1 = width1 - paddingLeft1 - paddingRight1;
-        int plotHeight1 = height1 - paddingTop1 - paddingBottom1;
-        int denom1 = Math.max(1, maxEpochs - 1);
+        String statusTitle1 = lossTrajectoryTitle(snap);
+        String statusSub1 = lossTrajectorySubtitle(snap);
+        String badgeClass1 = lossTrajectoryBadge(snap);
 
-        StringBuilder svg1Builder = new StringBuilder();
+        String statusTitle2 = budgetTitle(snap);
+        String badgeClass2 = budgetBadge(snap);
+        String statusSub2 = budgetSubtitle(snap);
 
-        for (int lossVal = 0; lossVal <= 10; lossVal += 2) {
-            int y = paddingTop1 + plotHeight1 - (int) ((lossVal / 10.0) * plotHeight1);
-            svg1Builder.append(String.format(
-                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#e2e8f0\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
-                paddingLeft1, y, paddingLeft1 + plotWidth1, y
-            ));
-            svg1Builder.append(String.format(
-                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"end\">%d</text>",
-                paddingLeft1 - 10, y + 4, lossVal
-            ));
-        }
+        String statusTitle3 = "Resource Monitor (real telemetry; N/A when unavailable)";
+        String badgeClass3 = "badge-neutral";
 
-        int[] xTicks1 = new int[] { 1, Math.max(2, maxEpochs / 4), Math.max(3, maxEpochs / 2), Math.max(4, (3 * maxEpochs) / 4), maxEpochs };
-        for (int ep : xTicks1) {
-            if (ep > maxEpochs) continue;
-            int x = paddingLeft1 + (int) (((double) (ep - 1) / denom1) * plotWidth1);
-            svg1Builder.append(String.format(
-                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#e2e8f0\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
-                x, paddingTop1, x, paddingTop1 + plotHeight1
-            ));
-            svg1Builder.append(String.format(
-                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"middle\">%d</text>",
-                x, paddingTop1 + plotHeight1 + 18, ep
-            ));
-        }
-
-        svg1Builder.append(String.format(
-            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
-            paddingLeft1, paddingTop1, paddingLeft1, paddingTop1 + plotHeight1
-        ));
-        svg1Builder.append(String.format(
-            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
-            paddingLeft1, paddingTop1 + plotHeight1, paddingLeft1 + plotWidth1, paddingTop1 + plotHeight1
-        ));
-
-        int targetY1 = paddingTop1 + plotHeight1 - (int) (Math.min(10.0, Math.max(0.0, targetFinishLoss)) / 10.0 * plotHeight1);
-        svg1Builder.append(String.format(
-            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#10b981\" stroke-width=\"2\" stroke-dasharray=\"6,4\" />",
-            paddingLeft1, targetY1, paddingLeft1 + plotWidth1, targetY1
-        ));
-        svg1Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"210\" height=\"22\" rx=\"4\" fill=\"#ecfdf5\" stroke=\"#10b981\" stroke-width=\"1\" />",
-            paddingLeft1 + plotWidth1 - 215, Math.max(paddingTop1 + 2, targetY1 - 26)
-        ));
-        svg1Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#047857\">🏁 Target Finish Loss &lt; %.2f</text>",
-            paddingLeft1 + plotWidth1 - 208, Math.max(paddingTop1 + 16, targetY1 - 11), targetFinishLoss
-        ));
-
-        // Always generate full reference Projected Loss Trajectory curve (Epoch 1 -> maxEpochs)
-        double ep1 = 1.0;
-        double initialProjectedLoss = 8.87;
-        StringBuilder fullProjPoints = new StringBuilder();
-        int projSteps = 40;
-        for (int i = 0; i <= projSteps; i++) {
-            double t = (double) i / projSteps;
-            double cEp = ep1 + t * (maxEpochs - ep1);
-            double cLoss = targetFinishLoss + (initialProjectedLoss - targetFinishLoss) * Math.exp(-3.5 * t);
-
-            int cx = paddingLeft1 + (int) (((cEp - 1.0) / denom1) * plotWidth1);
-            int cy = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, cLoss)) / 10.0) * plotHeight1);
-
-            if (i > 0) fullProjPoints.append(" ");
-            fullProjPoints.append(cx).append(",").append(cy);
-        }
-
-        // Draw full reference projected trajectory curve as dashed blue baseline
-        svg1Builder.append(String.format(
-            "<polyline points=\"%s\" fill=\"none\" stroke=\"#1d5296\" stroke-width=\"2.5\" stroke-dasharray=\"6,4\" opacity=\"0.85\" />",
-            fullProjPoints.toString()
-        ));
-
-        String statusTitle1;
-        String statusSub1;
-        String badgeClass1;
-
-        StringBuilder dataPointsSvg1 = new StringBuilder();
-
-        if (history != null && history.length > 0) {
-            double currentLoss = history[history.length - 1];
-            int currentEpoch = history.length;
-            boolean targetMet = currentLoss <= targetFinishLoss;
-
-            if (targetMet) {
-                statusTitle1 = "Target Loss Achieved";
-                statusSub1 = String.format("Epoch %d: Loss %.2f (Met Target &lt; %.2f)", currentEpoch, currentLoss, targetFinishLoss);
-                badgeClass1 = "badge-success";
-            } else {
-                statusTitle1 = "Forging In Progress";
-                statusSub1 = String.format("Epoch %d / %d: Loss %.2f (Measured Training Loss)", currentEpoch, maxEpochs, currentLoss);
-                badgeClass1 = "badge-primary";
-            }
-
-            StringBuilder polylinePoints = new StringBuilder();
-            int lastX = paddingLeft1;
-            int lastY = paddingTop1 + plotHeight1;
-
-            for (int i = 0; i < history.length; i++) {
-                int epNum = i + 1;
-                double lVal = history[i];
-                int px = paddingLeft1 + (int) (((double) (epNum - 1) / denom1) * plotWidth1);
-                int py = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, lVal)) / 10.0) * plotHeight1);
-
-                if (i > 0) polylinePoints.append(" ");
-                polylinePoints.append(px).append(",").append(py);
-
-                dataPointsSvg1.append(String.format(
-                    "<circle cx=\"%d\" cy=\"%d\" r=\"4\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"1.5\" class=\"dot\" data-tooltip=\"Epoch %d: Measured Loss %.2f\" />",
-                    px, py, epNum, lVal
-                ));
-
-                lastX = px;
-                lastY = py;
-            }
-
-            // Draw actual measured loss trajectory polyline over projected baseline
-            svg1Builder.append(String.format(
-                "<polyline points=\"%s\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"3\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />",
-                polylinePoints.toString()
-            ));
-
-            // Pulsing highlight marker on current actual state position on trajectory
-            svg1Builder.append(String.format(
-                "<circle cx=\"%d\" cy=\"%d\" r=\"10\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"2\" opacity=\"0.6\"><animate attributeName=\"r\" values=\"8;14;8\" dur=\"2s\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.8;0.2;0.8\" dur=\"2s\" repeatCount=\"indefinite\"/></circle>",
-                lastX, lastY
-            ));
-            svg1Builder.append(String.format(
-                "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#ef4444\" stroke=\"#ffffff\" stroke-width=\"2\" class=\"dot\" data-tooltip=\"Actual State: Epoch %d/%d (Loss %.2f)\" />",
-                lastX, lastY, currentEpoch, maxEpochs, currentLoss
-            ));
-        } else {
-            statusTitle1 = "Projected Loss Trajectory";
-            statusSub1 = String.format("Estimated trajectory for %d Epochs | Target Finish Loss &lt; %.2f", maxEpochs, targetFinishLoss);
-            badgeClass1 = "badge-neutral";
-
-            int x1 = paddingLeft1 + (int) (((ep1 - 1.0) / denom1) * plotWidth1);
-            int y1 = paddingTop1 + plotHeight1 - (int) ((initialProjectedLoss / 10.0) * plotHeight1);
-
-            svg1Builder.append(String.format(
-                "<circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"#1d5296\" stroke=\"#ffffff\" stroke-width=\"2\" />",
-                x1, y1
-            ));
-            svg1Builder.append(String.format(
-                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#1d5296\">★ Ready (Projected Start)</text>",
-                x1 + 12, y1 + 4
-            ));
-
-            int x2 = paddingLeft1 + plotWidth1;
-            int y2 = paddingTop1 + plotHeight1 - (int) ((Math.min(10.0, Math.max(0.0, targetFinishLoss)) / 10.0) * plotHeight1);
-            svg1Builder.append(String.format(
-                "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#10b981\" stroke=\"#ffffff\" stroke-width=\"2\" />",
-                x2, y2
-            ));
-        }
-
-        svg1Builder.append(dataPointsSvg1);
-
-        // --- GRAPH 2: TRAINING BUDGET & MODEL CAPACITY GRAPH ---
-        int width2 = 720;
-        int height2 = 320;
-        int paddingLeft2 = 60;
-        int paddingRight2 = 35;
-        int paddingTop2 = 40;
-        int paddingBottom2 = 50;
-
-        int plotWidth2 = width2 - paddingLeft2 - paddingRight2;
-        int plotHeight2 = height2 - paddingTop2 - paddingBottom2;
-
-        StringBuilder svg2Builder = new StringBuilder();
-
-        // Model sizes comparison: NANO, MICRO, MINI, SMALL, MEDIUM, LARGE, XLARGE
-        ModelSizePreset.Size[] allPresetSizes = ModelSizePreset.Size.values();
-        double[] modelEstHours = new double[allPresetSizes.length];
-        double maxEstHours = budgetHours * 1.25;
-
-        for (int i = 0; i < allPresetSizes.length; i++) {
-            String szName = allPresetSizes[i].name();
-            double sec = calculateEstimatedForgingSeconds(szName, selectedEpochs, totalDataBytes);
-            double hrs = sec / 3600.0;
-            modelEstHours[i] = hrs;
-            if (hrs > maxEstHours) {
-                maxEstHours = hrs;
-            }
-        }
-        if (maxEstHours <= 0.0) maxEstHours = 24.0;
-
-        // Y-Axis grid lines (Hours 0 to maxEstHours)
-        for (int step = 0; step <= 4; step++) {
-            double hrsVal = (maxEstHours / 4.0) * step;
-            int y = paddingTop2 + plotHeight2 - (int) ((hrsVal / maxEstHours) * plotHeight2);
-            svg2Builder.append(String.format(
-                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#e2e8f0\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
-                paddingLeft2, y, paddingLeft2 + plotWidth2, y
-            ));
-            svg2Builder.append(String.format(
-                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"end\">%.1fh</text>",
-                paddingLeft2 - 8, y + 4, hrsVal
-            ));
-        }
-
-        // Target Duration Budget Reference Line
-        int budgetY = paddingTop2 + plotHeight2 - (int) (Math.min(maxEstHours, Math.max(0.0, budgetHours)) / maxEstHours * plotHeight2);
-        svg2Builder.append(String.format(
-            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"6,4\" />",
-            paddingLeft2, budgetY, paddingLeft2 + plotWidth2, budgetY
-        ));
-        svg2Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"180\" height=\"20\" rx=\"4\" fill=\"#fef3c7\" stroke=\"#f59e0b\" stroke-width=\"1\" />",
-            paddingLeft2 + 10, Math.max(paddingTop2 + 2, budgetY - 24)
-        ));
-        svg2Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#b45309\">⏱ Target Budget: %.1f hrs</text>",
-            paddingLeft2 + 16, Math.max(paddingTop2 + 15, budgetY - 10), budgetHours
-        ));
-
-        // X-Axis Columns for Model Sizes
-        int barCount = allPresetSizes.length;
-        int barGroupWidth = plotWidth2 / barCount;
-        int barWidth = Math.max(12, barGroupWidth - 20);
-
-        for (int i = 0; i < barCount; i++) {
-            ModelSizePreset.Size sz = allPresetSizes[i];
-            String szName = sz.name();
-            double hrs = modelEstHours[i];
-            boolean isSelected = szName.equalsIgnoreCase(selectedModelSize) || sz.getDisplayName().equalsIgnoreCase(selectedModelSize);
-
-            int centerX = paddingLeft2 + i * barGroupWidth + barGroupWidth / 2;
-            int barX = centerX - barWidth / 2;
-            int barHeight = (int) ((hrs / maxEstHours) * plotHeight2);
-            int barY = paddingTop2 + plotHeight2 - barHeight;
-
-            String fillColor = isSelected ? (hrs <= budgetHours ? "#10b981" : "#ef4444") : "#94a3b8";
-            String strokeColor = isSelected ? "#0f172a" : "#64748b";
-
-            // Draw Bar
-            svg2Builder.append(String.format(
-                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" class=\"dot\" data-tooltip=\"Model: %s | Est. Duration: %s | Params: %.1fM\" />",
-                barX, barY, barWidth, Math.max(2, barHeight), fillColor, strokeColor, isSelected ? "2" : "1",
-                sz.getDisplayName(), formatDuration(hrs * 3600.0), sz.getParameterCount() / 1_000_000.0
-            ));
-
-            // Highlight Marker for Selected Model Size
-            if (isSelected) {
-                svg2Builder.append(String.format(
-                    "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\" text-anchor=\"middle\">★ SELECTED</text>",
-                    centerX, Math.max(paddingTop2 + 12, barY - 8), hrs <= budgetHours ? "#047857" : "#b91c1c"
-                ));
-            }
-
-            // X Label
-            svg2Builder.append(String.format(
-                "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"10\" font-weight=\"%s\" fill=\"#334155\" text-anchor=\"middle\">%s</text>",
-                centerX, paddingTop2 + plotHeight2 + 18, isSelected ? "700" : "400", sz.getDisplayName()
-            ));
-        }
-
-        // Axes Lines
-        svg2Builder.append(String.format(
-            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
-            paddingLeft2, paddingTop2, paddingLeft2, paddingTop2 + plotHeight2
-        ));
-        svg2Builder.append(String.format(
-            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#334155\" stroke-width=\"2\" />",
-            paddingLeft2, paddingTop2 + plotHeight2, paddingLeft2 + plotWidth2, paddingTop2 + plotHeight2
-        ));
-
-        String statusTitle2 = fitsBudget ? "Selected Configuration Fits Duration Budget" : "Selected Configuration Exceeds Duration Budget";
-        String badgeClass2 = fitsBudget ? "badge-success" : "badge-danger";
-
-        // --- GRAPH 3: PROGRESS & RESOURCE MONITOR DIAGRAM ---
-        int width3 = 720;
-        int height3 = 340;
-        int paddingLeft3 = 60;
-        int paddingRight3 = 35;
-        int paddingTop3 = 40;
-        int paddingBottom3 = 50;
-
-        int plotWidth3 = width3 - paddingLeft3 - paddingRight3;
-        int plotHeight3 = height3 - paddingTop3 - paddingBottom3;
-
-        StringBuilder svg3Builder = new StringBuilder();
-
-        // 1. Memory Metrics
-        long maxRamMb = getMaxMemoryMb();
-        if (maxRamMb <= 0) maxRamMb = 8192;
-        // Estimated memory usage based on model size parameter count and data batch size
-        long estimatedMemMb = Math.min(maxRamMb, (long) (params / 1_000_000.0 * 12.0 + selectedBatchSize * 16.0 + 512.0));
-        double memUsagePct = Math.min(100.0, Math.max(5.0, ((double) estimatedMemMb / maxRamMb) * 100.0));
-
-        // 2. Quality & Convergence Metrics
-        double baselineTps = getBaselineTokensPerSecond(selectedModelSize);
-        double estTps = Math.max(10.0, baselineTps);
-        double filterQualityPct = selectedQualityFilter ? 94.5 : 100.0;
-        double overallHealthIdx = Math.min(100.0, Math.max(10.0, (fitsBudget ? 50.0 : 30.0) + (memUsagePct < 85.0 ? 30.0 : 10.0) + (selectedQualityFilter ? 20.0 : 10.0)));
-
-        // Time calculations: Est vs Target Budget vs Calculated Calculation Time
-        double currentProgressPct = 0.0;
-        if (history != null && history.length > 0) {
-            currentProgressPct = Math.min(100.0, ((double) history.length / maxEpochs) * 100.0);
-        }
-
-        // Draw Progress & Metric Gauge Bars inside Graph 3 SVG
-        int barY1 = paddingTop3 + 20;
-        int barY2 = paddingTop3 + 70;
-        int barY3 = paddingTop3 + 120;
-        int barY4 = paddingTop3 + 170;
-        int barHeight3 = 22;
-
-        // Metric 1: Time Calculation & Progress
-        int timeFillW = (int) ((currentProgressPct / 100.0) * plotWidth3);
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Calculation Progress / Time</text>",
-            paddingLeft3, barY1 - 6
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
-            paddingLeft3, barY1, plotWidth3, barHeight3
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1d5296\" class=\"dot\" data-tooltip=\"Progress: %.1f%% | Est: %s | Budget: %.1fh\" />",
-            paddingLeft3, barY1, Math.max(currentProgressPct > 0 ? 6 : 0, timeFillW), barHeight3, currentProgressPct, formatDuration(estSec), budgetHours
-        ));
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%.1f%% (%s / %s budget)</text>",
-            paddingLeft3 + 10, barY1 + 15, currentProgressPct > 35 ? "#ffffff" : "#0f172a", currentProgressPct, formatDuration(estSec), String.format("%.1fh", budgetHours)
-        ));
-
-        // Metric 2: Memory Utilization Gauge
-        int memFillW = (int) ((memUsagePct / 100.0) * plotWidth3);
-        String memBarColor = memUsagePct > 85.0 ? "#ef4444" : (memUsagePct > 65.0 ? "#f59e0b" : "#10b981");
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Allocated System RAM / Memory Usage</text>",
-            paddingLeft3, barY2 - 6
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
-            paddingLeft3, barY2, plotWidth3, barHeight3
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" class=\"dot\" data-tooltip=\"Est. RAM: %d MB / %d MB Max (%.1f%%)\" />",
-            paddingLeft3, barY2, Math.max(6, memFillW), barHeight3, memBarColor, estimatedMemMb, maxRamMb, memUsagePct
-        ));
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%d MB / %d MB RAM (%.1f%%)</text>",
-            paddingLeft3 + 10, barY2 + 15, memUsagePct > 35 ? "#ffffff" : "#0f172a", estimatedMemMb, maxRamMb, memUsagePct
-        ));
-
-        // Metric 3: Token Throughput Rate (Tokens / sec)
-        double tpsPct = Math.min(100.0, (estTps / 2000.0) * 100.0);
-        int tpsFillW = (int) ((tpsPct / 100.0) * plotWidth3);
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Estimated Token Throughput (Tokens / sec)</text>",
-            paddingLeft3, barY3 - 6
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
-            paddingLeft3, barY3, plotWidth3, barHeight3
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#8b5cf6\" class=\"dot\" data-tooltip=\"Throughput Rate: %.1f tokens/sec | Total: %.2fM tokens\" />",
-            paddingLeft3, barY3, Math.max(6, tpsFillW), barHeight3, estTps, totalTokens / 1_000_000.0
-        ));
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%.0f Tokens/sec (%.2f M Total Tokens)</text>",
-            paddingLeft3 + 10, barY3 + 15, tpsPct > 35 ? "#ffffff" : "#0f172a", estTps, totalTokens / 1_000_000.0
-        ));
-
-        // Metric 4: Forging Quality & Health Index
-        int healthFillW = (int) ((overallHealthIdx / 100.0) * plotWidth3);
-        String healthBarColor = overallHealthIdx > 75.0 ? "#10b981" : (overallHealthIdx > 50.0 ? "#f59e0b" : "#ef4444");
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"600\" fill=\"#334155\">Overall Forging Quality & Health Index</text>",
-            paddingLeft3, barY4 - 6
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#e2e8f0\" stroke=\"#cbd5e1\" stroke-width=\"1\" />",
-            paddingLeft3, barY4, plotWidth3, barHeight3
-        ));
-        svg3Builder.append(String.format(
-            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" class=\"dot\" data-tooltip=\"Health Index: %.0f/100 | Quality Acceptance: %.1f%%\" />",
-            paddingLeft3, barY4, Math.max(6, healthFillW), barHeight3, healthBarColor, overallHealthIdx, filterQualityPct
-        ));
-        svg3Builder.append(String.format(
-            "<text x=\"%d\" y=\"%d\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">Health Rating: %.0f / 100 (Quality Filter: %.1f%% Accepted)</text>",
-            paddingLeft3 + 10, barY4 + 15, overallHealthIdx > 35 ? "#ffffff" : "#0f172a", overallHealthIdx, filterQualityPct
-        ));
-
-        String statusTitle3 = String.format("Resource Monitor | Health: %.0f/100", overallHealthIdx);
-        String badgeClass3 = overallHealthIdx >= 70.0 ? "badge-success" : (overallHealthIdx >= 40.0 ? "badge-primary" : "badge-danger");
-
-        return "<!DOCTYPE html>\n" +
-            "<html>\n" +
-            "<head>\n" +
-            "<meta charset=\"UTF-8\">\n" +
-            "<style>\n" +
-            "  :root {\n" +
-            "    --evo-bg: #e8ecef;\n" +
-            "    --evo-surface: #ffffff;\n" +
-            "    --evo-surface-alt: #f1f3f6;\n" +
-            "    --evo-border: #b8c0c8;\n" +
-            "    --evo-text: #1a202c;\n" +
-            "    --evo-text-muted: #64748b;\n" +
-            "    --evo-primary: #1d5296;\n" +
-            "    --evo-success: #10b981;\n" +
-            "    --evo-danger: #ef4444;\n" +
-            "  }\n" +
-            "  * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
-            "  body {\n" +
-            "    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;\n" +
-            "    background-color: #f8fafc;\n" +
-            "    color: var(--evo-text);\n" +
-            "    padding: 12px;\n" +
-            "    user-select: none;\n" +
-            "    overflow-y: auto;\n" +
-            "  }\n" +
-            "  .summary-bar {\n" +
-            "    display: flex;\n" +
-            "    flex-wrap: wrap;\n" +
-            "    gap: 12px;\n" +
-            "    background: #ffffff;\n" +
-            "    border: 1px solid #cbd5e1;\n" +
-            "    border-radius: 8px;\n" +
-            "    padding: 10px 14px;\n" +
-            "    margin-bottom: 12px;\n" +
-            "    box-shadow: 0 1px 2px rgba(0,0,0,0.03);\n" +
-            "  }\n" +
-            "  .summary-item { font-size: 11px; display: flex; align-items: center; gap: 4px; }\n" +
-            "  .summary-label { color: #64748b; font-weight: 500; }\n" +
-            "  .summary-value { color: #0f172a; font-weight: 700; }\n" +
-            "  .card {\n" +
-            "    background: #ffffff;\n" +
-            "    border: 1px solid #cbd5e1;\n" +
-            "    border-radius: 8px;\n" +
-            "    box-shadow: 0 1px 3px rgba(0,0,0,0.05);\n" +
-            "    padding: 14px;\n" +
-            "    margin-bottom: 12px;\n" +
-            "    display: flex;\n" +
-            "    flex-direction: column;\n" +
-            "  }\n" +
-            "  .header {\n" +
-            "    display: flex;\n" +
-            "    justify-content: space-between;\n" +
-            "    align-items: center;\n" +
-            "    margin-bottom: 8px;\n" +
-            "    padding-bottom: 6px;\n" +
-            "    border-bottom: 1px solid #e2e8f0;\n" +
-            "  }\n" +
-            "  .title-group { display: flex; flex-direction: column; }\n" +
-            "  .title { font-size: 13px; font-weight: 700; color: #0f172a; }\n" +
-            "  .subtitle { font-size: 11px; color: #64748b; margin-top: 1px; }\n" +
-            "  .badge {\n" +
-            "    padding: 3px 8px;\n" +
-            "    border-radius: 12px;\n" +
-            "    font-size: 10px;\n" +
-            "    font-weight: 600;\n" +
-            "    text-transform: uppercase;\n" +
-            "    letter-spacing: 0.5px;\n" +
-            "  }\n" +
-            "  .badge-primary { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }\n" +
-            "  .badge-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }\n" +
-            "  .badge-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }\n" +
-            "  .badge-neutral { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }\n" +
-            "  .graph-container {\n" +
-            "    position: relative;\n" +
-            "    width: 100%;\n" +
-            "    display: flex;\n" +
-            "    justify-content: center;\n" +
-            "    align-items: center;\n" +
-            "  }\n" +
-            "  svg { width: 100%; height: 280px; overflow: visible; }\n" +
-            "  .dot { cursor: pointer; transition: transform 0.15s ease; }\n" +
-            "  .dot:hover { opacity: 0.8; transform: scale(1.05); }\n" +
-            "  .tooltip {\n" +
-            "    position: absolute;\n" +
-            "    background: rgba(15, 23, 42, 0.95);\n" +
-            "    color: #ffffff;\n" +
-            "    padding: 5px 9px;\n" +
-            "    border-radius: 4px;\n" +
-            "    font-size: 11px;\n" +
-            "    font-weight: 500;\n" +
-            "    pointer-events: none;\n" +
-            "    opacity: 0;\n" +
-            "    transition: opacity 0.15s ease;\n" +
-            "    white-space: nowrap;\n" +
-            "    box-shadow: 0 2px 6px rgba(0,0,0,0.2);\n" +
-            "    z-index: 100;\n" +
-            "  }\n" +
-            "  .legend {\n" +
-            "    display: flex;\n" +
-            "    gap: 16px;\n" +
-            "    justify-content: center;\n" +
-            "    margin-top: 6px;\n" +
-            "    font-size: 11px;\n" +
-            "    color: #475569;\n" +
-            "  }\n" +
-            "  .legend-item { display: flex; align-items: center; gap: 6px; }\n" +
-            "  .legend-line { width: 16px; height: 3px; border-radius: 2px; }\n" +
-            "</style>\n" +
-            "</head>\n" +
-            "<body>\n" +
-            configSummaryHtml + "\n" +
-
-            "<!-- CARD 1: LOSS / EPOCH RELATION GRAPH -->\n" +
-            "<div class=\"card\">\n" +
-            "  <div class=\"header\">\n" +
-            "    <div class=\"title-group\">\n" +
-            "      <div class=\"title\">" + statusTitle1 + "</div>\n" +
-            "      <div class=\"subtitle\">" + statusSub1 + "</div>\n" +
-            "    </div>\n" +
-            "    <div class=\"badge " + badgeClass1 + "\">GRAPH 1: LOSS TRAJECTORY</div>\n" +
-            "  </div>\n" +
-            "  <div class=\"graph-container\" id=\"graphContainer1\">\n" +
-            "    <div class=\"tooltip\" id=\"tooltip1\"></div>\n" +
-            "    <svg viewBox=\"0 0 " + width1 + " " + height1 + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
-            "      <text x=\"20\" y=\"25\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\">Loss</text>\n" +
-            "      <text x=\"" + (width1 / 2) + "\" y=\"" + (height1 - 8) + "\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\" text-anchor=\"middle\">Epochs</text>\n" +
-            "      " + svg1Builder.toString() + "\n" +
-            "    </svg>\n" +
-            "  </div>\n" +
-            "  <div class=\"legend\">\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #ef4444;\"></div>Actual Loss</div>\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #1d5296; border-top: 2px dashed #1d5296;\"></div>Projected Trajectory</div>\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #10b981; border-top: 2px dashed #10b981;\"></div>Target Finish Threshold</div>\n" +
-            "  </div>\n" +
-            "</div>\n" +
-
-            "<!-- CARD 2: TRAINING BUDGET & MODEL CAPACITY GRAPH -->\n" +
-            "<div class=\"card\">\n" +
-            "  <div class=\"header\">\n" +
-            "    <div class=\"title-group\">\n" +
-            "      <div class=\"title\">" + statusTitle2 + "</div>\n" +
-            "      <div class=\"subtitle\">Estimated Duration across Model Capacities for " + String.format("%.2f MB Data (%d Epochs)", totalDataBytes / (1024.0 * 1024.0), selectedEpochs) + "</div>\n" +
-            "    </div>\n" +
-            "    <div class=\"badge " + badgeClass2 + "\">GRAPH 2: CAPACITY BUDGET</div>\n" +
-            "  </div>\n" +
-            "  <div class=\"graph-container\" id=\"graphContainer2\">\n" +
-            "    <div class=\"tooltip\" id=\"tooltip2\"></div>\n" +
-            "    <svg viewBox=\"0 0 " + width2 + " " + height2 + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
-            "      <text x=\"18\" y=\"25\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\">Hours</text>\n" +
-            "      <text x=\"" + (width2 / 2) + "\" y=\"" + (height2 - 8) + "\" font-family=\"system-ui, -apple-system, sans-serif\" font-size=\"11\" font-weight=\"700\" fill=\"#334155\" text-anchor=\"middle\">Model Capacity Preset</text>\n" +
-            "      " + svg2Builder.toString() + "\n" +
-            "    </svg>\n" +
-            "  </div>\n" +
-            "  <div class=\"legend\">\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #10b981;\"></div>Fits Budget</div>\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #ef4444;\"></div>Exceeds Budget</div>\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #f59e0b; border-top: 2px dashed #f59e0b;\"></div>Target Duration Budget</div>\n" +
-            "  </div>\n" +
-            "</div>\n" +
-
-            "<!-- CARD 3: PROGRESS & RESOURCE MONITOR DIAGRAM -->\n" +
-            "<div class=\"card\">\n" +
-            "  <div class=\"header\">\n" +
-            "    <div class=\"title-group\">\n" +
-            "      <div class=\"title\">" + statusTitle3 + "</div>\n" +
-            "      <div class=\"subtitle\">Time Expectation, Memory Utilization, Throughput & Forging Health</div>\n" +
-            "    </div>\n" +
-            "    <div class=\"badge " + badgeClass3 + "\">GRAPH 3: PROGRESS & RESOURCE MONITOR</div>\n" +
-            "  </div>\n" +
-            "  <div class=\"graph-container\" id=\"graphContainer3\">\n" +
-            "    <div class=\"tooltip\" id=\"tooltip3\"></div>\n" +
-            "    <svg viewBox=\"0 0 " + width3 + " " + height3 + "\" preserveAspectRatio=\"xMidYMid meet\">\n" +
-            "      " + svg3Builder.toString() + "\n" +
-            "    </svg>\n" +
-            "  </div>\n" +
-            "  <div class=\"legend\">\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #1d5296;\"></div>Time Progress</div>\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #10b981;\"></div>RAM Memory</div>\n" +
-            "    <div class=\"legend-item\"><div class=\"legend-line\" style=\"background: #8b5cf6;\"></div>Tokens/sec Throughput</div>\n" +
-            "  </div>\n" +
-            "</div>\n" +
-
-            "<script>\n" +
-            "  function setupTooltips(containerId, tooltipId) {\n" +
-            "    const container = document.getElementById(containerId);\n" +
-            "    const tooltip = document.getElementById(tooltipId);\n" +
-            "    if (!container || !tooltip) return;\n" +
-            "    container.querySelectorAll('.dot').forEach(dot => {\n" +
-            "      dot.addEventListener('mousemove', (e) => {\n" +
-            "        const rect = container.getBoundingClientRect();\n" +
-            "        tooltip.style.left = (e.clientX - rect.left + 10) + 'px';\n" +
-            "        tooltip.style.top = (e.clientY - rect.top - 25) + 'px';\n" +
-            "        tooltip.textContent = dot.getAttribute('data-tooltip');\n" +
-            "        tooltip.style.opacity = '1';\n" +
-            "      });\n" +
-            "      dot.addEventListener('mouseleave', () => {\n" +
-            "        tooltip.style.opacity = '0';\n" +
-            "      });\n" +
-            "    });\n" +
-            "  }\n" +
-            "  setupTooltips('graphContainer1', 'tooltip1');\n" +
-            "  setupTooltips('graphContainer2', 'tooltip2');\n" +
-            "  setupTooltips('graphContainer3', 'tooltip3');\n" +
-            "</script>\n" +
-            "</body>\n" +
-            "</html>";
+        return buildCenterDocument(configSummaryHtml, statusTitle1, statusSub1, badgeClass1, svg1,
+                statusTitle2, statusSub2, badgeClass2, svg2, statusTitle3, badgeClass3, svg3);
     }
+
+    private long calculateTotalDatasetBytesSafe() {
+        try {
+            return calculateTotalDatasetBytes();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static String throughputText(ForgeTelemetrySnapshot snap) {
+        switch (snap.throughputBasis) {
+            case MEASURED_LIVE:
+                return String.format("%.1f tok/s (measured)", snap.effectiveTokensPerSec);
+            case MEASURED_HISTORY:
+                return String.format("%.1f tok/s (measured history)", snap.effectiveTokensPerSec);
+            case ANALYTICAL_PRELIMINARY:
+                return String.format("%.1f tok/s (preliminary)", snap.effectiveTokensPerSec);
+            default:
+                return "N/A";
+        }
+    }
+
+    // ---------- GRAPH 1: LOSS TRAJECTORY ----------
+
+    private static String lossTrajectoryTitle(ForgeTelemetrySnapshot snap) {
+        if (snap.isTrainingActive) return "Measured Training Loss Trajectory";
+        if (!snap.history.isEmpty()) return "Training Loss Trajectory (last run)";
+        return "Loss Trajectory (no measured data yet)";
+    }
+
+    private static String lossTrajectorySubtitle(ForgeTelemetrySnapshot snap) {
+        if (snap.totalEpochs > 0) {
+            String pct = snap.overallProgress >= 0 ? String.format(" (overall %.0f%%)", snap.overallProgress * 100.0) : "";
+            return String.format("EPOCH %d / %d%s | Step %d / %d | Target Finish Loss < %.3f",
+                    snap.currentEpoch, snap.totalEpochs, pct, snap.currentStep, snap.totalSteps, snap.configuredDesiredLoss);
+        }
+        return "Start training to collect measured loss values.";
+    }
+
+    private static String lossTrajectoryBadge(ForgeTelemetrySnapshot snap) {
+        if (snap.currentLoss > 0 && snap.configuredDesiredLoss > 0 && snap.currentLoss <= snap.configuredDesiredLoss) {
+            return "badge-success";
+        }
+        if (snap.isTrainingActive) return "badge-primary";
+        if (!snap.history.isEmpty()) return "badge-neutral";
+        return "badge-neutral";
+    }
+
+    private static String buildLossTrajectorySvg(ForgeTelemetrySnapshot snap) {
+        int width = 720;
+        int height = 340;
+        int padL = 60;
+        int padR = 35;
+        int padT = 40;
+        int padB = 50;
+        int plotW = width - padL - padR;
+        int plotH = height - padT - padB;
+
+        StringBuilder svg = new StringBuilder();
+
+        // X domain: steps when available, else epochs.
+        boolean useSteps = snap.totalSteps > 0;
+        double xMax = useSteps ? Math.max(1, snap.totalSteps) : Math.max(1, snap.totalEpochs);
+        double xMin = 0;
+
+        // Y domain: auto-scaled to data; clamp to sensible loss ranges.
+        List<Double> losses = new ArrayList<>();
+        for (ForgeTelemetrySnapshot.HistoryPoint p : snap.history) {
+            if (p.loss > 0) losses.add(p.loss);
+        }
+        double yAxisMax = snap.configuredDesiredLoss > 0 ? snap.configuredDesiredLoss : 3.0;
+        for (Double l : losses) yAxisMax = Math.max(yAxisMax, l);
+        yAxisMax = Math.min(12.0, yAxisMax * 1.1 + 0.25);
+        if (losses.isEmpty()) yAxisMax = Math.max(3.0, yAxisMax);
+        final double yMax = yAxisMax;
+        double yMin = 0;
+
+        java.util.function.DoubleUnaryOperator xOf = v -> padL + (v - xMin) / Math.max(1.0, xMax - xMin) * plotW;
+        java.util.function.DoubleUnaryOperator yOf = v -> padT + plotH - (v - yMin) / Math.max(1.0, yMax - yMin) * plotH;
+
+        // Grid + Y labels
+        int yTicks = 5;
+        for (int i = 0; i <= yTicks; i++) {
+            double v = yMin + (yMax - yMin) * i / yTicks;
+            int y = (int) yOf.applyAsDouble(v);
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#2b3a52\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
+                padL, y, padL + plotW, y));
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\" text-anchor=\"end\">%.2f</text>",
+                padL - 8, y + 4, v));
+        }
+
+        // X ticks
+        int xTicks = 5;
+        for (int i = 0; i <= xTicks; i++) {
+            double v = xMin + (xMax - xMin) * i / xTicks;
+            int x = (int) xOf.applyAsDouble(v);
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#2b3a52\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
+                x, padT, x, padT + plotH));
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\" text-anchor=\"middle\">%s</text>",
+                x, padT + plotH + 16, useSteps ? String.valueOf((long) v) : String.valueOf((long) v + 1)));
+        }
+
+        // Axes
+        svg.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#46597a\" stroke-width=\"2\" />",
+            padL, padT, padL, padT + plotH));
+        svg.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#46597a\" stroke-width=\"2\" />",
+            padL, padT + plotH, padL + plotW, padT + plotH));
+
+        // Target threshold line (from the actual configuration)
+        if (snap.configuredDesiredLoss > 0) {
+            int targetY = (int) yOf.applyAsDouble(Math.min(yMax, snap.configuredDesiredLoss));
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#10b981\" stroke-width=\"2\" stroke-dasharray=\"6,4\" />",
+                padL, targetY, padL + plotW, targetY));
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"600\" fill=\"#10b981\">Target Finish Loss &lt; %.3f (config)</text>",
+                padL + plotW - 260, Math.max(padT + 14, targetY - 8), snap.configuredDesiredLoss));
+        }
+
+        // Actual measured loss series
+        if (!snap.history.isEmpty()) {
+            StringBuilder points = new StringBuilder();
+            StringBuilder dots = new StringBuilder();
+            boolean first = true;
+            int lastX = padL, lastY = padT + plotH;
+            for (ForgeTelemetrySnapshot.HistoryPoint p : snap.history) {
+                if (p.loss <= 0) continue;
+                double xv = useSteps ? p.step : p.epoch;
+                int x = (int) xOf.applyAsDouble(Math.min(xMax, Math.max(0, xv)));
+                int y = (int) yOf.applyAsDouble(Math.min(yMax, Math.max(0, p.loss)));
+                if (!first) points.append(" ");
+                points.append(x).append(",").append(y);
+                first = false;
+                lastX = x;
+                lastY = y;
+                dots.append(String.format(
+                    "<circle cx=\"%d\" cy=\"%d\" r=\"3.5\" fill=\"#60a5fa\" stroke=\"#0f172a\" stroke-width=\"1\" class=\"dot\" data-tooltip=\"Epoch %d | Step %d | Loss %.4f\" />",
+                    x, y, p.epoch, p.step, p.loss));
+            }
+            if (!first) {
+                svg.append(String.format(
+                    "<polyline points=\"%s\" fill=\"none\" stroke=\"#60a5fa\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />",
+                    points.toString()));
+                svg.append(dots.toString());
+                // Current position marker
+                svg.append(String.format(
+                    "<circle cx=\"%d\" cy=\"%d\" r=\"10\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\" opacity=\"0.7\"><animate attributeName=\"r\" values=\"8;14;8\" dur=\"2s\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.8;0.2;0.8\" dur=\"2s\" repeatCount=\"indefinite\"/></circle>",
+                    lastX, lastY));
+                svg.append(String.format(
+                    "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"#f59e0b\" stroke=\"#0f172a\" stroke-width=\"2\" class=\"dot\" data-tooltip=\"Current: Epoch %d/%d | Loss %.4f\" />",
+                    lastX, lastY, snap.currentEpoch, snap.totalEpochs, snap.currentLoss > 0 ? snap.currentLoss : 0.0));
+            }
+
+            // Validation loss series (when present)
+            StringBuilder valPoints = new StringBuilder();
+            boolean valFirst = true;
+            for (ForgeTelemetrySnapshot.HistoryPoint p : snap.history) {
+                if (p.valLoss <= 0) continue;
+                double xv = useSteps ? p.step : p.epoch;
+                int x = (int) xOf.applyAsDouble(Math.min(xMax, Math.max(0, xv)));
+                int y = (int) yOf.applyAsDouble(Math.min(yMax, Math.max(0, p.valLoss)));
+                if (!valFirst) valPoints.append(" ");
+                valPoints.append(x).append(",").append(y);
+                valFirst = false;
+            }
+            if (!valFirst) {
+                svg.append(String.format(
+                    "<polyline points=\"%s\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\" stroke-dasharray=\"5,3\" stroke-linejoin=\"round\" />",
+                    valPoints.toString()));
+            }
+
+            // PROJECTED LOSS: fitted from the measured history only.
+            String proj = buildMeasuredProjection(snap, xOf, yOf, xMax, useSteps);
+            if (proj != null) {
+                svg.append(proj);
+            }
+        } else if (snap.legacyLossHistory != null && snap.legacyLossHistory.length > 0) {
+            // Historical loss series from the persisted configuration (real
+            // values from a previous run), explicitly labeled as such.
+            StringBuilder points = new StringBuilder();
+            boolean first = true;
+            for (int i = 0; i < snap.legacyLossHistory.length; i++) {
+                double xv = useSteps ? 0 : (i + 1);
+                int x = (int) xOf.applyAsDouble(Math.min(xMax, Math.max(0, xv)));
+                int y = (int) yOf.applyAsDouble(Math.min(yMax, Math.max(0, snap.legacyLossHistory[i])));
+                if (!first) points.append(" ");
+                points.append(x).append(",").append(y);
+                first = false;
+            }
+            if (!first) {
+                svg.append(String.format(
+                    "<polyline points=\"%s\" fill=\"none\" stroke=\"#60a5fa\" stroke-width=\"2\" stroke-dasharray=\"4,3\" opacity=\"0.8\" />",
+                    points.toString()));
+            }
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"#8ea3c0\">Historical loss (persisted config, previous run)</text>",
+                padL + 8, padT + 14));
+        } else {
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"#8ea3c0\" text-anchor=\"middle\">No measured training data yet — start training to populate this graph.</text>",
+                padL + plotW / 2, padT + plotH / 2));
+        }
+
+        return svg.toString();
+    }
+
+    /**
+     * Projects the loss from the last measured points using a linear fit over
+     * the most recent window (max 8 points). Returns null when insufficient
+     * history exists: no projection is fabricated from less than 3 points.
+     */
+    private static String buildMeasuredProjection(ForgeTelemetrySnapshot snap,
+                                                  java.util.function.DoubleUnaryOperator xOf,
+                                                  java.util.function.DoubleUnaryOperator yOf,
+                                                  double xMax, boolean useSteps) {
+        List<ForgeTelemetrySnapshot.HistoryPoint> usable = new ArrayList<>();
+        for (ForgeTelemetrySnapshot.HistoryPoint p : snap.history) {
+            if (p.loss > 0) usable.add(p);
+        }
+        if (usable.size() < 3) return null;
+
+        int windowSize = Math.min(8, usable.size());
+        List<ForgeTelemetrySnapshot.HistoryPoint> window = usable.subList(usable.size() - windowSize, usable.size());
+        int n = window.size();
+        double sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        for (ForgeTelemetrySnapshot.HistoryPoint p : window) {
+            double x = useSteps ? p.step : p.epoch;
+            double y = p.loss;
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumXX += x * x;
+        }
+        double denom = n * sumXX - sumX * sumX;
+        if (Math.abs(denom) < 1e-9) return null;
+        double slope = (n * sumXY - sumX * sumY) / denom;
+        double intercept = (sumY - slope * sumX) / n;
+
+        double lastX = useSteps ? window.get(n - 1).step : window.get(n - 1).epoch;
+        if (lastX >= xMax - 1) return null;
+
+        StringBuilder proj = new StringBuilder();
+        int steps = 24;
+        double firstLoss = Math.max(0.0, intercept + slope * lastX);
+        proj.append((int) xOf.applyAsDouble(lastX)).append(",").append((int) yOf.applyAsDouble(Math.min(12.0, firstLoss)));
+        for (int i = 1; i <= steps; i++) {
+            double x = lastX + (xMax - lastX) * i / steps;
+            double y = Math.max(0.0, intercept + slope * x);
+            proj.append(" ").append((int) xOf.applyAsDouble(x)).append(",").append((int) yOf.applyAsDouble(Math.min(12.0, y)));
+        }
+        String trend = slope < 0 ? "decreasing trend" : "non-decreasing trend";
+        return String.format(
+            "<polyline points=\"%s\" fill=\"none\" stroke=\"#c084fc\" stroke-width=\"2\" stroke-dasharray=\"6,4\" opacity=\"0.9\" />" +
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#c084fc\">Projected (linear fit of last %d measured points, %s)</text>",
+            proj.toString(), (int) xOf.applyAsDouble(lastX) + 10, 26, n, trend);
+    }
+
+    // ---------- GRAPH 2: CAPACITY BUDGET ----------
+
+    private static String budgetTitle(ForgeTelemetrySnapshot snap) {
+        switch (snap.budgetState) {
+            case ON_TRACK: return "Capacity Budget: ON TRACK";
+            case AT_RISK: return "Capacity Budget: AT RISK";
+            case EXCEEDS_BUDGET: return "Capacity Budget: EXCEEDS BUDGET";
+            case COMPLETED: return "Capacity Budget: COMPLETED";
+            default: return "Capacity Budget: UNKNOWN (no budget or no estimate)";
+        }
+    }
+
+    private static String budgetBadge(ForgeTelemetrySnapshot snap) {
+        switch (snap.budgetState) {
+            case ON_TRACK:
+            case COMPLETED: return "badge-success";
+            case AT_RISK: return "badge-primary";
+            case EXCEEDS_BUDGET: return "badge-danger";
+            default: return "badge-neutral";
+        }
+    }
+
+    private static String budgetSubtitle(ForgeTelemetrySnapshot snap) {
+        double budgetSec = snap.configuredTimeBudgetHours > 0 ? snap.configuredTimeBudgetHours * 3600.0 : -1;
+        double elapsed = snap.elapsedSeconds;
+        double remaining = snap.estimatedRemainingSeconds;
+        double estTotal = remaining >= 0 ? elapsed + remaining : (snap.initialEstimateSeconds > 0 ? snap.initialEstimateSeconds : -1);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Elapsed: ").append(formatDuration(elapsed));
+        if (remaining >= 0) sb.append(" | Remaining: ").append(formatDuration(remaining));
+        if (estTotal > 0) sb.append(" | Est. total: ").append(formatDuration(estTotal));
+        if (budgetSec > 0) sb.append(" | Budget: ").append(formatDuration(budgetSec));
+        if (snap.budgetConsumption > 0) sb.append(" | Consumption: ").append(String.format("%.0f%%", snap.budgetConsumption * 100.0));
+        if (snap.isTrainingActive && snap.etaConfidence <= 0.0) {
+            sb.append(" | ETA: ANALYTICAL PRELIMINARY");
+        }
+        return sb.toString();
+    }
+
+    private static String buildCapacityBudgetSvg(ForgeTelemetrySnapshot snap, double budgetHours, double estSec) {
+        int width = 720;
+        int height = 300;
+        int padL = 220;
+        int padR = 45;
+        int padT = 30;
+        int padB = 40;
+        int plotW = width - padL - padR;
+        int plotH = height - padT - padB;
+
+        double budgetSec = budgetHours > 0 ? budgetHours * 3600.0 : -1;
+        double elapsed = snap.elapsedSeconds;
+        double remaining = snap.estimatedRemainingSeconds;
+        double estTotal = remaining >= 0 ? elapsed + remaining : estSec;
+
+        double xMax = Math.max(1.0, Math.max(budgetSec > 0 ? budgetSec : 0, estTotal > 0 ? estTotal : 0) * 1.2);
+
+        StringBuilder svg = new StringBuilder();
+
+        // Budget reference line
+        if (budgetSec > 0) {
+            int bx = padL + (int) (Math.min(budgetSec, xMax) / xMax * plotW);
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#f59e0b\" stroke-width=\"2\" stroke-dasharray=\"6,4\" />",
+                bx, padT, bx, padT + plotH));
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"600\" fill=\"#f59e0b\">Target Duration Budget: %s</text>",
+                Math.min(bx + 6, padL + plotW - 250), padT + 12, formatDuration(budgetSec)));
+        }
+
+        double[] bars = { elapsed, remaining >= 0 ? remaining : 0, estTotal > 0 ? estTotal : 0 };
+        String[] labels = { "Actual Elapsed (measured)", "Estimated Remaining (measured ETA)", "Estimated Total Duration" };
+        String[] colors = { "#60a5fa", "#c084fc", "#f87171" };
+
+        int rowH = 44;
+        for (int i = 0; i < bars.length; i++) {
+            int barY = padT + 40 + i * (rowH + 14);
+            int fill = (int) (Math.min(bars[i], xMax) / xMax * plotW);
+            String color = colors[i];
+            if (bars[i] <= 0) {
+                color = "#33415c";
+                fill = 6;
+            }
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"#c3d0e5\">%s</text>",
+                padL - 8, barY + 16, labels[i]));
+            svg.append(String.format(
+                "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"22\" rx=\"4\" fill=\"%s\" stroke=\"#1e293b\" stroke-width=\"1\" class=\"dot\" data-tooltip=\"%s: %s\" />",
+                padL, barY, Math.max(fill, 2), color, labels[i], bars[i] > 0 ? formatDuration(bars[i]) : "N/A"));
+            if (bars[i] > 0) {
+                svg.append(String.format(
+                    "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"700\" fill=\"#0b1220\">%s</text>",
+                    padL + 8, barY + 15, formatDuration(bars[i])));
+            }
+        }
+
+        // Axes
+        svg.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#46597a\" stroke-width=\"2\" />",
+            padL, padT + 30, padL + plotW, padT + 30));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\" text-anchor=\"middle\">Duration</text>",
+            padL + plotW / 2, height - 8));
+
+        // Status badge text
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"13\" font-weight=\"700\" fill=\"%s\">%s</text>",
+            padL, padT + 28, budgetStateColor(snap), budgetStateLabel(snap)));
+        return svg.toString();
+    }
+
+    private static String budgetStateLabel(ForgeTelemetrySnapshot snap) {
+        switch (snap.budgetState) {
+            case ON_TRACK: return "● ON TRACK";
+            case AT_RISK: return "● AT RISK";
+            case EXCEEDS_BUDGET: return "● EXCEEDS BUDGET";
+            case COMPLETED: return "● COMPLETED";
+            default: return "● UNKNOWN";
+        }
+    }
+
+    private static String budgetStateColor(ForgeTelemetrySnapshot snap) {
+        switch (snap.budgetState) {
+            case ON_TRACK:
+            case COMPLETED: return "#10b981";
+            case AT_RISK: return "#f59e0b";
+            case EXCEEDS_BUDGET: return "#ef4444";
+            default: return "#8ea3c0";
+        }
+    }
+
+    // ---------- GRAPH 3: PROGRESS & RESOURCE MONITOR ----------
+
+    private static String buildResourceMonitorSvg(ForgeTelemetrySnapshot snap) {
+        int width = 720;
+        int height = 340;
+        int padL = 240;
+        int padR = 40;
+        int padT = 30;
+        int padB = 40;
+        int plotW = width - padL - padR;
+
+        StringBuilder svg = new StringBuilder();
+
+        double progressPct = snap.overallProgress >= 0 ? snap.overallProgress * 100.0 : 0.0;
+        boolean progressAvailable = snap.overallProgress >= 0;
+        String progressText = progressAvailable ? String.format("%.1f%% (Step %d/%d)", progressPct, snap.currentStep, snap.totalSteps) : "N/A";
+
+        double memPct;
+        if (snap.ramTotalMb > 0) {
+            memPct = Math.min(100.0, Math.max(0.0, snap.ramUsedMb / snap.ramTotalMb * 100.0));
+        } else {
+            Runtime rt = Runtime.getRuntime();
+            memPct = Math.min(100.0, (rt.totalMemory() - rt.freeMemory()) * 100.0 / Math.max(1, rt.totalMemory()));
+        }
+        boolean memLive = snap.isTrainingActive || snap.history.size() > 1;
+
+        double tps = snap.effectiveTokensPerSec;
+        boolean tpsAvailable = tps > 0;
+        boolean tpsPreliminary = snap.throughputBasis == ForgeTelemetrySnapshot.ThroughputBasis.ANALYTICAL_PRELIMINARY;
+
+        double cpu = snap.cpuPercent;
+        boolean cpuAvailable = cpu > 0.0;
+
+        int[] barY = { padT + 26, padT + 88, padT + 150, padT + 212 };
+        int barH = 24;
+
+        // 1. Calculation Progress / Time
+        int timeFillW = (int) (Math.min(100.0, progressPct) / 100.0 * plotW);
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"600\" fill=\"#c3d0e5\">Calculation Progress / Time</text>",
+            padL - 8, barY[0] + 12));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1e293b\" stroke=\"#33415c\" stroke-width=\"1\" />",
+            padL, barY[0], plotW, barH));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1d5296\" class=\"dot\" data-tooltip=\"Progress: %s | Elapsed: %s | ETA: %s\" />",
+            padL, barY[0], Math.max(progressAvailable ? 6 : 0, timeFillW), barH,
+            progressText, formatDuration(snap.elapsedSeconds),
+            snap.estimatedRemainingSeconds >= 0 ? formatDuration(snap.estimatedRemainingSeconds) : "N/A"));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%s%s · Elapsed %s%s</text>",
+            padL + 10, barY[0] + 16, progressAvailable ? "#ffffff" : "#8ea3c0",
+            progressAvailable ? progressText : "Progress N/A",
+            progressAvailable ? "" : "",
+            formatDuration(snap.elapsedSeconds),
+            snap.estimatedRemainingSeconds >= 0 ? " · ETA " + formatDuration(snap.estimatedRemainingSeconds) : ""));
+
+        // 2. Allocated System RAM / Memory Usage (real JVM measurement)
+        int memFillW = (int) (memPct / 100.0 * plotW);
+        String memBarColor = memPct > 85.0 ? "#ef4444" : (memPct > 65.0 ? "#f59e0b" : "#10b981");
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"600\" fill=\"#c3d0e5\">Allocated System RAM / Memory Usage</text>",
+            padL - 8, barY[1] + 12));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1e293b\" stroke=\"#33415c\" stroke-width=\"1\" />",
+            padL, barY[1], plotW, barH));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"%s\" class=\"dot\" data-tooltip=\"JVM RAM: %d MB / %d MB (%.1f%%, %s)\" />",
+            padL, barY[1], Math.max(6, memFillW), barH, memBarColor,
+            (long) snap.ramUsedMb, (long) Math.max(snap.ramTotalMb, 1), memPct,
+            memLive ? "measured" : "current JVM"));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%d MB / %d MB RAM (%.1f%%)%s</text>",
+            padL + 10, barY[1] + 16, memPct > 35 ? "#ffffff" : "#c3d0e5",
+            (long) snap.ramUsedMb, (long) Math.max(snap.ramTotalMb, 1), memPct,
+            memLive ? "" : " (live JVM value)"));
+
+        // 3. Token Throughput
+        double tpsPct = tpsAvailable ? Math.min(100.0, tps / 2000.0 * 100.0) : 0.0;
+        int tpsFillW = (int) (tpsPct / 100.0 * plotW);
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"600\" fill=\"#c3d0e5\">Token Throughput (Tokens / sec)</text>",
+            padL - 8, barY[2] + 12));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1e293b\" stroke=\"#33415c\" stroke-width=\"1\" />",
+            padL, barY[2], plotW, barH));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#8b5cf6\" class=\"dot\" data-tooltip=\"Throughput: %s | Tokens: %d/%d\" />",
+            padL, barY[2], Math.max(tpsAvailable ? 6 : 0, tpsFillW), barH,
+            tpsAvailable ? String.format("%.1f tok/s", tps) : "N/A",
+            snap.processedTokens, snap.totalTokens));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%s · Tokens %s/%s</text>",
+            padL + 10, barY[2] + 16, tpsAvailable ? "#ffffff" : "#8ea3c0",
+            tpsAvailable ? String.format("%.1f tok/s %s", tps, tpsPreliminary ? "(ANALYTICAL PRELIMINARY)" : "(measured)") : "Throughput N/A",
+            fmtTokens(snap.processedTokens), fmtTokens(snap.totalTokens)));
+
+        // 4. Process CPU Utilization (real measurement)
+        int cpuFillW = (int) (Math.min(100.0, Math.max(0.0, cpu)) / 100.0 * plotW);
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"600\" fill=\"#c3d0e5\">Process CPU Utilization (measured)</text>",
+            padL - 8, barY[3] + 12));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#1e293b\" stroke=\"#33415c\" stroke-width=\"1\" />",
+            padL, barY[3], plotW, barH));
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"4\" fill=\"#22c55e\" class=\"dot\" data-tooltip=\"CPU: %.1f%% (process, measured)\" />",
+            padL, barY[3], Math.max(cpuAvailable ? 6 : 0, cpuFillW), barH, cpu));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"700\" fill=\"%s\">%s · GPU: %s</text>",
+            padL + 10, barY[3] + 16, cpuAvailable ? "#ffffff" : "#8ea3c0",
+            cpuAvailable ? String.format("%.1f%% CPU", cpu) : "CPU N/A (no training run yet)",
+            snap.gpuStatus != null ? snap.gpuStatus : "N/A"));
+
+        return svg.toString();
+    }
+
+    // ---------- HTML DOCUMENTS ----------
+
+    private static String buildCenterDocument(String summary, String t1, String s1, String b1, String svg1,
+                                              String t2, String s2, String b2, String svg2,
+                                              String t3, String b3, String svg3) {
+        return "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n" + graphCss() + "\n</head>\n<body>\n"
+            + summary + "\n"
+            + cardHtml("GRAPH 1: LOSS TRAJECTORY", t1, s1, b1, svg1,
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#60a5fa;\"></div>Actual Loss</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#38bdf8; border-top:2px dashed #38bdf8;\"></div>Validation Loss</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#c084fc; border-top:2px dashed #c084fc;\"></div>Projected (measured fit)</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#10b981; border-top:2px dashed #10b981;\"></div>Target Threshold</div>")
+            + "\n"
+            + cardHtml("GRAPH 2: CAPACITY BUDGET", t2, s2, b2, svg2,
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#f59e0b; border-top:2px dashed #f59e0b;\"></div>Target Budget</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#60a5fa;\"></div>Elapsed</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#c084fc;\"></div>Remaining</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#f87171;\"></div>Estimated Total</div>")
+            + "\n"
+            + cardHtml("GRAPH 3: PROGRESS & RESOURCE MONITOR", t3, t3, b3, svg3,
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#1d5296;\"></div>Time Progress</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#10b981;\"></div>RAM Memory</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#8b5cf6;\"></div>Tokens/sec</div>" +
+                "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#22c55e;\"></div>CPU</div>")
+            + "\n" + tooltipScript() + "</body>\n</html>";
+    }
+
+    private static String cardHtml(String badge, String title, String subtitle, String badgeClass, String svg, String legend) {
+        return "<!-- CARD: " + badge + " -->\n<div class=\"card\">\n"
+            + "  <div class=\"header\">\n"
+            + "    <div class=\"title-group\">\n"
+            + "      <div class=\"title\">" + title + "</div>\n"
+            + "      <div class=\"subtitle\">" + subtitle + "</div>\n"
+            + "    </div>\n"
+            + "    <div class=\"badge " + badgeClass + "\">" + badge + "</div>\n"
+            + "  </div>\n"
+            + "  <div class=\"graph-container\" id=\"" + badge.replaceAll("[^a-zA-Z0-9]", "") + "\">\n"
+            + "    <div class=\"tooltip\"></div>\n"
+            + "    <svg viewBox=\"0 0 720 360\" preserveAspectRatio=\"xMidYMid meet\">\n" + svg + "\n    </svg>\n"
+            + "  </div>\n"
+            + "  <div class=\"legend\">" + legend + "</div>\n"
+            + "</div>\n";
+    }
+
+    /** Bottom tabbed monitoring graphs (Loss | LR | Throughput | Hardware | Memory | Timeline). */
+    public String generateMonitoringGraphsHtml(ForgeTelemetrySnapshot snap) {
+        if (snap == null) {
+            snap = ForgeTelemetrySnapshot.configOnly(selectedModelSize, selectedEpochs, selectedDesiredLoss,
+                    selectedTargetHours, selectedEarlyStoppingEnabled, lossHistory, calculateTotalDatasetBytes());
+        }
+
+        StringBuilder tabs = new StringBuilder();
+        tabs.append("<div class=\"tab-bar\">");
+        tabs.append(tabButton("tabLoss", "Loss", true));
+        tabs.append(tabButton("tabLr", "Learning Rate", false));
+        tabs.append(tabButton("tabTp", "Throughput", false));
+        tabs.append(tabButton("tabHw", "Hardware", false));
+        tabs.append(tabButton("tabMem", "Memory", false));
+        tabs.append(tabButton("tabTime", "Timeline", false));
+        tabs.append("</div>");
+
+        String lossSvg = buildTimeSeriesSvg(snap, "loss", "Loss", "#60a5fa");
+        String lrSvg = buildTimeSeriesSvg(snap, "lr", "Learning Rate", "#f59e0b");
+        String tpSvg = buildTimeSeriesSvg(snap, "tps", "Throughput (tok/s)", "#8b5cf6");
+        String cpuSvg = buildTimeSeriesSvg(snap, "cpu", "Process CPU %", "#22c55e");
+        String memSvg = buildTimeSeriesSvg(snap, "ram", "JVM RAM (MB)", "#10b981");
+        String timelineSvg = buildTimelineSvg(snap);
+
+        String html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n" + graphCss() + tabsCss() + "\n</head>\n<body>\n"
+            + "<div class=\"tab-content\" id=\"tabLoss\">" + "<div class=\"tab-head\">Training Loss over time (measured, timestamped)</div>"
+            + svgWrap(lossSvg) + "</div>\n"
+            + "<div class=\"tab-content\" id=\"tabLr\" style=\"display:none\">" + "<div class=\"tab-head\">Learning Rate over time (optimizer schedule, measured)</div>"
+            + svgWrap(lrSvg) + "</div>\n"
+            + "<div class=\"tab-content\" id=\"tabTp\" style=\"display:none\">" + "<div class=\"tab-head\">Training Throughput over time (measured tokens/sec)</div>"
+            + svgWrap(tpSvg) + "</div>\n"
+            + "<div class=\"tab-content\" id=\"tabHw\" style=\"display:none\">" + "<div class=\"tab-head\">Hardware utilization (measured process CPU %)</div>"
+            + svgWrap(cpuSvg) + "</div>\n"
+            + "<div class=\"tab-content\" id=\"tabMem\" style=\"display:none\">" + "<div class=\"tab-head\">Memory consumption over time (measured JVM RAM)</div>"
+            + svgWrap(memSvg) + "</div>\n"
+            + "<div class=\"tab-content\" id=\"tabTime\" style=\"display:none\">" + "<div class=\"tab-head\">Training Phase Timeline (from real session events)</div>"
+            + svgWrap(timelineSvg) + "</div>\n"
+            + tabScript() + "\n</body>\n</html>";
+        return html;
+    }
+
+    private static String tabButton(String id, String label, boolean active) {
+        return "<button class=\"tab-btn" + (active ? " active" : "") + "\" onclick=\"showTab('" + id + "', this)\">" + label + "</button>";
+    }
+
+    private static String svgWrap(String svg) {
+        return "<div class=\"tab-svg-wrap\"><svg viewBox=\"0 0 720 300\" preserveAspectRatio=\"xMidYMid meet\">" + svg + "</svg></div>";
+    }
+
+    /**
+     * Generic timestamped time-series chart. series: "loss" | "valLoss" | "lr"
+     * | "tps" | "cpu" | "ram". Values come exclusively from telemetry history
+     * samples; empty history renders an honest "no data" placeholder.
+     */
+    private static String buildTimeSeriesSvg(ForgeTelemetrySnapshot snap, String series, String label, String color) {
+        int width = 720;
+        int height = 300;
+        int padL = 70;
+        int padR = 30;
+        int padT = 25;
+        int padB = 40;
+        int plotW = width - padL - padR;
+        int plotH = height - padT - padB;
+
+        StringBuilder svg = new StringBuilder();
+
+        List<ForgeTelemetrySnapshot.HistoryPoint> pts = new ArrayList<>();
+        for (ForgeTelemetrySnapshot.HistoryPoint p : snap.history) {
+            double v = valueOf(p, series);
+            if (v >= 0) pts.add(p);
+        }
+
+        if (pts.isEmpty()) {
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"#8ea3c0\" text-anchor=\"middle\">No %s data yet — collect training telemetry first.</text>",
+                padL + plotW / 2, padT + plotH / 2, label));
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#46597a\" stroke-width=\"2\" />",
+                padL, padT, padL + plotW, padT + plotH));
+            return svg.toString();
+        }
+
+        long tMin = pts.get(0).timestamp;
+        long tMax = Math.max(tMin + 1, pts.get(pts.size() - 1).timestamp);
+
+        double vMin = Double.MAX_VALUE;
+        double vMax = -Double.MAX_VALUE;
+        for (ForgeTelemetrySnapshot.HistoryPoint p : pts) {
+            double v = valueOf(p, series);
+            vMin = Math.min(vMin, v);
+            vMax = Math.max(vMax, v);
+        }
+        if (vMax - vMin < 1e-9) {
+            vMax = vMin + 1.0;
+        }
+        double padV = (vMax - vMin) * 0.1;
+        vMin = Math.max(0, vMin - padV);
+        vMax = vMax + padV;
+        final double tsVMin = vMin;
+        final double tsVMax = vMax;
+
+        java.util.function.DoubleUnaryOperator xOf = v -> padL + (v - tMin) / Math.max(1.0, tMax - tMin) * plotW;
+        java.util.function.DoubleUnaryOperator yOf = v -> padT + plotH - (v - tsVMin) / (tsVMax - tsVMin) * plotH;
+
+        for (int i = 0; i <= 4; i++) {
+            double v = vMin + (vMax - vMin) * i / 4;
+            int y = (int) yOf.applyAsDouble(v);
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#2b3a52\" stroke-dasharray=\"3,3\" stroke-width=\"1\" />",
+                padL, y, padL + plotW, y));
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\" text-anchor=\"end\">%s</text>",
+                padL - 6, y + 4, formatShort(v)));
+        }
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\" text-anchor=\"middle\">Time →</text>",
+            padL + plotW / 2, height - 10));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\">%s</text>",
+            padL - 40, padT - 8, label));
+
+        StringBuilder points = new StringBuilder();
+        StringBuilder dots = new StringBuilder();
+        boolean first = true;
+        for (ForgeTelemetrySnapshot.HistoryPoint p : pts) {
+            double v = valueOf(p, series);
+            int x = (int) xOf.applyAsDouble(p.timestamp);
+            int y = (int) yOf.applyAsDouble(v);
+            if (!first) points.append(" ");
+            points.append(x).append(",").append(y);
+            first = false;
+            dots.append(String.format(
+                "<circle cx=\"%d\" cy=\"%d\" r=\"3\" fill=\"%s\" stroke=\"#0f172a\" stroke-width=\"1\" class=\"dot\" data-tooltip=\"%s | Epoch %d | Step %d | %s\" />",
+                x, y, color, timeOf(p.timestamp), p.epoch, p.step, label + ": " + formatShort(v)));
+        }
+        svg.append(String.format(
+            "<polyline points=\"%s\" fill=\"none\" stroke=\"%s\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />",
+            points.toString(), color));
+        svg.append(dots.toString());
+
+        return svg.toString();
+    }
+
+    private static String timeOf(long ts) {
+        return new SimpleDateFormat("HH:mm:ss").format(new Date(ts));
+    }
+
+    private static String formatShort(double v) {
+        if (Math.abs(v) >= 1000) return String.format("%.0f", v);
+        if (Math.abs(v) >= 100) return String.format("%.0f", v);
+        if (Math.abs(v) >= 1) return String.format("%.2f", v);
+        return String.format("%.4f", v);
+    }
+
+    private static double valueOf(ForgeTelemetrySnapshot.HistoryPoint p, String series) {
+        switch (series) {
+            case "loss": return p.loss > 0 ? p.loss : -1;
+            case "valLoss": return p.valLoss > 0 ? p.valLoss : -1;
+            case "lr": return p.learningRate > 0 ? p.learningRate : -1;
+            case "tps": return p.tokensPerSec > 0 ? p.tokensPerSec : -1;
+            case "cpu": return p.cpuPct > 0 ? p.cpuPct : -1;
+            case "ram": return p.ramMb > 0 ? p.ramMb : -1;
+            default: return -1;
+        }
+    }
+
+    /** Phase timeline built from real session timing: run start, epochs, end. */
+    private static String buildTimelineSvg(ForgeTelemetrySnapshot snap) {
+        int width = 720;
+        int height = 300;
+        int padL = 70;
+        int padR = 30;
+        int padT = 25;
+        int padB = 40;
+        int plotW = width - padL - padR;
+        int plotH = height - padT - padB;
+
+        StringBuilder svg = new StringBuilder();
+
+        long start = snap.startTimeMs > 0 ? snap.startTimeMs : (snap.history.isEmpty() ? 0 : snap.history.get(0).timestamp);
+        long end = snap.durationMs > 0 ? snap.startTimeMs + snap.durationMs : snap.capturedAtMs;
+        if (start <= 0 || end <= start) {
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"#8ea3c0\" text-anchor=\"middle\">No training session timing available.</text>",
+                padL + plotW / 2, padT + plotH / 2));
+            return svg.toString();
+        }
+        double span = Math.max(1.0, end - start);
+        java.util.function.DoubleUnaryOperator xOf = ms -> padL + (ms - start) / span * plotW;
+
+        svg.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#46597a\" stroke-width=\"2\" />",
+            padL, padT + 40, padL + plotW, padT + 40));
+
+        // Training phase bar: measured run window.
+        int xStart = (int) xOf.applyAsDouble(start);
+        int xEnd = (int) xOf.applyAsDouble(end);
+        int phaseY = padT + 40;
+        svg.append(String.format(
+            "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"26\" rx=\"4\" fill=\"#1d5296\" class=\"dot\" data-tooltip=\"%s: %s → %s (%s)\" />",
+            xStart, phaseY, Math.max(8, xEnd - xStart),
+            phaseName(snap), timeOf(start), timeOf(end), formatDuration((end - start) / 1000.0)));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"11\" font-weight=\"700\" fill=\"#ffffff\">%s · %s</text>",
+            xStart + 8, phaseY + 17, phaseName(snap), formatDuration((end - start) / 1000.0)));
+
+        // Epoch markers from real history samples
+        int markerY = phaseY + 60;
+        int lastEpoch = -1;
+        for (ForgeTelemetrySnapshot.HistoryPoint p : snap.history) {
+            if (p.epoch <= 0 || p.epoch == lastEpoch) continue;
+            lastEpoch = p.epoch;
+            int mx = (int) xOf.applyAsDouble(p.timestamp);
+            svg.append(String.format(
+                "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#f59e0b\" stroke-width=\"1\" stroke-dasharray=\"4,3\" />",
+                mx, phaseY - 8, mx, markerY + 8));
+            svg.append(String.format(
+                "<text x=\"%d\" y=\"%d\" font-size=\"9\" fill=\"#f59e0b\" transform=\"rotate(-45 %d %d)\">Epoch %d</text>",
+                mx + 4, markerY + 12, mx + 4, markerY + 12, p.epoch));
+        }
+
+        // Current position marker (real, live)
+        long now = snap.isTrainingActive ? snap.capturedAtMs : end;
+        int nx = (int) xOf.applyAsDouble(now);
+        svg.append(String.format(
+            "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"#10b981\" stroke-width=\"2\" />",
+            nx, phaseY - 12, nx, phaseY + 34));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#10b981\">NOW</text>",
+            nx + 4, phaseY - 6));
+
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\">%s</text>",
+            padL, height - 14, timeOf(start)));
+        svg.append(String.format(
+            "<text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"#8ea3c0\" text-anchor=\"end\">%s</text>",
+            padL + plotW, height - 14, timeOf(end)));
+        return svg.toString();
+    }
+
+    private static String graphCss() {
+        return "<style>\n"
+            + "  :root { --bg:#0b1220; --surface:#111c30; --border:#26354f; --text:#e2e8f0; --muted:#8ea3c0; }\n"
+            + "  * { box-sizing: border-box; margin: 0; padding: 0; }\n"
+            + "  body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;\n"
+            + "         background: var(--bg); color: var(--text); padding: 10px; user-select: none; overflow-y: auto; }\n"
+            + "  .summary-bar { display:flex; flex-wrap:wrap; gap:12px; background:var(--surface); border:1px solid var(--border);\n"
+            + "         border-radius:8px; padding:10px 14px; margin-bottom:10px; }\n"
+            + "  .summary-item { font-size:11px; display:flex; align-items:center; gap:4px; }\n"
+            + "  .summary-label { color:var(--muted); font-weight:500; }\n"
+            + "  .summary-value { color:#f1f5f9; font-weight:700; }\n"
+            + "  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px;\n"
+            + "         padding:12px; margin-bottom:10px; display:flex; flex-direction:column; }\n"
+            + "  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;\n"
+            + "         padding-bottom:6px; border-bottom:1px solid var(--border); }\n"
+            + "  .title-group { display:flex; flex-direction:column; }\n"
+            + "  .title { font-size:13px; font-weight:700; color:#f1f5f9; }\n"
+            + "  .subtitle { font-size:11px; color:var(--muted); margin-top:1px; }\n"
+            + "  .badge { padding:3px 8px; border-radius:12px; font-size:10px; font-weight:600;\n"
+            + "         text-transform:uppercase; letter-spacing:0.5px; }\n"
+            + "  .badge-primary { background:#0c2a52; color:#7ab7ff; border:1px solid #1d5296; }\n"
+            + "  .badge-success { background:#0c2e24; color:#34d399; border:1px solid #1a6b4a; }\n"
+            + "  .badge-danger { background:#3a1215; color:#fca5a5; border:1px solid #7f1d1d; }\n"
+            + "  .badge-neutral { background:#1e293b; color:#94a3b8; border:1px solid #33415c; }\n"
+            + "  .graph-container { position:relative; width:100%; display:flex; justify-content:center; align-items:center; }\n"
+            + "  svg { width:100%; height:280px; overflow:visible; }\n"
+            + "  .dot { cursor:pointer; }\n"
+            + "  .dot:hover { opacity:0.75; }\n"
+            + "  .tooltip { position:absolute; background:rgba(2,6,23,0.96); color:#fff; padding:5px 9px;\n"
+            + "         border-radius:4px; font-size:11px; pointer-events:none; opacity:0; transition:opacity 0.15s ease;\n"
+            + "         white-space:nowrap; z-index:100; border:1px solid #33415c; }\n"
+            + "  .legend { display:flex; gap:14px; justify-content:center; margin-top:6px; font-size:10px; color:#c3d0e5; flex-wrap:wrap; }\n"
+            + "  .legend-item { display:flex; align-items:center; gap:5px; }\n"
+            + "  .legend-line { width:16px; height:3px; border-radius:2px; }\n"
+            + "</style>\n";
+    }
+
+    private static String tabsCss() {
+        return "<style>\n"
+            + "  .tab-bar { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }\n"
+            + "  .tab-btn { background:#111c30; color:#8ea3c0; border:1px solid #26354f; border-radius:6px 6px 0 0;\n"
+            + "         padding:6px 14px; font-size:11px; cursor:pointer; }\n"
+            + "  .tab-btn.active { background:#1d5296; color:#ffffff; border-color:#1d5296; }\n"
+            + "  .tab-head { font-size:11px; color:#c3d0e5; margin-bottom:4px; font-weight:600; }\n"
+            + "  .tab-svg-wrap { width:100%; }\n"
+            + "  .tab-svg-wrap svg { width:100%; height:250px; overflow:visible; }\n"
+            + "</style>\n";
+    }
+
+    private static String tabScript() {
+        return "<script>\n"
+            + "  function showTab(id, btn) {\n"
+            + "    document.querySelectorAll('.tab-content').forEach(function(c){ c.style.display='none'; });\n"
+            + "    document.getElementById(id).style.display='block';\n"
+            + "    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });\n"
+            + "    btn.classList.add('active');\n"
+            + "  }\n"
+            + "</script>\n";
+    }
+
+    private static String tooltipScript() {
+        return "<script>\n"
+            + "  function setupTooltips() {\n"
+            + "    document.querySelectorAll('.graph-container').forEach(function(container) {\n"
+            + "      var tooltip = container.querySelector('.tooltip');\n"
+            + "      if (!tooltip) return;\n"
+            + "      container.querySelectorAll('.dot').forEach(function(dot) {\n"
+            + "        dot.addEventListener('mousemove', function(e) {\n"
+            + "          var rect = container.getBoundingClientRect();\n"
+            + "          tooltip.style.left = (e.clientX - rect.left + 10) + 'px';\n"
+            + "          tooltip.style.top = (e.clientY - rect.top - 25) + 'px';\n"
+            + "          tooltip.textContent = dot.getAttribute('data-tooltip');\n"
+            + "          tooltip.style.opacity = '1';\n"
+            + "        });\n"
+            + "        dot.addEventListener('mouseleave', function() { tooltip.style.opacity = '0'; });\n"
+            + "      });\n"
+            + "    });\n"
+            + "  }\n"
+            + "  setupTooltips();\n"
+            + "</script>\n";
+    }
+
+    // =====================================================================
+    // ACTIONS
+    // =====================================================================
 
     private void handleCreateEvodata() {
         List<DatasetItem> checkedItems = new ArrayList<>();
@@ -1808,24 +2664,6 @@ public class ForgeSettingsDialog extends Dialog {
         }).start();
     }
 
-    private void refreshDatasetsTable() {
-        if (datasetsTable == null || datasetsTable.isDisposed()) return;
-        datasetsTable.removeAll();
-        for (DatasetItem item : datasetItems) {
-            TableItem tableItem = new TableItem(datasetsTable, SWT.NONE);
-            tableItem.setChecked(item.isChecked());
-            tableItem.setText(0, "");
-            String pathText = item.getPath();
-            if (item.getScaleRatio() < 0.99) {
-                pathText += String.format(" (Scaled: %.0f%%)", item.getScaleRatio() * 100.0);
-            }
-            tableItem.setText(1, pathText);
-            tableItem.setText(2, item.getType());
-            tableItem.setData(item);
-        }
-        updateHardwareAndTimeInfo();
-    }
-
     private void handleSmartScaling() {
         double hours = 12.0;
         if (targetTimeCombo != null && !targetTimeCombo.isDisposed()) {
@@ -1843,7 +2681,7 @@ public class ForgeSettingsDialog extends Dialog {
             }
             refreshDatasetsTable();
             updateHardwareAndTimeInfo();
-            updateGraphHtml();
+            scheduleGraphUpdate();
             MessageDialog.openInformation(getShell(), "Smart Data Scaling Applied",
                 String.format("Training parameters and dataset sample ratios scaled for target forging time of %.1f hours.\n" +
                     "Updated Epochs: %d\nEstimated Duration: %s",
@@ -1854,160 +2692,219 @@ public class ForgeSettingsDialog extends Dialog {
         }
     }
 
-    private void updateControlsFromFields() {
-        if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
-            for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
-                if (ModelSizePreset.Size.values()[i].name().equalsIgnoreCase(selectedModelSize) ||
-                    ModelSizePreset.Size.values()[i].getDisplayName().equalsIgnoreCase(selectedModelSize)) {
-                    modelSizeCombo.select(i);
-                    break;
-                }
+    private void handleStartOrResumeTraining() {
+        String sid = resolveForgeSessionId();
+        if (sid == null) {
+            MessageDialog.openWarning(getShell(), "No Forge Session", "No forge session is available to start training.");
+            return;
+        }
+        int port = resolveServerPort();
+        final String sessionId = sid;
+        final int serverPort = port;
+        new Thread(() -> {
+            try {
+                HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("http://localhost:" + serverPort + "/forge/session/" + sessionId + "/forging/start"))
+                        .timeout(Duration.ofSeconds(15))
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (getShell() != null && !getShell().isDisposed()) {
+                        MessageDialog.openError(getShell(), "Start Failed",
+                            "Could not start training via the EVO server: " + ex.getMessage());
+                    }
+                });
             }
+        }, "forge-settings-start").start();
+        MessageDialog.openInformation(getShell(), "Training Started",
+            "Training start requested. The monitor will refresh automatically.\n\n"
+            + "The backend prepares the dataset, validates configuration, initializes the model and starts training.");
+    }
+
+    private int resolveServerPort() {
+        try {
+            var orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.getServerSettings() != null && orch.getServerSettings().getPort() > 0) {
+                return orch.getServerSettings().getPort();
+            }
+        } catch (Exception ignored) {}
+        return 28080;
+    }
+
+    private void handlePauseTraining(Button btn) {
+        String sid = resolveForgeSessionId();
+        if (sid == null) {
+            MessageDialog.openInformation(getShell(), "No Active Trainer", "No active training run detected in progress to pause.");
+            return;
         }
-        if (epochCombo != null && !epochCombo.isDisposed()) {
-            epochCombo.setText(String.valueOf(selectedEpochs));
-        }
-        if (batchSizeCombo != null && !batchSizeCombo.isDisposed()) {
-            batchSizeCombo.setText(String.valueOf(selectedBatchSize));
-        }
-        if (learningRateCombo != null && !learningRateCombo.isDisposed()) {
-            learningRateCombo.setText(String.valueOf(selectedLearningRate));
-        }
-        if (generationsCombo != null && !generationsCombo.isDisposed()) {
-            generationsCombo.setText(String.valueOf(selectedGenerations));
-        }
-        if (candidatesCombo != null && !candidatesCombo.isDisposed()) {
-            candidatesCombo.setText(String.valueOf(selectedCandidates));
-        }
-        if (checkpointFreqCombo != null && !checkpointFreqCombo.isDisposed()) {
-            checkpointFreqCombo.setText(String.valueOf(selectedCheckpointFreq));
-        }
-        if (outputModelNameText != null && !outputModelNameText.isDisposed()) {
-            outputModelNameText.setText(selectedOutputModelName != null ? selectedOutputModelName : "");
-        }
-        if (maxDataSizeText != null && !maxDataSizeText.isDisposed()) {
-            maxDataSizeText.setText(String.valueOf(selectedMaxDataSizeMb));
-        }
-        if (maxSampleCountText != null && !maxSampleCountText.isDisposed()) {
-            maxSampleCountText.setText(String.valueOf(selectedMaxSampleCount));
-        }
-        if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
-            maxSeqLenText.setText(String.valueOf(selectedMaxSeqLen));
-        }
-        if (valRatioText != null && !valRatioText.isDisposed()) {
-            valRatioText.setText(String.valueOf((int) (selectedValRatio * 100)));
-        }
-        if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
-            qualityFilterCheck.setSelection(selectedQualityFilter);
-        }
-        if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
-            saveEpochCheckpointsCheck.setSelection(selectedSaveEpochCheckpoints);
+        boolean requested = ForgeSessionManager.getInstance().requestPause(sid);
+        if (requested) {
+            MessageDialog.openInformation(getShell(), "Pausing Training",
+                "Training pause requested!\n\nThe trainer will pause at the current batch and save a resumption checkpoint.");
+        } else {
+            MessageDialog.openInformation(getShell(), "No Active Trainer", "No active training run detected in progress to pause.");
         }
     }
 
-    private void updateHardwareAndTimeInfo() {
-        if (hwProfileLabel != null && !hwProfileLabel.isDisposed()) {
-            hwProfileLabel.setText("Hardware Profile: " + getHardwareProfile());
+    private void handleAbortTraining(Button btn) {
+        boolean confirm = MessageDialog.openConfirm(getShell(), "Confirm Cancel",
+                "Are you sure you want to cancel (abort) training? All unfinalized progress will be discarded.");
+        if (!confirm) return;
+        String sid = resolveForgeSessionId();
+        if (sid == null) {
+            MessageDialog.openInformation(getShell(), "No Active Trainer", "No active training run detected in progress to cancel.");
+            return;
         }
-        if (estTimeLabel != null && !estTimeLabel.isDisposed()) {
-            double estSec = getEstimatedForgingSeconds();
-            long bytes = calculateTotalDatasetBytes();
-            long tokens = estimateTotalTrainingTokens();
-            double params = getModelParameterCount(selectedModelSize);
-            estTimeLabel.setText(String.format("Data: %.2f MB | Tokens: %.2f M | Model: %s (%.1fM params) | Est. Time: %s",
-                bytes / (1024.0 * 1024.0), tokens / 1_000_000.0, selectedModelSize, params / 1_000_000.0, formatDuration(estSec)));
+        boolean requested = ForgeSessionManager.getInstance().requestAbort(sid);
+        if (requested) {
+            MessageDialog.openInformation(getShell(), "Training Cancelled",
+                "Training cancel (abort) requested. Running processes are halting.");
+        } else {
+            MessageDialog.openInformation(getShell(), "No Active Trainer", "No active training run detected in progress to cancel.");
         }
     }
+
+    private void handleFinishTraining(Button btn) {
+        String sid = resolveForgeSessionId();
+        if (sid == null) {
+            MessageDialog.openInformation(getShell(), "No Active Trainer",
+                "No active training run detected in progress.\n" +
+                "When training is running, clicking this button gracefully finishes the current epoch and exports all files.");
+            return;
+        }
+        boolean requested = ForgeSessionManager.getInstance().requestFinish(sid);
+        if (btn != null && !btn.isDisposed()) {
+            btn.setText("Finishing Epoch...");
+            btn.setEnabled(false);
+        }
+        if (requested) {
+            MessageDialog.openInformation(getShell(), "Finishing Training",
+                "Training finish requested!\n\n" +
+                "The trainer will complete its current step/epoch, retain all learned weights, " +
+                "and proceed immediately to compile, save, and export all model files (.evo, GGUF, report).");
+        } else {
+            MessageDialog.openInformation(getShell(), "No Active Trainer",
+                "No active training run detected in progress.\n" +
+                "When training is running, clicking this button gracefully finishes the current epoch and exports all files.");
+        }
+    }
+
+    private void handleOpenTrainingReport() {
+        String sid = resolveForgeSessionId();
+        List<File> candidates = new ArrayList<>();
+        String codebase = ProjectModelManager.getCodebasePath();
+        if (codebase != null && !codebase.isEmpty()) {
+            candidates.add(new File(codebase, "dist/forging-" + sid));
+            candidates.add(new File(codebase, "dist"));
+        }
+        String workspace = ProjectModelManager.getWorkspacePath();
+        if (workspace != null && !workspace.isEmpty()) {
+            candidates.add(new File(workspace, "dist/forging-" + sid));
+            candidates.add(new File(workspace, "dist"));
+        }
+        for (File f : candidates) {
+            if (f != null && f.isDirectory()) {
+                Program.launch(f.getAbsolutePath());
+                return;
+            }
+        }
+        MessageDialog.openInformation(getShell(), "Training Report",
+            "No training output folder found yet. The run folder is created in dist/forging-<sessionId> when training starts.");
+    }
+
+    // =====================================================================
+    // DIALOG LIFECYCLE
+    // =====================================================================
 
     @Override
     protected void okPressed() {
-        if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
-            int idx = modelSizeCombo.getSelectionIndex();
-            if (idx >= 0 && idx < ModelSizePreset.Size.values().length) {
-                selectedModelSize = ModelSizePreset.Size.values()[idx].name();
-            } else if (!modelSizeCombo.getText().isEmpty()) {
-                selectedModelSize = modelSizeCombo.getText();
-            }
-        }
-
-        if (epochCombo != null && !epochCombo.isDisposed()) {
-            try { selectedEpochs = Math.max(1, Integer.parseInt(epochCombo.getText().trim())); } catch (Exception e) { selectedEpochs = 32; }
-        }
-
-        if (batchSizeCombo != null && !batchSizeCombo.isDisposed()) {
-            try { selectedBatchSize = Math.max(1, Integer.parseInt(batchSizeCombo.getText().trim())); } catch (Exception e) { selectedBatchSize = 16; }
-        }
-
-        if (learningRateCombo != null && !learningRateCombo.isDisposed()) {
-            try { selectedLearningRate = Math.max(0.00001, Double.parseDouble(learningRateCombo.getText().trim())); } catch (Exception e) { selectedLearningRate = 0.01; }
-        }
-
-        if (generationsCombo != null && !generationsCombo.isDisposed()) {
-            try { selectedGenerations = Math.max(1, Integer.parseInt(generationsCombo.getText().trim())); } catch (Exception e) { selectedGenerations = 1; }
-        }
-
-        if (candidatesCombo != null && !candidatesCombo.isDisposed()) {
-            try { selectedCandidates = Math.max(1, Integer.parseInt(candidatesCombo.getText().trim())); } catch (Exception e) { selectedCandidates = 1; }
-        }
-
-        if (checkpointFreqCombo != null && !checkpointFreqCombo.isDisposed()) {
-            try { selectedCheckpointFreq = Math.max(1, Integer.parseInt(checkpointFreqCombo.getText().trim())); } catch (Exception e) { selectedCheckpointFreq = 5; }
-        }
-
-        if (outputModelNameText != null && !outputModelNameText.isDisposed()) {
-            selectedOutputModelName = outputModelNameText.getText().trim();
-        }
-
-        if (maxDataSizeText != null && !maxDataSizeText.isDisposed()) {
-            try { selectedMaxDataSizeMb = Long.parseLong(maxDataSizeText.getText().trim()); } catch (Exception e) { selectedMaxDataSizeMb = 500; }
-        }
-
-        if (maxSampleCountText != null && !maxSampleCountText.isDisposed()) {
-            try { selectedMaxSampleCount = Long.parseLong(maxSampleCountText.getText().trim()); } catch (Exception e) { selectedMaxSampleCount = -1; }
-        }
-
-        if (maxSeqLenText != null && !maxSeqLenText.isDisposed()) {
-            try { selectedMaxSeqLen = Math.max(16, Integer.parseInt(maxSeqLenText.getText().trim())); } catch (Exception e) { selectedMaxSeqLen = 1024; }
-        }
-
-        if (valRatioText != null && !valRatioText.isDisposed()) {
-            try {
-                int pct = Integer.parseInt(valRatioText.getText().trim());
-                selectedValRatio = Math.max(0.0, Math.min(0.5, pct / 100.0));
-            } catch (Exception e) { selectedValRatio = 0.15; }
-        }
-
-        if (qualityFilterCheck != null && !qualityFilterCheck.isDisposed()) {
-            selectedQualityFilter = qualityFilterCheck.getSelection();
-        }
-
-        if (saveEpochCheckpointsCheck != null && !saveEpochCheckpointsCheck.isDisposed()) {
-            selectedSaveEpochCheckpoints = saveEpochCheckpointsCheck.getSelection();
-        }
-
-        if (lossThresholdCombo != null && !lossThresholdCombo.isDisposed()) {
-            selectedLossThreshold = lossThresholdCombo.getText();
-        }
-
-        if (desiredLossCombo != null && !desiredLossCombo.isDisposed()) {
-            try {
-                selectedDesiredLoss = Double.parseDouble(desiredLossCombo.getText().trim());
-            } catch (Exception e) {
-                selectedDesiredLoss = 1.0;
-            }
-        }
-
-        if (datasetsTable != null && !datasetsTable.isDisposed()) {
-            for (int i = 0; i < datasetsTable.getItemCount(); i++) {
-                TableItem tableItem = datasetsTable.getItem(i);
-                if (i < datasetItems.size()) {
-                    datasetItems.get(i).setChecked(tableItem.getChecked());
-                }
-            }
-        }
-
+        readEffectiveSettingsFromUiSafe();
+        stopAutoRefresh();
         super.okPressed();
     }
+
+    @Override
+    protected void cancelPressed() {
+        stopAutoRefresh();
+        super.cancelPressed();
+    }
+
+    @Override
+    protected void createButtonsForButtonBar(Composite parent) {
+        Button estimateBtn = createButton(parent, 2000, "Estimate", false);
+        estimateBtn.setToolTipText("Recalculate the training time estimate using current configuration and all available measured history.");
+        estimateBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                readEffectiveSettingsFromUiSafe();
+                updateHardwareAndTimeInfo();
+                scheduleGraphUpdate();
+            }
+        });
+
+        startTrainingBtn = createButton(parent, 2001, "Start Training", false);
+        startTrainingBtn.setToolTipText("Start the real FORGE training flow for the active forge session (dataset preparation → validation → training → export).");
+        startTrainingBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleStartOrResumeTraining();
+            }
+        });
+
+        pauseBtn = createButton(parent, 2002, "Pause", false);
+        pauseBtn.setToolTipText("Pause training at the current batch and save a resumption checkpoint.");
+        pauseBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handlePauseTraining(pauseBtn);
+            }
+        });
+
+        resumeBtn = createButton(parent, 2003, "Resume", false);
+        resumeBtn.setToolTipText("Resume training from the saved checkpoint (the backend restarts forging and auto-discovers the compatible checkpoint).");
+        resumeBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleStartOrResumeTraining();
+            }
+        });
+
+        cancelBtn = createButton(parent, 2004, "Cancel", false);
+        cancelBtn.setToolTipText("Immediately cancel (abort) training and discard the unfinished model.");
+        cancelBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAbortTraining(cancelBtn);
+            }
+        });
+
+        reportBtn = createButton(parent, 2005, "Open Training Report", false);
+        reportBtn.setToolTipText("Open the run output folder (dist/forging-<sessionId>) containing the forging log, checkpoints and exported models.");
+        reportBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleOpenTrainingReport();
+            }
+        });
+
+        finishBtn = createButton(parent, 1001, "Stop & Finalize", false);
+        finishBtn.setToolTipText("Gracefully stop training at current state/epoch and export valid .evo model files");
+        finishBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleFinishTraining(finishBtn);
+            }
+        });
+
+        super.createButtonsForButtonBar(parent);
+    }
+
+    // =====================================================================
+    // GETTERS (public API preserved)
+    // =====================================================================
 
     public String getSelectedModelSize() {
         return selectedModelSize;
@@ -2096,113 +2993,19 @@ public class ForgeSettingsDialog extends Dialog {
         json.put("checkpointFrequencyEpochs", selectedCheckpointFreq);
         json.put("maxDataSizeMb", selectedMaxDataSizeMb);
         json.put("maxSampleCount", selectedMaxSampleCount);
+        json.put("maxTokensLimit", selectedMaxTokensLimit);
         json.put("maxSeqLen", selectedMaxSeqLen);
         json.put("validationRatio", selectedValRatio);
         json.put("filterQuality", selectedQualityFilter);
+        json.put("earlyStoppingEnabled", selectedEarlyStoppingEnabled);
         json.put("saveEpochCheckpoints", selectedSaveEpochCheckpoints);
         json.put("quantizationEnabled", selectedQuantizationEnabled);
         json.put("quantizationScheme", selectedQuantizationScheme);
         json.put("outputModelName", selectedOutputModelName);
         json.put("lossThreshold", selectedLossThreshold);
         json.put("desiredLossThreshold", selectedDesiredLoss);
+        json.put("timeBudgetHours", selectedTargetHours);
         json.put("datasets", getDatasetsJson());
         return json;
-    }
-
-    @Override
-    protected void createButtonsForButtonBar(Composite parent) {
-        Button finishBtn = createButton(parent, 1001, "⏹ Stop & Finalize", false);
-        finishBtn.setToolTipText("Gracefully stop training at current state/epoch and export valid .evo model files");
-        finishBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleFinishTraining(finishBtn);
-            }
-        });
-
-        Button pauseBtn = createButton(parent, 1002, "⏸ Pause", false);
-        pauseBtn.setToolTipText("Pause training at current batch and save resumption checkpoint");
-        pauseBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handlePauseTraining(pauseBtn);
-            }
-        });
-
-        Button abortBtn = createButton(parent, 1003, "✖ Abort", false);
-        abortBtn.setToolTipText("Immediately abort training and discard unfinished model");
-        abortBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleAbortTraining(abortBtn);
-            }
-        });
-
-        super.createButtonsForButtonBar(parent);
-    }
-
-    private void handlePauseTraining(Button btn) {
-        try {
-            Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-            Object mgr = managerClass.getMethod("getInstance").invoke(null);
-            Boolean requested = (Boolean) managerClass.getMethod("requestPause", String.class).invoke(mgr, (Object) null);
-
-            if (Boolean.TRUE.equals(requested)) {
-                MessageDialog.openInformation(getShell(), "Pausing Training",
-                    "Training pause requested!\n\nThe trainer will pause at the current batch and save a resumption checkpoint.");
-            } else {
-                MessageDialog.openInformation(getShell(), "No Active Trainer",
-                    "No active training run detected in progress to pause.");
-            }
-        } catch (Exception ex) {
-            MessageDialog.openError(getShell(), "Error", "Failed to pause training: " + ex.getMessage());
-        }
-    }
-
-    private void handleAbortTraining(Button btn) {
-        try {
-            boolean confirm = MessageDialog.openConfirm(getShell(), "Confirm Abort",
-                    "Are you sure you want to abort training? All unfinalized progress will be discarded.");
-            if (!confirm) return;
-
-            Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-            Object mgr = managerClass.getMethod("getInstance").invoke(null);
-            Boolean requested = (Boolean) managerClass.getMethod("requestAbort", String.class).invoke(mgr, (Object) null);
-
-            if (Boolean.TRUE.equals(requested)) {
-                MessageDialog.openInformation(getShell(), "Training Aborted",
-                    "Training abort requested. Running processes are halting.");
-            } else {
-                MessageDialog.openInformation(getShell(), "No Active Trainer",
-                    "No active training run detected in progress to abort.");
-            }
-        } catch (Exception ex) {
-            MessageDialog.openError(getShell(), "Error", "Failed to abort training: " + ex.getMessage());
-        }
-    }
-
-    private void handleFinishTraining(Button btn) {
-        try {
-            Class<?> managerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-            Object mgr = managerClass.getMethod("getInstance").invoke(null);
-            Boolean requested = (Boolean) managerClass.getMethod("requestFinish", String.class).invoke(mgr, (Object) null);
-
-            if (btn != null && !btn.isDisposed()) {
-                btn.setText("Finishing Epoch...");
-                btn.setEnabled(false);
-            }
-            if (Boolean.TRUE.equals(requested)) {
-                MessageDialog.openInformation(getShell(), "Finishing Training",
-                    "Training finish requested!\n\n" +
-                    "The trainer will complete its current step/epoch, retain all learned weights, " +
-                    "and proceed immediately to compile, save, and export all model files (.evo, GGUF, report).");
-            } else {
-                MessageDialog.openInformation(getShell(), "No Active Trainer",
-                    "No active training run detected in progress.\n" +
-                    "When training is running, clicking this button gracefully finishes the current epoch and exports all files.");
-            }
-        } catch (Exception ex) {
-            MessageDialog.openError(getShell(), "Error", "Failed to request finish: " + ex.getMessage());
-        }
     }
 }

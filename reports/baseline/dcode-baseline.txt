@@ -1,0 +1,26 @@
+=== DCoder Baseline ===
+Branch: master
+HEAD: 8499f1e8285264e6ec2e78ae8dcb0223969dc637
+Status:
+?? .launches/
+?? .mvn/
+?? docs/
+?? mvnw
+?? mvnw.cmd
+?? plugins/eu.kalafatic.dcode.ui/.gitignore
+?? scripts/
+Untracked files:
+.launches/DCoder_Headless_Server.launch
+.launches/DCoder_Maven_Build.launch
+.launches/DCoder_RCP_Application.launch
+.launches/DCoder_Tests.launch
+.mvn/wrapper/maven-wrapper.properties
+docs/BUILD_AND_LAUNCH.md
+mvnw
+mvnw.cmd
+plugins/eu.kalafatic.dcode.ui/.gitignore
+scripts/build.sh
+scripts/run-headless.sh
+Scripts:
+scripts/run-headless.sh
+scripts/build.sh

@@ -30,6 +30,13 @@ public class OllamaService {
 
     public static record OllamaOperationResult(boolean success, int statusCode, String responseBody, String message, Exception exception) {}
 
+    /**
+     * Chat result with token usage counters as reported by Ollama
+     * (prompt_eval_count / eval_count). Counters are 0 when the backend
+     * does not report them - consumers must treat 0 as "unknown".
+     */
+    public static record OllamaChatResult(String content, long promptTokens, long completionTokens) {}
+
     // Advanced options
     private float temperature = 0.7f;
     private int numPredict = 4096;
@@ -163,6 +170,16 @@ public class OllamaService {
     }
 
     public String chat(String userInput, String sessionId) throws Exception {
+        OllamaChatResult result = chatWithUsage(userInput, sessionId);
+        return result.content();
+    }
+
+    /**
+     * Chat with token usage metadata. Reads prompt_eval_count/eval_count
+     * from the Ollama response when present; both are 0 when the backend
+     * does not report usage.
+     */
+    public OllamaChatResult chatWithUsage(String userInput, String sessionId) throws Exception {
         List<Message> history = sessionMessages.computeIfAbsent(sessionId, k -> {
             List<Message> list = new ArrayList<>();
             list.add(new Message("system", "You are a concise, helpful Java programming assistant."));
@@ -189,10 +206,12 @@ public class OllamaService {
 
         JSONObject jsonResponse = new JSONObject(response.body());
         String answer = jsonResponse.getJSONObject("message").getString("content");
+        long promptTokens = jsonResponse.optLong("prompt_eval_count", 0);
+        long completionTokens = jsonResponse.optLong("eval_count", 0);
 
         history.add(new Message("assistant", answer));
 
-        return answer;
+        return new OllamaChatResult(answer, promptTokens, completionTokens);
     }
 
     /**
@@ -444,6 +463,64 @@ public class OllamaService {
         json.put("messages", msgs);
 
         return json.toString();
+    }
+
+    /**
+     * Streaming chat (ENR Phase 6): sends the request with stream=true and delivers each
+     * message.content delta to the consumer as it arrives. Session history is maintained
+     * exactly like {@link #chat(String, String)}.
+     *
+     * @return the fully assembled assistant answer.
+     */
+    public String streamChat(String userInput, String sessionId, Consumer<String> chunkConsumer) throws Exception {
+        List<Message> history = sessionMessages.computeIfAbsent(sessionId, k -> {
+            List<Message> list = new ArrayList<>();
+            list.add(new Message("system", "You are a concise, helpful Java programming assistant."));
+            return list;
+        });
+
+        history.add(new Message("user", userInput));
+
+        String chatUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/chat";
+        String jsonBody = buildChatJsonRequest(history, true);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(chatUrl))
+                .header("Content-Type", "application/json")
+                .timeout(resolveEffectiveTimeout())
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<java.util.stream.Stream<String>> response = createClient().send(request,
+                HttpResponse.BodyHandlers.ofLines());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Ollama streaming chat error: " + response.statusCode());
+        }
+
+        StringBuilder assembled = new StringBuilder();
+        try (java.util.stream.Stream<String> lines = response.body()) {
+            lines.forEach(line -> {
+                if (line == null || line.isBlank()) {
+                    return;
+                }
+                JSONObject obj = new JSONObject(line);
+                JSONObject message = obj.optJSONObject("message");
+                String content = message == null ? "" : message.optString("content", "");
+                if (message != null && message.optBoolean("done", false)) {
+                    return;
+                }
+                if (!content.isEmpty()) {
+                    assembled.append(content);
+                    if (chunkConsumer != null) {
+                        chunkConsumer.accept(content);
+                    }
+                }
+            });
+        }
+
+        history.add(new Message("assistant", assembled.toString()));
+        return assembled.toString();
     }
 
     public List<Message> getMessages(String sessionId) {

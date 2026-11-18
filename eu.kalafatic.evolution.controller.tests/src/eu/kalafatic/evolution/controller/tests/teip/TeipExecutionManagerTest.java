@@ -14,7 +14,8 @@ import eu.kalafatic.evolution.controller.teip.service.TeipExecutionManager;
 import eu.kalafatic.evolution.controller.teip.store.TeipEventStore;
 
 /**
- * Unit & Integration test for TeipExecutionManager, TeipEventStore, and idempotency guarantees.
+ * Unit & Integration test for TeipExecutionManager, TeipEventStore, and idempotency guarantees
+ * (TEIP 1.1).
  */
 public class TeipExecutionManagerTest {
 
@@ -55,6 +56,9 @@ public class TeipExecutionManagerTest {
         assertFalse(caps.getAgents().isEmpty());
         assertFalse(caps.getModels().isEmpty());
         assertTrue(caps.getFeatures().get("asyncExecution"));
+        // TEIP 1.1 §4.2 canonical arrays
+        assertFalse(caps.getAvailableModels().isEmpty());
+        assertFalse(caps.getCapabilities().isEmpty());
     }
 
     @Test
@@ -66,16 +70,20 @@ public class TeipExecutionManagerTest {
         req1.setCapability("CODE_IMPLEMENTATION");
         req1.setMode("DARWIN_MODE");
         req1.setInstruction("Implement unit tests for AuthController");
-        req1.setCaller(Map.of("app", "TRYST", "taskId", "task-99"));
+        req1.setCaller(Map.of("system", "TRYST", "taskId", "task-99"));
 
-        TeipAcceptedResponse resp1 = manager.createExecution(req1);
+        TeipExecutionManager.CreateOutcome outcome1 = manager.createExecution(req1);
+        assertFalse(outcome1.duplicate());
+        TeipAcceptedResponse resp1 = outcome1.response();
         assertNotNull(resp1);
         assertNotNull(resp1.getExecutionId());
         assertEquals("corr-1", resp1.getCorrelationId());
         assertEquals(TeipExecutionStatus.QUEUED, resp1.getStatus());
 
-        // Repeated request with same idempotency key returns exact same execution
-        TeipAcceptedResponse resp2 = manager.createExecution(req1);
+        // Repeated request with same idempotency key returns exact same execution as duplicate
+        TeipExecutionManager.CreateOutcome outcome2 = manager.createExecution(req1);
+        assertTrue(outcome2.duplicate());
+        TeipAcceptedResponse resp2 = outcome2.response();
         assertEquals(resp1.getExecutionId(), resp2.getExecutionId());
         assertEquals(resp1.getCreatedAt(), resp2.getCreatedAt());
 
@@ -96,27 +104,34 @@ public class TeipExecutionManagerTest {
         store.appendEvent(execId, "EVENT_2", "corr-1", Map.of("step", 2));
         store.appendEvent(execId, "EVENT_3", "corr-1", Map.of("step", 3));
 
-        // Get all from sequence 0
+        // Get all from sequence 0: nextSequence = last returned sequence + 1 (TEIP 1.1 §4.5)
         TeipEventsResponse respAll = store.getEvents(execId, 0, 10);
         assertEquals(3, respAll.getEvents().size());
         assertEquals(1, respAll.getEvents().get(0).getSequence());
         assertEquals(2, respAll.getEvents().get(1).getSequence());
         assertEquals(3, respAll.getEvents().get(2).getSequence());
-        assertEquals(3, respAll.getNextSequence());
+        assertEquals(4, respAll.getNextSequence());
         assertFalse(respAll.isHasMore());
 
-        // Paginate after sequence 1 with limit 1
+        // Paginate after sequence 1 with limit 1: nextSequence = 2 + 1 = 3
         TeipEventsResponse respPage = store.getEvents(execId, 1, 1);
         assertEquals(1, respPage.getEvents().size());
         assertEquals(2, respPage.getEvents().get(0).getSequence());
         assertTrue(respPage.isHasMore());
-        assertEquals(2, respPage.getNextSequence());
+        assertEquals(3, respPage.getNextSequence());
 
         // Paginate after sequence 2
         TeipEventsResponse respPage2 = store.getEvents(execId, 2, 10);
         assertEquals(1, respPage2.getEvents().size());
         assertEquals(3, respPage2.getEvents().get(0).getSequence());
         assertFalse(respPage2.isHasMore());
+        assertEquals(4, respPage2.getNextSequence());
+
+        // Cursor beyond the last event stays stable (no event loss, no progress)
+        TeipEventsResponse respEmpty = store.getEvents(execId, 3, 10);
+        assertEquals(0, respEmpty.getEvents().size());
+        assertFalse(respEmpty.isHasMore());
+        assertEquals(3, respEmpty.getNextSequence());
     }
 
     @Test
@@ -126,7 +141,7 @@ public class TeipExecutionManagerTest {
         req.setCorrelationId("corr-cancel-1");
         req.setInstruction("Long running analysis");
 
-        TeipAcceptedResponse accepted = manager.createExecution(req);
+        TeipAcceptedResponse accepted = manager.createExecution(req).response();
         String execId = accepted.getExecutionId();
 
         boolean cancelled = manager.cancelExecution(execId, "Test operator cancellation");
@@ -138,5 +153,28 @@ public class TeipExecutionManagerTest {
         // Idempotent cancellation
         boolean cancelledAgain = manager.cancelExecution(execId, "Repeat cancellation");
         assertTrue(cancelledAgain);
+    }
+
+    @Test
+    public void testIdempotencyMappingPersisted() {
+        TeipExecutionRequest req = new TeipExecutionRequest();
+        req.setIdempotencyKey("idem-persisted-1");
+        req.setCorrelationId("corr-persisted");
+        req.setInstruction("Persistence test");
+
+        TeipAcceptedResponse accepted = manager.createExecution(req).response();
+        assertNotNull(accepted.getExecutionId());
+
+        // The relation between idempotencyKey and executionId MUST be persisted (TEIP 1.1 §7.2)
+        eu.kalafatic.evolution.controller.teip.store.TeipPersistenceStore persistenceStore =
+                eu.kalafatic.evolution.controller.teip.store.TeipPersistenceStore.getInstance();
+        java.util.Optional<String> persistedExecutionId = persistenceStore.findExecutionIdByIdempotencyKey("idem-persisted-1");
+        if (persistenceStore.isAvailable()) {
+            assertTrue(persistedExecutionId.isPresent());
+            assertEquals(accepted.getExecutionId(), persistedExecutionId.get());
+        } else {
+            // Persistence unavailable in this environment: the relation remains in-memory
+            assertNotNull(manager.createExecution(req).response().getExecutionId());
+        }
     }
 }

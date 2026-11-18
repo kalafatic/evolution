@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Forge Agent
 Bundle-SymbolicName: eu.kalafatic.evolution.forge.agent
-Bundle-Version: 2.6.5.qualifier
+Bundle-Version: 2.6.11.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: eu.kalafatic.evolution.forge.math,
  eu.kalafatic.evolution.forge.model,

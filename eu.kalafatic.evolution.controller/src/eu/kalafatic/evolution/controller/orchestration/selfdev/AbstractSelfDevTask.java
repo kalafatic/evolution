@@ -48,6 +48,33 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
     @Override
     public void cancel() {
         this.cancelled = true;
+        Thread current = Thread.currentThread();
+        // Interruption is best-effort: tasks performing interruptible waits should
+        // observe the cancelled flag via checkCancelled()/isCancelled().
+        if (current != null && !current.getName().startsWith("selfdev-task-")) {
+            // Do not interrupt the orchestrator thread here; sub-tasks poll the flag.
+        }
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    /**
+     * Throws a SelfDevCancellationException when cancellation was requested.
+     * Call from long-running loops (HTTP polls, wait loops, Maven execution loops).
+     */
+    protected void checkCancelled() throws SelfDevCancellationException {
+        if (cancelled) {
+            throw new SelfDevCancellationException("Task [" + id + "] cancelled.");
+        }
+    }
+
+    public static class SelfDevCancellationException extends Exception {
+        public SelfDevCancellationException(String message) {
+            super(message);
+        }
     }
 
     protected void logTaskStep(String stepName, String details) {
@@ -200,7 +227,34 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
             }
             return recordedResult;
 
+        } catch (SelfDevCancellationException c) {
+            long duration = System.currentTimeMillis() - startTime;
+            status = TaskStatus.CANCELLED;
+            logTaskStep("STATE", status.name());
+            logTaskStep("END CANCELLED", c.getMessage());
+            TaskResult cancelledResult = TaskResult.cancelled(id, c.getMessage() != null ? c.getMessage() : "Task cancelled.");
+            if (context != null) {
+                context.recordTaskResult(cancelledResult);
+                DiagnosticsSummaryWriter.writeSummary(context);
+            }
+            return cancelledResult;
         } catch (Throwable t) {
+            if (cancelled) {
+                long duration = System.currentTimeMillis() - startTime;
+                status = TaskStatus.CANCELLED;
+                logTaskStep("STATE", status.name());
+                TaskResult cancelledResult = new TaskResult.Builder(id)
+                        .status(TaskStatus.CANCELLED)
+                        .message("Task cancelled during execution: " + (t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()))
+                        .duration(duration)
+                        .build();
+                logTaskStep("END CANCELLED", cancelledResult.getMessage());
+                if (context != null) {
+                    context.recordTaskResult(cancelledResult);
+                    DiagnosticsSummaryWriter.writeSummary(context);
+                }
+                return cancelledResult;
+            }
             long duration = System.currentTimeMillis() - startTime;
             status = TaskStatus.FAILED;
             logError("<<< Task [" + id + "] threw uncaught exception: " + t.getMessage(), t);

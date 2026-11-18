@@ -50,6 +50,87 @@ public class P2Utils {
 	// ---------------------------------------------------------------
 
 	/**
+	 * Registers the product's local update repository (<install>/updates) in
+	 * the provisioning profile when that directory exists. Published updates
+	 * are discovered by Check for Updates without overwriting any
+	 * user-configured repository.
+	 */
+	public static void registerLocalUpdateRepository() {
+		try {
+			// Prefer this bundle's context; fall back to the always-active
+			// org.eclipse.core.runtime bundle context (headless products).
+			BundleContext bundleContext = null;
+			org.osgi.framework.Bundle ownBundle = org.osgi.framework.FrameworkUtil.getBundle(P2Utils.class);
+			if (ownBundle != null) {
+				bundleContext = ownBundle.getBundleContext();
+			}
+			if (bundleContext == null) {
+				org.osgi.framework.Bundle runtimeBundle =
+						org.osgi.framework.FrameworkUtil.getBundle(org.eclipse.core.runtime.Platform.class);
+				if (runtimeBundle != null) {
+					bundleContext = runtimeBundle.getBundleContext();
+				}
+			}
+			if (bundleContext == null) {
+				return;
+			}
+			ServiceReference reference = bundleContext.getServiceReference(IProvisioningAgent.SERVICE_NAME);
+			if (reference == null) {
+				return;
+			}
+			final IProvisioningAgent agent = (IProvisioningAgent) bundleContext.getService(reference);
+			try {
+				ensureBundleStarted(org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager.class);
+				ensureBundleStarted(org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager.class);
+				org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager metaManager =
+						agent.getService(org.eclipse.equinox.p2.repository.metadata.IMetadataRepositoryManager.class);
+				org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager artifactManager =
+						agent.getService(org.eclipse.equinox.p2.repository.artifact.IArtifactRepositoryManager.class);
+				if (metaManager == null || artifactManager == null) {
+					return;
+				}
+				java.io.File updatesDir = new java.io.File(
+						org.eclipse.core.runtime.Platform.getInstallLocation().getURL().getPath(), "updates");
+				if (!updatesDir.isDirectory()) {
+					return;
+				}
+				java.net.URI repoUri = updatesDir.toURI();
+				if (!metaManager.contains(repoUri)) {
+					metaManager.addRepository(repoUri);
+					metaManager.setRepositoryProperty(repoUri,
+							org.eclipse.equinox.p2.repository.IRepository.PROP_NICKNAME, "EVO Local Updates");
+				}
+				if (!artifactManager.contains(repoUri)) {
+					artifactManager.addRepository(repoUri);
+					artifactManager.setRepositoryProperty(repoUri,
+							org.eclipse.equinox.p2.repository.IRepository.PROP_NICKNAME, "EVO Local Updates");
+				}
+			} finally {
+				bundleContext.ungetService(reference);
+			}
+		} catch (Throwable t) {
+			// Registration is best-effort; update capability must never break startup.
+		}
+	}
+
+	/**
+	 * Starts the bundle exporting the given API if it is only resolved; the p2
+	 * repository managers register their agent service factories at activation.
+	 */
+	private static void ensureBundleStarted(Class<?> api) {
+		try {
+			org.osgi.framework.Bundle apiBundle = org.osgi.framework.FrameworkUtil.getBundle(api);
+			if (apiBundle != null
+					&& (apiBundle.getState() == org.osgi.framework.Bundle.RESOLVED
+						|| apiBundle.getState() == org.osgi.framework.Bundle.INSTALLED)) {
+				apiBundle.start(org.osgi.framework.Bundle.START_TRANSIENT);
+			}
+		} catch (Throwable t) {
+			// Best effort.
+		}
+	}
+
+	/**
 	 * Check for updates.
 	 */
 	public static void checkForUpdates() {

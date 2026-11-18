@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.pde.ui.JunitLaunchConfig">
+    <booleanAttribute key="append.args" value="true"/>
+    <stringAttribute key="application" value="org.eclipse.pde.junit.runtime.coretestapplication"/>
+    <booleanAttribute key="askclear" value="false"/>
+    <booleanAttribute key="automaticAdd" value="false"/>
+    <booleanAttribute key="automaticIncludeRequirements" value="true"/>
+    <booleanAttribute key="automaticValidate" value="false"/>
+    <stringAttribute key="bootstrap" value=""/>
+    <booleanAttribute key="clearConfig" value="true"/>
+    <booleanAttribute key="clearws" value="true"/>
+    <booleanAttribute key="clearwslog" value="false"/>
+    <stringAttribute key="configLocation" value="${workspace_loc}/.metadata/.plugins/org.eclipse.pde.core/EVO_Model_Tests"/>
+    <booleanAttribute key="default" value="false"/>
+    <booleanAttribute key="includeOptional" value="true"/>
+    <stringAttribute key="location" value="${workspace_loc}/../runtime-evo-model-tests"/>
+    <stringAttribute key="org.eclipse.jdt.junit.CONTAINER" value=""/>
+    <booleanAttribute key="org.eclipse.jdt.junit.KEEPRUNNING_ATTR" value="false"/>
+    <stringAttribute key="org.eclipse.jdt.junit.TESTNAME" value=""/>
+    <stringAttribute key="org.eclipse.jdt.junit.TEST_KIND" value="org.eclipse.jdt.junit.loader.junit4"/>
+
+    <setAttribute key="selected_target_bundles">
+        <setEntry value="org.apache.felix.scr"/>
+        <setEntry value="org.eclipse.core.contenttype"/>
+    </setAttribute>
+    <setAttribute key="selected_workspace_bundles">
+        <setEntry value="eu.kalafatic.evolution.controller"/>
+        <setEntry value="eu.kalafatic.evolution.controller.tests"/>
+        <setEntry value="eu.kalafatic.evolution.creatic"/>
+        <setEntry value="eu.kalafatic.evolution.enr"/>
+        <setEntry value="eu.kalafatic.evolution.forge.agent"/>
+        <setEntry value="eu.kalafatic.evolution.forge.agent.api"/>
+        <setEntry value="eu.kalafatic.evolution.forge.controller"/>
+        <setEntry value="eu.kalafatic.evolution.forge.data"/>
+        <setEntry value="eu.kalafatic.evolution.forge.math"/>
+        <setEntry value="eu.kalafatic.evolution.forge.model"/>
+        <setEntry value="eu.kalafatic.evolution.forge.observability"/>
+        <setEntry value="eu.kalafatic.evolution.forge.runtime"/>
+        <setEntry value="eu.kalafatic.evolution.forge.tokenizer"/>
+        <setEntry value="eu.kalafatic.evolution.forge.trainer"/>
+        <setEntry value="eu.kalafatic.evolution.media"/>
+        <setEntry value="eu.kalafatic.evolution.model"/>
+        <setEntry value="eu.kalafatic.evolution.model.edit"/>
+        <setEntry value="eu.kalafatic.evolution.model.editor"/>
+        <setEntry value="eu.kalafatic.evolution.model.tests"/>
+        <setEntry value="eu.kalafatic.evolution.quality.tests"/>
+        <setEntry value="eu.kalafatic.evolution.selfdev.genome"/>
+        <setEntry value="eu.kalafatic.evolution.selfdev.genome.tests"/>
+        <setEntry value="eu.kalafatic.evolution.servers"/>
+        <setEntry value="eu.kalafatic.evolution.tests"/>
+        <setEntry value="eu.kalafatic.evolution.view"/>
+        <setEntry value="eu.kalafatic.utils"/>
+    </setAttribute>
+    <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
+    <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value=""/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl ${target.nl} -consoleLog"/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="eu.kalafatic.evolution.model.tests"/>
+    <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
+    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xms1g -Xmx6g"/>
+    <stringAttribute key="pde.version" value="3.3"/>
+    <booleanAttribute key="run_in_ui_thread" value="false"/>
+    <booleanAttribute key="show_selected_only" value="false"/>
+    <booleanAttribute key="tracing" value="false"/>
+    <booleanAttribute key="useCustomFeatures" value="false"/>
+    <booleanAttribute key="useDefaultConfig" value="true"/>
+    <booleanAttribute key="useDefaultConfigArea" value="true"/>
+    <booleanAttribute key="useProduct" value="false"/>
+</launchConfiguration>

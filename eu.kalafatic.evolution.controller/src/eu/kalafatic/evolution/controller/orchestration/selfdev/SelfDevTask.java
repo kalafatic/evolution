@@ -11,4 +11,5 @@ public interface SelfDevTask {
     TaskResult validate(SelfDevContext context);
     TaskStatus getStatus();
     void cancel();
+    boolean isCancelled();
 }

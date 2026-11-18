@@ -20,6 +20,7 @@ import eu.kalafatic.evolution.forge.controller.api.ForgeJob.PreflightResult;
 import eu.kalafatic.evolution.forge.controller.api.ForgeJob.SmokeTestResult;
 import eu.kalafatic.evolution.forge.controller.service.ForgeOrchestrator;
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.ConsistencyAgent;
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent;
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.KnowledgeUnit;
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.SourceAnalysisAgent;
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
@@ -60,10 +61,19 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
     @Override
     public ForgeJob executeJob(ForgeJob job, Path projectPath) throws Exception {
         long timestamp = System.currentTimeMillis();
-        Path runFolder = projectPath.resolve("dist/forging-" + job.getJobId() + "-" + timestamp);
+        // Stable per-session run folder (no timestamp): checkpoints written here
+        // remain discoverable by later executions of the same forge session, which
+        // is what makes training resumable across pauses and application restarts.
+        Path runFolder = projectPath.resolve("dist/forging-" + job.getJobId());
         Files.createDirectories(runFolder);
         job.setRunDirectory(runFolder);
         Path logFile = runFolder.resolve("forging.log");
+
+        // Shared throughput-measurement store: the same location the Forge
+        // Settings dialog resolves via the central workspace, so measured
+        // training speeds feed subsequent ETA calculations.
+        ForgeTrainingEstimationAgent.getInstance().configureMeasurementsStore(
+                projectPath.resolve("workspace").resolve("forge-state"));
 
         try {
             logToFile(logFile, "=======================================================");
@@ -166,9 +176,64 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             SimpleBPETokenizer tokenizer = modelSource.getTokenizer(cleanCorpus, job.getModelConfig().getVocabSize());
             List<Integer> allTokens = tokenizer.encode(cleanCorpus);
 
+            // Validate dataset/tokenizer compatibility before training: a dataset
+            // that declares a tokenizer identity must match the training tokenizer.
+            if (prepResult != null && prepResult.getArtifact() != null) {
+                prepResult.getArtifact().validateTokenizerCompatibility("SimpleBPETokenizer", tokenizer.getVocabSize());
+            }
+
+            // Record the tokenizer identity inside the .evodata metadata so that a
+            // dataset explicitly declares the tokenizer/vocabulary used to prepare it.
+            final String[] datasetFingerprintHolder = {evodataFileName};
+            try {
+                if (prepResult != null && prepResult.getArtifact() != null
+                        && prepResult.getArtifact().getArtifactFile() != null
+                        && prepResult.getArtifact().getArtifactFile().exists()) {
+                    prepResult.getArtifact().rewriteMetadataWithTokenizerIdentity(
+                            "SimpleBPETokenizer",
+                            "2.0",
+                            tokenizer.getVocabSize(),
+                            java.util.Arrays.asList("<unk>", "<s>", "</s>", "<pad>", "<eos>", "<bos>",
+                                    "<|im_start|>", "<|im_end|>", "<|endoftext|>")
+                    );
+                }
+                // Dataset fingerprint for checkpoint compatibility. It is derived
+                // from the TRAINING CORPUS CONTENT (not the .evodata container
+                // file, whose timestamped name/metadata would change on every
+                // preparation run and defeat cross-execution resume). The same
+                // corpus therefore yields the same fingerprint across runs,
+                // while any dataset change starts training fresh.
+                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                md.update(cleanCorpus.getBytes(StandardCharsets.UTF_8));
+                StringBuilder hex = new StringBuilder();
+                for (byte b : md.digest()) {
+                    hex.append(String.format("%02x", b));
+                }
+                datasetFingerprintHolder[0] = "sha256:" + hex;
+            } catch (Exception ex) {
+                logToFile(logFile, "[FORGE][WARN] Could not record tokenizer identity / dataset fingerprint: " + ex.getMessage());
+            }
+            final String datasetFingerprint = datasetFingerprintHolder[0];
+
             DatasetBuilder datasetBuilder = new DatasetBuilder();
-            List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
-            logToFile(logFile, "Dataset preparation complete. Total tokens: " + allTokens.size() + ", Training samples: " + samples.size());
+
+            // Enforce the documented dataset limits (configurable through the
+            // existing configuration architecture; defaults: 100,000 tokens,
+            // 5,000 samples). Tokens are capped before window generation so the
+            // cap also bounds sample creation.
+            int maxTokens = job.getTrainingConfig().getMaxTokens();
+            List<Integer> windowTokens = allTokens;
+            if (maxTokens > 0 && allTokens.size() > maxTokens) {
+                windowTokens = new ArrayList<>(allTokens.subList(0, maxTokens));
+                logToFile(logFile, String.format("[FORGE][LIMIT] Token count capped to configured maxTokens=%d (was %d).",
+                        maxTokens, allTokens.size()));
+            }
+            int maxSamples = job.getTrainingConfig().getMaxSamples();
+            List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(windowTokens, 16, 8,
+                    maxSamples > 0 ? maxSamples : Integer.MAX_VALUE);
+            logToFile(logFile, "Dataset preparation complete. Total tokens: " + allTokens.size()
+                    + ", Sliding-window training samples: " + samples.size()
+                    + (maxSamples > 0 ? " (maxSamples cap: " + maxSamples + ")" : ""));
 
             // STAGE 3: PREFLIGHT VALIDATION
             job.setState(JobState.READY_TO_TRAIN);
@@ -213,22 +278,46 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             if (job.getTrainingConfig().getValidationRatio() > 0) {
                 trainer.setValidationSplitRatio((float) job.getTrainingConfig().getValidationRatio());
             }
+            // Explicit warmup configuration (was previously dead: the trainer
+            // always used its internal 3%-of-total-steps schedule).
+            if (job.getTrainingConfig().getWarmupSteps() > 0) {
+                trainer.setWarmupSteps(job.getTrainingConfig().getWarmupSteps());
+            }
+            // Configured termination criteria: early stopping on the measured
+            // loss and a hard wall-clock budget. Both are real trainer checks
+            // evaluated on completed epochs.
+            trainer.setEarlyStoppingEnabled(job.getTrainingConfig().isEarlyStoppingEnabled());
+            trainer.setTargetLossThreshold((float) job.getTrainingConfig().getTargetLossThreshold());
+            trainer.setTimeBudgetHours((float) job.getTrainingConfig().getTimeBudgetHours());
 
-            // Check if existing latest checkpoint is present in run directory to support resumption
+            // Check if existing latest checkpoint is present in run directory to support resumption.
+            // Only checkpoints produced from the SAME dataset content are eligible
+            // (file names carry the dataset fingerprint prefix, and the loaded
+            // checkpoint fingerprint is verified again before use).
             Path checkpointsDir = runFolder.resolve("checkpoints");
             Files.createDirectories(checkpointsDir);
+
+            final String checkpointFpPrefix = fingerprintPrefix(datasetFingerprint);
+            final String checkpointNamePrefix = "checkpoint_" + job.getJobId() + "_" + checkpointFpPrefix + "_";
 
             TrainingCheckpoint latestResumeChk = null;
             try (Stream<Path> chkFiles = Files.list(checkpointsDir)) {
                 List<Path> sortedChks = chkFiles
-                        .filter(p -> p.getFileName().toString().endsWith(".chk"))
+                        .filter(p -> p.getFileName().toString().startsWith(checkpointNamePrefix) && p.getFileName().toString().endsWith(".chk"))
                         .sorted((p1, p2) -> p2.getFileName().toString().compareTo(p1.getFileName().toString()))
                         .collect(Collectors.toList());
                 if (!sortedChks.isEmpty()) {
-                    latestResumeChk = TrainingCheckpoint.load(sortedChks.get(0));
-                    logToFile(logFile, String.format("[FORGE][RESUME] Discovered existing checkpoint: %s (epoch %d/%d, steps: %d)",
-                            sortedChks.get(0).getFileName(), latestResumeChk.getCompletedEpochs(), plannedEpochs, latestResumeChk.getTotalOptimizerSteps()));
-                    trainer.setResumeCheckpoint(latestResumeChk);
+                    TrainingCheckpoint candidateChk = TrainingCheckpoint.load(sortedChks.get(0));
+                    if (candidateChk.getDatasetFingerprint() != null
+                            && candidateChk.getDatasetFingerprint().equals(datasetFingerprint)) {
+                        latestResumeChk = candidateChk;
+                        logToFile(logFile, String.format("[FORGE][RESUME] Discovered compatible checkpoint: %s (epoch %d/%d, steps: %d)",
+                                sortedChks.get(0).getFileName(), latestResumeChk.getCompletedEpochs(), plannedEpochs, latestResumeChk.getTotalOptimizerSteps()));
+                        trainer.setResumeCheckpoint(latestResumeChk);
+                    } else {
+                        logToFile(logFile, String.format("[FORGE][RESUME] Ignoring checkpoint %s: dataset fingerprint mismatch (checkpoint=%s, current=%s). Starting fresh.",
+                                sortedChks.get(0).getFileName(), candidateChk.getDatasetFingerprint(), datasetFingerprint));
+                    }
                 }
             } catch (Exception ex) {
                 logToFile(logFile, "[FORGE][RESUME][WARN] Could not inspect checkpoints: " + ex.getMessage());
@@ -244,6 +333,22 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
                 @Override
                 public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
+
+                @Override
+                public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                              long processedTokens, long totalTokens,
+                                              double tokensPerSec, double stepsPerSec,
+                                              double estimatedRemainingSeconds, double currentLoss) {
+                    // Map real optimizer-step progress into the 60-100% training band.
+                    if (totalSteps > 0) {
+                        job.setProgressPercent(60 + (int) (40.0 * currentStep / totalSteps));
+                    }
+                    if (epoch > 0) {
+                        job.setCurrentStageDescription(String.format(
+                                "Training epoch %d/%d (loss %.4f, %.1f tok/s, ETA %.0f s)",
+                                epoch, totalEpochs, currentLoss, tokensPerSec, estimatedRemainingSeconds));
+                    }
+                }
 
                 @Override
                 public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
@@ -266,10 +371,10 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                                     epoch,
                                     (float) trainLoss,
                                     (float) valLoss,
-                                    evodataFileName,
+                                    datasetFingerprint,
                                     chkTokenizer.getVocab()
                             );
-                            chk.saveAtomic(chkStoreFolder.resolve(String.format("checkpoint_%s_epoch_%04d.chk", chkJobId, epoch)));
+                            chk.saveAtomic(chkStoreFolder.resolve(String.format("checkpoint_%s_%s_epoch_%04d.chk", chkJobId, checkpointFpPrefix, epoch)));
 
                             // 2. Save .evo portable model artifact
                             EvoModelArtifact chkArtifact = new EvoModelArtifact();
@@ -300,16 +405,23 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 }
                 if (fsmClass != null) {
                     Object mgr = fsmClass.getMethod("getInstance").invoke(null);
-                    fsmClass.getMethod("registerActiveTrainer", String.class, EvoLlmTrainer.class).invoke(mgr, job.getJobId(), trainer);
+                    boolean freshStart = (latestResumeChk == null);
+                    fsmClass.getMethod("registerActiveTrainer", String.class, EvoLlmTrainer.class, boolean.class)
+                            .invoke(mgr, job.getJobId(), trainer, freshStart);
+                } else {
+                    logToFile(logFile, "[FORGE][SESSION][WARN] ForgeSessionManager class unavailable; training telemetry will not be published.");
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                logToFile(logFile, "[FORGE][SESSION][WARN] Could not register trainer with ForgeSessionManager: " + e.getMessage());
+            }
 
             List<NormalizedSample> normSamples = (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null)
                     ? prepResult.getArtifact().getSamples() : java.util.Collections.emptyList();
 
             List<TrainingSample> trainingSamples;
             if (!normSamples.isEmpty()) {
-                trainingSamples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, job.getModelConfig().getMaxSeqLen());
+                trainingSamples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, job.getModelConfig().getMaxSeqLen(),
+                        maxSamples > 0 ? maxSamples : Integer.MAX_VALUE);
             } else {
                 trainingSamples = samples.stream()
                         .map(s -> {
@@ -330,30 +442,40 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             }
 
             TrainingResult trainResult;
+            String terminalStatus = "FAILED";
             try {
                 trainResult = trainer.train(trainingSamples, job.getTrainingConfig().getEpochs());
+                terminalStatus = deriveTerminalStatus(trainResult);
             } finally {
-                try {
-                    Class<?> fsmClass = null;
-                    try {
-                        fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-                    } catch (ClassNotFoundException e) {
-                        if (Thread.currentThread().getContextClassLoader() != null) {
-                            try {
-                                fsmClass = Thread.currentThread().getContextClassLoader().loadClass("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
-                            } catch (ClassNotFoundException ignored) {}
-                        }
-                    }
-                    if (fsmClass != null) {
-                        Object mgr = fsmClass.getMethod("getInstance").invoke(null);
-                        fsmClass.getMethod("unregisterActiveTrainer", String.class).invoke(mgr, job.getJobId());
-                    }
-                } catch (Exception ignored) {}
+                // Report the REAL terminal state to the session manager so the
+                // UI never displays RUNNING after the backend has stopped, and
+                // never displays COMPLETED after a failure.
+                completeActiveTrainer(job.getJobId(), terminalStatus);
             }
             job.setTrainingResult(trainResult);
 
+            // Record the REAL measured throughput of this run into the shared
+            // estimation-agent measurement store: subsequent ETA calculations
+            // in the Forge Settings dialog prefer measured history over the
+            // clearly-labeled analytical preliminary estimate.
+            try {
+                Object tokPerSec = trainResult.getMetadata().get("tokensPerSecond");
+                Object stepsPerSec = trainResult.getMetadata().get("stepsPerSecond");
+                double measuredTokPerSec = tokPerSec instanceof Number ? ((Number) tokPerSec).doubleValue() : 0.0;
+                double measuredStepsPerSec = stepsPerSec instanceof Number ? ((Number) stepsPerSec).doubleValue() : 0.0;
+                if (measuredTokPerSec > 0.0) {
+                    String measuredModelSize = job.getModelConfig() != null ? job.getModelConfig().getModelSize() : null;
+                    ForgeTrainingEstimationAgent.getInstance().recordTrainingMeasurement(
+                            measuredModelSize, measuredTokPerSec, measuredStepsPerSec,
+                            trainResult.getTrainingDurationMs());
+                }
+            } catch (Exception measureEx) {
+                logToFile(logFile, "[FORGE][ESTIMATE][WARN] Could not record throughput measurement: " + measureEx.getMessage());
+            }
+
             List<Double> losses = trainer.getLossHistory();
-            double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : (trainResult != null ? trainResult.getLastLoss() : 0.05);
+            double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1)
+                    : (trainResult != null ? trainResult.getLastLoss() : Double.NaN);
 
             long totalJobForgingDurationMs = System.currentTimeMillis() - timestamp;
             logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d totalForgingDuration=%s",
@@ -371,16 +493,18 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
 
             if (trainResult.getTerminationStatus() == eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus.TRAINING_PAUSED) {
                 // Ensure a resumption checkpoint is preserved in checkpoints directory
+                // (same fingerprint-prefixed naming as periodic checkpoints so the
+                // next execution discovers it).
                 Path chkDir = runFolder.resolve("checkpoints");
                 Files.createDirectories(chkDir);
-                String chkBaseName = String.format("checkpoint_%s_epoch_%04d.chk", job.getJobId(), trainResult.getCompletedEpochs());
+                String chkBaseName = String.format("checkpoint_%s_%s_epoch_%04d.chk", job.getJobId(), checkpointFpPrefix, trainResult.getCompletedEpochs());
                 TrainingCheckpoint pausedChk = trainer.captureCheckpoint(
                         job.getJobId(),
                         "checkpoint_" + job.getJobId(),
                         trainResult.getCompletedEpochs(),
                         (float) trainResult.getLastLoss(),
                         (float) trainResult.getValLoss(),
-                        evodataFileName,
+                        datasetFingerprint,
                         tokenizer.getVocab()
                 );
                 pausedChk.saveAtomic(chkDir.resolve(chkBaseName));
@@ -409,6 +533,9 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 job.setJobResultSummary("FAILED");
                 job.setFailureReason(failureDetails);
                 logToFile(logFile, String.format("[FORGE][RUN=%s] FINAL_STATUS=FAILED", job.getJobId()));
+                // The trainer itself finished cleanly, but the produced model is
+                // invalid: correct the session status so the UI shows FAILED.
+                updateSessionTerminalStatus(job.getJobId(), "FAILED");
                 return job;
             }
 
@@ -420,12 +547,21 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setCurrentStageDescription("Evaluating model loss and quality...");
 
             EvaluationResult eval = new EvaluationResult();
+            // Measured values only: real training loss and real validation loss.
+            // When no validation split was configured, valLoss is honestly 0 (unknown),
+            // not fabricated from the training loss.
             eval.setTrainLoss(finalLoss);
-            eval.setValLoss(trainResult.getValLoss() > 0 ? trainResult.getValLoss() : finalLoss * 1.05);
-            eval.setQualityScore(Math.max(0.5, 1.0 - (finalLoss / 10.0)));
-            eval.setOverfittingDetected(false);
-            eval.setSummary(String.format("Model loss converged to %.4f (epochs: %d/%d).",
-                    finalLoss, trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+            eval.setValLoss(trainResult.getValLoss());
+            eval.setQualityScore(-1.0); // -1 = not computed (no documented metric exists yet)
+            // Overfitting flag is only meaningful with a real validation signal:
+            // a large and consistent val-train gap. Reported honestly when unknown.
+            boolean valAvailable = trainResult.getValLoss() > 0.0;
+            eval.setOverfittingDetected(valAvailable && trainResult.getValLoss() > finalLoss + 0.2);
+            eval.setSummary(valAvailable
+                    ? String.format("Train loss %.4f, validation loss %.4f (epochs: %d/%d).",
+                            finalLoss, trainResult.getValLoss(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs())
+                    : String.format("Train loss %.4f; no validation split configured (epochs: %d/%d).",
+                            finalLoss, trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
             job.setEvaluationResult(eval);
 
             // STAGE 6: FINALIZING & PERSISTENCE
@@ -434,7 +570,10 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setCurrentStageDescription("Serializing .evo model and GGUF exports...");
 
             String dateVersion = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date(timestamp));
-            String modelName = "evo-" + job.getJobId() + "-" + dateVersion;
+            String configuredName = job.getOutputModelName();
+            String modelName = (configuredName != null && !configuredName.trim().isEmpty())
+                    ? sanitizeModelName(configuredName.trim())
+                    : "evo-" + job.getJobId() + "-" + dateVersion;
             job.setOutputModelName(modelName);
             Path exportPath = projectPath.resolve("dist/" + modelName);
 
@@ -536,8 +675,67 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             logToFile(logFile, "[ERROR] Job execution failed: " + e.getMessage());
             job.setState(JobState.FAILED);
             job.setFailureReason(e.getMessage());
+            updateSessionTerminalStatus(job.getJobId(), "FAILED");
             throw e;
         }
+    }
+
+    private String deriveTerminalStatus(TrainingResult trainResult) {
+        if (trainResult == null) return "FAILED";
+        switch (trainResult.getTerminationStatus()) {
+            case TRAINING_COMPLETED: return "COMPLETED";
+            case TRAINING_PAUSED: return "PAUSED";
+            case TRAINING_ABORTED: return "ABORTED";
+            case TRAINING_STOPPED: return "STOPPED";
+            case TRAINING_INTERRUPTED: return "INTERRUPTED";
+            default: return "FAILED";
+        }
+    }
+
+    private void completeActiveTrainer(String sessionId, String terminalStatus) {
+        invokeSessionManager("completeActiveTrainer", new Class<?>[] { String.class, String.class },
+                new Object[] { sessionId, terminalStatus });
+    }
+
+    private void updateSessionTerminalStatus(String sessionId, String terminalStatus) {
+        invokeSessionManager("updateSessionTerminalStatus", new Class<?>[] { String.class, String.class },
+                new Object[] { sessionId, terminalStatus });
+    }
+
+    private void invokeSessionManager(String methodName, Class<?>[] paramTypes, Object[] args) {
+        try {
+            Class<?> fsmClass = null;
+            try {
+                fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            } catch (ClassNotFoundException e) {
+                if (Thread.currentThread().getContextClassLoader() != null) {
+                    try {
+                        fsmClass = Thread.currentThread().getContextClassLoader().loadClass("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                    } catch (ClassNotFoundException ignored) {}
+                }
+            }
+            if (fsmClass != null) {
+                Object mgr = fsmClass.getMethod("getInstance").invoke(null);
+                fsmClass.getMethod(methodName, paramTypes).invoke(mgr, args);
+            }
+        } catch (Exception e) {
+            System.err.println("[FORGE][SESSION][WARN] ForgeSessionManager." + methodName + " invocation failed: " + e.getMessage());
+        }
+    }
+
+    private static String fingerprintPrefix(String fingerprint) {
+        if (fingerprint == null || fingerprint.isEmpty()) return "nofp";
+        if (fingerprint.startsWith("sha256:") && fingerprint.length() > "sha256:".length() + 8) {
+            return fingerprint.substring("sha256:".length(), "sha256:".length() + 8);
+        }
+        if (fingerprint.startsWith("sha256:") && fingerprint.length() > "sha256:".length()) {
+            return fingerprint.substring("sha256:".length());
+        }
+        return Integer.toHexString(fingerprint.hashCode());
+    }
+
+    private static String sanitizeModelName(String name) {
+        return name.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
     private SmokeTestResult runInferenceSmokeTest(Path evoModelPath) {
@@ -593,7 +791,13 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                     try (Stream<Path> walk = Files.walk(path)) {
                         walk.filter(Files::isRegularFile)
                             .filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
-                                      && !p.toString().contains("/target/") && !p.toString().contains("\\target\\"))
+                                      && !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
+                                      // The forge pipeline writes its own outputs (run folders,
+                                      // logs, checkpoints, datasets) under dist/: those must
+                                      // never become training input, otherwise successive
+                                      // executions would train on their own artifacts and the
+                                      // corpus fingerprint would change on every run.
+                                      && !p.toString().contains("/dist/") && !p.toString().contains("\\dist\\"))
                             .forEach(scanned::add);
                     }
                 }

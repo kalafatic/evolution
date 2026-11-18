@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>eu.kalafatic.evolution</groupId>
 		<artifactId>eu.kalafatic.evolution.aggregator</artifactId>
-		<version>2.6.5-SNAPSHOT</version>
+		<version>2.6.11-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -22,28 +22,28 @@
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.evolution.forge.model</artifactId>
-			<version>2.6.5-SNAPSHOT</version>
+			<version>2.6.11-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.evolution.forge.math</artifactId>
-			<version>2.6.5-SNAPSHOT</version>
+			<version>2.6.11-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.evolution.forge.observability</artifactId>
-			<version>2.6.5-SNAPSHOT</version>
+			<version>2.6.11-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.evolution.forge.agent.api</artifactId>
-			<version>2.6.5-SNAPSHOT</version>
+			<version>2.6.11-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.evolution.model</artifactId>
-			<version>2.6.5-SNAPSHOT</version>
+			<version>2.6.11-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -63,11 +63,6 @@
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.17.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
 			<version>2.17.0</version>
 		</dependency>
@@ -77,6 +72,6 @@
 			<version>2.17.0</version>
 		</dependency>
 	</dependencies>
-	<version>2.6.5-SNAPSHOT</version>
+	<version>2.6.11-SNAPSHOT</version>
 	<groupId>eu.kalafatic.evolution</groupId>
 </project>

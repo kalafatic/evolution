@@ -226,6 +226,12 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         }
 
         for (int step = 0; step < maxTokensToGenerate; step++) {
+            if (request.isCancellationRequested() || Thread.currentThread().isInterrupted()) {
+                terminationReason = InferenceResult.TerminationReason.CANCELLED;
+                System.out.printf("[EvoInferenceEngine] Generation cancelled at step %d/%d.%n", step, maxTokensToGenerate);
+                break;
+            }
+
             if (step > 0) {
                 int lastToken = currentTokens.get(currentTokens.size() - 1);
                 lastLogits = model.forwardWithCache(new int[]{lastToken}, kvCache);

@@ -26,6 +26,15 @@ public class EvoRcpDeployer extends AbstractDeployer<BuildArtifact> {
             return TaskResult.failure("deploy_evo_rcp", "Invalid or non-existent EVO RCP artifact", null);
         }
 
+        // WP4 (D-09/D-10): verify recorded provenance (checksum) before deployment.
+        if (artifact.getSha256() != null && !artifact.getSha256().isEmpty()) {
+            String actualSha = ArtifactManifestStore.computeSha256(artifact.getPath());
+            if (actualSha == null || !actualSha.equalsIgnoreCase(artifact.getSha256())) {
+                return TaskResult.failure("deploy_evo_rcp", "Checksum mismatch for EVO RCP artifact at " + artifact.getPath().getAbsolutePath()
+                        + ": manifest=" + artifact.getSha256() + " actual=" + actualSha, null);
+            }
+        }
+
         File targetRuntimeDir = context.getRuntimeDirectory();
         if (targetRuntimeDir == null) {
             return TaskResult.failure("deploy_evo_rcp", "Target runtime directory in context is null", null);
@@ -168,11 +177,16 @@ public class EvoRcpDeployer extends AbstractDeployer<BuildArtifact> {
     }
 
     private void unzip(File zipFile, File destDir) throws IOException {
+        Path destRoot = destDir.getCanonicalFile().toPath().toAbsolutePath().normalize();
         byte[] buffer = new byte[8192];
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                File newFile = new File(destDir, entry.getName());
+                Path target = destRoot.resolve(entry.getName()).toAbsolutePath().normalize();
+                if (!target.startsWith(destRoot)) {
+                    throw new IOException("Zip-slip attempt blocked: entry '" + entry.getName() + "' escapes destination " + destRoot);
+                }
+                File newFile = target.toFile();
                 if (entry.isDirectory()) {
                     newFile.mkdirs();
                 } else {

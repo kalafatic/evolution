@@ -5,14 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Health check response DTO for TEIP 1.0.
+ * Health check response DTO for TEIP 1.1.
  */
 public class TeipHealthResponse {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String status = "UP";
     private String application = "EVOLUTION";
-    private String appVersion = "2.6.5";
+    private String appVersion = "2.6.11";
     private String timestamp = java.time.Instant.now().toString();
     private boolean ready = true;
     private Map<String, Object> details = new HashMap<>();

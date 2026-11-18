@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>eu.kalafatic.evolution</groupId>
 	<artifactId>eu.kalafatic.evolution.aggregator</artifactId>
-	<version>2.6.5-SNAPSHOT</version>
+	<version>2.6.11-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<properties>
@@ -41,6 +41,7 @@
 		<module>eu.kalafatic.evolution.forge.controller</module>
 		<module>eu.kalafatic.evolution.creatic</module>
 		<module>eu.kalafatic.evolution.servers</module>
+		<module>eu.kalafatic.evolution.enr</module>
 		<module>eu.kalafatic.evolution.supervisor</module>
 		<module>eu.kalafatic.evolution.forge.agent</module>
 	</modules>
@@ -88,6 +89,11 @@
 			<layout>p2</layout>
 			<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/</url>
 		</repository>
+		<repository>
+			<id>gef-classic</id>
+			<layout>p2</layout>
+			<url>https://download.eclipse.org/tools/gef/classic/release/latest</url>
+		</repository>
 	</repositories>
 
 	<profiles>
@@ -134,6 +140,27 @@
 			</build>
 		</profile>
 		<profile>
+			<id>macosx</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.tycho</groupId>
+						<artifactId>target-platform-configuration</artifactId>
+						<version>${tycho.version}</version>
+						<configuration>
+							<environments>
+								<environment>
+									<os>macosx</os>
+									<ws>cocoa</ws>
+									<arch>x86_64</arch>
+								</environment>
+							</environments>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
 			<id>all-platforms</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
@@ -154,6 +181,11 @@
 								<environment>
 									<os>linux</os>
 									<ws>gtk</ws>
+									<arch>x86_64</arch>
+								</environment>
+								<environment>
+									<os>macosx</os>
+									<ws>cocoa</ws>
 									<arch>x86_64</arch>
 								</environment>
 							</environments>

@@ -61,14 +61,17 @@ public class PromoteTask extends AbstractSelfDevTask {
                 Files.copy(candidateFile.toPath(), targetInPromoted.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
 
-            BuildArtifact promotedArtifact = new BuildArtifact(
-                    ArtifactType.EVO_RCP,
-                    targetInPromoted,
-                    context.getSourceRevision(),
-                    context.getOs(),
-                    candidate.getMetadata()
-            );
+            // WP4 (D-12/D-43): promotion preserves artifact identity (build ID,
+            // revision, metadata) and re-verifies the copy via checksum.
+            ArtifactManifestStore store = context.getArtifactManifestStore();
+            BuildArtifact promotedArtifact = store.rehome(candidate, targetInPromoted, "SUCCESS");
+            if (promotedArtifact == null || !store.verifyIntegrity(promotedArtifact)) {
+                return TaskResult.failure(id, "Promotion failed: promoted copy integrity verification failed at " + targetInPromoted.getAbsolutePath(), null);
+            }
             context.recordArtifact(promotedArtifact);
+
+            // WP10 (D-43): deterministic known-good index for rollback.
+            appendPromotedIndex(promotedDir, promotedArtifact);
 
             Log.log("[SELF-DEV][PROMOTE] Candidate artifact successfully promoted to: " + targetInPromoted.getAbsolutePath());
             System.out.println("[SELF-DEV][PROMOTE] Candidate artifact successfully promoted to: " + targetInPromoted.getAbsolutePath());
@@ -104,5 +107,85 @@ public class PromoteTask extends AbstractSelfDevTask {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // WP10 (D-43): deterministic promoted-artifact index for rollback.
+    // ------------------------------------------------------------------
+
+    public static final String PROMOTED_INDEX_FILE = "promoted-index.json";
+
+    public static File promotedIndexFile(File promotedDir) {
+        return new File(promotedDir, PROMOTED_INDEX_FILE);
+    }
+
+    public static synchronized void appendPromotedIndex(File promotedDir, BuildArtifact artifact) {
+        try {
+            org.json.JSONObject root = readPromotedIndexJson(promotedDir);
+            org.json.JSONArray entries = root.optJSONArray("entries");
+            if (entries == null) {
+                entries = new org.json.JSONArray();
+                root.put("entries", entries);
+            }
+            org.json.JSONObject entry = new org.json.JSONObject();
+            entry.put("path", artifact.getPath().getAbsolutePath());
+            entry.put("buildId", artifact.getBuildId());
+            entry.put("sha256", artifact.getSha256());
+            entry.put("revision", artifact.getSourceRevision());
+            entry.put("promotedAt", System.currentTimeMillis());
+            entries.put(entry);
+            Files.writeString(promotedIndexFile(promotedDir).toPath(), root.toString(2), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            System.err.println("[PromoteTask] Failed to persist promoted index: " + e.getMessage());
+        }
+    }
+
+    private static org.json.JSONObject readPromotedIndexJson(File promotedDir) throws Exception {
+        File indexFile = promotedIndexFile(promotedDir);
+        if (indexFile.exists()) {
+            String content = Files.readString(indexFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+            if (content != null && !content.trim().isEmpty()) {
+                return new org.json.JSONObject(content);
+            }
+        }
+        return new org.json.JSONObject();
+    }
+
+    /**
+     * Deterministically selects the newest promoted known-good artifact whose
+     * file still exists and whose checksum verifies. Never a first-match pick.
+     */
+    public static BuildArtifact findNewestVerifiedPromoted(File promotedDir) {
+        if (promotedDir == null || !promotedDir.exists()) {
+            return null;
+        }
+        try {
+            org.json.JSONObject root = readPromotedIndexJson(promotedDir);
+            org.json.JSONArray entries = root.optJSONArray("entries");
+            if (entries != null) {
+                for (int i = entries.length() - 1; i >= 0; i--) {
+                    org.json.JSONObject entry = entries.getJSONObject(i);
+                    File path = new File(entry.optString("path", ""));
+                    String sha = entry.optString("sha256", null);
+                    if (path.exists()) {
+                        if (sha == null || sha.isEmpty() || sha.equalsIgnoreCase(ArtifactManifestStore.computeSha256(path))) {
+                            return new BuildArtifact(ArtifactType.EVO_RCP, path, entry.optString("revision", null), null, null,
+                                    null, entry.optString("buildId", null), path.length(), sha,
+                                    "SUCCESS", "PROMOTED_KNOWN_GOOD", "SUCCESS");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[PromoteTask] Failed to read promoted index: " + e.getMessage());
+        }
+        // Fallback without an index: newest file by modification time (still
+        // deterministic - never an arbitrary first entry).
+        File[] files = promotedDir.listFiles(f -> !f.getName().equals(PROMOTED_INDEX_FILE));
+        if (files != null && files.length > 0) {
+            java.util.Arrays.sort(files, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+            return new BuildArtifact(ArtifactType.EVO_RCP, files[0], null, null, null);
+        }
+        return null;
     }
 }

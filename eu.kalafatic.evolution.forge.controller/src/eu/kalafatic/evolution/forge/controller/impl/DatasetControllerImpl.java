@@ -26,9 +26,10 @@ public class DatasetControllerImpl implements DatasetController {
     @Override
     public Map<String, Object> getDatasetStatistics(String sessionId) {
         if (datasetService == null) {
+            // Honest unavailability: no fabricated sizes/vocabularies are ever reported.
             Map<String, Object> stats = new HashMap<>();
-            stats.put("size", 1000);
-            stats.put("vocab", 5000);
+            stats.put("available", false);
+            stats.put("reason", "No dataset service is registered for this session");
             return stats;
         }
         return datasetService.getDatasetStatistics(sessionId);
@@ -38,8 +39,8 @@ public class DatasetControllerImpl implements DatasetController {
     public Map<String, Object> getDatasetSample(String sessionId, int index) {
         if (datasetService == null) {
             Map<String, Object> sample = new HashMap<>();
-            sample.put("raw", "Functional sample text");
-            sample.put("tokens", new int[]{10, 20, 30});
+            sample.put("available", false);
+            sample.put("reason", "No dataset service is registered for this session");
             return sample;
         }
         return datasetService.getDatasetSample(sessionId, index);

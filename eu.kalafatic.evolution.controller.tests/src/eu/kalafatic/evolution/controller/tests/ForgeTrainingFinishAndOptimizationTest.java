@@ -90,10 +90,11 @@ public class ForgeTrainingFinishAndOptimizationTest {
 
         TrainingResult result = trainer.train(samples, 10);
 
-        assertTrue("Stop should be requested", trainer.isStopRequested());
+        // The stop flag is consumed by the run and cleared on exit; the result
+        // carries the authoritative termination state.
         assertNotNull("Result should not be null", result);
         assertEquals(TrainingTerminationStatus.TRAINING_STOPPED, result.getTerminationStatus());
-        assertEquals(TerminationReason.USER_REQUEST, result.getTerminationReason());
+        assertEquals(TerminationReason.USER_STOP_REQUEST, result.getTerminationReason());
         assertTrue("Completed epochs should be less than planned 10", result.getCompletedEpochs() < 10);
         assertTrue("Completed epochs should be at least 1", result.getCompletedEpochs() >= 1);
         assertTrue("Model should remain valid after clean early stop boundary", result.isModelValid());
@@ -181,10 +182,26 @@ public class ForgeTrainingFinishAndOptimizationTest {
     @Test
     public void testFullForgeJobEarlyStopExportAndMetadata() throws Exception {
         Path projectPath = tempFolder.newFolder("project").toPath();
+        // A real training corpus: the forge pipeline must not train on its own
+        // dist/ artifacts, so the test provides explicit source text.
+        java.nio.file.Files.writeString(projectPath.resolve("corpus.txt"),
+                "The evolution genome platform trains local models on prepared datasets and exports them. " + 
+                "Training checkpoints preserve optimizer state for resumption across sessions. ".repeat(30));
 
         ForgeJob job = new ForgeJob("test-job-early-stop");
         job.getSourcePaths().add(projectPath.toString());
         job.getTrainingConfig().setEpochs(100);
+        // Deterministic small model so the full job executes in seconds on CPU;
+        // early stopping disabled so the user stop request is the termination
+        // trigger being verified (not the loss threshold).
+        job.getTrainingConfig().setEarlyStoppingEnabled(false);
+        job.getModelConfig().setHiddenSize(64);
+        job.getModelConfig().setLayers(2);
+        job.getModelConfig().setHeads(4);
+        job.getModelConfig().setDff(128);
+        job.getModelConfig().setMaxSeqLen(64);
+        job.getModelConfig().setVocabSize(200);
+        job.getQuantizationConfig().setEnabled(false);
 
         ForgeOrchestratorImpl orchestrator = new ForgeOrchestratorImpl();
 
@@ -222,7 +239,7 @@ public class ForgeTrainingFinishAndOptimizationTest {
         EvoModelArtifact loadedArtifact = EvoModelArtifact.load(exportedEvo);
         assertNotNull(loadedArtifact);
         assertEquals("TRAINING_STOPPED", loadedArtifact.getMetadata().get("trainingStatus"));
-        assertEquals("USER_REQUEST", loadedArtifact.getMetadata().get("terminationReason"));
+        assertEquals("USER_STOP_REQUEST", loadedArtifact.getMetadata().get("terminationReason"));
         assertEquals("true", loadedArtifact.getMetadata().get("earlyStop"));
     }
 

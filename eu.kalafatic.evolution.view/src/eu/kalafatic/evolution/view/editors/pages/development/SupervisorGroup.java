@@ -71,11 +71,28 @@ public class SupervisorGroup extends AEvoGroup {
     private Color lightGreenColor;
     private Color lightRedColor;
 
+    // WP11 (D-62): optional shared controller so supervisor actions reuse the
+    // page's orchestrator/context instead of creating separate instances.
+    private volatile SelfDevBootstrapController sharedController;
+
     public SupervisorGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
         this.lightGreenColor = new Color(Display.getDefault(), 220, 245, 220);
         this.lightRedColor = new Color(Display.getDefault(), 252, 232, 232);
         createControl(toolkit, parent);
+    }
+
+    public void setSharedBootstrapController(SelfDevBootstrapController controller) {
+        this.sharedController = controller;
+    }
+
+    private SelfDevBootstrapController resolveController() {
+        SelfDevBootstrapController existing = sharedController;
+        if (existing != null) {
+            return existing;
+        }
+        File projectRoot = resolveProjectRoot();
+        return new SelfDevBootstrapController(projectRoot, orchestrator);
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
@@ -372,8 +389,7 @@ public class SupervisorGroup extends AEvoGroup {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 monitor.beginTask("Starting External Supervisor...", 100);
-                File projectRoot = resolveProjectRoot();
-                SelfDevBootstrapController controller = new SelfDevBootstrapController(projectRoot, orchestrator);
+                SelfDevBootstrapController controller = resolveController();
                 controller.setDebugMode(debugCheck.getSelection());
                 controller.startBootstrap();
                 monitor.worked(100);
@@ -389,8 +405,7 @@ public class SupervisorGroup extends AEvoGroup {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 monitor.beginTask("Stopping External Supervisor...", 100);
-                File projectRoot = resolveProjectRoot();
-                SelfDevBootstrapController controller = new SelfDevBootstrapController(projectRoot, orchestrator);
+                SelfDevBootstrapController controller = resolveController();
                 controller.stopBootstrap();
                 monitor.worked(100);
                 Display.getDefault().asyncExec(() -> refreshUI());
@@ -427,8 +442,7 @@ public class SupervisorGroup extends AEvoGroup {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 monitor.beginTask("Building and Deploying Supervisor...", 100);
-                File projectRoot = resolveProjectRoot();
-                SelfDevBootstrapController controller = new SelfDevBootstrapController(projectRoot, orchestrator);
+                SelfDevBootstrapController controller = resolveController();
                 TaskResult res = controller.runTask("BUILD_SUPERVISOR_LOCAL");
                 monitor.worked(100);
                 Display.getDefault().asyncExec(() -> {

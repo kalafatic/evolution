@@ -11,7 +11,7 @@ import java.io.File;
 public class GpuTrainerMain {
 
     public static void main(String[] args) {
-        System.out.println("[EVO-GPU-TRAINER] Initializing isolated GPU Model Training Process...");
+        System.out.println("[EVO-GPU-DIAGNOSTICS] Initializing isolated GPU capability diagnostics process...");
 
         String configPath = null;
         String workDirPath = "gpu-work";
@@ -44,15 +44,16 @@ public class GpuTrainerMain {
             GpuTrainingProcess.TrainingStatus status = process.executeTraining(config);
 
             System.out.println("\n=========================================================");
-            System.out.println("          EVO GPU TRAINING PROCESS SUMMARY               ");
+            System.out.println("         EVO GPU DIAGNOSTICS PROCESS SUMMARY             ");
             System.out.println("=========================================================");
-            System.out.println("Status          : " + (status.isCompleted() ? "SUCCESS" : "FAILED"));
-            System.out.println("Compute Device  : " + status.getComputeDeviceUsed());
-            System.out.println("Epochs Completed: " + status.getTotalEpochsCompleted());
-            System.out.println("Final Loss      : " + status.getFinalLoss());
-            System.out.println("Duration        : " + status.getDurationMs() + " ms");
-            System.out.println("Model Artifact  : " + status.getModelArtifactPath());
-            System.out.println("Execution Log   : " + status.getLogFilePath());
+            System.out.println("Status            : " + (status.isCompleted() ? "DIAGNOSTICS COMPLETED" : "FAILED"));
+            System.out.println("GPU Device        : " + status.getGpuDeviceName());
+            System.out.println("CUDA Verification : " + status.getCudaVerificationLabel());
+            System.out.println("Compute Device    : " + status.getComputeDeviceUsed());
+            System.out.println("Native Training   : " + (status.isNativeTrainingExecuted() ? "EXECUTED" : "NOT EXECUTED (kernels not implemented)"));
+            System.out.println("Technical Note    : " + status.getTechnicalNote());
+            System.out.println("Duration          : " + status.getDurationMs() + " ms");
+            System.out.println("Diagnostics Log   : " + status.getLogFilePath());
             System.out.println("=========================================================");
 
         } catch (Exception e) {

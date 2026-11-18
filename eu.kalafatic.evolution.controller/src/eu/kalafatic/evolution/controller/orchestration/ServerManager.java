@@ -116,6 +116,9 @@ public class ServerManager {
         int secondary = getPortForService(PortRegistry.EVO_HTTP_SECONDARY);
         int mcp = getPortForService(PortRegistry.EVO_MCP);
         int dev = getPortForService(PortRegistry.EVO_DEVELOP);
+        int supervisorApi = getPortForService(PortRegistry.EVO_SUPERVISOR_API);
+        int auxiliary = getPortForService(PortRegistry.EVO_AUXILIARY);
+        int enr = getPortForService(PortRegistry.EVO_ENR);
 
         // Web Applications hosted on Primary HTTP (and shared with secondary/develop endpoints)
         registerWebApp(new WebApplicationDescriptor("chat", "AI Chat", "/experimental/chat?runtime=SWT", primary, PortRegistry.EVO_HTTP_PRIMARY.getServiceId()));
@@ -127,6 +130,18 @@ public class ServerManager {
         registerWebApp(new WebApplicationDescriptor("mutation", "Mutation", "/mutation?runtime=SWT", primary, PortRegistry.EVO_HTTP_PRIMARY.getServiceId()));
         registerWebApp(new WebApplicationDescriptor("admin", "Administration", "/admin.html?runtime=SWT", primary, PortRegistry.EVO_HTTP_PRIMARY.getServiceId()));
         registerWebApp(new WebApplicationDescriptor("mcp_docs", "MCP Documentation", "/", mcp, PortRegistry.EVO_MCP.getServiceId()));
+
+        // One default tab per EVO server port, following the platform +20000 allocation
+        // standard (8080 → 28080, +100 per service, all defined in PortRegistry):
+        // 28080 primary, 28180 portal, 28280 MCP, 28380 develop, 28480 supervisor REST,
+        // 28680 auxiliary, 28780 ENR. (28580 is the Supervisor Control TCP channel —
+        // not a web surface, so no browser tab is registered for it.)
+        registerWebApp(new WebApplicationDescriptor("primary_home", "EVO Home", "/", primary, PortRegistry.EVO_HTTP_PRIMARY.getServiceId()));
+        registerWebApp(new WebApplicationDescriptor("portal", "Portal Server", "/dashboard.html", secondary, PortRegistry.EVO_HTTP_SECONDARY.getServiceId()));
+        registerWebApp(new WebApplicationDescriptor("develop_endpoint", "Develop Endpoint", "/develop?runtime=SWT", dev, PortRegistry.EVO_DEVELOP.getServiceId()));
+        registerWebApp(new WebApplicationDescriptor("supervisor_api", "Supervisor REST API", "/health", supervisorApi, PortRegistry.EVO_SUPERVISOR_API.getServiceId()));
+        registerWebApp(new WebApplicationDescriptor("auxiliary", "Auxiliary Service", "/", auxiliary, PortRegistry.EVO_AUXILIARY.getServiceId()));
+        registerWebApp(new WebApplicationDescriptor("enr_runtime", "ENR Neural Runtime", "/status", enr, PortRegistry.EVO_ENR.getServiceId()));
     }
 
     public synchronized void registerWebApp(WebApplicationDescriptor desc) {
@@ -402,7 +417,7 @@ public class ServerManager {
         }
 
         // Primary HTTP Server
-        java.io.File readyFile = new java.io.File("self-dev-run/evo_ready.txt");
+        java.io.File readyFile = resolveReadinessFile();
         if (readyFile.exists()) {
             readyFile.delete();
         }
@@ -434,12 +449,12 @@ public class ServerManager {
             activeServers.put(port, server);
             this.primaryPort = port;
 
-            // Write readiness marker file
-            java.io.File runDir = new java.io.File("self-dev-run");
-            if (!runDir.exists()) {
-                runDir.mkdirs();
+            // Write readiness marker file (run-scoped state dir when provided by the parent
+            // Self-Dev launch, legacy CWD-relative location otherwise)
+            java.io.File rf = resolveReadinessFile();
+            if (!rf.getParentFile().exists()) {
+                rf.getParentFile().mkdirs();
             }
-            java.io.File rf = new java.io.File(runDir, "evo_ready.txt");
             try {
                 java.nio.file.Files.write(rf.toPath(), String.valueOf(System.currentTimeMillis()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             } catch (Exception ignored) {}
@@ -654,5 +669,18 @@ public class ServerManager {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Resolves the Self-Dev readiness marker file location. When the parent Self-Dev
+     * launch provided a run-scoped state directory (EVO_SELFDEV_STATE_DIR), the marker
+     * is written there; otherwise the legacy CWD-relative location is used.
+     */
+    private java.io.File resolveReadinessFile() {
+        String stateDir = System.getenv("EVO_SELFDEV_STATE_DIR");
+        if (stateDir != null && !stateDir.trim().isEmpty()) {
+            return new java.io.File(new java.io.File(stateDir.trim()), "evo_ready.txt");
+        }
+        return new java.io.File("self-dev-run/evo_ready.txt");
     }
 }

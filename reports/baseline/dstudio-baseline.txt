@@ -1,0 +1,27 @@
+=== DStudio Baseline ===
+Branch: master
+HEAD: 98c7fb2990cd004bff85e0a6d0e8caf0dcc9780e
+Status:
+ M plugins/eu.kalafatic.dstudio.harness/.gitignore
+?? .launches/
+?? .mvn/
+?? docs/BUILD_AND_LAUNCH.md
+?? mvnw
+?? mvnw.cmd
+?? plugins/eu.kalafatic.dstudio.ui/.gitignore
+?? scripts/
+Untracked files:
+.launches/DStudio_Headless_Server.launch
+.launches/DStudio_Maven_Build.launch
+.launches/DStudio_RCP_Application.launch
+.launches/DStudio_Tests.launch
+.mvn/wrapper/maven-wrapper.properties
+docs/BUILD_AND_LAUNCH.md
+mvnw
+mvnw.cmd
+plugins/eu.kalafatic.dstudio.ui/.gitignore
+scripts/build.sh
+scripts/run-headless.sh
+Scripts:
+scripts/run-headless.sh
+scripts/build.sh

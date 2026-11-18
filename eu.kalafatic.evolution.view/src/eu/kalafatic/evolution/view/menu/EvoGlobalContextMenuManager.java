@@ -249,6 +249,13 @@ public class EvoGlobalContextMenuManager {
         // 3. Global Session & Running Process Actions
         addProcessAndSessionActions(manager, control);
 
+        manager.add(new Separator("CONTEXTUAL"));
+
+        // 3.5 Unified contextual actions (Darwin Family Contextual Action Contract
+        //     v1.0): forge-session and connected-harness operations resolved from the
+        //     single EVO registry — same ids/domain operations as the web surface.
+        addContextualActions(manager);
+
         manager.add(new Separator("AI_ASSIST"));
 
         // 4. Neural / LLM Smart Proposals
@@ -258,6 +265,79 @@ public class EvoGlobalContextMenuManager {
 
         // 5. Workbench Page / View Quick Navigation
         addQuickNavigationActions(manager);
+    }
+
+    private void addContextualActions(IMenuManager manager) {
+        try {
+            eu.kalafatic.evolution.controller.contextual.ContextualActionRegistry registry =
+                    eu.kalafatic.evolution.controller.contextual.EvoContextualRegistry
+                            .getInstance();
+            eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager
+                    forgeManager =
+                    eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager
+                            .getInstance();
+            String sessionId = forgeManager.getActiveTrainingSessionId();
+            java.util.List<eu.kalafatic.evolution.model.orchestration.ForgeSession>
+                    sessions = forgeManager.getSessions();
+            if ((sessionId == null || sessionId.isBlank()) && !sessions.isEmpty()) {
+                sessionId = sessions.get(0).getSessionId();
+            }
+            if (sessionId == null || sessionId.isBlank()) {
+                return;
+            }
+            final String targetSessionId = sessionId;
+            eu.kalafatic.evolution.controller.contextual.ContextualSelection selection =
+                    eu.kalafatic.evolution.controller.contextual.ContextualSelection
+                            .builder("EVO", "RCP", "session")
+                            .object(targetSessionId, "Forge Session").build();
+            java.util.List<eu.kalafatic.evolution.controller.contextual.ContextualAction>
+                    actions = registry.resolve(selection);
+            if (actions.isEmpty()) {
+                return;
+            }
+            MenuManager submenu = new MenuManager("Forge Session Actions",
+                    "ctx_forge_session");
+            String currentGroup = null;
+            for (eu.kalafatic.evolution.controller.contextual.ContextualAction action
+                    : actions) {
+                String group = action.descriptor().group();
+                if (!group.equals(currentGroup)) {
+                    if (currentGroup != null) {
+                        submenu.add(new org.eclipse.jface.action.Separator());
+                    }
+                    currentGroup = group;
+                }
+                final eu.kalafatic.evolution.controller.contextual.ContextualAction
+                        capturedAction = action;
+                Action jfaceAction = new Action(action.descriptor().label()) {
+                    @Override
+                    public void run() {
+                        eu.kalafatic.evolution.controller.contextual.ContextualExecutionResult
+                                result = registry.executeResolved(capturedAction, selection);
+                        if (!result.ok()) {
+                            org.eclipse.swt.widgets.Shell shell =
+                                    org.eclipse.swt.widgets.Display.getDefault() != null
+                                            ? org.eclipse.swt.widgets.Display.getDefault()
+                                                    .getActiveShell()
+                                            : null;
+                            if (shell != null) {
+                                org.eclipse.jface.dialogs.MessageDialog.openError(shell,
+                                        capturedAction.descriptor().label(),
+                                        result.message());
+                            }
+                        }
+                    }
+                };
+                jfaceAction.setId(action.actionId());
+                jfaceAction.setEnabled(action.enabled());
+                jfaceAction.setToolTipText(action.descriptor().description()
+                        + (action.enabled() ? "" : " — " + action.disabledReason()));
+                submenu.add(jfaceAction);
+            }
+            manager.add(submenu);
+        } catch (Exception e) {
+            System.err.println("[EVO] Contextual menu section skipped: " + e.getMessage());
+        }
     }
 
     private void addContextHeader(IMenuManager manager, Control control) {

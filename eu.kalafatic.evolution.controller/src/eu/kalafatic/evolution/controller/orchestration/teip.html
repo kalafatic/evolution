@@ -902,7 +902,7 @@
                     }
 
                     document.getElementById('overview-details').innerHTML = `
-                        <strong>EVO Application:</strong> ${res.health.application || 'EVOLUTION'} (v${res.health.appVersion || '2.6.5'})<br>
+                        <strong>EVO Application:</strong> ${res.health.application || 'EVOLUTION'} (v${res.health.appVersion || '2.6.11'})<br>
                         <strong>Integration Endpoint:</strong> <code>/teip/v1</code> on Port ${res.serverPort || 28080}<br>
                         <strong>TEIP Status:</strong> <span style="color: ${res.teipEnabled ? 'var(--success)' : 'var(--danger)'}; font-weight: bold;">${res.teipEnabled ? 'ENABLED' : 'DISABLED'}</span><br>
                         <strong>TRYST MCP Server:</strong> <code>${res.trystMcpUrl || 'http://localhost:3000/mcp'}</code>

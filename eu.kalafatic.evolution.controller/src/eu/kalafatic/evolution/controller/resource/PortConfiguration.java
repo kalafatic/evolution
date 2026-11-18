@@ -30,7 +30,7 @@ public class PortConfiguration implements Serializable {
         this.protocol = protocol != null ? protocol.toLowerCase() : "http";
         this.bindingAddress = bindingAddress != null ? bindingAddress : "127.0.0.1";
         this.enabled = enabled;
-        this.configurationVersion = configurationVersion != null ? configurationVersion : "2.6.5";
+        this.configurationVersion = configurationVersion != null ? configurationVersion : "2.6.11";
         this.metadata = metadata != null ? metadata : "";
     }
 
@@ -43,7 +43,7 @@ public class PortConfiguration implements Serializable {
                 registry.getProtocol(),
                 registry.getDefaultHost(),
                 registry.isAutoStart(),
-                "2.6.5",
+                "2.6.11",
                 "default"
         );
     }

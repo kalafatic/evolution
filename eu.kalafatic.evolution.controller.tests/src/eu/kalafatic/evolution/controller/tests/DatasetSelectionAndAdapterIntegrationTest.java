@@ -296,7 +296,9 @@ public class DatasetSelectionAndAdapterIntegrationTest {
         File forgeInputDir = tempFolder.newFolder("forge-input");
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        // Explicit unbounded target: this test verifies folder placement, not target enforcement.
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
+        context.setValidationSplitRatio(0.0); // keep both samples in the training split
         DatasetPreparationResult result = service.prepareDatasets(items, context, forgeInputDir);
 
         assertEquals(DatasetPreparationResult.Status.SUCCESS, result.getStatus());

@@ -29,7 +29,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown argument: $1" >&2
-            echo "Usage: $0 [--platform linux|windows|all]" >&2
+            echo "Usage: $0 [--platform linux|windows|macosx|all]" >&2
             exit 1
             ;;
     esac
@@ -56,6 +56,8 @@ if [[ "${TARGET_PLATFORM}" == "windows" ]]; then
     PROFILE="-Pwindows"
 elif [[ "${TARGET_PLATFORM}" == "linux" ]]; then
     PROFILE="-Plinux"
+elif [[ "${TARGET_PLATFORM}" == "macosx" ]]; then
+    PROFILE="-Pmacosx"
 elif [[ "${TARGET_PLATFORM}" == "all" ]]; then
     PROFILE="-Pall-platforms"
 else
@@ -99,6 +101,16 @@ if [[ "${TARGET_PLATFORM}" == "linux" || "${TARGET_PLATFORM}" == "all" || "${TAR
     if [[ -f "${LINUX_TAR}" ]]; then
         cp -f "${LINUX_TAR}" "release/EVO-linux-x64.tar.gz"
         echo "SUCCESS: Published Linux x64 package: release/EVO-linux-x64.tar.gz"
+        PROD_FOUND=$((PROD_FOUND + 1))
+    fi
+fi
+
+if [[ "${TARGET_PLATFORM}" == "macosx" || "${TARGET_PLATFORM}" == "all" ]]; then
+    # Look for macOS tar.gz
+    MAC_TAR="${PRODUCTS_DIR}/evolution-macosx.cocoa.x86_64.tar.gz"
+    if [[ -f "${MAC_TAR}" ]]; then
+        cp -f "${MAC_TAR}" "release/EVO-mac-x64.tar.gz"
+        echo "SUCCESS: Published macOS x64 package: release/EVO-mac-x64.tar.gz"
         PROD_FOUND=$((PROD_FOUND + 1))
     fi
 fi
@@ -153,6 +165,9 @@ if [[ -f "EVO-win-x64.zip" ]]; then
 fi
 if [[ -f "EVO-linux-x64.tar.gz" ]]; then
     sha256sum "EVO-linux-x64.tar.gz" >> checksums.txt 2>/dev/null || sha256 "EVO-linux-x64.tar.gz" >> checksums.txt 2>/dev/null || md5sum "EVO-linux-x64.tar.gz" >> checksums.txt 2>/dev/null || true
+fi
+if [[ -f "EVO-mac-x64.tar.gz" ]]; then
+    sha256sum "EVO-mac-x64.tar.gz" >> checksums.txt 2>/dev/null || sha256 "EVO-mac-x64.tar.gz" >> checksums.txt 2>/dev/null || md5sum "EVO-mac-x64.tar.gz" >> checksums.txt 2>/dev/null || true
 fi
 echo "Checksums published in release/checksums.txt"
 

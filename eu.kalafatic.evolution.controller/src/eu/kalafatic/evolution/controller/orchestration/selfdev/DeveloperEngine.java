@@ -288,6 +288,13 @@ public class DeveloperEngine extends CodingEngine {
 				+ "11. Run relevant builds and tests.\n"
 				+ "12. Analyze compiler errors and test failures.\n"
 				+ "13. Correct your own implementation when verification fails.\n"
-				+ "14. Report actual results rather than claim success without evidence.";
+				+ "14. Report actual results rather than claim success without evidence.\n"
+				+ "CODING HARNESS:\n"
+				+ "- A connected external coding harness (e.g. OpenCode) is available through the tool\n"
+				+ "  'coding_harness_execute' when one is selected and connected. Invoke it with the\n"
+				+ "  concrete coding task as the command; it executes inside the resolved development\n"
+				+ "  target and returns a summary with the modified files.\n"
+				+ "- The harness is an execution capability, not a substitute for verification:\n"
+				+ "  still inspect the results, run builds/tests, and report actual evidence.";
 	}
 }

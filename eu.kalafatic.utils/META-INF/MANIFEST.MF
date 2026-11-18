@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Utils
 Bundle-SymbolicName: eu.kalafatic.utils;singleton:=true
-Bundle-Version: 2.6.5.qualifier
+Bundle-Version: 2.6.11.qualifier
 Bundle-RequiredExecutinnvironment: JavaSE-21
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Import-Package: com.ibm.icu.text;version="[0.0.0,1.0.0)",
@@ -35,6 +35,9 @@ Import-Package: com.ibm.icu.text;version="[0.0.0,1.0.0)",
  org.eclipse.equinox.p2.metadata;version="2.1.0",
  org.eclipse.equinox.p2.operations;version="2.0.0",
  org.eclipse.equinox.p2.query;version="2.0.0",
+ org.eclipse.equinox.p2.repository;version="2.0.0",
+ org.eclipse.equinox.p2.repository.metadata;version="2.0.0",
+ org.eclipse.equinox.p2.repository.artifact;version="2.0.0",
  org.eclipse.equinox.p2.ui;version="2.0.0",
  org.eclipse.jface,
  org.eclipse.jface.action,

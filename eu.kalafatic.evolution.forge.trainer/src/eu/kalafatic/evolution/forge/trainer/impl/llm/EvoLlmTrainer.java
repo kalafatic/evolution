@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.model.llm.ModelParameters;
 import eu.kalafatic.evolution.forge.trainer.api.LossReduction;
 import eu.kalafatic.evolution.forge.trainer.api.TerminationReason;
 import eu.kalafatic.evolution.forge.trainer.api.TrainingCheckpoint;
@@ -29,6 +30,15 @@ public class EvoLlmTrainer {
                                        double tokensPerSec, double stepsPerSec,
                                        double estimatedRemainingSeconds, double currentLoss) {
             onProgress(epoch, totalEpochs, currentStep, totalSteps, currentLoss);
+        }
+
+        default void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                       long processedTokens, long totalTokens,
+                                       double tokensPerSec, double stepsPerSec,
+                                       double estimatedRemainingSeconds, double currentLoss,
+                                       double learningRate) {
+            onProgressMetrics(epoch, totalEpochs, currentStep, totalSteps, processedTokens, totalTokens,
+                    tokensPerSec, stepsPerSec, estimatedRemainingSeconds, currentLoss);
         }
 
         default void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss) {}
@@ -66,10 +76,13 @@ public class EvoLlmTrainer {
     private int microBatchSize = 4;
     private int accumulationSteps = 2;
     private long baseSeed = 42L;
+    private int configuredWarmupSteps = -1;
 
     private LossReduction lossReduction = LossReduction.MEAN_PER_TOKEN;
     private final List<ProgressListener> progressListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final List<Double> lossHistory = new ArrayList<>();
+    private static final int MAX_LOSS_HISTORY = 4096;
+    private volatile long lastProcessedTokens = 0;
     private volatile boolean stopRequested = false;
     private volatile boolean pauseRequested = false;
     private volatile boolean abortRequested = false;
@@ -78,6 +91,7 @@ public class EvoLlmTrainer {
     // Resumption state
     private TrainingCheckpoint resumeCheckpoint = null;
     private EmbeddedAdamW activeOptimizer = null;
+    private int lastCompletedEpochs = 0;
 
     public EvoLlmTrainer(EvoLlmModel model, TrainingProfile profile) {
         if (model == null) throw new IllegalArgumentException("EvoLlmModel cannot be null");
@@ -103,9 +117,28 @@ public class EvoLlmTrainer {
     public void setLearningRate(float lr) { this.initialLr = lr; }
     public void setMaxGradNorm(float maxGradNorm) { this.maxGradNorm = maxGradNorm; }
 
+    public void setWarmupSteps(int warmupSteps) { this.configuredWarmupSteps = warmupSteps > 0 ? warmupSteps : -1; }
+    public int getWarmupSteps() { return configuredWarmupSteps; }
+
     public void setResumeCheckpoint(TrainingCheckpoint checkpoint) {
         this.resumeCheckpoint = checkpoint;
     }
+
+    // Optional training termination criteria. Disabled by default so that plain
+    // training runs behave exactly as before; enabled when the orchestrator
+    // supplies an explicit configuration.
+    private boolean earlyStoppingEnabled = false;
+    private float targetLossThreshold = Float.POSITIVE_INFINITY;
+    private float timeBudgetHours = Float.POSITIVE_INFINITY;
+
+    public void setEarlyStoppingEnabled(boolean enabled) { this.earlyStoppingEnabled = enabled; }
+    public boolean isEarlyStoppingEnabled() { return earlyStoppingEnabled; }
+
+    public void setTargetLossThreshold(float threshold) { this.targetLossThreshold = threshold; }
+    public float getTargetLossThreshold() { return targetLossThreshold; }
+
+    public void setTimeBudgetHours(float hours) { this.timeBudgetHours = hours; }
+    public float getTimeBudgetHours() { return timeBudgetHours; }
 
     public TrainingCheckpoint getResumeCheckpoint() {
         return resumeCheckpoint;
@@ -120,7 +153,14 @@ public class EvoLlmTrainer {
             this.progressListeners.add(listener);
         }
     }
+    public void removeProgressListener(ProgressListener listener) {
+        if (listener != null) {
+            this.progressListeners.remove(listener);
+        }
+    }
+    public int getProgressListenerCount() { return this.progressListeners.size(); }
     public List<Double> getLossHistory() { return lossHistory; }
+    public long getLastProcessedTokens() { return lastProcessedTokens; }
     public void requestStop() { this.stopRequested = true; }
     public void finishTraining() { this.stopRequested = true; }
     public boolean isStopRequested() { return stopRequested; }
@@ -151,8 +191,10 @@ public class EvoLlmTrainer {
     }
 
     public TrainingCheckpoint captureCheckpoint(String runId, String modelName, int completedEpochs, float lastTrainLoss, float lastValLoss, String datasetFingerprint, Map<String, Integer> vocab) {
-        Map<String, float[]> m = activeOptimizer != null ? activeOptimizer.getMVectorMap(model.parameters()) : Collections.emptyMap();
-        Map<String, float[]> v = activeOptimizer != null ? activeOptimizer.getVVectorMap(model.parameters()) : Collections.emptyMap();
+        List<Tensor> paramList = model.parameters();
+        List<String> canonicalNames = canonicalParameterNames(paramList);
+        Map<String, float[]> m = activeOptimizer != null ? activeOptimizer.getMVectorMap(paramList, canonicalNames) : Collections.emptyMap();
+        Map<String, float[]> v = activeOptimizer != null ? activeOptimizer.getVVectorMap(paramList, canonicalNames) : Collections.emptyMap();
         long stepCount = activeOptimizer != null ? activeOptimizer.getStepCounter() : model.getTrainingState().getStep();
         float curLr = activeOptimizer != null ? activeOptimizer.getLr() : initialLr;
 
@@ -169,15 +211,36 @@ public class EvoLlmTrainer {
                 datasetFingerprint,
                 m,
                 v,
-                vocab
+                vocab,
+                lastProcessedTokens
         );
+    }
+
+    private List<String> canonicalParameterNames(List<Tensor> paramList) {
+        ModelParameters registry = model.getModelParameters();
+        List<String> names = new ArrayList<>(paramList.size());
+        // Map by identity: registry names are in a different order than parameters();
+        // match by data-array identity to obtain the canonical name per position.
+        for (Tensor p : paramList) {
+            String name = null;
+            for (String candidate : registry.names()) {
+                if (registry.get(candidate).getData() == p.getData()) {
+                    name = candidate;
+                    break;
+                }
+            }
+            names.add(name);
+        }
+        return names;
     }
 
     public TrainingResult train(List<?> rawSamples, int epochs) {
         long startTime = System.currentTimeMillis();
-        this.stopRequested = false;
-        this.pauseRequested = false;
-        this.abortRequested = false;
+        // NOTE: stop/pause/abort flags are intentionally NOT reset here. A
+        // control request may legitimately arrive between trainer registration
+        // and the start of the training loop (e.g. a user clicking Stop right
+        // at training start); resetting the flags at entry would lose it. The
+        // flags are consumed by this run and cleared at every exit point.
         TrainingResult result = new TrainingResult();
         result.setPlannedEpochs(epochs);
 
@@ -187,6 +250,7 @@ public class EvoLlmTrainer {
             result.setModelValid(false);
             result.setFailureDetails("No training samples provided to trainer.");
             this.lastResult = result;
+            clearRequestFlags();
             return result;
         }
 
@@ -242,6 +306,7 @@ public class EvoLlmTrainer {
             result.setModelValid(false);
             result.setFailureDetails("Training samples list became empty after filtering.");
             this.lastResult = result;
+            clearRequestFlags();
             return result;
         }
 
@@ -251,6 +316,12 @@ public class EvoLlmTrainer {
         int valCount = (int) (dataset.size() * validationSplitRatio);
         List<TrainingSample> trainSamples = new ArrayList<>(dataset.subList(0, Math.max(1, dataset.size() - valCount)));
         List<TrainingSample> valSamples = valCount > 0 ? new ArrayList<>(dataset.subList(dataset.size() - valCount, dataset.size())) : Collections.emptyList();
+
+        // Canonical epoch ordering: every epoch permutation is applied to this
+        // fixed order (not to the previous epoch's shuffled order) so that a
+        // resumed run produces bit-identical batches for any epoch regardless of
+        // which earlier epochs were executed elsewhere.
+        final List<TrainingSample> canonicalEpochOrder = new ArrayList<>(trainSamples);
 
         ModelParameterGroups paramGroups = ModelParameterGroups.fromModel(model);
         EmbeddedAdamW optimizer = new EmbeddedAdamW(initialLr, beta1, beta2, eps, weightDecay);
@@ -265,7 +336,7 @@ public class EvoLlmTrainer {
             Map<String, float[]> restoredM = new HashMap<>();
             Map<String, float[]> restoredV = new HashMap<>();
             resumeCheckpoint.restoreInto(model, restoredM, restoredV);
-            optimizer.loadState(model.parameters(), restoredM, restoredV, (int) resumeCheckpoint.getTotalOptimizerSteps());
+            optimizer.loadState(model.parameters(), canonicalParameterNames(model.parameters()), restoredM, restoredV, (int) resumeCheckpoint.getTotalOptimizerSteps());
             startEpoch = resumeCheckpoint.getCompletedEpochs();
             completedStepsPrior = (int) resumeCheckpoint.getTotalOptimizerSteps();
             lossHistory.add((double) resumeCheckpoint.getLastTrainLoss());
@@ -284,21 +355,29 @@ public class EvoLlmTrainer {
         System.out.printf("[EVO Trainer] Mode: %s | Pretrained Weights: %b | Parameters: %d | Base Seed: %d%n",
                 result.getMetadata().get("trainingMode"), (resumeCheckpoint != null), paramCount, baseSeed);
 
-        // Check if requested epochs already satisfied
-        if (startEpoch >= epochs) {
-            System.out.printf("[EVO Trainer] Training already completed: requested %d epochs, checkpoint has %d completed epochs. No-op termination.%n",
-                    epochs, startEpoch);
+        // Check if requested epochs already satisfied. Considers both the resume
+        // checkpoint AND epochs already completed by a previous train() invocation
+        // on this trainer instance (a re-submission of <= completed epochs is a
+        // clean no-op even when the stored checkpoint is stale).
+        int effectiveStartEpoch = Math.max(startEpoch, lastCompletedEpochs);
+        if (effectiveStartEpoch >= epochs) {
+            System.out.printf("[EVO Trainer] Training already completed: requested %d epochs, %d completed epochs. No-op termination.%n",
+                    epochs, effectiveStartEpoch);
             result.setTerminationStatus(TrainingTerminationStatus.TRAINING_COMPLETED);
             result.setTerminationReason(TerminationReason.PLANNED_COMPLETION);
-            result.setCompletedEpochs(startEpoch);
+            result.setCompletedEpochs(effectiveStartEpoch);
             result.setCompletedSteps(completedStepsPrior);
             result.setPlannedSteps(completedStepsPrior);
-            result.setLastLoss(resumeCheckpoint != null ? resumeCheckpoint.getLastTrainLoss() : 0.0);
-            result.setValLoss(resumeCheckpoint != null ? resumeCheckpoint.getLastValLoss() : 0.0);
+            result.setLastLoss(resumeCheckpoint != null ? resumeCheckpoint.getLastTrainLoss()
+                    : (lastResult != null ? lastResult.getLastLoss() : 0.0));
+            result.setValLoss(resumeCheckpoint != null ? resumeCheckpoint.getLastValLoss()
+                    : (lastResult != null ? lastResult.getValLoss() : 0.0));
             result.setTrainingDurationMs(0);
             this.lastResult = result;
+            clearRequestFlags();
             return result;
         }
+        startEpoch = effectiveStartEpoch;
 
         List<TrainingBatch> initialBatches = buildBatches(trainSamples, microBatchSize);
         int stepsPerEpoch = Math.max(1, (initialBatches.size() + accumulationSteps - 1) / accumulationSteps);
@@ -310,7 +389,13 @@ public class EvoLlmTrainer {
             epochTokenCount += sample.inputIds.length;
         }
         long totalTokensToTrain = epochTokenCount * (long) epochs;
-        long totalProcessedTokens = (long) startEpoch * epochTokenCount;
+        // On resume, prefer the exact processed-token counter persisted in the
+        // checkpoint; older checkpoints without it fall back to the previous
+        // approximation (completed epochs x tokens per epoch).
+        long resumedTokens = (resumeCheckpoint != null && resumeCheckpoint.getProcessedTokens() > 0)
+                ? resumeCheckpoint.getProcessedTokens()
+                : (long) startEpoch * epochTokenCount;
+        long totalProcessedTokens = resumedTokens;
         long lastMeasurementTime = System.currentTimeMillis();
         long windowStartTokens = totalProcessedTokens;
         int windowStartStep = completedStepsPrior;
@@ -318,7 +403,12 @@ public class EvoLlmTrainer {
         double movingAvgStepsPerSec = 0.0;
 
         int optStep = completedStepsPrior;
-        int actualCompletedSteps = 0;
+
+        // Warmup: explicit configuration wins; otherwise the documented
+        // default schedule (3% of total optimization steps).
+        int warmupSteps = configuredWarmupSteps > 0
+                ? configuredWarmupSteps
+                : Math.max(1, (int) (totalOptimizationSteps * 0.03f));
 
         try {
             for (int epoch = startEpoch; epoch < epochs; epoch++) {
@@ -347,10 +437,12 @@ public class EvoLlmTrainer {
                     result.setTerminationReason(TerminationReason.USER_STOP_REQUEST);
                     break;
                 }
+                // Shuffle a FRESH copy of the canonical order: an epoch's batches are
+                // a pure function of (epoch, seed), independent of prior epochs, so
+                // interrupted+resumed training matches uninterrupted training exactly.
+                trainSamples = new ArrayList<>(canonicalEpochOrder);
                 Collections.shuffle(trainSamples, new Random(baseSeed + epoch + 1));
                 List<TrainingBatch> batches = buildBatches(trainSamples, microBatchSize);
-
-                int warmupSteps = Math.max(1, (int) (totalOptimizationSteps * 0.03f));
 
                 double epochTotalLoss = 0.0;
                 long epochValidTokens = 0;
@@ -388,17 +480,21 @@ public class EvoLlmTrainer {
                         epochStoppedEarly = true;
                         break;
                     }
-                    optStep++;
-                    float currentLr = computeScheduledLr(optStep, totalOptimizationSteps, warmupSteps);
-                    optimizer.setLr(currentLr);
-
-                    paramGroups.zeroGradAll();
-
-                    int windowEnd = Math.min(bIdx + accumulationSteps, batches.size());
-                    List<TrainingBatch> accumulationWindow = batches.subList(bIdx, windowEnd);
-
+                    // Hard wall-clock budget is also evaluated at accumulation-window
+                    // boundaries so a single very long epoch cannot overrun the budget.
+                    if (timeBudgetHours < Float.POSITIVE_INFINITY) {
+                        long elapsedMs = System.currentTimeMillis() - startTime;
+                        if (elapsedMs >= (long) (timeBudgetHours * 3600_000L)) {
+                            System.out.printf("[EVO Trainer] Time budget %.2f h exceeded during epoch %d (elapsed %s).%n",
+                                    timeBudgetHours, epoch + 1, formatDuration(elapsedMs));
+                            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
+                            result.setTerminationReason(TerminationReason.TIME_BUDGET_REACHED);
+                            epochStoppedEarly = true;
+                            break;
+                        }
+                    }
                     long windowValidTokens = 0;
-                    for (TrainingBatch batch : accumulationWindow) {
+                    for (TrainingBatch batch : batches.subList(bIdx, Math.min(bIdx + accumulationSteps, batches.size()))) {
                         for (float[] maskRow : batch.lossMask) {
                             for (float m : maskRow) {
                                 if (m > 0.0f) windowValidTokens++;
@@ -407,6 +503,15 @@ public class EvoLlmTrainer {
                     }
 
                     if (windowValidTokens == 0) continue;
+
+                    optStep++;
+                    float currentLr = computeScheduledLr(optStep, totalOptimizationSteps, warmupSteps);
+                    optimizer.setLr(currentLr);
+
+                    paramGroups.zeroGradAll();
+
+                    int windowEnd = Math.min(bIdx + accumulationSteps, batches.size());
+                    List<TrainingBatch> accumulationWindow = batches.subList(bIdx, windowEnd);
 
                     double windowLoss = 0.0;
                     for (TrainingBatch batch : accumulationWindow) {
@@ -427,9 +532,9 @@ public class EvoLlmTrainer {
                     epochValidTokens += windowValidTokens;
 
                     optimizer.step(paramGroups, maxGradNorm);
-                    actualCompletedSteps++;
 
                     totalProcessedTokens += windowValidTokens;
+                    lastProcessedTokens = totalProcessedTokens;
 
                     long now = System.currentTimeMillis();
                     long durationMs = now - lastMeasurementTime;
@@ -461,7 +566,7 @@ public class EvoLlmTrainer {
                             listener.onProgressMetrics(epoch, epochs, optStep, totalOptimizationSteps,
                                     totalProcessedTokens, totalTokensToTrain,
                                     movingAvgTokPerSec, movingAvgStepsPerSec,
-                                    remainingSec, currentLoss);
+                                    remainingSec, currentLoss, currentLr);
                         }
                     } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
@@ -471,11 +576,34 @@ public class EvoLlmTrainer {
                     }
                 }
 
+                if (epochStoppedEarly) {
+                    // The epoch did not run to completion (user stop/pause/abort,
+                    // interrupt, or NaN/Inf loss). Do NOT record it as completed:
+                    // a partial epoch must not advance completedEpochs, otherwise
+                    // pause/resume would skip the remaining portion of the epoch
+                    // while the optimizer step counter sits mid-epoch.
+                    break;
+                }
+
                 double avgTrainLoss = epochValidTokens > 0 ? epochTotalLoss / epochValidTokens : 0.0;
                 double avgValLoss = evaluateValidation(valSamples);
                 long epochDuration = System.currentTimeMillis() - epochStartTime;
 
+                if (Double.isNaN(avgTrainLoss) || Double.isInfinite(avgTrainLoss)
+                        || Double.isNaN(avgValLoss) || Double.isInfinite(avgValLoss)) {
+                    System.err.printf("[EVO Trainer] NaN/Inf loss detected after epoch %d (train=%.4f, val=%.4f).%n",
+                            epoch + 1, avgTrainLoss, avgValLoss);
+                    result.setTerminationStatus(TrainingTerminationStatus.TRAINING_FAILED);
+                    result.setTerminationReason(TerminationReason.NAN_OR_INF_LOSS);
+                    result.setModelValid(false);
+                    result.setFailureDetails("NaN or Infinity loss after epoch " + (epoch + 1));
+                    break;
+                }
+
                 lossHistory.add(avgTrainLoss);
+                if (lossHistory.size() > MAX_LOSS_HISTORY) {
+                    lossHistory.remove(0);
+                }
                 model.getTrainingState().setEpoch(epoch + 1);
                 model.getTrainingState().setStep(optStep);
                 model.getTrainingState().setLastLoss((float) avgTrainLoss);
@@ -492,8 +620,28 @@ public class EvoLlmTrainer {
                     listener.onEpochCompleted(epoch + 1, epochs, avgTrainLoss, avgValLoss, epochDuration);
                 }
 
-                if (epochStoppedEarly) {
-                    break;
+                // Configured termination criteria evaluated ONLY on fully
+                // completed epochs, using the real measured losses.
+                if (earlyStoppingEnabled && targetLossThreshold < Float.POSITIVE_INFINITY) {
+                    double criterion = (valSamples != null && !valSamples.isEmpty()) ? avgValLoss : avgTrainLoss;
+                    if (criterion <= targetLossThreshold) {
+                        System.out.printf("[EVO Trainer] Early stopping criterion met after epoch %d: loss %.4f <= threshold %.4f.%n",
+                                epoch + 1, criterion, targetLossThreshold);
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
+                        result.setTerminationReason(TerminationReason.EARLY_STOPPING_CRITERIA);
+                        break;
+                    }
+                }
+
+                if (timeBudgetHours < Float.POSITIVE_INFINITY) {
+                    long elapsedMs = System.currentTimeMillis() - startTime;
+                    if (elapsedMs >= (long) (timeBudgetHours * 3600_000L)) {
+                        System.out.printf("[EVO Trainer] Time budget %.2f h exceeded after epoch %d (elapsed %s).%n",
+                                timeBudgetHours, epoch + 1, formatDuration(elapsedMs));
+                        result.setTerminationStatus(TrainingTerminationStatus.TRAINING_STOPPED);
+                        result.setTerminationReason(TerminationReason.TIME_BUDGET_REACHED);
+                        break;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -504,18 +652,24 @@ public class EvoLlmTrainer {
             result.setFailureDetails("Exception caught during training loop: " + e.getMessage());
         }
 
-        if (result.getTerminationStatus() == TrainingTerminationStatus.TRAINING_COMPLETED
-                && result.getCompletedEpochs() < epochs) {
-            result.setTerminationStatus(TrainingTerminationStatus.TRAINING_COMPLETED);
-            result.setTerminationReason(TerminationReason.PLANNED_COMPLETION);
-        }
-
         result.setTrainingDurationMs(System.currentTimeMillis() - startTime);
         result.getMetadata().put("totalTokensTrained", totalProcessedTokens);
         result.getMetadata().put("tokensPerSecond", movingAvgTokPerSec);
         result.getMetadata().put("stepsPerSecond", movingAvgStepsPerSec);
+        if (result.getTerminationStatus() == TrainingTerminationStatus.TRAINING_COMPLETED) {
+            this.lastCompletedEpochs = Math.max(this.lastCompletedEpochs, result.getCompletedEpochs());
+        }
         this.lastResult = result;
+        // Consume the control flags of this run so a later train() invocation
+        // on the same trainer instance is not immediately stopped/paused/aborted.
+        clearRequestFlags();
         return result;
+    }
+
+    private void clearRequestFlags() {
+        this.stopRequested = false;
+        this.pauseRequested = false;
+        this.abortRequested = false;
     }
 
     public double processMicroBatch(TrainingBatch batch, long accumulationWindowTokens) {
@@ -552,9 +706,13 @@ public class EvoLlmTrainer {
                 float logSumExp = maxLogit + (float) Math.log(sumExp);
                 microBatchRawLoss += (logSumExp - logitsData[offset + target]);
 
+                // MEAN_PER_TOKEN: each token gradient is divided by the total valid tokens
+                // in the accumulation window so one optimizer step = mean-per-token gradient.
+                // SUM: raw per-token gradients (loss is the plain sum over valid tokens),
+                // no batch-size or window-size dependent normalization.
                 float normFactor = (lossReduction == LossReduction.MEAN_PER_TOKEN)
                         ? accumulationWindowTokens
-                        : (accumulationWindowTokens / (float) batch.batchSize);
+                        : 1.0f;
 
                 for (int v = 0; v < vocabSize; v++) {
                     float prob = (float) Math.exp(logitsData[offset + v] - logSumExp);
@@ -679,38 +837,58 @@ public class EvoLlmTrainer {
         public float getLr() { return lr; }
         public int getStepCounter() { return stepCounter; }
 
-        public Map<String, float[]> getMVectorMap(List<Tensor> paramList) {
+        public Map<String, float[]> getMVectorMap(List<Tensor> paramList, List<String> canonicalNames) {
             Map<String, float[]> res = new HashMap<>();
             for (int i = 0; i < paramList.size(); i++) {
                 Tensor p = paramList.get(i);
                 float[] mArr = m.get(p);
-                if (mArr != null) res.put("p_" + i, mArr.clone());
+                if (mArr == null) continue;
+                String canonical = canonicalNames != null && i < canonicalNames.size() ? canonicalNames.get(i) : null;
+                if (canonical != null && !canonical.isEmpty()) {
+                    res.put("n_" + canonical, mArr.clone());
+                } else {
+                    res.put("p_" + i, mArr.clone());
+                }
             }
             return res;
         }
 
-        public Map<String, float[]> getVVectorMap(List<Tensor> paramList) {
+        public Map<String, float[]> getVVectorMap(List<Tensor> paramList, List<String> canonicalNames) {
             Map<String, float[]> res = new HashMap<>();
             for (int i = 0; i < paramList.size(); i++) {
                 Tensor p = paramList.get(i);
                 float[] vArr = v.get(p);
-                if (vArr != null) res.put("p_" + i, vArr.clone());
+                if (vArr == null) continue;
+                String canonical = canonicalNames != null && i < canonicalNames.size() ? canonicalNames.get(i) : null;
+                if (canonical != null && !canonical.isEmpty()) {
+                    res.put("n_" + canonical, vArr.clone());
+                } else {
+                    res.put("p_" + i, vArr.clone());
+                }
             }
             return res;
         }
 
         public void loadState(List<Tensor> paramList, Map<String, float[]> mVectors, Map<String, float[]> vVectors, int stepCount) {
+            loadState(paramList, Collections.emptyList(), mVectors, vVectors, stepCount);
+        }
+
+        public void loadState(List<Tensor> paramList, List<String> canonicalNames, Map<String, float[]> mVectors, Map<String, float[]> vVectors, int stepCount) {
             this.stepCounter = stepCount;
             this.m.clear();
             this.v.clear();
             for (int i = 0; i < paramList.size(); i++) {
                 Tensor p = paramList.get(i);
-                String k = "p_" + i;
-                if (mVectors != null && mVectors.containsKey(k)) {
-                    this.m.put(p, mVectors.get(k).clone());
+                String canonical = canonicalNames != null && i < canonicalNames.size() ? canonicalNames.get(i) : null;
+                String k = (canonical != null && !canonical.isEmpty()) ? "n_" + canonical : null;
+                String legacyK = "p_" + i;
+                String mKey = (k != null && mVectors != null && mVectors.containsKey(k)) ? k : legacyK;
+                String vKey = (k != null && vVectors != null && vVectors.containsKey(k)) ? k : legacyK;
+                if (mVectors != null && mVectors.containsKey(mKey)) {
+                    this.m.put(p, mVectors.get(mKey).clone());
                 }
-                if (vVectors != null && vVectors.containsKey(k)) {
-                    this.v.put(p, vVectors.get(k).clone());
+                if (vVectors != null && vVectors.containsKey(vKey)) {
+                    this.v.put(p, vVectors.get(vKey).clone());
                 }
             }
         }

@@ -90,6 +90,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	private McpSettingsPage mcpSettingsPage;
 	private eu.kalafatic.evolution.view.editors.pages.TeipProtocolPage teipProtocolPage;
 	private eu.kalafatic.evolution.view.editors.pages.AdminPage adminPage;
+	private eu.kalafatic.evolution.view.editors.pages.CognitiveAdminPage cognitiveAdminPage;
 	private GraphPage graphPage;
 	private BrowserPage browserPage;
 	private ApprovalPage approvalPage;
@@ -241,6 +242,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
 				adminPage = eu.kalafatic.evolution.view.editors.pages.AdminPageFactory.createAdminPage(getContainer(), this, orchestrator);
 				int adminIdx = addPage(adminPage);
 				setPageText(adminIdx, "Administration");
+
+				cognitiveAdminPage = new eu.kalafatic.evolution.view.editors.pages.CognitiveAdminPage(getContainer(), this, orchestrator);
+				int cognitiveIdx = addPage(cognitiveAdminPage);
+				setPageText(cognitiveIdx, "Cognitive Services");
 
 				comparePage = ComparePageFactory.createComparePage(this, orchestrator);
 				textEditor = new NestedTextEditor();
@@ -636,6 +641,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
 	public void showAiChatPage() {
 		setActivePageByControl(aiChatPage);
+	}
+
+	public void showForgePage() {
+		setActivePageByControl(forgePage);
 	}
 
 	public void showArchitecturePage() {

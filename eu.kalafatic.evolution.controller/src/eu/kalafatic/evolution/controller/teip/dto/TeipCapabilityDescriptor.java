@@ -6,15 +6,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Capability descriptor catalog DTO for TEIP 1.0.
+ * Capability descriptor catalog DTO for TEIP 1.1.
  */
 public class TeipCapabilityDescriptor {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String timestamp = java.time.Instant.now().toString();
+    private List<Map<String, Object>> capabilities = new ArrayList<>();
     private List<String> supportedModes = new ArrayList<>();
     private List<Map<String, Object>> agents = new ArrayList<>();
     private List<Map<String, Object>> models = new ArrayList<>();
+    private List<Map<String, Object>> availableModels = new ArrayList<>();
     private List<Map<String, Object>> tools = new ArrayList<>();
     private Map<String, Boolean> features = new HashMap<>();
 
@@ -33,6 +35,9 @@ public class TeipCapabilityDescriptor {
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 
+    public List<Map<String, Object>> getCapabilities() { return capabilities; }
+    public void setCapabilities(List<Map<String, Object>> capabilities) { this.capabilities = capabilities != null ? capabilities : new ArrayList<>(); }
+
     public List<String> getSupportedModes() { return supportedModes; }
     public void setSupportedModes(List<String> supportedModes) { this.supportedModes = supportedModes != null ? supportedModes : new ArrayList<>(); }
 
@@ -41,6 +46,9 @@ public class TeipCapabilityDescriptor {
 
     public List<Map<String, Object>> getModels() { return models; }
     public void setModels(List<Map<String, Object>> models) { this.models = models != null ? models : new ArrayList<>(); }
+
+    public List<Map<String, Object>> getAvailableModels() { return availableModels; }
+    public void setAvailableModels(List<Map<String, Object>> availableModels) { this.availableModels = availableModels != null ? availableModels : new ArrayList<>(); }
 
     public List<Map<String, Object>> getTools() { return tools; }
     public void setTools(List<Map<String, Object>> tools) { this.tools = tools != null ? tools : new ArrayList<>(); }

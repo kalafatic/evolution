@@ -203,7 +203,7 @@ public class ForgeSettingsDialogHardwareEstimationTest {
         eu.kalafatic.evolution.forge.controller.api.ForgeJob job = new eu.kalafatic.evolution.forge.controller.api.ForgeJob("test-job-1");
         assertNotNull(job.getTrainingConfig());
         assertEquals(0.01, job.getTrainingConfig().getLearningRate(), 0.001);
-        assertEquals(32, job.getTrainingConfig().getEpochs());
+        assertEquals(4, job.getTrainingConfig().getEpochs());
         assertEquals(16, job.getTrainingConfig().getBatchSize());
         assertEquals(12.0, job.getTrainingConfig().getTimeBudgetHours(), 0.001);
         assertEquals(0.15, job.getTrainingConfig().getValidationRatio(), 0.001);

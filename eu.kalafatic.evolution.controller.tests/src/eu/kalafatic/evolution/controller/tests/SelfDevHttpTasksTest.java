@@ -54,7 +54,7 @@ public class SelfDevHttpTasksTest {
         mockRepoRoot = tempFolder.newFolder("mockEvoRepo");
         File rootPom = new File(mockRepoRoot, "pom.xml");
         try (FileWriter fw = new FileWriter(rootPom)) {
-            fw.write("<project><modelVersion>4.0.0</modelVersion><groupId>eu.kalafatic.evolution</groupId><artifactId>eu.kalafatic.evolution.aggregator</artifactId><version>2.6.5-SNAPSHOT</version><packaging>pom</packaging></project>");
+            fw.write("<project><modelVersion>4.0.0</modelVersion><groupId>eu.kalafatic.evolution</groupId><artifactId>eu.kalafatic.evolution.aggregator</artifactId><version>2.6.11-SNAPSHOT</version><packaging>pom</packaging></project>");
         }
 
         File controllerModelPkg = new File(mockRepoRoot, "eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/forge/model/llm");

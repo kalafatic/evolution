@@ -36,10 +36,10 @@ public class EvoValidatorTest {
         File evoIni = new File(tempDir, "evo.ini");
         evoIni.createNewFile();
 
-        File viewBundle = new File(pluginsDir, "eu.kalafatic.evolution.view_2.6.5.20260906.jar");
+        File viewBundle = new File(pluginsDir, "eu.kalafatic.evolution.view_2.6.11.20260906.jar");
         viewBundle.createNewFile();
 
-        File controllerBundle = new File(pluginsDir, "eu.kalafatic.evolution.controller_2.6.5.20260906.jar");
+        File controllerBundle = new File(pluginsDir, "eu.kalafatic.evolution.controller_2.6.11.20260906.jar");
         controllerBundle.createNewFile();
 
         File configIni = new File(configDir, "config.ini");

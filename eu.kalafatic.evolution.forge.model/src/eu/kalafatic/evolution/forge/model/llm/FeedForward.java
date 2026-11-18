@@ -13,7 +13,7 @@ public class FeedForward {
         this.W2 = new SimpleTensor(dff, dModel);
         this.W3 = new SimpleTensor(dModel, dff);
         
-        java.util.Random r = new java.util.Random();
+        java.util.Random r = new java.util.Random(42);
         float stdIn = (float) (1.0 / Math.sqrt(dModel));
         float stdOut = (float) (1.0 / Math.sqrt(dff));
 

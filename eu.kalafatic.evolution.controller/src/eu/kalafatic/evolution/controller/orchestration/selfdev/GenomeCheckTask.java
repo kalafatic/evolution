@@ -39,18 +39,32 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        File repoRoot = context.getProjectRoot();
+        // WP3 (D-13): prefer the isolated reactor; never build the genome module
+        // inside the canonical Git repository.
+        SelfDevBuildPolicy policy = SelfDevBuildPolicy.resolve(context);
+        File buildRoot = context.getPreparedReactorDirectory();
+        boolean isolatedReactorAvailable = buildRoot != null && new File(buildRoot, "pom.xml").exists()
+                && new File(buildRoot, "eu.kalafatic.evolution.selfdev.genome").exists();
+        if (!isolatedReactorAvailable) {
+            buildRoot = genomeModuleDir;
+        }
 
-        // Build genome module
         MavenBuildExecutor executor = new MavenBuildExecutor(id);
         File logFile = new File(context.getLogDirectory(), "genome_build.log");
 
-        File repoRootPom = new File(repoRoot, "pom.xml");
         TaskResult buildRes;
-        if (repoRootPom.exists()) {
-            buildRes = executor.executeBuild(repoRoot, Arrays.asList("clean", "install"), Arrays.asList("-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests"), logFile, 10);
+        if (isolatedReactorAvailable) {
+            java.util.List<String> args = new java.util.ArrayList<>(Arrays.asList("-pl", "eu.kalafatic.evolution.selfdev.genome", "-am"));
+            if (policy.isSkipTests()) {
+                args.add("-DskipTests");
+            }
+            buildRes = executor.executeBuild(buildRoot, Arrays.asList("clean", "install"), args, logFile, 10);
         } else {
-            buildRes = executor.executeBuild(genomeModuleDir, Arrays.asList("clean", "install"), Arrays.asList("-DskipTests"), logFile, 10);
+            java.util.List<String> args = new java.util.ArrayList<>();
+            if (policy.isSkipTests()) {
+                args.add("-DskipTests");
+            }
+            buildRes = executor.executeBuild(genomeModuleDir, Arrays.asList("clean", "install"), args, logFile, 10);
         }
 
         if (!buildRes.isSuccess()) {
@@ -64,14 +78,14 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
             Object hub = getInstanceMethod.invoke(null);
             if (hub != null) {
                 Method updateMethod = hubClass.getDeclaredMethod("updateGenome", File.class);
-                updateMethod.invoke(hub, repoRoot);
+                updateMethod.invoke(hub, context.getRepositoryRoot());
             }
         } catch (Throwable ignored) {
         }
 
         return new TaskResult.Builder(id)
                 .status(TaskStatus.SUCCESS)
-                .message("Genome module compiled and verified successfully.")
+                .message("Genome module compiled and verified successfully (policy: " + policy + ").")
                 .workingDirectory(genomeModuleDir)
                 .logFile(logFile)
                 .build();

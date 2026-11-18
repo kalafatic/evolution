@@ -141,8 +141,11 @@ public class ForgeDurationAndSyncTest {
         List<DatasetBuilder.Sample> boundedSamples = builder.buildSlidingWindow(encoded, 4, 1, 3);
         assertEquals(3, boundedSamples.size());
 
-        // Test buildTrainingSamples with NormalizedSample and maxSamples limit
+        // Test buildTrainingSamples with NormalizedSample and maxSamples limit.
+        // INSTRUCTION samples produce exactly one training sample per record
+        // (response-token loss masking), so the maxSamples cap is observable.
         NormalizedSample sample1 = new NormalizedSample();
+        sample1.setType(eu.kalafatic.evolution.forge.data.api.TrainingSampleType.INSTRUCTION);
         sample1.setInstruction("Hello");
         sample1.setResponse("World");
 

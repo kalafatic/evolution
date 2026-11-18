@@ -51,6 +51,19 @@ public class KVCache {
         return layerCaches.get(layerIndex);
     }
 
+    /**
+     * Returns the number of token positions already stored in the cache,
+     * i.e. the position offset of the next token to be processed.
+     */
+    public int getCachedSequenceLength() {
+        for (LayerKVCache layerCache : layerCaches) {
+            if (layerCache.getKeyCache() != null) {
+                return (int) layerCache.getKeyCache().getShape()[0];
+            }
+        }
+        return 0;
+    }
+
     public void clear() {
         for (LayerKVCache layerCache : layerCaches) {
             layerCache.clear();

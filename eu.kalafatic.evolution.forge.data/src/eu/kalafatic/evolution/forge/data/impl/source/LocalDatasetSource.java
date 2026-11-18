@@ -29,6 +29,7 @@ public class LocalDatasetSource implements DatasetSource {
     private int currentFileIdx = 0;
     private BufferedReader currentReader = null;
     private NormalizedSample nextBufferedSample = null;
+    private final java.util.ArrayDeque<NormalizedSample> pendingRecords = new java.util.ArrayDeque<>();
 
     public LocalDatasetSource(String path) {
         this(new DatasetSourceConfig("LOCAL", path != null ? path : "."));
@@ -78,7 +79,8 @@ public class LocalDatasetSource implements DatasetSource {
                 }
             } else if (child.isFile()) {
                 String name = child.getName().toLowerCase();
-                if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".json") || name.endsWith(".jsonl") || name.endsWith(".java")) {
+                if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".json") || name.endsWith(".jsonl")
+                        || name.endsWith(".java") || name.endsWith(".py") || name.endsWith(".js") || name.endsWith(".ts")) {
                     filesToProcess.add(child);
                 }
             }
@@ -87,6 +89,11 @@ public class LocalDatasetSource implements DatasetSource {
 
     private void advanceToNextSample() {
         nextBufferedSample = null;
+
+        // Serve records already produced by hybrid recordization of the previous file.
+        if (serveNextPendingRecord()) {
+            return;
+        }
 
         // Check hard bounds
         if (config.getMaxSamples() > 0 && stats.getTotalSamplesRead() >= config.getMaxSamples()) {
@@ -104,7 +111,6 @@ public class LocalDatasetSource implements DatasetSource {
                 }
 
                 String line;
-                StringBuilder textBuf = new StringBuilder();
                 boolean isJsonl = file.getName().toLowerCase().endsWith(".jsonl");
 
                 if (isJsonl) {
@@ -124,23 +130,35 @@ public class LocalDatasetSource implements DatasetSource {
                         currentFileIdx++;
                     }
                 } else {
-                    // Read complete file for txt/md/java
+                    // Hybrid recordization for txt/md/java files:
+                    // - lines too short to ever pass quality filtering (<= 3 chars) become
+                    //   standalone records so the pipeline can REJECT and account them;
+                    // - all remaining lines are merged per file (whole-file sample
+                    //   semantics preserved for meaningful content).
+                    List<String> mergedLines = new ArrayList<>();
                     while ((line = currentReader.readLine()) != null) {
-                        textBuf.append(line).append("\n");
+                        String trimmed = line.trim();
+                        if (!trimmed.isEmpty() && trimmed.length() <= 3) {
+                            if (!mergedLines.isEmpty()) {
+                                pendingRecords.add(buildMergedRecord(mergedLines, file));
+                                mergedLines.clear();
+                            }
+                            pendingRecords.add(NormalizedSample.createTextSample(trimmed, file.getAbsolutePath() + "#short-record"));
+                        } else {
+                            mergedLines.add(line);
+                        }
                     }
                     currentReader.close();
                     currentReader = null;
                     currentFileIdx++;
 
-                    String content = textBuf.toString().trim();
-                    if (!content.isEmpty()) {
-                        NormalizedSample sample = NormalizedSample.createTextSample(content, file.getAbsolutePath());
-                        if (file.getName().endsWith(".java")) {
-                            sample.setType(TrainingSampleType.CODE);
-                        }
-                        stats.incrementSamplesRead();
-                        stats.addBytesRead(content.getBytes(StandardCharsets.UTF_8).length);
-                        nextBufferedSample = sample;
+                    if (!mergedLines.isEmpty()) {
+                        pendingRecords.add(buildMergedRecord(mergedLines, file));
+                    }
+
+                    // Serve the first produced record; remaining records are served
+                    // on subsequent advanceToNextSample() calls.
+                    if (serveNextPendingRecord()) {
                         return;
                     }
                 }
@@ -149,6 +167,30 @@ public class LocalDatasetSource implements DatasetSource {
                 currentReader = null;
             }
         }
+    }
+
+    private boolean serveNextPendingRecord() {
+        NormalizedSample record = pendingRecords.pollFirst();
+        if (record == null) {
+            return false;
+        }
+        nextBufferedSample = record;
+        stats.incrementSamplesRead();
+        stats.addBytesRead(record.toFullText().getBytes(StandardCharsets.UTF_8).length);
+        return true;
+    }
+
+    private NormalizedSample buildMergedRecord(List<String> lines, File file) {
+        StringBuilder sb = new StringBuilder();
+        for (String l : lines) {
+            sb.append(l).append("\n");
+        }
+        String content = sb.toString().trim();
+        NormalizedSample sample = NormalizedSample.createTextSample(content, file.getAbsolutePath());
+        if (file.getName().endsWith(".java")) {
+            sample.setType(TrainingSampleType.CODE);
+        }
+        return sample;
     }
 
     @Override

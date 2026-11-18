@@ -304,16 +304,34 @@ public class BrowserPage extends Composite implements ServerLifecycleListener {
         });
     }
 
+    /**
+     * Resolves which registered web applications become default browser tabs: ALL
+     * evolution-generated pages, regardless of whether their port is reachable yet
+     * (the server may start concurrently with the editor). Regression guard: an
+     * earlier revision only opened a four-entry whitelist and silently dropped
+     * Forge, Architecture, Mutation, Administration and MCP Documentation tabs.
+     */
+    public static List<WebApplicationDescriptor> resolveDefaultTabApplications(
+            List<WebApplicationDescriptor> registeredApps) {
+        return registeredApps == null ? java.util.Collections.emptyList()
+                : new ArrayList<>(registeredApps);
+    }
+
     private void initializeTabs() {
         // Discover registered web applications associated with configured ports
+        // (EVO ports use the platform +20000 allocation standard: 8080→28080,
+        // 8180→28180, … via PortAllocationManager/PortRegistry).
         List<WebApplicationDescriptor> allApps = ServerManager.getInstance().getWebApplications();
         boolean hasRunningAppTab = false;
 
-        for (WebApplicationDescriptor app : allApps) {
+        for (WebApplicationDescriptor app : resolveDefaultTabApplications(allApps)) {
             if (ServerManager.getInstance().isPortRunning(app.getServerPort())) {
-                tabManager.openOrActivate(app.getFullUrl(), app.getName(), app);
                 hasRunningAppTab = true;
             }
+            // Open EVERY evolution-generated web page by default: AI Chat, Portal,
+            // Develop, MCP Studio, Forge, Architecture, Mutation, Administration
+            // and MCP Documentation.
+            tabManager.openOrActivate(app.getFullUrl(), app.getName(), app);
         }
 
         // If no running web app tabs were opened, open standard default home tab

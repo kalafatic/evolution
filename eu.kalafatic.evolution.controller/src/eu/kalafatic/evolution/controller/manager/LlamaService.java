@@ -20,6 +20,7 @@ public class LlamaService {
     private final Map<String, List<Message>> sessionMessages = new ConcurrentHashMap<>();
 
     private float temperature = 0.2f;
+    private int contextLength = 2048;
     private LlamaCppRunner runner;
 
     public LlamaService(String model, String modelPath) {
@@ -31,7 +32,7 @@ public class LlamaService {
     private void initRunner() {
         if (modelPath != null && !modelPath.isEmpty() && new File(modelPath).exists()) {
             this.runner = LlamaCppRunner.builder(modelPath)
-                    .contextLength(2048)
+                    .contextLength(contextLength)
                     .temperature(temperature)
                     .build();
         }
@@ -47,6 +48,11 @@ public class LlamaService {
 
     public void setTemperature(float temperature) {
         this.temperature = temperature;
+        initRunner();
+    }
+
+    public void setContextLength(int contextLength) {
+        this.contextLength = Math.max(512, contextLength);
         initRunner();
     }
 
@@ -305,6 +311,21 @@ public class LlamaService {
      * @return List of target model directories.
      */
     public static List<File> resolveAllTargetModelDirs() {
+        // Test isolation seam: overridable via a system property so tests never
+        // write fixture files into real user model directories.
+        String overrideProp = System.getProperty("evo.test.modelDirsOverride");
+        if (overrideProp != null && !overrideProp.trim().isEmpty()) {
+            List<File> overrides = new ArrayList<>();
+            for (String part : overrideProp.split(File.pathSeparator)) {
+                if (!part.trim().isEmpty()) {
+                    overrides.add(new File(part.trim()));
+                }
+            }
+            if (!overrides.isEmpty()) {
+                return overrides;
+            }
+        }
+
         List<File> targetDirs = new ArrayList<>();
         File workspaceModels = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
                 .getPath(eu.kalafatic.evolution.controller.resource.EvoPath.MODELS)
@@ -434,9 +455,13 @@ public class LlamaService {
         File file = new File(System.getProperty("user.home"), ".ollama/models/" + modelName + ".gguf");
         if (file.exists()) return file;
 
-        // 3. Check user home ~/.ollama/models/evo.gguf
-        file = new File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
-        if (file.exists()) return file;
+        // 3. Check user home ~/.ollama/models/evo.gguf — only as a fallback for
+        // evo-variant names; unknown model names must never silently resolve to a
+        // default model.
+        if (isEvoVariant) {
+            file = new File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
+            if (file.exists()) return file;
+        }
 
         // Get workspace or codebase paths
         String codebasePath = ProjectModelManager.getCodebasePath();
@@ -448,8 +473,10 @@ public class LlamaService {
             if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
                 File f = new File(sourceModelsDir, modelName + ".gguf");
                 if (f.exists()) return f;
-                f = new File(sourceModelsDir, "evo.gguf");
-                if (f.exists()) return f;
+                if (isEvoVariant) {
+                    f = new File(sourceModelsDir, "evo.gguf");
+                    if (f.exists()) return f;
+                }
             }
         }
 
@@ -476,7 +503,8 @@ public class LlamaService {
                 File[] subdirs = forgeOutputDir.listFiles(File::isDirectory);
                 if (subdirs != null) {
                     for (File subdir : subdirs) {
-                        if (subdir.getName().equalsIgnoreCase(modelName) || subdir.getName().startsWith("evo-")) {
+                        if (subdir.getName().equalsIgnoreCase(modelName)
+                                || (isEvoVariant && subdir.getName().startsWith("evo-"))) {
                             File f = new File(subdir, "evo.gguf");
                             if (f.exists()) return f;
                         }
@@ -494,17 +522,24 @@ public class LlamaService {
         };
         for (File dir : candidateDirs) {
             if (dir.exists() && dir.isDirectory()) {
-                File[] files = dir.listFiles((d, name) -> name.endsWith(".gguf"));
-                if (files != null && files.length > 0) {
-                    return files[0];
+                if (isEvoVariant) {
+                    File[] files = dir.listFiles((d, name) -> name.endsWith(".gguf"));
+                    if (files != null && files.length > 0) {
+                        return files[0];
+                    }
                 }
                 File[] subdirs = dir.listFiles(File::isDirectory);
                 if (subdirs != null) {
                     for (File subdir : subdirs) {
-                        File f = new File(subdir, "evo.gguf");
-                        if (f.exists()) return f;
-                        File[] ggufs = subdir.listFiles((d, name) -> name.endsWith(".gguf"));
-                        if (ggufs != null && ggufs.length > 0) return ggufs[0];
+                        if (subdir.getName().equalsIgnoreCase(modelName)
+                                || (isEvoVariant && subdir.getName().startsWith("evo-"))) {
+                            File f = new File(subdir, "evo.gguf");
+                            if (f.exists()) return f;
+                            if (isEvoVariant) {
+                                File[] ggufs = subdir.listFiles((d, name) -> name.endsWith(".gguf"));
+                                if (ggufs != null && ggufs.length > 0) return ggufs[0];
+                            }
+                        }
                     }
                 }
             }

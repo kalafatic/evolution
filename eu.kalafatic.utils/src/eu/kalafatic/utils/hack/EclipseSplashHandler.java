@@ -109,7 +109,7 @@ public class EclipseSplashHandler extends BasicSplashHandler {
 		}
 
 		if (ver == null || ver.trim().isEmpty()) {
-			ver = "2.6.5.qualifier";
+			ver = "2.6.11.qualifier";
 		}
 
 		return ver;
