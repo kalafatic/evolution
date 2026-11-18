@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.controller.teip.dto.TeipExecutionResult;
 import eu.kalafatic.evolution.controller.teip.dto.TeipExecutionStatusResponse;
 import eu.kalafatic.evolution.controller.teip.dto.TeipHealthResponse;
 import eu.kalafatic.evolution.controller.teip.dto.TeipJsonConverter;
+import eu.kalafatic.evolution.controller.teip.dto.TeipVersionMismatchException;
 import eu.kalafatic.evolution.controller.teip.service.TeipExecutionManager;
 import eu.kalafatic.evolution.controller.teip.store.TeipEventStore;
 import fi.iki.elonen.NanoHTTPD;
@@ -24,7 +25,7 @@ import fi.iki.elonen.NanoHTTPD.Response;
 import fi.iki.elonen.NanoHTTPD.ResponseException;
 
 /**
- * Controller handling all TEIP 1.0 HTTP requests under /teip/v1.
+ * Controller handling all TEIP 1.1 HTTP requests under /teip/v1.
  */
 public class TeipApiController {
 
@@ -35,7 +36,8 @@ public class TeipApiController {
         Method method = session.getMethod();
 
         try {
-            // Check auth token if configured in system properties
+            // TEIP 1.1 §6: Authorization: Bearer <token> is REQUIRED and ENFORCED.
+            // Dev-mode opt-out (loopback-only without a token) MUST be explicit configuration.
             String configuredToken = System.getProperty("evo.teip.auth.token");
             if (configuredToken != null && !configuredToken.trim().isEmpty()) {
                 String authHeader = session.getHeaders().get("authorization");
@@ -43,6 +45,11 @@ public class TeipApiController {
                     TeipError unauth = new TeipError("AUTHENTICATION_FAILED", "Invalid or missing Bearer authorization token", null, null, false);
                     return jsonResponse(Response.Status.UNAUTHORIZED, TeipJsonConverter.toJson(unauth));
                 }
+            } else if (!isExplicitDevModeAllowed(session)) {
+                TeipError unauth = new TeipError("AUTHENTICATION_FAILED",
+                        "No TEIP bearer token configured (evo.teip.auth.token). Dev-mode opt-out requires evo.teip.devMode=true and a loopback connection.",
+                        null, null, false);
+                return jsonResponse(Response.Status.UNAUTHORIZED, TeipJsonConverter.toJson(unauth));
             }
 
             if (Method.GET.equals(method) && "/teip/v1/health".equals(uri)) {
@@ -54,9 +61,17 @@ public class TeipApiController {
             } else if (uri.startsWith("/teip/v1/executions/")) {
                 String sub = uri.substring("/teip/v1/executions/".length());
                 if (sub.endsWith("/events")) {
+                    if (!Method.GET.equals(method)) {
+                        TeipError methErr = new TeipError("METHOD_NOT_ALLOWED", "Method " + method + " not allowed on /events", null, null, false);
+                        return jsonResponse(Response.Status.METHOD_NOT_ALLOWED, TeipJsonConverter.toJson(methErr));
+                    }
                     String execId = sub.substring(0, sub.length() - "/events".length());
                     return handleGetEvents(execId, session);
                 } else if (sub.endsWith("/result")) {
+                    if (!Method.GET.equals(method)) {
+                        TeipError methErr = new TeipError("METHOD_NOT_ALLOWED", "Method " + method + " not allowed on /result", null, null, false);
+                        return jsonResponse(Response.Status.METHOD_NOT_ALLOWED, TeipJsonConverter.toJson(methErr));
+                    }
                     String execId = sub.substring(0, sub.length() - "/result".length());
                     return handleGetResult(execId);
                 } else if (sub.endsWith("/cancel")) {
@@ -74,15 +89,39 @@ public class TeipApiController {
             TeipError notFound = new TeipError("NOT_FOUND", "Endpoint not found: " + uri, null, null, false);
             return jsonResponse(Response.Status.NOT_FOUND, TeipJsonConverter.toJson(notFound));
 
+        } catch (TeipVersionMismatchException e) {
+            TeipError err = new TeipError("VERSION_MISMATCH", e.getMessage(), null, null, false);
+            return jsonResponse(Response.Status.BAD_REQUEST, TeipJsonConverter.toJson(err));
         } catch (IllegalArgumentException e) {
             TeipError err = new TeipError("VALIDATION_FAILED", e.getMessage(), null, null, false);
             return jsonResponse(Response.Status.BAD_REQUEST, TeipJsonConverter.toJson(err));
         } catch (SecurityException e) {
-            TeipError err = new TeipError("FORBIDDEN", e.getMessage(), null, null, false);
+            // TEIP 1.1 §5: canonical authorization code is AUTHORIZATION_DENIED
+            TeipError err = new TeipError("AUTHORIZATION_DENIED", e.getMessage(), null, null, false);
             return jsonResponse(Response.Status.FORBIDDEN, TeipJsonConverter.toJson(err));
         } catch (Throwable t) {
-            TeipError err = new TeipError("EXECUTION_FAILED", t.getMessage(), null, null, true);
+            // TEIP 1.1 §5: canonical internal error code is INTERNAL_ERROR (non-retryable)
+            TeipError err = new TeipError("INTERNAL_ERROR", t.getMessage(), null, null, false);
             return jsonResponse(Response.Status.INTERNAL_ERROR, TeipJsonConverter.toJson(err));
+        }
+    }
+
+    /**
+     * Explicit development opt-out (TEIP 1.1 §6): only when evo.teip.devMode=true AND the
+     * caller is on loopback may a request be admitted without a bearer token.
+     */
+    private boolean isExplicitDevModeAllowed(IHTTPSession session) {
+        String devMode = System.getProperty("evo.teip.devMode");
+        if (devMode == null || !"true".equalsIgnoreCase(devMode.trim())) {
+            return false;
+        }
+        try {
+            String remoteIp = session.getRemoteIpAddress();
+            if (remoteIp == null) return false;
+            java.net.InetAddress addr = java.net.InetAddress.getByName(remoteIp);
+            return addr.isLoopbackAddress();
+        } catch (Throwable t) {
+            return false;
         }
     }
 
@@ -106,8 +145,19 @@ public class TeipApiController {
         }
 
         TeipExecutionRequest req = TeipJsonConverter.parseExecutionRequest(postData);
-        TeipAcceptedResponse accepted = executionManager.createExecution(req);
-        return jsonResponse(Response.Status.ACCEPTED, TeipJsonConverter.toJson(accepted));
+
+        // TEIP 1.1 §4.3: Idempotency-Key header is accepted; body key takes precedence
+        if (req.getIdempotencyKey() == null || req.getIdempotencyKey().isBlank()) {
+            String headerKey = session.getHeaders().get("idempotency-key");
+            if (headerKey != null && !headerKey.isBlank()) {
+                req.setIdempotencyKey(headerKey.trim());
+            }
+        }
+
+        TeipExecutionManager.CreateOutcome outcome = executionManager.createExecution(req);
+        // TEIP 1.1 §4.3: 202 Accepted (new), 200 OK (idempotent duplicate)
+        Response.Status status = outcome.duplicate() ? Response.Status.OK : Response.Status.ACCEPTED;
+        return jsonResponse(status, TeipJsonConverter.toJson(outcome.response()));
     }
 
     private Response handleGetStatus(String executionId) {
@@ -127,8 +177,10 @@ public class TeipApiController {
                 TeipError notFound = new TeipError("NOT_FOUND", "Execution not found: " + executionId, null, null, false);
                 return jsonResponse(Response.Status.NOT_FOUND, TeipJsonConverter.toJson(notFound));
             }
-            // If running or queued, result is not yet available
-            TeipError err = new TeipError("CONFLICT", "Execution is not yet completed. Current status: " + status.getStatus(), null, null, true);
+            // If running or queued, result is not yet available.
+            // TEIP 1.1 §4.6/§5: CONFLICT is non-retryable and carries details.currentStatus.
+            TeipError err = new TeipError("CONFLICT", "Execution is not yet completed. Current status: " + status.getStatus(), null, null, false);
+            err.getDetails().put("currentStatus", status.getStatus().name());
             return jsonResponse(Response.Status.CONFLICT, TeipJsonConverter.toJson(err));
         }
         return jsonResponse(Response.Status.OK, TeipJsonConverter.toJson(res));
@@ -156,10 +208,10 @@ public class TeipApiController {
 
         JSONObject resp = new JSONObject();
         resp.put("protocol", "TEIP");
-        resp.put("version", "1.0");
+        resp.put("version", "1.1");
         resp.put("executionId", executionId);
         resp.put("status", "CANCELLED");
-        resp.put("message", "Execution cancelled successfully");
+        resp.put("message", "Execution cancellation accepted.");
         return jsonResponse(Response.Status.OK, resp.toString(2));
     }
 

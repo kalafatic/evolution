@@ -30,9 +30,32 @@ public class PositionalEncoding {
 
     public Tensor forward(Tensor input) {
         int seqLen = (int) input.getShape()[0];
+        validateSeqLen(seqLen, 0);
         Tensor posPart = new SimpleTensor(seqLen, dModel);
         System.arraycopy(encoding.getData(), 0, posPart.getData(), 0, seqLen * dModel);
         return input.add(posPart);
+    }
+
+    /**
+     * Forward pass for autoregressive generation: applies positional encodings
+     * for positions [startPos, startPos + seqLen) instead of always starting at 0.
+     */
+    public Tensor forwardAtOffset(Tensor input, int startPos) {
+        if (startPos < 0) {
+            throw new IllegalArgumentException("Position offset cannot be negative: " + startPos);
+        }
+        int seqLen = (int) input.getShape()[0];
+        validateSeqLen(seqLen, startPos);
+        Tensor posPart = new SimpleTensor(seqLen, dModel);
+        System.arraycopy(encoding.getData(), startPos * dModel, posPart.getData(), 0, seqLen * dModel);
+        return input.add(posPart);
+    }
+
+    private void validateSeqLen(int seqLen, int offset) {
+        if ((long) seqLen + offset > maxSeqLen) {
+            throw new IllegalArgumentException("Sequence length (" + seqLen + ") at offset (" + offset
+                    + ") exceeds positional encoding table length (" + maxSeqLen + ")");
+        }
     }
 
     public Tensor backward(Tensor dOutput) {

@@ -116,6 +116,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         long cleanerRejections = 0;
         long filterRejections = 0;
         long duplicateRejections = 0;
+        boolean cancellationRequested = false;
 
         int sourceIndex = 0;
         int searchRound = 1;
@@ -143,10 +144,22 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
             }
         }
 
+        boolean hasExplicitSources = request.getSources() != null && !request.getSources().isEmpty();
+
         while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
+            if (request.isCancellationRequested()) {
+                System.out.println("[ACQUISITION LOG] Acquisition cancelled before processing sources.");
+                cancellationRequested = true;
+                break;
+            }
 
             // Process all available sources in the sources list
             while (sourceIndex < sources.size() && (targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
+                if (request.isCancellationRequested()) {
+                    System.out.println("[ACQUISITION LOG] Acquisition cancelled between sources.");
+                    cancellationRequested = true;
+                    break;
+                }
                 DatasetSource source = sources.get(sourceIndex++);
                 if (source == null || !attemptedSourceNames.add(source.getSourceName())) {
                     continue;
@@ -186,6 +199,11 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 boolean sourceReadError = false;
                 try (source) {
                     while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && source.hasNext()) {
+                        if (request.isCancellationRequested()) {
+                            System.out.println("[ACQUISITION LOG] Acquisition cancelled during source read.");
+                            cancellationRequested = true;
+                            break;
+                        }
                         NormalizedSample s = source.next();
                         byte[] rawBytes = s.toFullText().getBytes(StandardCharsets.UTF_8);
                         long rawLen = rawBytes.length;
@@ -258,10 +276,13 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         remaining, remaining / (1024.0 * 1024.0));
             }
 
+            if (cancellationRequested) {
+                break;
+            }
+
             // TARGET-DRIVEN SEARCH EXPANSION LOOP:
             // If accumulatedUsableBytes < targetUsableBytes and current sources list is exhausted,
             // trigger progressive discovery expansion ONLY IF explicit sources were NOT requested by the caller!
-            boolean hasExplicitSources = request.getSources() != null && !request.getSources().isEmpty();
             if (hasExplicitSources) {
                 System.out.println("[ACQUISITION LOG] Explicit sources were provided in request. Disabling multi-domain search expansion to prevent mixing unrelated datasets.");
                 break;
@@ -299,6 +320,62 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
             }
         }
 
+        // BOUNDED, COVERAGE-GATED AMPLIFICATION:
+        // When explicitly-selected sources are exhausted close to the target,
+        // complete the shortfall with explicitly marked copies of already-accepted
+        // samples. Policy:
+        //  - engages only for EXPLICITLY requested sources (the user selected this
+        //    corpus; discovery-driven acquisition never amplifies remote data);
+        //  - engages only when the first pass covered at least
+        //    amplificationMinCoveragePercent (default 30%) of the target —
+        //    genuinely insufficient sources still report INSUFFICIENT_SOURCE_DATA;
+        //  - the amplified volume is capped at twice the first-pass yield
+        //    (total <= 3x); copies are marked ("#amplified" source/id) and bypass
+        //    deduplication.
+        if (!cancellationRequested
+                && request.isAllowAmplification()
+                && hasExplicitSources
+                && targetUsableBytes > 0
+                && accumulatedUsableBytes < targetUsableBytes
+                && !acceptedSamples.isEmpty()) {
+            double coverage = (accumulatedUsableBytes * 100.0) / targetUsableBytes;
+            if (coverage >= request.getAmplificationMinCoveragePercent()) {
+                long firstPassYield = accumulatedUsableBytes;
+                long amplificationCap = firstPassYield * 2;
+                long amplifiedBytes = 0;
+                int copyIndex = 0;
+                while (!request.isCancellationRequested()
+                        && accumulatedUsableBytes < targetUsableBytes
+                        && amplifiedBytes < amplificationCap
+                        && copyIndex < acceptedSamples.size()) {
+                    NormalizedSample original = acceptedSamples.get(copyIndex);
+                    byte[] cleanBytes = original.toFullText().getBytes(StandardCharsets.UTF_8);
+                    long cleanLen = cleanBytes.length;
+                    if (cleanLen == 0) {
+                        copyIndex++;
+                        continue;
+                    }
+
+                    // Explicitly marked copy: distinguishable from source records in
+                    // every downstream report and future dedup pass.
+                    NormalizedSample copy = copyForAmplification(original);
+                    acceptedSamples.add(copy);
+                    accumulatedUsableBytes += cleanLen;
+                    amplifiedBytes += cleanLen;
+                    long tokens = copy.getTokenCount() > 0 ? copy.getTokenCount() : cleanLen / 4;
+                    accounting.recordAccepted(cleanLen, tokens);
+                    copyIndex++;
+                }
+                if (amplifiedBytes > 0) {
+                    System.out.printf("[ACQUISITION LOG] Coverage-gated amplification: firstPass=%d bytes (%.2f%%), amplified=%d bytes, total=%d bytes.%n",
+                            firstPassYield, coverage, amplifiedBytes, accumulatedUsableBytes);
+                }
+            } else {
+                System.out.printf("[ACQUISITION LOG] Amplification skipped: first-pass coverage %.2f%% below gate %.2f%%.%n",
+                        coverage, request.getAmplificationMinCoveragePercent());
+            }
+        }
+
         // CRITICAL PIPELINE INVARIANT CHECK
         if (!acceptedSamples.isEmpty() && accumulatedUsableBytes == 0) {
             throw new IllegalStateException("CRITICAL PIPELINE INVARIANT VIOLATION: acceptedSamples count="
@@ -321,16 +398,25 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         long shortfall = targetReached ? 0 : (targetUsableBytes - accumulatedUsableBytes);
         double coveragePercent = targetUsableBytes > 0 ? ((accumulatedUsableBytes * 100.0) / targetUsableBytes) : 100.0;
 
-        TrainingDataAcquisitionResult.Status status = (targetReached && eval.isAllHardRequirementsSatisfied())
-                ? TrainingDataAcquisitionResult.Status.READY
-                : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
+        TrainingDataAcquisitionResult.Status status;
+        if (cancellationRequested) {
+            status = TrainingDataAcquisitionResult.Status.CANCELLED;
+        } else {
+            status = (targetReached && eval.isAllHardRequirementsSatisfied())
+                    ? TrainingDataAcquisitionResult.Status.READY
+                    : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
+        }
 
         List<String> sourcesUsedNames = new ArrayList<>(successfullyReadSourceNames);
         List<String> sourcesExhaustedNamesList = sourceExhausted ? new ArrayList<>(exhaustedSourceNames) : List.of();
         List<String> errorMessages = new ArrayList<>(failedSourceNames);
 
         String failureReason = null;
-        if (!targetReached) {
+        if (cancellationRequested) {
+            failureReason = "CANCELLED: Acquisition stopped by user request. Acquired usable: "
+                    + accumulatedUsableBytes + " bytes of " + targetUsableBytes + " requested.";
+            System.out.println("[ACQ-TRACE] ACQUISITION CANCELLED! " + failureReason);
+        } else if (!targetReached) {
             failureReason = "INSUFFICIENT_SOURCE_DATA: Source universe exhausted before satisfying minimum usable bytes requirement. Requested: "
                     + targetUsableBytes + " bytes (" + (targetUsableBytes / (1024 * 1024)) + " MB), Acquired Usable: "
                     + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Max Download: "
@@ -346,7 +432,9 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     targetUsableBytes, accumulatedUsableBytes, coveragePercent);
         }
 
-        List<String> hardFailures = (targetReached && eval.isAllHardRequirementsSatisfied()) ? List.of() : List.of("MinimumUsableBytesNotSatisfied");
+        List<String> hardFailures = cancellationRequested
+                ? List.of("CancelledByUser")
+                : ((targetReached && eval.isAllHardRequirementsSatisfied()) ? List.of() : List.of("MinimumUsableBytesNotSatisfied"));
 
         System.out.printf("[HF-ACQ][run=%s][FINAL-RESULT]\nstatus=%s\ntargetReached=%b\nrequestedUsableBytes=%d\naccumulatedUsableBytes=%d\nshortfallBytes=%d\ncoveragePercent=%.2f%%\nacceptedSamples=%d\ncleanerRejections=%d\nfilterRejections=%d\nduplicateRejections=%d\nsourcesUsed=%s\n",
                 runId, status, targetReached, targetUsableBytes, accumulatedUsableBytes, shortfall, coveragePercent,
@@ -380,5 +468,39 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 errorMessages,
                 "EVO_TARGET_DRIVEN_MULTI_SOURCE_PIPELINE"
         );
+    }
+
+    /**
+     * Creates an explicitly marked amplification copy of an accepted sample:
+     * identical content, distinguishable provenance ("#amplified" suffix) so
+     * reports and future deduplication passes can identify it.
+     */
+    private NormalizedSample copyForAmplification(NormalizedSample original) {
+        NormalizedSample copy = new NormalizedSample();
+        copy.setId(original.getId() != null ? original.getId() + "#amplified" : null);
+        copy.setType(original.getType());
+        if (original.getText() != null) {
+            copy.setText(original.getText());
+        }
+        if (original.getInstruction() != null) {
+            copy.setInstruction(original.getInstruction());
+        }
+        if (original.getResponse() != null) {
+            copy.setResponse(original.getResponse());
+        }
+        if (original.getConversationId() != null) {
+            copy.setConversationId(original.getConversationId());
+        }
+        if (original.getConversationMessages() != null) {
+            copy.setConversationMessages(new ArrayList<>(original.getConversationMessages()));
+        }
+        if (original.getMessages() != null) {
+            copy.setMessages(new ArrayList<>(original.getMessages()));
+        }
+        copy.setSource((original.getSource() != null ? original.getSource() : "unknown") + "#amplified");
+        copy.setQualityScore(original.getQualityScore());
+        copy.setTokenCount(original.getTokenCount());
+        copy.setHash(original.getHash());
+        return copy;
     }
 }

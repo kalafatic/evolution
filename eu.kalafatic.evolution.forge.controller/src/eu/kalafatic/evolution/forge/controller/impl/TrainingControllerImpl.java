@@ -55,9 +55,10 @@ public class TrainingControllerImpl implements TrainingController {
     @Override
     public Map<String, Object> getTrainingMetrics(String sessionId) {
         if (trainingService == null) {
+            // Honest unavailability: no fabricated loss/accuracy values are ever reported.
             Map<String, Object> metrics = new HashMap<>();
-            metrics.put("loss", 0.5);
-            metrics.put("acc", 0.8);
+            metrics.put("available", false);
+            metrics.put("reason", "No training service is registered for this session");
             return metrics;
         }
         return trainingService.getTrainingMetrics(sessionId);
@@ -66,11 +67,7 @@ public class TrainingControllerImpl implements TrainingController {
     @Override
     public List<String> getRecentEvents(String sessionId) {
         if (trainingService == null) {
-            List<String> events = new ArrayList<>();
-            events.add("14:22:01 Training Started");
-            events.add("14:22:15 Epoch 1 Complete");
-            events.add("14:22:18 Loss = 0.91");
-            return events;
+            return new ArrayList<>();
         }
         return trainingService.getRecentEvents(sessionId);
     }

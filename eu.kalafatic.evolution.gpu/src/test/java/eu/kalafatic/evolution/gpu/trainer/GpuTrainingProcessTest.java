@@ -19,7 +19,7 @@ public class GpuTrainingProcessTest {
         File outDir = tempFolder.newFolder("output");
 
         GpuTrainerConfig config = new GpuTrainerConfig();
-        config.setModelName("test_gpu_train");
+        config.setModelName("test_gpu_diag");
         config.setWorkDir(workDir.getAbsolutePath());
         config.setOutputDir(outDir.getAbsolutePath());
         config.setEpochs(1);
@@ -30,16 +30,22 @@ public class GpuTrainingProcessTest {
         GpuTrainingProcess process = new GpuTrainingProcess();
         GpuTrainingProcess.TrainingStatus status = process.executeTraining(config);
 
-        assertTrue(status.isCompleted());
-        assertEquals(1, status.getTotalEpochsCompleted());
+        assertTrue("Diagnostics process must complete", status.isCompleted());
         assertNotNull(status.getComputeDeviceUsed());
-        assertNotNull(status.getModelArtifactPath());
+        assertNotNull(status.getTechnicalNote());
+        assertFalse(status.getTechnicalNote().isEmpty());
+        assertNotNull(status.getCudaVerificationLabel());
 
-        File modelFile = new File(status.getModelArtifactPath());
-        assertTrue(modelFile.exists());
-        assertTrue(modelFile.length() > 0);
+        // Honesty invariants: no fake training, no fake model artifact.
+        assertFalse("Native training must never be reported as executed without real kernels",
+                status.isNativeTrainingExecuted());
+        assertEquals("No epochs may be reported from a non-executed training", 0, status.getTotalEpochsCompleted());
+        assertNotNull(status.getModelArtifactPath());
+        assertTrue("No model artifact may be produced by a diagnostics-only run",
+                status.getModelArtifactPath().isEmpty());
 
         File logFile = new File(status.getLogFilePath());
         assertTrue(logFile.exists());
+        assertTrue(logFile.length() > 0);
     }
 }

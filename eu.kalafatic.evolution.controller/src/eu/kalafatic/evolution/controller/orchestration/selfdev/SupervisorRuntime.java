@@ -13,6 +13,26 @@ public class SupervisorRuntime implements ProcessLifecycle {
     private static volatile Process uiRcpSupervisorProcess;
     private final SupervisorClient client = new SupervisorClient();
 
+    // WP5: processes launched by this JVM, terminated on JVM shutdown so the
+    // parent never leaves unmanaged children behind (best-effort; identity-verified).
+    private static final java.util.Set<ProcessOwnershipRecord> LAUNCHED_OWNERS =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static volatile boolean shutdownHookInstalled = false;
+
+    private static synchronized void installShutdownHook() {
+        if (shutdownHookInstalled) {
+            return;
+        }
+        shutdownHookInstalled = true;
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            for (ProcessOwnershipRecord record : LAUNCHED_OWNERS) {
+                try {
+                    ProcessOwnershipRecord.terminateOwnedProcessTree(record);
+                } catch (Throwable ignored) {}
+            }
+        }, "selfdev-owned-processes-cleanup"));
+    }
+
     @Override
     public TaskResult start(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
@@ -24,11 +44,24 @@ public class SupervisorRuntime implements ProcessLifecycle {
         int supervisorPort = context.getEffectiveSupervisorPort();
         int controlPort = context.getEffectiveSupervisorControlPort();
 
-        if (isAlive() && activeClient.ping()) {
-            return new TaskResult.Builder("start_supervisor")
-                    .status(TaskStatus.SUCCESS)
-                    .message("Supervisor is already running and responding to ping on " + activeClient.getBaseUrl() + ".")
-                    .build();
+        // WP5 (D-01/D-17): the fast path is accepted ONLY when the current run's
+        // ownership record exists, the PID identity matches, and the endpoint
+        // responds. A foreign/stale supervisor is never adopted.
+        ProcessOwnershipRecord existingOwnership =
+                ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR);
+        if (existingOwnership != null
+                && ProcessOwnershipRecord.isOwnedByRun(existingOwnership, context)
+                && ProcessOwnershipRecord.verifyIdentity(existingOwnership)
+                && activeClient.ping()) {
+            Integer recordedPort = existingOwnership.getEffectivePorts().get("supervisor");
+            if (recordedPort != null && recordedPort.intValue() == supervisorPort) {
+                return new TaskResult.Builder("start_supervisor")
+                        .status(TaskStatus.SUCCESS)
+                        .message("Supervisor for run " + context.getRunId() + " is already running and responding (PID " + existingOwnership.getPid() + ").")
+                        .build();
+            }
+            System.err.println("[START_SUPERVISOR] Ownership record for run " + context.getRunId()
+                    + " exists but effective ports differ (recorded=" + recordedPort + ", expected=" + supervisorPort + "). Not adopting.");
         }
 
         if (supervisorProcess != null) {
@@ -62,6 +95,9 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
         cmd.add("-Dport=" + supervisorPort);
         cmd.add("-Dcontrol.port=" + controlPort);
+        // WP7: explicit child EVO HTTP port contract - the supervisor must use
+        // this port for the EVO child instead of deriving offsets itself (D-26).
+        cmd.add("-Devo.http.port=" + context.getEffectiveServerPort());
         cmd.add("-jar");
         cmd.add(jarFile.getAbsolutePath());
         cmd.add(context.getProjectRoot().getAbsolutePath());
@@ -93,6 +129,19 @@ public class SupervisorRuntime implements ProcessLifecycle {
             context.setSupervisorPid(pid);
             context.setSupervisorExecutable(jarFile.getAbsolutePath());
             context.setSupervisorWorkingDirectory(jarFile.getParentFile());
+
+            // WP5: persist the run-scoped ownership record (PID, parent PID,
+            // command line, workdir, runtime path, start time, effective ports).
+            java.util.Map<String, Integer> ports = new java.util.LinkedHashMap<>();
+            ports.put("supervisor", supervisorPort);
+            ports.put("control", controlPort);
+            ProcessOwnershipRecord ownership = ProcessOwnershipRecord.snapshot(
+                    ProcessOwnershipRecord.ProcessKind.SUPERVISOR, context, supervisorProcess,
+                    "java", String.join(" ", cmd), jarFile.getParentFile(),
+                    new File(context.getRuntimeDirectory(), "supervisor"), ports);
+            ProcessOwnershipRecord.write(context, ownership);
+            LAUNCHED_OWNERS.add(ownership);
+            installShutdownHook();
 
             log("[START_EVO_SUPERVISOR][PROCESS_STARTED_HEADLESS]");
             log("pid=" + pid);
@@ -167,6 +216,15 @@ public class SupervisorRuntime implements ProcessLifecycle {
                     killProcessTree(uiRcpSupervisorProcess);
                     uiRcpSupervisorProcess = null;
                 }
+                // WP5: persist the failed ownership outcome so no stale record
+                // remains for the next run.
+                ProcessOwnershipRecord failedOwnership =
+                        ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR);
+                if (failedOwnership != null) {
+                    LAUNCHED_OWNERS.remove(failedOwnership);
+                    ProcessOwnershipRecord.clear(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR, exitCode);
+                }
+                context.setSupervisorPid(-1);
 
                 String failMsg = "Supervisor process started but failed ping check: " + readyRes.getMessage();
                 if (exitCode != -1) {
@@ -194,6 +252,13 @@ public class SupervisorRuntime implements ProcessLifecycle {
                 killProcessTree(uiRcpSupervisorProcess);
                 uiRcpSupervisorProcess = null;
             }
+            ProcessOwnershipRecord failedOwnership =
+                    ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR);
+            if (failedOwnership != null) {
+                LAUNCHED_OWNERS.remove(failedOwnership);
+                ProcessOwnershipRecord.clear(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR, -1);
+            }
+            context.setSupervisorPid(-1);
             return new TaskResult.Builder("start_supervisor")
                     .status(TaskStatus.FAILED)
                     .message("Failed to start Supervisor process: " + e.getMessage())
@@ -253,10 +318,16 @@ public class SupervisorRuntime implements ProcessLifecycle {
     @Override
     public TaskResult stop(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
-        SupervisorClient activeClient = new SupervisorClient(context);
+        SupervisorClient activeClient = context != null ? new SupervisorClient(context) : null;
         long targetPid = context != null ? context.getSupervisorPid() : -1;
 
-        if (supervisorProcess == null && uiRcpSupervisorProcess == null && targetPid <= 0) {
+        // WP5 (D-16/D-18): STOP operates only on the current run's ownership
+        // record with verified PID identity. No handle and no record => nothing
+        // owned by this run to stop (honest no-op).
+        ProcessOwnershipRecord ownership =
+                context != null ? ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR) : null;
+
+        if (supervisorProcess == null && uiRcpSupervisorProcess == null && targetPid <= 0 && ownership == null) {
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
                     .message("Supervisor is not running or not owned by current run.")
@@ -264,53 +335,100 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
 
         try {
-            // STOP must terminate only the process owned by the current run.
-            // If we launched the process directly, terminate our owned process.
-            if (supervisorProcess != null) {
-                if (activeClient.ping()) {
-                    try {
-                        activeClient.sendCommand("shutdown", null);
-                        Thread.sleep(800);
-                    } catch (Exception ignored) {}
-                }
-                killProcessTree(supervisorProcess);
-                supervisorProcess = null;
-            } else if (targetPid > 0) {
-                java.util.Optional<ProcessHandle> ph = ProcessHandle.of(targetPid);
-                if (ph.isPresent()) {
-                    ProcessHandle p = ph.get();
-                    if (p.isAlive()) {
-                        if (activeClient.ping()) {
-                            try {
-                                activeClient.sendCommand("shutdown", null);
-                                Thread.sleep(800);
-                            } catch (Exception ignored) {}
-                        }
-                        p.descendants().forEach(ProcessHandle::destroyForcibly);
-                        p.destroyForcibly();
-                    }
-                }
+            Integer exitStatus = null;
+            boolean refused = false;
+
+            // 1. Graceful shutdown via HTTP when the owned endpoint is responsive.
+            if (activeClient != null && activeClient.ping()) {
+                try {
+                    activeClient.sendCommand("shutdown", null);
+                    Thread.sleep(800);
+                } catch (Exception ignored) {}
             }
 
+            // 2. Verify identity before force termination; never kill an
+            // unrelated process that reused the recorded PID (D-18).
+            boolean stopped = false;
+            if (ownership != null && ProcessOwnershipRecord.verifyIdentity(ownership)) {
+                java.util.Optional<ProcessHandle> ph = ProcessHandle.of(ownership.getPid());
+                if (ph.isPresent() && ph.get().isAlive()) {
+                    try {
+                        ph.get().descendants().forEach(ProcessHandle::destroyForcibly);
+                    } catch (Throwable ignored) {}
+                    ph.get().destroyForcibly();
+                    try {
+                        ph.get().onExit().get(5, java.util.concurrent.TimeUnit.SECONDS);
+                        stopped = !ph.get().isAlive();
+                    } catch (Throwable ignored) {
+                        stopped = !ph.get().isAlive();
+                    }
+                    exitStatus = stopped ? 0 : -1;
+                } else {
+                    stopped = true; // already gone
+                }
+            } else if (ownership != null && ownership.getPid() > 0 && isPidAlive(ownership.getPid())) {
+                refused = true;
+                System.err.println("[STOP_SUPERVISOR] Refusing to terminate live PID " + ownership.getPid()
+                        + ": identity does not match the ownership record (stale or recycled PID).");
+            }
+
+            // 3. Fall back to same-JVM handles (they were launched by this JVM).
+            if (supervisorProcess != null) {
+                if (supervisorProcess.isAlive()) {
+                    killProcessTree(supervisorProcess);
+                }
+                stopped = true;
+                supervisorProcess = null;
+            }
             if (uiRcpSupervisorProcess != null) {
-                killProcessTree(uiRcpSupervisorProcess);
+                if (uiRcpSupervisorProcess.isAlive()) {
+                    killProcessTree(uiRcpSupervisorProcess);
+                }
                 uiRcpSupervisorProcess = null;
             }
 
+            // 4. Persist shutdown result and clear run-scoped state.
+            if (ownership != null && exitStatus == null) {
+                exitStatus = 0;
+            }
+            if (context != null && ownership != null) {
+                ProcessOwnershipRecord.clear(context, ProcessOwnershipRecord.ProcessKind.SUPERVISOR, exitStatus);
+                LAUNCHED_OWNERS.remove(ownership);
+            }
             if (context != null) {
                 context.setSupervisorPid(-1);
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            return new TaskResult.Builder("stop_supervisor")
-                    .status(TaskStatus.SUCCESS)
-                    .message("Supervisor process stopped.")
-                    .duration(duration)
-                    .build();
+            if (refused) {
+                return TaskResult.failure("stop_supervisor",
+                        "Supervisor stop refused: ownership identity verification failed for live PID.", null);
+            }
+            if (stopped || exitStatus != null) {
+                return new TaskResult.Builder("stop_supervisor")
+                        .status(TaskStatus.SUCCESS)
+                        .message("Supervisor process stopped (graceful-first, identity-verified).")
+                        .duration(duration)
+                        .exitCode(exitStatus != null ? exitStatus : 0)
+                        .build();
+            }
+            return TaskResult.failure("stop_supervisor",
+                    "Supervisor stop incomplete: owned process could not be verified/terminated.", null);
 
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
             return TaskResult.failure("stop_supervisor", "Failed to stop Supervisor process: " + e.getMessage(), e);
+        }
+    }
+
+    private static boolean isPidAlive(long pid) {
+        if (pid <= 0) {
+            return false;
+        }
+        try {
+            return ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+        } catch (Throwable t) {
+            return false;
         }
     }
 
@@ -378,11 +496,10 @@ public class SupervisorRuntime implements ProcessLifecycle {
         if (jarInRuntime.exists()) return jarInRuntime;
 
         BuildArtifact artifact = context.getArtifact(ArtifactType.SUPERVISOR);
-        if (artifact != null && artifact.getPath().exists()) return artifact.getPath();
+        if (artifact != null && artifact.getPath() != null && artifact.getPath().exists()) return artifact.getPath();
 
-        File targetJar = new File(context.getProjectRoot(), "eu.kalafatic.evolution.supervisor/target/eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
-        if (targetJar.exists()) return targetJar;
-
+        // Run-scoped export artifact only. Reading build output from the canonical
+        // repository target/ directory is forbidden (run isolation, defect D-38).
         File exportJar = new File(context.getExportDirectory(), "eu.kalafatic.evolution.supervisor.jar");
         if (exportJar.exists()) return exportJar;
 

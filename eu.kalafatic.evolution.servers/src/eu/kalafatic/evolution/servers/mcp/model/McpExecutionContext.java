@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.servers.mcp.model;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import eu.kalafatic.evolution.servers.service.ValidatedPrincipal;
+
 /**
  * Execution context associated with an MCP request.
  * Contains session identifier, security principal, cancellation flag, and timeout bounds.
@@ -14,9 +16,31 @@ public class McpExecutionContext {
     private long timeoutMs = 60000L; // default 60 seconds
     private final long startTimeMs = System.currentTimeMillis();
 
+    /** Raw bearer token as presented by the client (never logged). */
+    private String bearerToken;
+
+    /** Principal established by successful bearer authentication. */
+    private ValidatedPrincipal authenticatedPrincipal;
+
     public McpExecutionContext(String sessionId, String principal) {
         this.sessionId = (sessionId != null && !sessionId.trim().isEmpty()) ? sessionId : "default-session";
         this.principal = (principal != null && !principal.trim().isEmpty()) ? principal : "SYSTEM";
+    }
+
+    public String getBearerToken() {
+        return bearerToken;
+    }
+
+    public void setBearerToken(String bearerToken) {
+        this.bearerToken = bearerToken;
+    }
+
+    public ValidatedPrincipal getAuthenticatedPrincipal() {
+        return authenticatedPrincipal;
+    }
+
+    public void setAuthenticatedPrincipal(ValidatedPrincipal authenticatedPrincipal) {
+        this.authenticatedPrincipal = authenticatedPrincipal;
     }
 
     public McpExecutionContext(String sessionId, String principal, long timeoutMs) {

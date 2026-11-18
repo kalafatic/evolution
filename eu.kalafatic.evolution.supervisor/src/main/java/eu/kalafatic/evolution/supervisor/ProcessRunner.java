@@ -66,6 +66,9 @@ public class ProcessRunner {
         }
 
         File logFile = getLogFile(variantDir, taskId, "build.log");
+        // WP3: tests are enabled by default; skipping requires the explicit
+        // smoke-build escape hatch (-Devo.build.skipTests=true).
+        boolean skipTests = Boolean.getBoolean("evo.build.skipTests");
         List<String> command = new ArrayList<>();
         if (PlatformInfo.isWindows()) {
             File mvnwCmd = new File(variantDir, "mvnw.cmd");
@@ -78,7 +81,9 @@ public class ProcessRunner {
             command.add("verify");
             command.add("-B");
             command.add("-ntp");
-            command.add("-DskipTests");
+            if (skipTests) {
+                command.add("-DskipTests");
+            }
             command.add("-Pwindows");
         } else {
             File mvnw = new File(variantDir, "mvnw");
@@ -96,7 +101,9 @@ public class ProcessRunner {
             command.add("verify");
             command.add("-B");
             command.add("-ntp");
-            command.add("-DskipTests");
+            if (skipTests) {
+                command.add("-DskipTests");
+            }
             command.add("-Plinux");
         }
 
@@ -166,6 +173,23 @@ public class ProcessRunner {
         }
     }
 
+    /**
+     * WP7 (D-26/D-28): child EVO HTTP port resolution - explicit parent contract
+     * (-Devo.http.port) first, base default otherwise. Never a busy port.
+     */
+    private static int resolveChildPort() {
+        String explicit = System.getProperty("evo.http.port");
+        if (explicit != null && !explicit.trim().isEmpty()) {
+            try {
+                int port = Integer.parseInt(explicit.trim());
+                if (port > 0) {
+                    return findAvailablePort(port);
+                }
+            } catch (Exception ignored) {}
+        }
+        return findAvailablePort(SupervisorMain.DEFAULT_EVO_SERVER_PORT);
+    }
+
     private static int findAvailablePort(int startPort) {
         for (int p = startPort; p < startPort + 50; p++) {
             try (java.net.ServerSocket ss = new java.net.ServerSocket(p)) {
@@ -173,7 +197,9 @@ public class ProcessRunner {
                 return p;
             } catch (Exception ignored) {}
         }
-        return startPort;
+        // WP7 (D-25): never report a busy port as available.
+        System.err.println("[PORT] No free port found in range " + startPort + ".." + (startPort + 49));
+        return -1;
     }
 
     public boolean runApplication(File variantDir) {
@@ -198,7 +224,11 @@ public class ProcessRunner {
                     executable.setExecutable(true, false);
                 } catch (Exception ignored) {}
             }
-            int portToUse = findAvailablePort(SupervisorMain.DEFAULT_EVO_SERVER_PORT);
+            int portToUse = resolveChildPort();
+            if (portToUse <= 0) {
+                System.err.println("[RUN] No free child port available (port conflict). Aborting application startup.");
+                return false;
+            }
             boolean ready = prepareNetworkAndExecutableAccess(executable, portToUse);
             if (!ready) {
                 System.err.println("[RUN] Mandatory network readiness gate failed for executable: " + executable.getAbsolutePath() + ". Aborting application startup.");
@@ -275,21 +305,34 @@ public class ProcessRunner {
             System.out.println("[MOCK PATCH] Returning mock result: " + mockPatchResult);
             return mockPatchResult;
         }
+
+        // WP9: Git simulation boundary - when enabled, no git mutation is
+        // executed; the patch application is validated and refused.
+        boolean simulation = Boolean.parseBoolean(System.getProperty("evo.git.simulation", "true"));
+        if (simulation) {
+            System.out.println("[PATCH] Git simulation mode: refusing real patch application for " + baseDir.getAbsolutePath());
+            return false;
+        }
+
         System.out.println("[PATCH] Applying diff to " + baseDir.getAbsolutePath());
         File patchFile = new File(baseDir, "temp.patch");
         try {
-            // Discard any local modifications and clean the directory first to ensure incoming patch overrides all old data
+            // WP9 (D-42): never discard unrecorded local modifications. A dirty
+            // working tree refuses patch application (read-only check).
             try {
-                System.out.println("[PATCH] Resetting and cleaning local workspace to override with incoming changes...");
-                ProcessBuilder pbReset = new ProcessBuilder("git", "reset", "--hard");
-                pbReset.directory(baseDir);
-                pbReset.start().waitFor();
-
-                ProcessBuilder pbClean = new ProcessBuilder("git", "clean", "-fd");
-                pbClean.directory(baseDir);
-                pbClean.start().waitFor();
-            } catch (Exception resetEx) {
-                System.err.println("[PATCH] Warning during local reset/clean: " + resetEx.getMessage());
+                ProcessBuilder pbStatus = new ProcessBuilder("git", "status", "--porcelain");
+                pbStatus.directory(baseDir);
+                pbStatus.redirectErrorStream(true);
+                Process statusProcess = pbStatus.start();
+                String statusOut = new String(statusProcess.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                statusProcess.waitFor();
+                if (statusOut != null && !statusOut.trim().isEmpty()) {
+                    System.err.println("[PATCH] Refusing patch application: working tree is not clean (pre-existing changes protected):\n" + statusOut);
+                    return false;
+                }
+            } catch (Exception statusEx) {
+                System.err.println("[PATCH] Working-tree cleanliness check failed: " + statusEx.getMessage());
+                return false;
             }
 
             try (FileOutputStream fos = new FileOutputStream(patchFile)) {
@@ -320,6 +363,14 @@ public class ProcessRunner {
                 currentProcess.destroyForcibly();
             }
         }
+    }
+
+    /**
+     * WP5 (D-22): idempotency support - whether this runner currently owns a
+     * live RCP child process.
+     */
+    public boolean isRCPRunning() {
+        return currentProcess != null && currentProcess.isAlive();
     }
 
     public boolean runRCP(File variantDir, String targetPath, String statePath) {
@@ -366,7 +417,15 @@ public class ProcessRunner {
             }
         }
 
-        int portToUse = findAvailablePort(SupervisorMain.DEFAULT_EVO_SERVER_PORT);
+        int portToUse = resolveChildPort();
+        if (portToUse <= 0) {
+            File logDir = new File(variantDir, "self-dev-run");
+            File taskLogFile = new File(logDir, (taskId != null) ? "task_execution_" + taskId + ".log" : "evo_execution.log");
+            String errStr = "[RUN] No free child port available (port conflict). Aborting RCP launch.";
+            System.err.println(errStr);
+            appendToLog(taskLogFile, errStr);
+            return false;
+        }
         boolean ready = prepareNetworkAndExecutableAccess(targetFile, portToUse);
         if (!ready) {
             File logDir = new File(variantDir, "self-dev-run");

@@ -76,7 +76,7 @@ public class EvoModelWriter {
             float[] data = tensorData.get(i);
 
             String tensorChecksum = EvoModelContentHash.calculateFloatArrayChecksum(data);
-            byte[] rawBytes = floatArrayToByteArrayChunked(data);
+            byte[] rawBytes = floatArrayToByteArray(data, dtype, resolveQuantizationScale(name, dtype, data, metadata));
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (GZIPOutputStream gzos = new GZIPOutputStream(baos)) {
@@ -137,6 +137,9 @@ public class EvoModelWriter {
                 metaJson.put(entry.getKey(), entry.getValue());
             }
         }
+        // Full 64-hex-char content hash stored in metadata for integrity verification
+        // (the 32-byte header field keeps only the prefix for backwards compatibility).
+        metaJson.put("evo_content_hash", contentHash);
 
         try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile.toFile())))) {
             dos.write(MAGIC_V2.getBytes(StandardCharsets.US_ASCII));
@@ -145,7 +148,7 @@ public class EvoModelWriter {
             dos.writeShort(PROTOCOL_VERSION);
             dos.writeShort(0); // flags
             dos.writeInt(64);  // header size
-            dos.writeInt(5);   // section count
+            dos.writeInt(6);   // section count (modelName, arch, tokenizer, vocab, manifest, metadata)
             dos.writeLong(System.currentTimeMillis());
 
             byte[] hashBytes = contentHash.getBytes(StandardCharsets.UTF_8);
@@ -176,11 +179,88 @@ public class EvoModelWriter {
         dos.write(bytes);
     }
 
-    private byte[] floatArrayToByteArrayChunked(float[] floats) {
-        ByteBuffer bb = ByteBuffer.allocate(floats.length * Float.BYTES).order(ByteOrder.BIG_ENDIAN);
-        for (float f : floats) {
-            bb.putFloat(f);
+    /**
+     * Serializes float values into the compact on-disk representation of the given dtype:
+     * F32 = 4-byte big-endian floats, F16 = 2-byte half-precision, BF16 = 2-byte truncated
+     * floats, INT8 = 4-byte big-endian float scale followed by 1-byte quantized values.
+     * INT4 packed storage is not implemented and is rejected at write time.
+     */
+    private byte[] floatArrayToByteArray(float[] floats, EvoDtype dtype, float int8Scale) {
+        ByteBuffer bb;
+        switch (dtype) {
+            case F32 -> {
+                bb = ByteBuffer.allocate(floats.length * Float.BYTES).order(ByteOrder.BIG_ENDIAN);
+                for (float f : floats) {
+                    bb.putFloat(f);
+                }
+            }
+            case F16 -> {
+                bb = ByteBuffer.allocate(floats.length * Short.BYTES).order(ByteOrder.BIG_ENDIAN);
+                for (float f : floats) {
+                    bb.putShort(floatToFloat16(f));
+                }
+            }
+            case BF16 -> {
+                bb = ByteBuffer.allocate(floats.length * Short.BYTES).order(ByteOrder.BIG_ENDIAN);
+                for (float f : floats) {
+                    int bits = Float.floatToIntBits(f);
+                    bb.putShort((short) (bits >>> 16));
+                }
+            }
+            case INT8 -> {
+                float scale = int8Scale > 0.0f ? int8Scale : 1.0f;
+                bb = ByteBuffer.allocate(Float.BYTES + floats.length).order(ByteOrder.BIG_ENDIAN);
+                bb.putFloat(scale);
+                for (float f : floats) {
+                    int q = Math.round(f / scale);
+                    q = Math.max(-127, Math.min(127, q));
+                    bb.put((byte) q);
+                }
+            }
+            case INT4 -> {
+                throw new IllegalArgumentException("INT4 tensor storage requires packed nibble encoding which is not implemented; tensor must use F32/F16/BF16/INT8");
+            }
+            default -> {
+                bb = ByteBuffer.allocate(floats.length * Float.BYTES).order(ByteOrder.BIG_ENDIAN);
+                for (float f : floats) {
+                    bb.putFloat(f);
+                }
+            }
         }
         return bb.array();
+    }
+
+    private float resolveQuantizationScale(String tensorName, EvoDtype dtype, float[] data, Map<String, String> metadata) {
+        if (dtype != EvoDtype.INT8) return 0.0f;
+        if (metadata != null && tensorName != null) {
+            String stored = metadata.get("tensor_scale_" + tensorName);
+            if (stored != null) {
+                try {
+                    return Float.parseFloat(stored);
+                } catch (NumberFormatException ignored) {
+                    // fall through to recomputation
+                }
+            }
+        }
+        float maxAbs = 0.0f;
+        for (float v : data) {
+            maxAbs = Math.max(maxAbs, Math.abs(v));
+        }
+        return maxAbs == 0.0f ? 1.0f : maxAbs / 127.0f;
+    }
+
+    private static short floatToFloat16(float val) {
+        int bits = Float.floatToIntBits(val);
+        int sign = (bits >>> 16) & 0x8000;
+        int exp = ((bits >>> 23) & 0xFF) - 127 + 15;
+        int mant = bits & 0x007FFFFF;
+
+        if (exp <= 0) {
+            return (short) sign;
+        } else if (exp >= 31) {
+            return (short) (sign | 0x7C00);
+        } else {
+            return (short) (sign | (exp << 10) | (mant >>> 13));
+        }
     }
 }

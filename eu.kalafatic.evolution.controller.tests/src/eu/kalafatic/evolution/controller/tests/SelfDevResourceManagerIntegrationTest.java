@@ -84,9 +84,9 @@ public class SelfDevResourceManagerIntegrationTest {
         TaskResult failedCopy = TaskResult.failure("COPY", "Simulated source copy failure", null);
         context.recordTaskResult(failedCopy);
 
-        // Execute dependent task BUILD
-        TaskResult buildResult = orchestrator.getTaskRegistry() != null && orchestrator.getTaskRegistry().containsKey("BUILD")
-                ? orchestrator.getTaskRegistry().get("BUILD").execute(context)
+        // Execute dependent task BUILD_EVO (canonical build ID; alias "BUILD" was removed in WP2)
+        TaskResult buildResult = orchestrator.getTaskRegistry() != null && orchestrator.getTaskRegistry().containsKey("BUILD_EVO")
+                ? orchestrator.getTaskRegistry().get("BUILD_EVO").execute(context)
                 : null;
 
         if (buildResult != null) {

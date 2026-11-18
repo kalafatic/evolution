@@ -8,7 +8,9 @@ public class BuildEvoTask extends AbstractSelfDevTask {
     public BuildEvoTask(String id) {
         super(id, "Build EVO RCP (" + id + ")");
         TychoEvoRcpBuilder evoBuilder = new TychoEvoRcpBuilder();
-        evoBuilder.setSkipTests(true);
+        // WP3: explicit build policy. Tests are ENABLED by default; skipping is only
+        // possible via the explicit smoke-build escape hatch (-Devo.build.skipTests).
+        evoBuilder.setSkipTests(SelfDevBuildPolicy.resolve(null).isSkipTests());
         this.builder = evoBuilder;
     }
 

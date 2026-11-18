@@ -49,6 +49,8 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.log,
  eu.kalafatic.evolution.controller.manager,
  eu.kalafatic.evolution.controller.manager.removal,
+ eu.kalafatic.evolution.controller.cognitive,
+ eu.kalafatic.evolution.controller.cognitive.model,
  eu.kalafatic.evolution.controller.mediation,
  eu.kalafatic.evolution.controller.mediation.analysis,
  eu.kalafatic.evolution.controller.mediation.model,
@@ -101,5 +103,6 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.teip.dto,
  eu.kalafatic.evolution.controller.teip.mcp,
  eu.kalafatic.evolution.controller.teip.service,
- eu.kalafatic.evolution.controller.teip.store
+ eu.kalafatic.evolution.controller.teip.store,
+ eu.kalafatic.evolution.controller.harness
 Bundle-ClassPath: .

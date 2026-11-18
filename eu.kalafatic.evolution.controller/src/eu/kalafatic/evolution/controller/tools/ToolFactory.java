@@ -40,6 +40,24 @@ public class ToolFactory {
         registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetProjectStructureTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetProjectStructureTool());
         registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetDependenciesTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.GetDependenciesTool());
         registerTool(eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FormatTool.NAME, new eu.kalafatic.evolution.controller.tools.java.JavaDevelopmentTools.FormatTool());
+
+        // Connected coding harnesses (Phase 3, WP-3.8/WP-3.9): Darwin selects external coding
+        // agents (e.g. OpenCode) through the connected-application registry.
+        registerTool(CodingHarnessTool.NAME, new CodingHarnessTool());
+
+        // Register built-in connected application adapters
+        try {
+            eu.kalafatic.evolution.controller.harness.ConnectedApplicationRegistry registry =
+                    eu.kalafatic.evolution.controller.harness.ConnectedApplicationRegistry.getInstance();
+            registry.registerAdapter(new eu.kalafatic.evolution.controller.harness.OpenCodeCodingHarnessAdapter());
+            registry.registerAdapter(new eu.kalafatic.evolution.controller.harness.DStudioCodingHarnessAdapter());
+            // Phase 6: DCode is the default family coding harness.
+            registry.registerAdapter(new eu.kalafatic.evolution.controller.harness.DCodeCodingHarnessAdapter());
+            if (registry.getSelectedApplicationId().isEmpty()) {
+                registry.selectApplication(
+                        eu.kalafatic.evolution.controller.harness.DCodeCodingHarnessAdapter.APPLICATION_ID);
+            }
+        } catch (Throwable ignored) {}
     }
 
     /**

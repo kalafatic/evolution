@@ -2284,11 +2284,13 @@
         function renderDemoFallback() {
             const area = document.getElementById('viz-area');
             if (currentViz === 'TRAINING') {
-                renderTrainingViz({ loss: '0.2451', acc: '0.8920' }, ['Demo started', 'Data loaded', 'Batch 100 processing...']);
+                // Honest fallback: no fabricated loss/accuracy values are displayed
+                // when the backend is unreachable.
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Backend unreachable: training visualization is not available. No simulated metrics are shown.</div>`;
             } else if (currentViz === 'ARCHITECTURE') {
-                renderArchitectureViz(model);
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Backend unreachable: architecture visualization is not available.</div>`;
             } else if (currentViz === 'DATASET') {
-                renderDatasetViz({ size: 10000, vocab: 5000 }, { raw: "This is a demo sample text for visualization fallback.", tokens: [1, 4, 12, 5, 2] });
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Backend unreachable: dataset visualization is not available.</div>`;
             } else {
                 area.innerHTML = `<div style="padding:20px; color:var(--accent)">[DEMO MODE] Visualization simulation active.</div>`;
             }

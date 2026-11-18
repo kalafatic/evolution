@@ -172,19 +172,25 @@ public class DemoDocumentController {
             user = "admin"; // Default principal in line with AdminApiController
         }
 
-        String sid = session.getParms() != null ? session.getParms().get("sessionId") : null;
-        if (sid == null || sid.trim().isEmpty()) {
-            String auth = headers.get("authorization");
-            if (auth == null) auth = headers.get("Authorization");
-            if (auth != null && auth.startsWith("Bearer ")) {
-                sid = auth.substring(7).trim();
-            }
-        }
-        if (sid == null || sid.trim().isEmpty()) {
-            sid = "mcp-session-" + System.currentTimeMillis();
+        String bearer = null;
+        String auth = headers.get("authorization");
+        if (auth == null) auth = headers.get("Authorization");
+        if (auth != null && auth.startsWith("Bearer ")) {
+            bearer = auth.substring(7).trim();
         }
 
-        return new McpExecutionContext(sid, user);
+        String sid = session.getParms() != null ? session.getParms().get("sessionId") : null;
+        if (sid == null || sid.trim().isEmpty()) {
+            if (bearer != null) {
+                sid = "mcp-" + Integer.toHexString(bearer.hashCode());
+            } else {
+                sid = "mcp-session-" + System.currentTimeMillis();
+            }
+        }
+
+        McpExecutionContext context = new McpExecutionContext(sid, user);
+        context.setBearerToken(bearer);
+        return context;
     }
 
     private Response jsonResponse(Object data) throws IOException {

@@ -65,7 +65,21 @@ public class MultiHeadAttention {
     }
 
     public Tensor forward(Tensor x) {
+        return forward(x, null);
+    }
+
+    /**
+     * Single sequence forward pass with an optional per-position attention mask
+     * (length == seqLen, 1.0 = attend, 0.0 = masked). The caller mask is combined
+     * with the causal mask: a position is attendable only if it is not in the
+     * future AND not masked by the caller.
+     */
+    public Tensor forward(Tensor x, float[] attentionMask) {
         Objects.requireNonNull(x, "Input tensor x cannot be null");
+        if (attentionMask != null && attentionMask.length != x.getShape()[0]) {
+            throw new IllegalArgumentException("Attention mask length (" + attentionMask.length
+                    + ") must match sequence length (" + x.getShape()[0] + ")");
+        }
         this.lastX = x;
         int seqLen = (int) x.getShape()[0];
 
@@ -95,8 +109,15 @@ public class MultiHeadAttention {
                 int qRowOffset = r * dModel + headOffset;
                 int scoreRowOffset = r * seqLen;
                 float maxVal = Float.NEGATIVE_INFINITY;
+                boolean anyAttendable = false;
 
-                for (int c = 0; c <= r; c++) {
+                for (int c = 0; c < seqLen; c++) {
+                    boolean masked = c > r || (attentionMask != null && attentionMask[c] == 0.0f);
+                    if (masked) {
+                        softData[scoreRowOffset + c] = -1e9f;
+                        continue;
+                    }
+                    anyAttendable = true;
                     int kRowOffset = c * dModel + headOffset;
                     float dot = 0.0f;
                     for (int d = 0; d < headDim; d++) {
@@ -108,23 +129,29 @@ public class MultiHeadAttention {
                         maxVal = scaledScore;
                     }
                 }
-                for (int c = r + 1; c < seqLen; c++) {
-                    softData[scoreRowOffset + c] = -1e9f;
+
+                if (!anyAttendable) {
+                    for (int c = 0; c < seqLen; c++) {
+                        softData[scoreRowOffset + c] = 0.0f;
+                    }
+                    continue;
                 }
 
                 float sumExp = 0.0f;
-                for (int c = 0; c <= r; c++) {
+                for (int c = 0; c < seqLen; c++) {
+                    if (softData[scoreRowOffset + c] == -1e9f) continue;
                     float expVal = (float) Math.exp(softData[scoreRowOffset + c] - maxVal);
                     softData[scoreRowOffset + c] = expVal;
                     sumExp += expVal;
                 }
-                for (int c = r + 1; c < seqLen; c++) {
-                    softData[scoreRowOffset + c] = 0.0f;
-                }
 
                 if (sumExp > 0.0f) {
-                    for (int c = 0; c <= r; c++) {
-                        softData[scoreRowOffset + c] /= sumExp;
+                    for (int c = 0; c < seqLen; c++) {
+                        if (softData[scoreRowOffset + c] == -1e9f) {
+                            softData[scoreRowOffset + c] = 0.0f;
+                        } else {
+                            softData[scoreRowOffset + c] /= sumExp;
+                        }
                     }
                 }
             }
@@ -137,7 +164,7 @@ public class MultiHeadAttention {
             for (int r = 0; r < seqLen; r++) {
                 int scoreRowOffset = r * seqLen;
                 int outRowOffset = r * headDim;
-                for (int c = 0; c <= r; c++) {
+                for (int c = 0; c < seqLen; c++) {
                     float p = softData[scoreRowOffset + c];
                     if (p == 0.0f) continue;
                     int vRowOffset = c * dModel + headOffset;

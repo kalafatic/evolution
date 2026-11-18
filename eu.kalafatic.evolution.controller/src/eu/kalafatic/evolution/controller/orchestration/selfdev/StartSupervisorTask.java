@@ -38,11 +38,8 @@ public class StartSupervisorTask extends AbstractSelfDevTask {
             if (exportJar.exists() && exportJar.length() > 0) return exportJar;
         }
 
-        if (context.getProjectRoot() != null) {
-            java.io.File targetJar = new java.io.File(context.getProjectRoot(), "eu.kalafatic.evolution.supervisor/target/eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
-            if (targetJar.exists() && targetJar.length() > 0) return targetJar;
-        }
-
+        // Run-scoped isolated reactor output only. The canonical repository target/
+        // directory is never consulted (run isolation, defect D-38).
         if (context.getPreparedReactorDirectory() != null) {
             java.io.File reactorJar = new java.io.File(context.getPreparedReactorDirectory(), "eu.kalafatic.evolution.supervisor/target/eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
             if (reactorJar.exists() && reactorJar.length() > 0) return reactorJar;
@@ -66,21 +63,20 @@ public class StartSupervisorTask extends AbstractSelfDevTask {
             SupervisorClient client = new SupervisorClient(context);
             TaskResult evoRes = client.sendCommand("start-evo", exportPath);
 
-            // Record START_EVO task result in context so downstream tasks know EVO RCP has been started
-            TaskResult startEvoSuccess = TaskResult.success("START_EVO", "EVO RCP product started via Supervisor command (" + evoRes.getMessage() + ")");
-            context.recordTaskResult(startEvoSuccess);
-
             if (evoRes.isSuccess()) {
+                // Only a verified /start-evo success may record START_EVO in the context.
+                context.recordTaskResult(TaskResult.success("START_EVO", "EVO RCP product started via Supervisor command (" + evoRes.getMessage() + ")"));
                 return new TaskResult.Builder(id)
                         .status(TaskStatus.SUCCESS)
                         .message("Supervisor started and successfully launched EVO RCP product: " + evoRes.getMessage())
                         .duration(superResult.getDuration() + evoRes.getDuration())
                         .build();
             } else {
-                logInfo("Supervisor start-evo endpoint returned non-success: " + evoRes.getMessage());
+                // Honest failure: the supervisor is up but the EVO child did not start.
+                logError("Supervisor start-evo endpoint returned non-success: " + evoRes.getMessage());
                 return new TaskResult.Builder(id)
-                        .status(TaskStatus.SUCCESS)
-                        .message("Supervisor started on port " + context.getEffectiveSupervisorPort() + " (start-evo status: " + evoRes.getMessage() + ")")
+                        .status(TaskStatus.FAILED)
+                        .message("Supervisor started but /start-evo failed: " + evoRes.getMessage())
                         .duration(superResult.getDuration() + evoRes.getDuration())
                         .build();
             }

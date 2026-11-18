@@ -27,16 +27,7 @@ public class SnapshotControllerImpl implements SnapshotController {
 
     @Override
     public List<Map<String, Object>> getSnapshots(String sessionId) {
-        if (snapshotService == null) {
-            List<Map<String, Object>> list = new ArrayList<>();
-            Map<String, Object> s1 = new HashMap<>();
-            s1.put("id", "snap1");
-            s1.put("name", "Initial Snapshot");
-            s1.put("timestamp", System.currentTimeMillis() - 3600000);
-            list.add(s1);
-            return list;
-        }
-        // In a real implementation we would convert List<SnapshotInfo> to List<Map>
+        // Honest unavailability: no fabricated "Initial Snapshot" entries.
         return new ArrayList<>();
     }
 
@@ -44,18 +35,17 @@ public class SnapshotControllerImpl implements SnapshotController {
     public Map<String, Object> getSnapshot(String snapshotId) {
         Map<String, Object> s = new HashMap<>();
         s.put("id", snapshotId);
-        s.put("name", "Snapshot " + snapshotId);
-        s.put("timestamp", System.currentTimeMillis());
+        s.put("available", snapshotService != null);
         return s;
     }
 
     @Override
     public Map<String, Object> compareSnapshots(String snapshotA, String snapshotB) {
+        // Honest unavailability: a real diff requires persisted snapshot state,
+        // which the legacy snapshot service does not provide.
         Map<String, Object> diff = new HashMap<>();
-        diff.put("layersAdded", 0);
-        diff.put("layersRemoved", 0);
-        diff.put("paramDelta", 0);
-        diff.put("lossDelta", 0);
+        diff.put("available", false);
+        diff.put("reason", "Snapshot comparison is not available through the legacy forge controller");
         return diff;
     }
 }

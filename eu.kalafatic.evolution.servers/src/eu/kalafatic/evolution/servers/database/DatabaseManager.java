@@ -168,6 +168,7 @@ public class DatabaseManager {
             stmt.execute(resourcesTable);
             stmt.execute(resourceAccessTable);
             stmt.execute(auditLogTable);
+            createCognitiveTables(stmt);
 
             // Migrations for existing tables if needed
             try { stmt.execute("ALTER TABLE users ADD COLUMN display_name TEXT;"); } catch (SQLException e) {}
@@ -180,6 +181,278 @@ public class DatabaseManager {
             try { stmt.execute("ALTER TABLE sessions ADD COLUMN status TEXT DEFAULT 'ACTIVE';"); } catch (SQLException e) {}
             try { stmt.execute("ALTER TABLE sessions ADD COLUMN session_type TEXT DEFAULT 'SYSTEM';"); } catch (SQLException e) {}
             try { stmt.execute("ALTER TABLE sessions ADD COLUMN ended_at TEXT;"); } catch (SQLException e) {}
+        }
+    }
+
+    /**
+     * Cognitive Services schema (additive, idempotent). FTS tables are optional:
+     * if FTS5 is unavailable the virtual tables are skipped and services fall
+     * back to LIKE-based search.
+     */
+    private void createCognitiveTables(Statement stmt) throws SQLException {
+        // Phase 1: application identity and access
+        stmt.execute("CREATE TABLE IF NOT EXISTS applications (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "application_id TEXT UNIQUE NOT NULL," +
+                "name TEXT NOT NULL," +
+                "kind TEXT," +
+                "owner_user_id INTEGER," +
+                "enabled BOOLEAN NOT NULL DEFAULT 1," +
+                "created_at TEXT NOT NULL," +
+                "updated_at TEXT," +
+                "description TEXT," +
+                "FOREIGN KEY (owner_user_id) REFERENCES users(id)" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS application_tokens (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "application_id INTEGER NOT NULL," +
+                "user_id INTEGER NOT NULL," +
+                "token_hash TEXT UNIQUE NOT NULL," +
+                "scopes_json TEXT NOT NULL," +
+                "revoked BOOLEAN NOT NULL DEFAULT 0," +
+                "issued_at TEXT NOT NULL," +
+                "expires_at TEXT," +
+                "last_used_at TEXT," +
+                "description TEXT," +
+                "FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE," +
+                "FOREIGN KEY (user_id) REFERENCES users(id)" +
+                ");");
+
+        // Phase 1: validation policy
+        stmt.execute("CREATE TABLE IF NOT EXISTS validation_policy_config (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "rule_id TEXT UNIQUE NOT NULL," +
+                "category TEXT NOT NULL," +
+                "description TEXT," +
+                "mode TEXT NOT NULL DEFAULT 'DISABLED'," +
+                "enabled BOOLEAN NOT NULL DEFAULT 1," +
+                "severity TEXT NOT NULL DEFAULT 'WARNING'," +
+                "security_fixed BOOLEAN NOT NULL DEFAULT 0," +
+                "default_mode TEXT NOT NULL DEFAULT 'DISABLED'," +
+                "warnings INTEGER NOT NULL DEFAULT 0," +
+                "errors INTEGER NOT NULL DEFAULT 0," +
+                "last_result TEXT," +
+                "last_check_at TEXT," +
+                "updated_at TEXT NOT NULL," +
+                "updated_by TEXT" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS validation_policy_history (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "timestamp TEXT NOT NULL," +
+                "rule_id TEXT NOT NULL," +
+                "category TEXT," +
+                "old_mode TEXT," +
+                "new_mode TEXT," +
+                "changed_by TEXT," +
+                "change_reason TEXT" +
+                ");");
+
+        // Phase 2: memory index and versions
+        stmt.execute("CREATE TABLE IF NOT EXISTS memory_index (" +
+                "entry_id TEXT PRIMARY KEY," +
+                "content TEXT NOT NULL," +
+                "scope TEXT," +
+                "type TEXT," +
+                "project_ref TEXT," +
+                "user_ref TEXT," +
+                "application_ref TEXT," +
+                "confidence REAL," +
+                "validity TEXT," +
+                "updated_at INTEGER" +
+                ");");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_memory_scope_type ON memory_index (scope, type);");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_memory_project ON memory_index (project_ref);");
+
+        // Phase 3: sessions, conversations, snapshots
+        stmt.execute("CREATE TABLE IF NOT EXISTS cognitive_sessions (" +
+                "id TEXT PRIMARY KEY," +
+                "legacy_alias TEXT," +
+                "kind TEXT NOT NULL DEFAULT 'CONVERSATION'," +
+                "owner_user_id TEXT," +
+                "application_id TEXT," +
+                "project_ref TEXT," +
+                "status TEXT NOT NULL DEFAULT 'ACTIVE'," +
+                "started_at INTEGER NOT NULL," +
+                "last_activity_at INTEGER," +
+                "ended_at INTEGER," +
+                "parent_session_id TEXT," +
+                "metadata TEXT" +
+                ");");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_cog_sessions_owner ON cognitive_sessions (owner_user_id);");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_cog_sessions_project ON cognitive_sessions (project_ref);");
+        stmt.execute("CREATE TABLE IF NOT EXISTS session_relationships (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "from_session_id TEXT NOT NULL," +
+                "to_session_id TEXT NOT NULL," +
+                "kind TEXT NOT NULL," +
+                "created_at INTEGER NOT NULL" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS session_snapshots (" +
+                "id TEXT PRIMARY KEY," +
+                "session_id TEXT NOT NULL," +
+                "kind TEXT NOT NULL," +
+                "schema_version TEXT," +
+                "ref TEXT," +
+                "created_at INTEGER NOT NULL," +
+                "created_by TEXT" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS conversations (" +
+                "id TEXT PRIMARY KEY," +
+                "session_id TEXT," +
+                "title TEXT," +
+                "created_at INTEGER NOT NULL," +
+                "file_ref TEXT" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS conversation_messages (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "conversation_id TEXT NOT NULL," +
+                "sequence INTEGER NOT NULL," +
+                "role TEXT NOT NULL," +
+                "agent_type TEXT," +
+                "tool_name TEXT," +
+                "content TEXT NOT NULL," +
+                "tokens INTEGER," +
+                "timestamp INTEGER NOT NULL," +
+                "metadata TEXT" +
+                ");");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_conv_messages ON conversation_messages (conversation_id, sequence);");
+
+        // Phase 4/8: preferences, profiles, project knowledge, context snapshots
+        stmt.execute("CREATE TABLE IF NOT EXISTS user_profiles (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "user_id INTEGER NOT NULL," +
+                "display_name TEXT," +
+                "locale TEXT," +
+                "timezone TEXT," +
+                "hints_json TEXT," +
+                "updated_at TEXT," +
+                "FOREIGN KEY (user_id) REFERENCES users(id)" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS user_preferences (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "user_id INTEGER NOT NULL," +
+                "scope TEXT NOT NULL DEFAULT 'USER'," +
+                "project_ref TEXT," +
+                "key TEXT NOT NULL," +
+                "value_json TEXT NOT NULL," +
+                "source TEXT NOT NULL DEFAULT 'EXPLICIT'," +
+                "confidence REAL NOT NULL DEFAULT 1.0," +
+                "status TEXT NOT NULL DEFAULT 'ACTIVE'," +
+                "expires_at TEXT," +
+                "updated_at TEXT NOT NULL" +
+                ");");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_prefs_user ON user_preferences (user_id, scope);");
+        stmt.execute("CREATE TABLE IF NOT EXISTS project_knowledge (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_key TEXT UNIQUE NOT NULL," +
+                "project_name TEXT," +
+                "root_path TEXT," +
+                "last_scanned_at INTEGER" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS project_components (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "component_path TEXT," +
+                "component_type TEXT," +
+                "summary TEXT," +
+                "tags_json TEXT," +
+                "criticality TEXT" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS architectural_decisions (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "decision_id TEXT," +
+                "title TEXT," +
+                "context TEXT," +
+                "decision TEXT," +
+                "rationale TEXT," +
+                "status TEXT NOT NULL DEFAULT 'ACCEPTED'," +
+                "superseded_by TEXT," +
+                "created_at INTEGER," +
+                "decided_at INTEGER" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS known_issues (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "title TEXT," +
+                "description TEXT," +
+                "severity TEXT," +
+                "status TEXT NOT NULL DEFAULT 'OPEN'," +
+                "workaround TEXT" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS implementation_history (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "summary TEXT," +
+                "change_summary TEXT," +
+                "commit_ref TEXT," +
+                "session_id TEXT," +
+                "timestamp INTEGER" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS build_results (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "command TEXT," +
+                "success BOOLEAN NOT NULL DEFAULT 0," +
+                "duration_ms INTEGER," +
+                "summary TEXT," +
+                "session_id TEXT," +
+                "timestamp INTEGER" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS test_results (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "suite TEXT," +
+                "run INTEGER," +
+                "failures INTEGER," +
+                "errors INTEGER," +
+                "skipped INTEGER," +
+                "pass_rate REAL," +
+                "failing_tests_json TEXT," +
+                "build_result_id INTEGER," +
+                "timestamp INTEGER" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS repository_snapshots (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "project_knowledge_id INTEGER NOT NULL," +
+                "snapshot_ref TEXT," +
+                "root_path TEXT," +
+                "file_count INTEGER," +
+                "created_at INTEGER" +
+                ");");
+        stmt.execute("CREATE TABLE IF NOT EXISTS context_snapshots (" +
+                "id TEXT PRIMARY KEY," +
+                "context_id TEXT," +
+                "schema_version TEXT," +
+                "package_ref TEXT," +
+                "requested_by TEXT," +
+                "created_at INTEGER" +
+                ");");
+
+        // FTS indexes (optional capability)
+        try {
+            stmt.execute("CREATE VIRTUAL TABLE IF NOT EXISTS conversation_messages_fts USING fts5(content, content='conversation_messages', content_rowid='id');");
+        } catch (SQLException e) {
+            System.err.println("DatabaseManager: FTS5 unavailable for conversation_messages_fts, LIKE search fallback active: " + e.getMessage());
+        }
+        try {
+            stmt.execute("CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts USING fts5(content, content='memory_index', content_rowid='rowid');");
+        } catch (SQLException e) {
+            System.err.println("DatabaseManager: FTS5 unavailable for memory_fts, LIKE search fallback active: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Whether the FTS5 extension is available for full-text search.
+     */
+    public boolean isFtsAvailable() {
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT name FROM sqlite_master WHERE type='table' AND name='conversation_messages_fts'")) {
+            return rs.next();
+        } catch (SQLException e) {
+            return false;
         }
     }
 

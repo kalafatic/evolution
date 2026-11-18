@@ -39,6 +39,7 @@ public class SelfDevContext {
 
     private String sourceRevision;
     private boolean debugMode;
+    private volatile boolean gitPushAuthorized;
 
     private long supervisorPid = -1;
     private String supervisorExecutable;
@@ -84,13 +85,16 @@ public class SelfDevContext {
             this.repositoryRoot = defaultRepo;
         }
 
-        this.projectRoot = pRoot != null ? pRoot : this.repositoryRoot;
+        // Validate view/consumer-provided project roots against canonical filesystem rules.
+        // Outside-canonical roots fall back to the canonical repository root; the repository
+        // root itself is resolved through ResourceManager and is already canonical-validated.
+        File validatedProjectRoot = validateProjectRoot(pRoot);
+        this.projectRoot = validatedProjectRoot != null ? validatedProjectRoot : this.repositoryRoot;
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
-        this.runId = "run_" + timestamp;
+        this.runId = uniqueRunId(wsRootForRun(), timestamp);
 
-        File wsRoot = this.resourceManager.getPath(EvoPath.WORKSPACE).toFile().getAbsoluteFile();
-
+        File wsRoot = wsRootForRun();
         File runDir;
         if (baseRunDir != null) {
             runDir = resolvePath(wsRoot, baseRunDir);
@@ -129,6 +133,44 @@ public class SelfDevContext {
         printPreflightReport();
     }
 
+    private File wsRootForRun() {
+        return this.resourceManager.getPath(EvoPath.WORKSPACE).toFile().getAbsoluteFile();
+    }
+
+    /**
+     * Generates a collision-resistant run ID. Never silently reuses an existing run directory:
+     * if a directory for the timestamp already exists, a numeric suffix is appended until a
+     * free slot is found.
+     */
+    private String uniqueRunId(File wsRoot, String timestamp) {
+        String base = "run_" + timestamp;
+        File selfDevRoot = wsRoot.toPath().resolve("self-dev").toAbsolutePath().normalize().toFile();
+        String candidate = base;
+        int seq = 0;
+        while (new File(selfDevRoot, candidate).exists()) {
+            seq++;
+            candidate = base + "_" + seq;
+        }
+        return candidate;
+    }
+
+    /**
+     * Validates a consumer-provided project root against the canonical filesystem rules.
+     * Returns the normalized root when valid, or null when it must be rejected (fallback).
+     */
+    private File validateProjectRoot(File candidate) {
+        if (candidate == null) {
+            return null;
+        }
+        try {
+            return this.resourceManager.validateCanonicalPath(candidate.toPath()).toFile();
+        } catch (IllegalArgumentException e) {
+            System.out.println("[SelfDevContext] Rejected non-canonical project root '" + candidate.getAbsolutePath()
+                    + "': " + e.getMessage() + " Falling back to canonical repository root.");
+            return null;
+        }
+    }
+
     public ResourceManager getResourceManager() {
         return resourceManager;
     }
@@ -159,7 +201,8 @@ public class SelfDevContext {
         if (configuredPath == null || configuredPath.trim().isEmpty()) {
             return semanticBase != null ? semanticBase.getAbsoluteFile().toPath().normalize().toFile() : null;
         }
-        Path p = java.nio.file.Paths.get(configuredPath.trim());
+        String expanded = ResourceManager.getInstance().expandVariables(configuredPath.trim());
+        Path p = java.nio.file.Paths.get(expanded);
         if (p.isAbsolute()) {
             return p.toAbsolutePath().normalize().toFile();
         }
@@ -344,6 +387,18 @@ public class SelfDevContext {
         this.debugMode = debugMode;
     }
 
+    /**
+     * WP9: explicit push authorization (default: NOT authorized). Remote pushes
+     * are impossible without an explicit operator authorization.
+     */
+    public boolean isGitPushAuthorized() {
+        return gitPushAuthorized;
+    }
+
+    public void setGitPushAuthorized(boolean authorized) {
+        this.gitPushAuthorized = authorized;
+    }
+
     public long getSupervisorPid() {
         return supervisorPid;
     }
@@ -419,5 +474,12 @@ public class SelfDevContext {
 
     public Map<ArtifactType, BuildArtifact> getArtifacts() {
         return Collections.unmodifiableMap(artifacts);
+    }
+
+    /**
+     * Authoritative per-run artifact provenance store (WP4).
+     */
+    public ArtifactManifestStore getArtifactManifestStore() {
+        return new ArtifactManifestStore(this);
     }
 }

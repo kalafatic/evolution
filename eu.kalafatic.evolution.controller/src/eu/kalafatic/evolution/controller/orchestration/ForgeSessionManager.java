@@ -124,7 +124,9 @@ public class ForgeSessionManager {
             json.put("sessionId", sessionId);
             json.put("status", status);
             json.put("startTimeMs", startTimeMs);
-            json.put("durationMs", durationMs > 0 ? durationMs : (startTimeMs > 0 ? System.currentTimeMillis() - startTimeMs : 0));
+            long durationNow = durationMs > 0 ? durationMs : (startTimeMs > 0 ? System.currentTimeMillis() - startTimeMs : 0);
+            json.put("durationMs", durationNow);
+            json.put("elapsedMillis", durationNow);
             json.put("currentEpoch", currentEpoch);
             json.put("totalEpochs", totalEpochs);
             json.put("currentStep", currentStep);
@@ -142,6 +144,23 @@ public class ForgeSessionManager {
             json.put("cpuPercent", Math.round(cpuPercent * 10.0) / 10.0);
             json.put("gpuStatus", gpuStatus);
             json.put("lastEventMessage", lastEventMessage);
+
+            // Derived progress percentage: real when step/token counters exist,
+            // otherwise an explicit -1 (unavailable) so clients render an honest '—'.
+            int progressPercent = -1;
+            if (totalSteps > 0) {
+                progressPercent = (int) Math.min(100, Math.max(0, (100.0 * currentStep / totalSteps)));
+            } else if (totalTokens > 0) {
+                progressPercent = (int) Math.min(100, Math.max(0, (100.0 * processedTokens / totalTokens)));
+            }
+            json.put("progressPercent", progressPercent);
+
+            // UI-compatible aliases (renderer.js field names) derived from the same measured values.
+            json.put("trainingLoss", Math.round(currentLoss * 10000.0) / 10000.0);
+            json.put("validationLoss", Math.round(valLoss * 10000.0) / 10000.0);
+            json.put("stepsPerSecond", Math.round(stepsPerSec * 100.0) / 100.0);
+            json.put("estimatedRemainingMillis", Math.round(estimatedRemainingSeconds * 1000.0));
+            json.put("learningRate", -1.0); // not tracked yet — honest unavailable marker
 
             org.json.JSONArray histArr = new org.json.JSONArray();
             synchronized (history) {
@@ -760,70 +779,12 @@ public class ForgeSessionManager {
         }
         if (session == null) return;
 
-        final String targetSessionId = session.getSessionId();
-
-        Thread demoThread = new Thread(() -> {
-            try {
-                ForgeSession current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 1. Initializing Architecture
-                String type = current.getSelectedModelType() != null ? current.getSelectedModelType() : "MLP";
-                generateArchitecture(current, type);
-                publishEvent(current, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
-                Thread.sleep(1500);
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 2. Loading Data
-                publishEvent(current, RuntimeEventType.FORGE_DATASET_IMPORTED, "DEMO_DATA_LOADED");
-                Thread.sleep(1500);
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 3. Training
-                publishEvent(current, RuntimeEventType.FORGE_TRAINING_STARTED, "DEMO_TRAINING_STARTED");
-                for (int i = 0; i < 5; i++) {
-                    Thread.sleep(1000);
-                    current = findSessionById(targetSessionId);
-                    if (current == null) return;
-                    publishEvent(current, RuntimeEventType.EVOLUTION_PROGRESS, "DEMO_TRAINING_PROGRESS_" + i);
-                }
-
-                // 4. Exporting
-                String modelDir = "./forge-lab/forge-model/src/main/resources/model/demo/";
-                File dir = new File(modelDir);
-                if (!dir.exists()) dir.mkdirs();
-
-                File modelFile = new File(dir, "demo_transformer.gguf");
-                try (FileWriter writer = new FileWriter(modelFile)) {
-                    writer.write("DUMMY OLLAMA MODEL CONTENT FOR DEMO");
-                } catch (IOException e) {
-                    System.err.println("[FORGE_DEMO] Failed to write demo model artifact: " + e.getMessage());
-                }
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                publishEvent(current, RuntimeEventType.EXPORT_READY, modelFile.getAbsolutePath());
-                Thread.sleep(2000);
-
-                current = findSessionById(targetSessionId);
-                if (current == null) return;
-
-                // 5. Finalizing
-                publishEvent(current, RuntimeEventType.VIEW_UPDATED, "DEMO_COMPLETED");
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("[FORGE_DEMO] Demo task interrupted for session: " + targetSessionId);
-            }
-        }, "Forge-E2E-Demo-" + targetSessionId);
-
-        demoThread.setDaemon(true);
-        demoThread.start();
+        // The legacy demo simulated training progress with sleeps and wrote a
+        // placeholder .gguf file containing dummy bytes. Telemetry honesty forbids
+        // simulated progress and fabricated artifacts, so the demo now reports the
+        // truth: the real pipeline is the authoritative forging flow.
+        publishEvent(session, RuntimeEventType.VIEW_UPDATED,
+                "E2E demo replaced: use the real forging flow (POST /forge/session/{id}/forging/start). No simulated training or placeholder model files are produced.");
     }
 
     public List<RuntimeEvent> getRecentEvents(String sessionId) {

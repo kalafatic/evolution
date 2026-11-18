@@ -135,6 +135,9 @@ public class EvoGpuModelSerializer {
             container.getMetadata().forEach(metaJson::put);
         }
 
+        String contentHash = calculateContentHash(container);
+        metaJson.put("evo_content_hash", contentHash);
+
         try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile.toFile())))) {
             dos.write(MAGIC_V2.getBytes(StandardCharsets.US_ASCII));
             dos.writeShort(FORMAT_VERSION_MAJOR);
@@ -142,10 +145,12 @@ public class EvoGpuModelSerializer {
             dos.writeShort(PROTOCOL_VERSION);
             dos.writeShort(0);
             dos.writeInt(64);
-            dos.writeInt(5);
+            dos.writeInt(6);
             dos.writeLong(System.currentTimeMillis());
 
+            byte[] hashBytes = contentHash.getBytes(StandardCharsets.UTF_8);
             byte[] hashPadded = new byte[32];
+            System.arraycopy(hashBytes, 0, hashPadded, 0, Math.min(hashBytes.length, 32));
             dos.write(hashPadded);
 
             writeString32(dos, container.getModelName() != null ? container.getModelName() : "evo_gpu_model");
@@ -243,7 +248,26 @@ public class EvoGpuModelSerializer {
                 }
 
                 float[] data = byteArrayToFloatArray(rawBytes);
+
+                String storedChecksum = tObj.has("checksum") ? tObj.get("checksum").asText() : "";
+                if (!storedChecksum.isEmpty()) {
+                    String computedChecksum = calculateChecksum(data);
+                    if (!storedChecksum.equals(computedChecksum)) {
+                        throw new IOException("EVO_INTEGRITY_ERROR: checksum mismatch for tensor '" + tName
+                                + "' (stored " + storedChecksum + ", computed " + computedChecksum + ")");
+                    }
+                }
+
                 container.addTensor(tName, shape, data);
+            }
+
+            String storedContentHash = container.getMetadata().get("evo_content_hash");
+            if (storedContentHash != null && !storedContentHash.isEmpty()) {
+                String computedContentHash = calculateContentHash(container);
+                if (!storedContentHash.equals(computedContentHash)) {
+                    throw new IOException("EVO_INTEGRITY_ERROR: model content hash mismatch (stored "
+                            + storedContentHash + ", computed " + computedContentHash + ")");
+                }
             }
         }
 
@@ -286,6 +310,39 @@ public class EvoGpuModelSerializer {
             return sb.toString();
         } catch (Exception e) {
             return "0000000000000000";
+        }
+    }
+
+    /**
+     * Deterministic content hash over the full logical model content
+     * (architecture, tokenizer, vocab, manifest and tensor payloads).
+     */
+    private String calculateContentHash(ModelContainer container) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            if (container.getArchitectureJson() != null) {
+                md.update(container.getArchitectureJson().getBytes(StandardCharsets.UTF_8));
+            }
+            if (container.getTokenizerJson() != null) {
+                md.update(container.getTokenizerJson().getBytes(StandardCharsets.UTF_8));
+            }
+            List<String> sortedNames = new ArrayList<>(container.getTensorNames());
+            List<Integer> order = new ArrayList<>();
+            for (int i = 0; i < sortedNames.size(); i++) order.add(i);
+            order.sort((a, b) -> container.getTensorNames().get(a).compareTo(container.getTensorNames().get(b)));
+            for (int idx : order) {
+                md.update(container.getTensorNames().get(idx).getBytes(StandardCharsets.UTF_8));
+                for (long dim : container.getTensorShapes().get(idx)) {
+                    md.update(ByteBuffer.allocate(Long.BYTES).order(ByteOrder.BIG_ENDIAN).putLong(dim).array());
+                }
+                md.update(floatArrayToByteArray(container.getTensorData().get(idx)));
+            }
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
         }
     }
 }

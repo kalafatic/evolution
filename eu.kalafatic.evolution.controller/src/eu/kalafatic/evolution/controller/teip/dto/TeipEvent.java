@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Standard sequenced event DTO for TEIP 1.0.
+ * Standard sequenced event DTO for TEIP 1.1.
  */
 public class TeipEvent {
     private String eventId;

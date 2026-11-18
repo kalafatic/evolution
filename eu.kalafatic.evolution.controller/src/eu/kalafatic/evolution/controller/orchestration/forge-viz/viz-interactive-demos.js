@@ -196,13 +196,13 @@ window.saveDemoNeuron = function() {
 
 window.trainDemo = function() {
     const loss = (Math.random() * 0.2).toFixed(4);
-    log("Demo Training - Loss: " + loss);
+    log("Demo Training (SIMULATION - value is randomly generated, not measured) - Loss: " + loss);
     const details = document.getElementById('viz-details-content');
     const lossDiv = document.createElement('div');
     lossDiv.style.marginTop = "10px";
     lossDiv.style.padding = "10px";
     lossDiv.style.background = "#e8f0fe";
-    lossDiv.innerHTML = `<b>Training Status</b><br>Current Loss: ${loss}`;
+    lossDiv.innerHTML = `<b>Simulation Status</b> (random value, not a real measurement)<br>Simulated Loss: ${loss}`;
     details.appendChild(lossDiv);
 };
 

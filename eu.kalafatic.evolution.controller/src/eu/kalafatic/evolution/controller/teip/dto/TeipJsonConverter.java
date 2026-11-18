@@ -10,7 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Bidirectional JSON serializer and deserializer for TEIP 1.0 DTOs.
+ * Bidirectional JSON serializer and deserializer for TEIP 1.1 DTOs.
  */
 public class TeipJsonConverter {
 
@@ -32,9 +32,13 @@ public class TeipJsonConverter {
         obj.put("protocol", cap.getProtocol());
         obj.put("version", cap.getVersion());
         obj.put("timestamp", cap.getTimestamp());
+        // TEIP 1.1 §4.2: capabilities[] and availableModels[] are canonical; models is a
+        // deprecated alias retained for compatibility.
+        obj.put("capabilities", new JSONArray(cap.getCapabilities()));
         obj.put("supportedModes", new JSONArray(cap.getSupportedModes()));
         obj.put("agents", new JSONArray(cap.getAgents()));
         obj.put("models", new JSONArray(cap.getModels()));
+        obj.put("availableModels", new JSONArray(cap.getAvailableModels()));
         obj.put("tools", new JSONArray(cap.getTools()));
         obj.put("features", new JSONObject(cap.getFeatures()));
         return obj.toString(2);
@@ -76,6 +80,8 @@ public class TeipJsonConverter {
         obj.put("correlationId", result.getCorrelationId());
         obj.put("status", result.getStatus() != null ? result.getStatus().name() : "COMPLETED");
         obj.put("summary", result.getSummary());
+        obj.put("patch", result.getPatch());
+        obj.put("modifiedFiles", new JSONArray(result.getModifiedFiles()));
         obj.put("completedAt", result.getCompletedAt());
         obj.put("artifacts", new JSONArray(result.getArtifacts()));
         obj.put("metrics", new JSONObject(result.getMetrics()));
@@ -172,18 +178,34 @@ public class TeipJsonConverter {
 
         TeipExecutionRequest req = new TeipExecutionRequest();
         req.setProtocol(obj.optString("protocol", "TEIP"));
-        req.setVersion(obj.optString("version", "1.0"));
+
+        // TEIP 1.1 §2: an unsupported major version is a VERSION_MISMATCH protocol error
+        String version = obj.optString("version", "1.1");
+        String major = version != null && version.contains(".") ? version.substring(0, version.indexOf('.')) : version;
+        if (major == null || major.isBlank() || !major.equals("1")) {
+            throw new TeipVersionMismatchException("Unsupported TEIP protocol version: " + version);
+        }
+        req.setVersion(version);
+
         req.setRequestId(obj.optString("requestId", null));
         req.setCorrelationId(obj.optString("correlationId", null));
         req.setIdempotencyKey(obj.optString("idempotencyKey", null));
         req.setTimestamp(obj.optString("timestamp", java.time.Instant.now().toString()));
         req.setCapability(obj.optString("capability", null));
-        req.setMode(obj.optString("mode", null));
+        // `mode` is canonical; `aiMode` is a deprecated alias (TEIP 1.1 §1)
+        req.setMode(obj.has("mode") ? obj.optString("mode", null) : obj.optString("aiMode", null));
+        // Top-level `model` is canonical; `parameters.model` remains accepted as fallback
+        req.setModel(obj.optString("model", null));
         req.setInstruction(obj.optString("instruction", null));
 
         JSONObject callerObj = obj.optJSONObject("caller");
         if (callerObj != null) {
-            req.setCaller(jsonToMap(callerObj));
+            Map<String, Object> callerMap = jsonToMap(callerObj);
+            // `caller.system` is canonical; `caller.app` is a deprecated alias (TEIP 1.1 §3)
+            if (!callerMap.containsKey("system") && callerMap.containsKey("app")) {
+                callerMap.put("system", callerMap.remove("app"));
+            }
+            req.setCaller(callerMap);
         }
 
         JSONObject paramsObj = obj.optJSONObject("parameters");
@@ -191,7 +213,11 @@ public class TeipJsonConverter {
             req.setParameters(jsonToMap(paramsObj));
         }
 
+        // `grantedToolScopes` is canonical; `mcpToolScopes` is a deprecated alias (TEIP 1.1 §1)
         JSONArray scopesArr = obj.optJSONArray("grantedToolScopes");
+        if (scopesArr == null) {
+            scopesArr = obj.optJSONArray("mcpToolScopes");
+        }
         if (scopesArr != null) {
             List<String> scopes = new ArrayList<>();
             for (int i = 0; i < scopesArr.length(); i++) {
@@ -200,6 +226,8 @@ public class TeipJsonConverter {
             req.setGrantedToolScopes(scopes);
         }
 
+        // contextReferences: canonical objects {type, path, description}; bare strings
+        // accepted as path shorthand (TEIP 1.1 §4.3)
         JSONArray ctxArr = obj.optJSONArray("contextReferences");
         if (ctxArr != null) {
             List<Map<String, Object>> ctxList = new ArrayList<>();
@@ -207,6 +235,14 @@ public class TeipJsonConverter {
                 JSONObject item = ctxArr.optJSONObject(i);
                 if (item != null) {
                     ctxList.add(jsonToMap(item));
+                } else {
+                    String path = ctxArr.optString(i, null);
+                    if (path != null && !path.isBlank()) {
+                        Map<String, Object> shorthand = new HashMap<>();
+                        shorthand.put("type", "FILE");
+                        shorthand.put("path", path);
+                        ctxList.add(shorthand);
+                    }
                 }
             }
             req.setContextReferences(ctxList);

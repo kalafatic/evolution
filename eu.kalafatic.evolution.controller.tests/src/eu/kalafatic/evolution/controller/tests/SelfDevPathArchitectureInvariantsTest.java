@@ -112,19 +112,25 @@ public class SelfDevPathArchitectureInvariantsTest {
             fw.write("<project><modelVersion>4.0.0</modelVersion></project>");
         }
 
-        // Create target/products with a dummy product archive in source
-        File productsDir = new File(mockSource, "eu.kalafatic.evolution.repository/target/products");
-        productsDir.mkdirs();
-        File dummyZip = new File(productsDir, "evolution-win32.win32.x86_64.zip");
-        try (FileWriter fw = new FileWriter(dummyZip)) {
-            fw.write("dummy archive content");
-        }
-
         SelfDevContext context = new SelfDevContext(mockRepo, mockRunDir, resourceManager.getOrchestrator());
 
         TychoEvoRcpBuilder builder = new TychoEvoRcpBuilder();
         TychoEvoRcpBuilder.ProductDefinition prodDef = new TychoEvoRcpBuilder.ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
-        TychoEvoRcpBuilder.TargetPlatform platform = new TychoEvoRcpBuilder.TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+        // The export pipeline resolves the target platform from the environment
+        // (ResourceManager.getTargetPlatform); a fixed win32 fixture would only
+        // match on Windows hosts. Build the fixture name from the resolved platform.
+        TychoEvoRcpBuilder.TargetPlatform platform = builder.resolveTargetPlatform(context);
+
+        String packaging = platform.getPackaging();
+        String extension = "zip".equals(packaging) ? ".zip" : (packaging != null && packaging.contains("tar") ? ".tar.gz" : ".zip");
+        String artifactName = "evolution-" + platform.getOs() + "." + platform.getWs() + "." + platform.getArch() + extension;
+        // Create target/products with a dummy product archive in source
+        File productsDir = new File(mockSource, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+        File dummyZip = new File(productsDir, artifactName);
+        try (FileWriter fw = new FileWriter(dummyZip)) {
+            fw.write("dummy archive content");
+        }
 
         File foundProduct = builder.findExactExportedProduct(mockSource, prodDef, platform, context);
         assertNotNull("Product should be discovered under source target/products", foundProduct);

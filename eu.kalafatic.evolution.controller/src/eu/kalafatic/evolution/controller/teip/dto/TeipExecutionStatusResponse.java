@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Execution status response DTO for TEIP 1.0.
+ * Execution status response DTO for TEIP 1.1.
  */
 public class TeipExecutionStatusResponse {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String executionId;
     private TeipExecutionStatus status = TeipExecutionStatus.QUEUED;
     private String correlationId;

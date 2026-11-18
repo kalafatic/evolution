@@ -468,6 +468,14 @@ public class SelfDevSupervisor {
     private void restart(int iteration) {
         System.out.println("[SUPERVISOR] Restarting RCP for iteration " + iteration);
 
+        // WP5 (D-22): idempotent restart - when an EVO child of this supervisor
+        // is already running, do not launch a duplicate instance.
+        if (runner.isRCPRunning() || SupervisorMain.EVOSupervisorServer.isActiveEvoRunning()) {
+            System.out.println("[SUPERVISOR] An owned EVO child is already running; skipping duplicate restart launch.");
+            protocol.updateState(iteration, "RUNNING", "RUNNING", "Product already running (idempotent restart)", 0.9);
+            return;
+        }
+
         // 0. Stop current RCP
         runner.stopRCP();
 

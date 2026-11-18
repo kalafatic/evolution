@@ -166,6 +166,49 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             SimpleBPETokenizer tokenizer = modelSource.getTokenizer(cleanCorpus, job.getModelConfig().getVocabSize());
             List<Integer> allTokens = tokenizer.encode(cleanCorpus);
 
+            // Validate dataset/tokenizer compatibility before training: a dataset
+            // that declares a tokenizer identity must match the training tokenizer.
+            if (prepResult != null && prepResult.getArtifact() != null) {
+                prepResult.getArtifact().validateTokenizerCompatibility("SimpleBPETokenizer", tokenizer.getVocabSize());
+            }
+
+            // Record the tokenizer identity inside the .evodata metadata so that a
+            // dataset explicitly declares the tokenizer/vocabulary used to prepare it.
+            final String[] datasetFingerprintHolder = {evodataFileName};
+            try {
+                if (prepResult != null && prepResult.getArtifact() != null
+                        && prepResult.getArtifact().getArtifactFile() != null
+                        && prepResult.getArtifact().getArtifactFile().exists()) {
+                    prepResult.getArtifact().rewriteMetadataWithTokenizerIdentity(
+                            "SimpleBPETokenizer",
+                            "2.0",
+                            tokenizer.getVocabSize(),
+                            java.util.Arrays.asList("<unk>", "<s>", "</s>", "<pad>", "<eos>", "<bos>",
+                                    "<|im_start|>", "<|im_end|>", "<|endoftext|>")
+                    );
+                }
+                // Content fingerprint of the dataset file for checkpoint compatibility checks.
+                File evodataInput = new File(prepResult != null ? prepResult.getOutputPath() : evodataFileName);
+                if (evodataInput.exists()) {
+                    java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                    try (java.io.InputStream in = Files.newInputStream(evodataInput.toPath())) {
+                        byte[] buf = new byte[8192];
+                        int read;
+                        while ((read = in.read(buf)) > 0) {
+                            md.update(buf, 0, read);
+                        }
+                    }
+                    StringBuilder hex = new StringBuilder();
+                    for (byte b : md.digest()) {
+                        hex.append(String.format("%02x", b));
+                    }
+                    datasetFingerprintHolder[0] = "sha256:" + hex;
+                }
+            } catch (Exception ex) {
+                logToFile(logFile, "[FORGE][WARN] Could not record tokenizer identity / dataset fingerprint: " + ex.getMessage());
+            }
+            final String datasetFingerprint = datasetFingerprintHolder[0];
+
             DatasetBuilder datasetBuilder = new DatasetBuilder();
             List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
             logToFile(logFile, "Dataset preparation complete. Total tokens: " + allTokens.size() + ", Training samples: " + samples.size());
@@ -246,6 +289,22 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {}
 
                 @Override
+                public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                              long processedTokens, long totalTokens,
+                                              double tokensPerSec, double stepsPerSec,
+                                              double estimatedRemainingSeconds, double currentLoss) {
+                    // Map real optimizer-step progress into the 60-100% training band.
+                    if (totalSteps > 0) {
+                        job.setProgressPercent(60 + (int) (40.0 * currentStep / totalSteps));
+                    }
+                    if (epoch > 0) {
+                        job.setCurrentStageDescription(String.format(
+                                "Training epoch %d/%d (loss %.4f, %.1f tok/s, ETA %.0f s)",
+                                epoch, totalEpochs, currentLoss, tokensPerSec, estimatedRemainingSeconds));
+                    }
+                }
+
+                @Override
                 public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
                     // Note: epoch argument is 1-based (1..totalEpochs)
                     logToFile(logFile, String.format("[FORGE][EPOCH] Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
@@ -266,7 +325,7 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                                     epoch,
                                     (float) trainLoss,
                                     (float) valLoss,
-                                    evodataFileName,
+                                    datasetFingerprint,
                                     chkTokenizer.getVocab()
                             );
                             chk.saveAtomic(chkStoreFolder.resolve(String.format("checkpoint_%s_epoch_%04d.chk", chkJobId, epoch)));
@@ -353,7 +412,8 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setTrainingResult(trainResult);
 
             List<Double> losses = trainer.getLossHistory();
-            double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1) : (trainResult != null ? trainResult.getLastLoss() : 0.05);
+            double finalLoss = (losses != null && !losses.isEmpty()) ? losses.get(losses.size() - 1)
+                    : (trainResult != null ? trainResult.getLastLoss() : Double.NaN);
 
             long totalJobForgingDurationMs = System.currentTimeMillis() - timestamp;
             logToFile(logFile, String.format("[FORGE][TRAINING][RUN=%s] %s completedEpochs=%d plannedEpochs=%d totalForgingDuration=%s",
@@ -420,12 +480,21 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setCurrentStageDescription("Evaluating model loss and quality...");
 
             EvaluationResult eval = new EvaluationResult();
+            // Measured values only: real training loss and real validation loss.
+            // When no validation split was configured, valLoss is honestly 0 (unknown),
+            // not fabricated from the training loss.
             eval.setTrainLoss(finalLoss);
-            eval.setValLoss(trainResult.getValLoss() > 0 ? trainResult.getValLoss() : finalLoss * 1.05);
-            eval.setQualityScore(Math.max(0.5, 1.0 - (finalLoss / 10.0)));
-            eval.setOverfittingDetected(false);
-            eval.setSummary(String.format("Model loss converged to %.4f (epochs: %d/%d).",
-                    finalLoss, trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+            eval.setValLoss(trainResult.getValLoss());
+            eval.setQualityScore(-1.0); // -1 = not computed (no documented metric exists yet)
+            // Overfitting flag is only meaningful with a real validation signal:
+            // a large and consistent val-train gap. Reported honestly when unknown.
+            boolean valAvailable = trainResult.getValLoss() > 0.0;
+            eval.setOverfittingDetected(valAvailable && trainResult.getValLoss() > finalLoss + 0.2);
+            eval.setSummary(valAvailable
+                    ? String.format("Train loss %.4f, validation loss %.4f (epochs: %d/%d).",
+                            finalLoss, trainResult.getValLoss(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs())
+                    : String.format("Train loss %.4f; no validation split configured (epochs: %d/%d).",
+                            finalLoss, trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
             job.setEvaluationResult(eval);
 
             // STAGE 6: FINALIZING & PERSISTENCE

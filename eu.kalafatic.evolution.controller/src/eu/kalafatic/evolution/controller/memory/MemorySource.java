@@ -14,5 +14,7 @@ public enum MemorySource {
     LOG,
     DOCUMENT,
     TRAINING,
-    SYSTEM
+    SYSTEM,
+    APP_MCP,
+    CONSOLIDATION
 }

@@ -66,7 +66,7 @@ public class UniversalDatasetPreparationPipelineTest {
 
         // Test dataset preparation
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_alpaca");
 
         List<DatasetItem> items = new ArrayList<>();
@@ -112,7 +112,7 @@ public class UniversalDatasetPreparationPipelineTest {
         items.add(new DatasetItem(true, txtFile.getAbsolutePath(), "FILE"));
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_hetero");
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
@@ -141,7 +141,7 @@ public class UniversalDatasetPreparationPipelineTest {
         items.add(new DatasetItem(true, jsonlFile.getAbsolutePath(), "FILE"));
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_dedupe");
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
@@ -178,7 +178,7 @@ public class UniversalDatasetPreparationPipelineTest {
         items.add(new DatasetItem(true, validFile2.getAbsolutePath(), "FILE"));
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_isolation");
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
@@ -257,7 +257,7 @@ public class UniversalDatasetPreparationPipelineTest {
         items.add(new DatasetItem(true, metaDir.getAbsolutePath(), "FOLDER"));
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_meta_only");
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
@@ -282,7 +282,7 @@ public class UniversalDatasetPreparationPipelineTest {
         items.add(new DatasetItem(true, parquetFile.getAbsolutePath(), "FILE"));
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_real_parquet");
 
         DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
@@ -307,7 +307,7 @@ public class UniversalDatasetPreparationPipelineTest {
         items.add(new DatasetItem(true, dataDir.getAbsolutePath(), "FOLDER"));
 
         DatasetPreparationService service = new DatasetPreparationService();
-        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationContext context = new DatasetPreparationContext(0, null);
         File outDir = tempFolder.newFolder("out_cache");
 
         // First preparation
@@ -372,11 +372,15 @@ public class UniversalDatasetPreparationPipelineTest {
 
     @Test
     public void test12_FixesVerification_NormalizedDeduplication() throws Exception {
-        File txtFile = tempFolder.newFile("norm_dedupe.txt");
-        String content = "Hello, World!\nhello world\nHELLO WORLD!!!\nAnother distinct sample.\n";
-        Files.writeString(txtFile.toPath(), content, StandardCharsets.UTF_8);
+        // TextAdapter produces one sample per file; normalized dedup is exercised via
+        // separate files whose content differs only by casing/punctuation.
+        File dir = tempFolder.newFolder("norm_dedupe_dir");
+        Files.writeString(new File(dir, "a.txt").toPath(), "Hello, World!", StandardCharsets.UTF_8);
+        Files.writeString(new File(dir, "b.txt").toPath(), "hello world", StandardCharsets.UTF_8);
+        Files.writeString(new File(dir, "c.txt").toPath(), "HELLO WORLD!!!", StandardCharsets.UTF_8);
+        Files.writeString(new File(dir, "d.txt").toPath(), "Another distinct sample.", StandardCharsets.UTF_8);
 
-        List<DatasetItem> items = List.of(new DatasetItem(true, txtFile.getAbsolutePath(), "FILE"));
+        List<DatasetItem> items = List.of(new DatasetItem(true, dir.getAbsolutePath(), "FOLDER"));
 
         DatasetPreparationService service = new DatasetPreparationService();
         DatasetPreparationContext context = new DatasetPreparationContext(0, null);

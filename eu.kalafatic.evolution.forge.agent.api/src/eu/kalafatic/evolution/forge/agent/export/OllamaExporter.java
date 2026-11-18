@@ -164,8 +164,26 @@ public class OllamaExporter implements EvoModelExporter {
         Path modelfilePath = exportsOllamaDir.resolve("Modelfile");
         Files.write(modelfilePath, modelfile);
 
+        // Raw F32 weight sidecar (native model dump in GGUF tensor order) for
+        // downstream tooling and debugging.
+        Path weightsPath = exportsOllamaDir.resolve("weights.bin");
+        try (DataOutputStream wdos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsPath.toFile())))) {
+            wdos.writeInt(serializedTensors.size());
+            for (NamedTensor nt : serializedTensors) {
+                wdos.writeUTF(nt.name);
+                wdos.writeInt(nt.tensor.getShape().length);
+                for (long dim : nt.tensor.getShape()) {
+                    wdos.writeLong(dim);
+                }
+                for (float v : nt.tensor.getData()) {
+                    wdos.writeFloat(v);
+                }
+            }
+        }
+
         Files.copy(ggufPath, outputPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(modelfilePath, outputPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(weightsPath, outputPath.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
 
         boolean registrationSuccess = false;
         String nameToRegister = (modelName != null && !modelName.isEmpty()) ? modelName : "evo";
@@ -178,6 +196,10 @@ public class OllamaExporter implements EvoModelExporter {
                 registrationSuccess = true;
             }
         } catch (Exception ignored) {}
+    }
+
+    private static String nameToRegisterSafe(String modelName) {
+        return (modelName != null && !modelName.isEmpty()) ? modelName : "evo";
     }
 
     private int resolveGgufFileType(QuantizationConfig.QuantizationScheme scheme) {
@@ -219,6 +241,21 @@ public class OllamaExporter implements EvoModelExporter {
             throw e;
         } catch (Exception ex) {
             throw new IOException("Failed to export model snapshot", ex);
+        }
+
+        // Copy the exported GGUF into the default Ollama models folder under the
+        // authoritative export name so it is discoverable by ProjectModelManager/
+        // Ollama tooling without an explicit import step. Never fails the export.
+        try {
+            Path exportsOllamaGguf = outputPath.resolve("exports/ollama/evo.gguf");
+            if (Files.exists(exportsOllamaGguf)) {
+                Path ollamaModels = Path.of(System.getProperty("user.home"), ".ollama", "models");
+                Files.createDirectories(ollamaModels);
+                Files.copy(exportsOllamaGguf, ollamaModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(exportsOllamaGguf, ollamaModels.resolve(nameToRegisterSafe(modelName) + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception e) {
+            System.err.println("[OllamaExporter] Failed to copy model to default Ollama folder: " + e.getMessage());
         }
     }
 

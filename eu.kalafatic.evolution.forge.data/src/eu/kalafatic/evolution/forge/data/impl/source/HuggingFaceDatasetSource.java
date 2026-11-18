@@ -234,7 +234,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 return res;
             }
 
-            ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, this.resolvedSplit, requestedSplit, this.resolvedConfig != null ? this.resolvedConfig : "default", "main", "https://datasets-server.huggingface.co/rows", "application/json", estimatedSize, true, true, null);
+            ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, this.resolvedSplit, this.resolvedConfig != null ? this.resolvedConfig : "default", "main", "https://datasets-server.huggingface.co/rows", "application/json", estimatedSize, true, true, null);
             res.logPreflight(runId);
             return res;
 
@@ -629,8 +629,9 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             }
         }
 
-        // 3. Instruction / Input / Output or Response
-        if (row.has("instruction") || row.has("response") || row.has("output") || row.has("input")) {
+        // 3. Instruction / Input / Output (a bare "response" without instruction/input
+        //    is handled by the prompt/response branch below, never swallowed here)
+        if (row.has("instruction") || row.has("output") || row.has("input")) {
             detectedSchemaInfo = "instruction / input / output";
             String inst = row.optString("instruction", "").trim();
             String input = row.optString("input", "").trim();
@@ -770,6 +771,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
         sample.setTokenCount((int) sampleTokens);
         stats.incrementSamplesRead();
+        stats.incrementAccepted();
         stats.addBytesRead(sampleBytes);
         stats.addAcceptedBytes(sampleBytes);
         stats.addEstimatedTokens(sampleTokens);

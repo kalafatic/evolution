@@ -37,18 +37,27 @@ import eu.kalafatic.evolution.controller.teip.dto.TeipExecutionStatus;
 import eu.kalafatic.evolution.controller.teip.dto.TeipExecutionStatusResponse;
 import eu.kalafatic.evolution.controller.teip.dto.TeipHealthResponse;
 import eu.kalafatic.evolution.controller.teip.store.TeipEventStore;
+import eu.kalafatic.evolution.controller.teip.store.TeipPersistenceStore;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.utils.log.Log;
 
 /**
- * Authoritative lifecycle coordinator for TEIP 1.0 executions.
+ * Authoritative lifecycle coordinator for TEIP 1.1 executions.
  * Manages mappings between external TEIP executions and internal EVO SessionContainers,
- * ServerOperations, idempotency caches, and dynamic capability queries.
+ * ServerOperations, idempotency caches, and dynamic capability queries. The
+ * idempotencyKey→executionId relation and sequenced events are persisted through
+ * TeipPersistenceStore (TEIP 1.1 §7).
  */
 public class TeipExecutionManager {
 
     private static final TeipExecutionManager INSTANCE = new TeipExecutionManager();
+
+    /**
+     * Outcome of a create-execution request: the accepted response plus whether the
+     * response was produced by an idempotent replay (HTTP 200) or a new execution (HTTP 202).
+     */
+    public record CreateOutcome(TeipAcceptedResponse response, boolean duplicate) {}
 
     // Idempotency cache: idempotencyKey -> TeipAcceptedResponse
     private final Map<String, TeipAcceptedResponse> idempotencyStore = new ConcurrentHashMap<>();
@@ -63,10 +72,55 @@ public class TeipExecutionManager {
 
     private volatile boolean teipEnabled = true;
 
-    private TeipExecutionManager() {}
+    private TeipExecutionManager() {
+        // TEIP 1.1 §7.4: after a restart, in-flight executions that cannot be resumed
+        // transition to FAILED with an explicit diagnostic message.
+        reconcileAfterRestart();
+    }
 
     public static TeipExecutionManager getInstance() {
         return INSTANCE;
+    }
+
+    private void reconcileAfterRestart() {
+        try {
+            TeipEventStore.getInstance().hydrateFromPersistence();
+            List<String[]> openExecutions = TeipPersistenceStore.getInstance().loadOpenExecutions();
+            for (String[] row : openExecutions) {
+                String executionId = row[0];
+                String correlationId = row[2];
+                if (executionId == null || executionId.isBlank()) continue;
+                if (statusCache.containsKey(executionId)) continue;
+
+                TeipExecutionStatusResponse statusResp = new TeipExecutionStatusResponse();
+                statusResp.setExecutionId(executionId);
+                statusResp.setCorrelationId(correlationId);
+                statusResp.setStatus(TeipExecutionStatus.FAILED);
+                statusResp.setCreatedAt(Instant.now().toString());
+                statusResp.setCompletedAt(Instant.now().toString());
+                statusResp.setStatusMessage("Server restarted; execution cannot be resumed");
+                statusCache.put(executionId, statusResp);
+
+                TeipExecutionResult res = new TeipExecutionResult(
+                        executionId, correlationId, TeipExecutionStatus.FAILED,
+                        "Server restarted; execution cannot be resumed");
+                executionResults.put(executionId, res);
+
+                TeipEventStore.getInstance().appendEvent(
+                        executionId,
+                        "EXECUTION_FAILED",
+                        correlationId,
+                        Map.of("error", "Server restarted; execution cannot be resumed")
+                );
+                TeipPersistenceStore.getInstance().updateExecutionStatus(executionId, "FAILED");
+
+                // Restore the idempotency mapping for replay-safe duplicate detection
+                if (row[1] != null && !row[1].isBlank() && !idempotencyStore.containsKey(row[1])) {
+                    TeipAcceptedResponse accepted = new TeipAcceptedResponse(executionId, correlationId);
+                    idempotencyStore.put(row[1], accepted);
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     public boolean isTeipEnabled() {
@@ -130,6 +184,7 @@ public class TeipExecutionManager {
                     mMap.put("provider", "Ollama");
                     mMap.put("size", m.getSize());
                     desc.getModels().add(mMap);
+                    desc.getAvailableModels().add(mMap);
                 }
             }
         } catch (Throwable ignored) {}
@@ -141,6 +196,7 @@ public class TeipExecutionManager {
             mMap.put("available", true);
             mMap.put("provider", "Ollama");
             desc.getModels().add(mMap);
+            desc.getAvailableModels().add(mMap);
         }
 
         // 4. Tools from ToolRegistry
@@ -153,10 +209,46 @@ public class TeipExecutionManager {
             }
         } catch (Throwable ignored) {}
 
+        // 5. Canonical capability catalog (TEIP 1.1 §4.2)
+        Map<String, Object> codeImpl = new HashMap<>();
+        codeImpl.put("id", "CODE_IMPLEMENTATION");
+        codeImpl.put("name", "Autonomous Code Modification");
+        codeImpl.put("supportedModes", List.of("DEFAULT", "INCREMENTAL"));
+        codeImpl.put("requiredScopes", List.of("read:workspace", "write:workspace", "execute:build"));
+        desc.getCapabilities().add(codeImpl);
+
+        Map<String, Object> codeAnalysis = new HashMap<>();
+        codeAnalysis.put("id", "CODE_ANALYSIS");
+        codeAnalysis.put("name", "Codebase Analysis & Inspection");
+        codeAnalysis.put("supportedModes", List.of("DEFAULT", "DEEP_REASONING"));
+        codeAnalysis.put("requiredScopes", List.of("read:workspace", "read:task"));
+        desc.getCapabilities().add(codeAnalysis);
+
+        // 6. Phase 6 family capability discovery: DCode harness + ENR inference runtime
+        // (registered in the Darwin CapabilityRegistry and advertised through TEIP so that
+        // TRYST, DStudio and other family members can discover them).
+        try {
+            Map<String, Object> dcodeHarness = new HashMap<>();
+            dcodeHarness.put("id", "DCODE_HARNESS");
+            dcodeHarness.put("name", "DCode — native family coding harness");
+            dcodeHarness.put("supportedModes", List.of("DEFAULT"));
+            dcodeHarness.put("requiredScopes", List.of("read:workspace", "write:workspace",
+                    "execute:build"));
+            desc.getCapabilities().add(dcodeHarness);
+        } catch (Throwable ignored) {}
+        try {
+            Map<String, Object> enrInference = new HashMap<>();
+            enrInference.put("id", "ENR_INFERENCE");
+            enrInference.put("name", "ENR — native family inference runtime");
+            enrInference.put("supportedModes", List.of("DEFAULT"));
+            enrInference.put("requiredScopes", List.of("inference:local"));
+            desc.getCapabilities().add(enrInference);
+        } catch (Throwable ignored) {}
+
         return desc;
     }
 
-    public synchronized TeipAcceptedResponse createExecution(TeipExecutionRequest request) {
+    public synchronized CreateOutcome createExecution(TeipExecutionRequest request) {
         if (!teipEnabled) {
             throw new IllegalStateException("TEIP integration is currently disabled");
         }
@@ -166,15 +258,35 @@ public class TeipExecutionManager {
             throw new IllegalArgumentException("Execution instruction cannot be empty");
         }
 
-        // Idempotency check
+        // Idempotency check: in-memory first, then persisted mapping (survives restarts)
         String idempotencyKey = request.getIdempotencyKey();
         if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
-            TeipAcceptedResponse cached = idempotencyStore.get(idempotencyKey.trim());
+            String key = idempotencyKey.trim();
+            TeipAcceptedResponse cached = idempotencyStore.get(key);
             if (cached != null) {
                 try {
-                    Log.log("[TEIP] Idempotency match for key=" + idempotencyKey + ", returning executionId=" + cached.getExecutionId());
+                    Log.log("[TEIP] Idempotency match for key=" + key + ", returning executionId=" + cached.getExecutionId());
                 } catch (Throwable ignored) {}
-                return cached;
+                return new CreateOutcome(cached, true);
+            }
+            java.util.Optional<String> persistedExecutionId = TeipPersistenceStore.getInstance().findExecutionIdByIdempotencyKey(key);
+            if (persistedExecutionId.isPresent()) {
+                String execId = persistedExecutionId.get();
+                TeipAcceptedResponse replayed = new TeipAcceptedResponse(execId, request.getCorrelationId());
+                idempotencyStore.put(key, replayed);
+                if (!statusCache.containsKey(execId)) {
+                    TeipExecutionStatusResponse statusResp = new TeipExecutionStatusResponse();
+                    statusResp.setExecutionId(execId);
+                    statusResp.setCorrelationId(request.getCorrelationId());
+                    statusResp.setStatus(TeipExecutionStatus.QUEUED);
+                    statusResp.setCreatedAt(Instant.now().toString());
+                    statusResp.setStatusMessage("Execution restored from persisted state");
+                    statusCache.put(execId, statusResp);
+                }
+                try {
+                    Log.log("[TEIP] Idempotency match (persisted) for key=" + key + ", returning executionId=" + execId);
+                } catch (Throwable ignored) {}
+                return new CreateOutcome(replayed, true);
             }
         }
 
@@ -188,7 +300,9 @@ public class TeipExecutionManager {
         TeipAcceptedResponse accepted = new TeipAcceptedResponse(executionId, request.getCorrelationId());
         if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
             idempotencyStore.put(idempotencyKey.trim(), accepted);
+            TeipPersistenceStore.getInstance().saveIdempotency(idempotencyKey.trim(), executionId);
         }
+        TeipPersistenceStore.getInstance().saveExecution(executionId, idempotencyKey, request.getCorrelationId(), "QUEUED");
 
         // Initialize status response
         TeipExecutionStatusResponse statusResp = new TeipExecutionStatusResponse();
@@ -209,7 +323,7 @@ public class TeipExecutionManager {
         // Bind and dispatch to EVO SessionContainer and ServerOperation
         dispatchExecution(executionId, evoSessionId, request);
 
-        return accepted;
+        return new CreateOutcome(accepted, false);
     }
 
     private void dispatchExecution(String executionId, String evoSessionId, TeipExecutionRequest request) {
@@ -248,7 +362,9 @@ public class TeipExecutionManager {
                 taskReq.getContext().put("executionId", executionId);
                 taskReq.getContext().put("grantedToolScopes", request.getGrantedToolScopes());
 
-                if (request.getParameters() != null && request.getParameters().containsKey("model")) {
+                if (request.getModel() != null && !request.getModel().isBlank()) {
+                    taskReq.getContext().put("model", request.getModel());
+                } else if (request.getParameters() != null && request.getParameters().containsKey("model")) {
                     taskReq.getContext().put("model", String.valueOf(request.getParameters().get("model")));
                 }
 
@@ -292,6 +408,7 @@ public class TeipExecutionManager {
 
                 TeipExecutionResult res = new TeipExecutionResult(executionId, request.getCorrelationId(), TeipExecutionStatus.COMPLETED, orchResp.getSummary());
                 executionResults.put(executionId, res);
+                TeipPersistenceStore.getInstance().updateExecutionStatus(executionId, "COMPLETED");
 
                 TeipEventStore.getInstance().appendEvent(executionId, "EXECUTION_COMPLETED", request.getCorrelationId(), Map.of("summary", orchResp.getSummary()));
 
@@ -309,6 +426,7 @@ public class TeipExecutionManager {
 
                 TeipExecutionResult res = new TeipExecutionResult(executionId, request.getCorrelationId(), finalState, t.getMessage());
                 executionResults.put(executionId, res);
+                TeipPersistenceStore.getInstance().updateExecutionStatus(executionId, finalState.name());
 
                 TeipEventStore.getInstance().appendEvent(
                     executionId,
@@ -379,6 +497,7 @@ public class TeipExecutionManager {
 
         TeipExecutionResult res = new TeipExecutionResult(executionId, status.getCorrelationId(), TeipExecutionStatus.CANCELLED, "Execution cancelled: " + reason);
         executionResults.put(executionId, res);
+        TeipPersistenceStore.getInstance().updateExecutionStatus(executionId, "CANCELLED");
 
         TeipEventStore.getInstance().appendEvent(
             executionId,
@@ -401,5 +520,6 @@ public class TeipExecutionManager {
         executionResults.clear();
         statusCache.clear();
         TeipEventStore.getInstance().reset();
+        TeipPersistenceStore.getInstance().clearAll();
     }
 }

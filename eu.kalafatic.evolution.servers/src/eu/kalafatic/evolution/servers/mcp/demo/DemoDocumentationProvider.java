@@ -49,6 +49,10 @@ public class DemoDocumentationProvider extends NanoHTTPD {
         controller.setMcpDispatcher(dispatcher);
     }
 
+    public DemoDocumentController getController() {
+        return controller;
+    }
+
     private void initializeDocs() {
         File docsDir = new File(config.getDocsFolder());
         if (!docsDir.exists()) {

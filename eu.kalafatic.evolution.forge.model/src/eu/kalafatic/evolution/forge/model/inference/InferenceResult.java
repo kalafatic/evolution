@@ -8,6 +8,7 @@ public class InferenceResult {
         EOS_REACHED,
         MAX_TOKENS_REACHED,
         STOP_SEQUENCE,
+        CANCELLED,
         ERROR
     }
 

@@ -275,10 +275,15 @@ public class EvoProductValidator {
     }
 
     private void unzip(File zipFile, File destDir) throws IOException {
+        java.nio.file.Path destRoot = destDir.getCanonicalFile().toPath().toAbsolutePath().normalize();
         try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFile))) {
             ZipEntry entry = zipIn.getNextEntry();
             while (entry != null) {
-                File filePath = new File(destDir, entry.getName());
+                java.nio.file.Path target = destRoot.resolve(entry.getName()).toAbsolutePath().normalize();
+                if (!target.startsWith(destRoot)) {
+                    throw new IOException("Zip-slip attempt blocked: entry '" + entry.getName() + "' escapes destination " + destRoot);
+                }
+                File filePath = target.toFile();
                 if (!entry.isDirectory()) {
                     if (filePath.getParentFile() != null && !filePath.getParentFile().exists()) {
                         filePath.getParentFile().mkdirs();

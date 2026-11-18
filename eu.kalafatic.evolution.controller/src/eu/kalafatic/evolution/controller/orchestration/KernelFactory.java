@@ -112,18 +112,22 @@ public class KernelFactory {
 				throw new IllegalStateException("KernelFactory: sessionContext is null for session "
 						+ context.getSessionId() + ". Cannot register capabilities.");
 			}
-			CapabilityRegistry reg = sessionContext.getCapabilityRegistry();
-			reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler(
-					eu.kalafatic.evolution.controller.execution.ExecutionBudget.defaultProfile(),
-					sessionContext.getBackpressureController()));
-			reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
-		} catch (CapabilityException e) {
-			effectiveContext.log("[KERNEL] Factory capability registration error: " + e.getMessage());
-		}
-
-		return new IterationManager(effectiveContext, sessionContext, aiService, gitManager, taskPlanner, taskExecutor,
-				evaluator, darwinEngine, memoryService);
+		CapabilityRegistry reg = sessionContext.getCapabilityRegistry();
+		reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler(
+				eu.kalafatic.evolution.controller.execution.ExecutionBudget.defaultProfile(),
+				sessionContext.getBackpressureController()));
+		reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
+		// Phase 6 family capabilities: DCode harness + ENR inference runtime (default
+		// family components, discoverable through the existing CapabilityRegistry).
+		reg.register(new eu.kalafatic.evolution.controller.orchestration.capability.DCodeFamilyCapability());
+		reg.register(new eu.kalafatic.evolution.controller.orchestration.capability.EnrFamilyCapability());
+	} catch (CapabilityException e) {
+		effectiveContext.log("[KERNEL] Factory capability registration error: " + e.getMessage());
 	}
+
+	return new IterationManager(effectiveContext, sessionContext, aiService, gitManager, taskPlanner, taskExecutor,
+			evaluator, darwinEngine, memoryService);
+}
 	
 
 	public static IterationManager create(PlatformType platformType, SessionContainer sessionContext, AiService aiService) {
@@ -183,18 +187,22 @@ public class KernelFactory {
 				throw new IllegalStateException("KernelFactory: sessionContext is null for session "
 						+ context.getSessionId() + ". Cannot register capabilities.");
 			}
-			CapabilityRegistry reg = sessionContext.getCapabilityRegistry();
-			reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler(
-					eu.kalafatic.evolution.controller.execution.ExecutionBudget.defaultProfile(),
-					sessionContext.getBackpressureController()));
-			reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
-		} catch (CapabilityException e) {
-			context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
-		}
-
-		return new IterationManager(context, sessionContext, aiService, gitManager, taskPlanner, taskExecutor,
-				evaluator, darwinEngine, memoryService);
+		CapabilityRegistry reg = sessionContext.getCapabilityRegistry();
+		reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler(
+				eu.kalafatic.evolution.controller.execution.ExecutionBudget.defaultProfile(),
+				sessionContext.getBackpressureController()));
+		reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
+		// Phase 6 family capabilities: DCode harness + ENR inference runtime (default
+		// family components, discoverable through the existing CapabilityRegistry).
+		reg.register(new eu.kalafatic.evolution.controller.orchestration.capability.DCodeFamilyCapability());
+		reg.register(new eu.kalafatic.evolution.controller.orchestration.capability.EnrFamilyCapability());
+	} catch (CapabilityException e) {
+		context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
 	}
+
+	return new IterationManager(context, sessionContext, aiService, gitManager, taskPlanner, taskExecutor,
+			evaluator, darwinEngine, memoryService);
+}
 
 	public static IterationManager create(IterationManager iterationManager, String prompt, TaskContext variantContext,
 			SessionContainer sessionContainer, AiService aiService) {

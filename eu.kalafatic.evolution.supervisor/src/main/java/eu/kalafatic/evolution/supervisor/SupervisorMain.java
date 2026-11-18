@@ -159,6 +159,13 @@ public class SupervisorMain {
         private final File runDir;
         private final int port;
         private static volatile Process activeEvoProcess;
+
+        /**
+         * WP5 (D-22): whether this supervisor currently owns a live EVO child.
+         */
+        public static boolean isActiveEvoRunning() {
+            return activeEvoProcess != null && activeEvoProcess.isAlive();
+        }
         
         public EVOSupervisorServer(int port, File baseDir) {
             // Explicitly bind to 127.0.0.1 to avoid Windows dual-stack issues
@@ -229,6 +236,10 @@ public class SupervisorMain {
                     
                     case "/stop-evo":
                         return handleStopEvo(session, params);
+
+                    case "/shutdown":
+                        // WP5: graceful supervisor shutdown endpoint.
+                        return handleShutdown(session, params);
 
                     case "/create-project":
                     case "/server/project/create":
@@ -674,8 +685,14 @@ public class SupervisorMain {
                     if (System.getProperty("evo.server.port") != null) {
                         try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                     }
-                    int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
-                    int portToUse = findAvailablePort(baseStartPort + portOffset);
+                    // WP7 (D-26): the parent passes the explicit child EVO HTTP
+                    // port (-Devo.http.port); the supervisor must not derive
+                    // offsets from its own port when the contract is present.
+                    int portToUse = resolveChildEvoPort(baseStartPort);
+                    if (portToUse <= 0) {
+                        return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                            "{\"status\":\"ERROR\",\"message\":\"No free child EVO port available in range (port conflict).\"}");
+                    }
 
                     List<String> command = new ArrayList<>();
                     command.add(executable.getAbsolutePath());
@@ -709,11 +726,14 @@ public class SupervisorMain {
                         }
                     } catch (InterruptedException ignored) {}
 
-                    if (!startupFailed && activeEvoProcess.isAlive()) {
+                    // WP6 (D-20): HTTP readiness verification replaces the
+                    // liveness-only gate. Success requires the child's HTTP
+                    // status endpoint to report RUNNING.
+                    if (!startupFailed && activeEvoProcess.isAlive() && waitForEvoReadiness(activeEvoProcess, portToUse, 30)) {
                         return newFixedLengthResponse(Response.Status.OK, "application/json",
-                            "{\"status\":\"OK\",\"message\":\"SUCCESS: Started executable product " + executable.getName() + "\",\"path\":\"" + path + "\"}");
+                            "{\"status\":\"OK\",\"message\":\"SUCCESS: Started executable product " + executable.getName() + " (readiness verified)\",\"path\":\"" + path + "\",\"port\":" + portToUse + "}");
                     } else {
-                        System.out.println("[HTTP] Native executable startup failed. Checking Equinox Starter / Jar fallbacks...");
+                        System.out.println("[HTTP] Native executable startup/readiness failed. Checking Equinox Starter / Jar fallbacks...");
                         if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
                             activeEvoProcess.destroyForcibly();
                         }
@@ -743,8 +763,12 @@ public class SupervisorMain {
                         if (System.getProperty("evo.server.port") != null) {
                             try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                         }
-                        int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
-                        int portToUse = findAvailablePort(baseStartPort + portOffset);
+                        // WP7 (D-26): explicit child port contract from the parent.
+                        int portToUse = resolveChildEvoPort(baseStartPort);
+                        if (portToUse <= 0) {
+                            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                                "{\"status\":\"ERROR\",\"message\":\"No free child EVO port available in range (port conflict).\"}");
+                        }
 
                         List<String> command = new ArrayList<>();
                         command.add("java");
@@ -781,11 +805,11 @@ public class SupervisorMain {
                             }
                         } catch (InterruptedException ignored) {}
 
-                        if (!startupFailed && activeEvoProcess.isAlive()) {
+                        if (!startupFailed && activeEvoProcess.isAlive() && waitForEvoReadiness(activeEvoProcess, portToUse, 30)) {
                             return newFixedLengthResponse(Response.Status.OK, "application/json",
-                                "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product via Equinox Starter " + launcherJar.getName() + "\",\"path\":\"" + path + "\"}");
+                                "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product via Equinox Starter " + launcherJar.getName() + " (readiness verified)\",\"path\":\"" + path + "\",\"port\":" + portToUse + "}");
                         } else {
-                            System.out.println("[HTTP] Equinox Starter startup failed. Checking Jar fallbacks...");
+                            System.out.println("[HTTP] Equinox Starter startup/readiness failed. Checking Jar fallbacks...");
                             if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
                                 activeEvoProcess.destroyForcibly();
                             }
@@ -886,8 +910,12 @@ public class SupervisorMain {
                 if (System.getProperty("evo.server.port") != null) {
                     try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
                 }
-                int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
-                int portToUse = findAvailablePort(baseStartPort + portOffset);
+                // WP7 (D-26): explicit child port contract from the parent.
+                int portToUse = resolveChildEvoPort(baseStartPort);
+                if (portToUse <= 0) {
+                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                        "{\"status\":\"ERROR\",\"message\":\"No free child EVO port available in range (port conflict).\"}");
+                }
 
                 command.add("--mode=SELF_DEV");
                 command.add("--variant=" + baseDir.getAbsolutePath());
@@ -919,9 +947,28 @@ public class SupervisorMain {
                     java.nio.file.Files.write(commandFile.toPath(),
                         commandStr.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 } catch (Exception ignored) {}
-                
-                return newFixedLengthResponse(Response.Status.OK, "application/json", 
-                    "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product " + runnableJar.getName() + "\",\"path\":\"" + path + "\"}");
+
+                // WP6 (D-20): the jar fallback branch previously reported SUCCESS
+                // without any verification. Require HTTP readiness now.
+                boolean ready = false;
+                try {
+                    boolean exitedEarly = activeEvoProcess.waitFor(3, TimeUnit.SECONDS);
+                    if (!exitedEarly && activeEvoProcess.isAlive()) {
+                        ready = waitForEvoReadiness(activeEvoProcess, portToUse, 30);
+                    }
+                } catch (InterruptedException ignored) {}
+
+                if (ready) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product " + runnableJar.getName() + " (readiness verified)\",\"path\":\"" + path + "\",\"port\":" + portToUse + "}");
+                }
+                if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                    activeEvoProcess.destroyForcibly();
+                    try { activeEvoProcess.waitFor(2, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
+                    activeEvoProcess = null;
+                }
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"status\":\"ERROR\",\"message\":\"EVO product started but did not reach HTTP readiness on port " + portToUse + " within 30s.\"}");
             } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
@@ -942,10 +989,26 @@ public class SupervisorMain {
                     control.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
                 if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
-                    System.out.println("[HTTP] Forcibly destroying active EVO process...");
-                    activeEvoProcess.destroyForcibly();
+                    System.out.println("[HTTP] Gracefully stopping active EVO process (descendants first)...");
+                    // WP5: terminate descendants first so launcher-forked children
+                    // cannot leak (D-21).
                     try {
-                        activeEvoProcess.waitFor(2, TimeUnit.SECONDS);
+                        activeEvoProcess.descendants().forEach(ph -> {
+                            try { ph.destroy(); } catch (Throwable ignored) {}
+                        });
+                    } catch (Throwable ignored) {}
+                    activeEvoProcess.destroy();
+                    try {
+                        boolean exited = activeEvoProcess.waitFor(3, TimeUnit.SECONDS);
+                        if (!exited) {
+                            activeEvoProcess.destroyForcibly();
+                            try {
+                                activeEvoProcess.descendants().forEach(ph -> {
+                                    try { ph.destroyForcibly(); } catch (Throwable ignored) {}
+                                });
+                            } catch (Throwable ignored) {}
+                            activeEvoProcess.waitFor(2, TimeUnit.SECONDS);
+                        }
                     } catch (InterruptedException ignored) {}
                     activeEvoProcess = null;
                     return newFixedLengthResponse(Response.Status.OK, "application/json",
@@ -961,6 +1024,86 @@ public class SupervisorMain {
             }
         }
 
+        private Response handleShutdown(IHTTPSession session, Map<String, String> params) {
+            System.out.println("[HTTP] Shutdown requested - graceful supervisor termination.");
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json",
+                    "{\"status\":\"OK\",\"message\":\"Shutting down supervisor gracefully.\"}");
+            Thread shutdownThread = new Thread(() -> {
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException ignored) {}
+                if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                    try {
+                        activeEvoProcess.descendants().forEach(ph -> {
+                            try { ph.destroy(); } catch (Throwable ignored) {}
+                        });
+                        activeEvoProcess.destroy();
+                        activeEvoProcess.waitFor(3, TimeUnit.SECONDS);
+                        if (activeEvoProcess.isAlive()) {
+                            activeEvoProcess.destroyForcibly();
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                System.out.println("[HTTP] Supervisor shutdown complete.");
+                System.exit(0);
+            }, "supervisor-graceful-shutdown");
+            shutdownThread.setDaemon(true);
+            shutdownThread.start();
+            return response;
+        }
+
+        /**
+         * WP7 (D-26): the child EVO HTTP port contract.
+         * The parent process passes the explicit child port via -Devo.http.port;
+         * when absent, the legacy offset derivation (this.port - supervisor base)
+         * is retained for backward compatibility.
+         */
+        private int resolveChildEvoPort(int baseStartPort) {
+            String explicit = System.getProperty("evo.http.port");
+            if (explicit != null && !explicit.trim().isEmpty()) {
+                try {
+                    int port = Integer.parseInt(explicit.trim());
+                    if (port > 0) {
+                        return findAvailablePort(port);
+                    }
+                } catch (Exception ignored) {}
+            }
+            int portOffset = (this.port > DEFAULT_SUPERVISOR_PORT) ? (this.port - DEFAULT_SUPERVISOR_PORT) : 0;
+            return findAvailablePort(baseStartPort + portOffset);
+        }
+
+        private boolean waitForEvoReadiness(Process process, int port, int timeoutSeconds) {            long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+            while (System.currentTimeMillis() < deadline) {
+                if (process == null || !process.isAlive()) {
+                    return false;
+                }
+                try {
+                    java.net.URL url = new java.net.URI("http://127.0.0.1:" + port + "/server/status").toURL();
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(1500);
+                    conn.setReadTimeout(1500);
+                    if (conn.getResponseCode() == 200) {
+                        try (java.io.InputStream is = conn.getInputStream()) {
+                            String body = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                            if (body.contains("RUNNING")) {
+                                return true;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // not responsive yet
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+            return false;
+        }
+
         private static int findAvailablePort(int startPort) {
             for (int p = startPort; p < startPort + 50; p++) {
                 try (java.net.ServerSocket ss = new java.net.ServerSocket(p)) {
@@ -968,14 +1111,21 @@ public class SupervisorMain {
                     return p;
                 } catch (Exception ignored) {}
             }
-            return startPort;
+            // WP7 (D-25): never report a busy port as available.
+            System.err.println("[PORT] No free port found in range " + startPort + ".." + (startPort + 49));
+            return -1;
         }
 
         private static void unzip(File zipFile, File destDir) throws IOException {
+            java.nio.file.Path destRoot = destDir.getCanonicalFile().toPath().toAbsolutePath().normalize();
             try (java.util.zip.ZipInputStream zipIn = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFile))) {
                 java.util.zip.ZipEntry entry = zipIn.getNextEntry();
                 while (entry != null) {
-                    File filePath = new File(destDir, entry.getName());
+                    java.nio.file.Path target = destRoot.resolve(entry.getName()).toAbsolutePath().normalize();
+                    if (!target.startsWith(destRoot)) {
+                        throw new IOException("Zip-slip attempt blocked: entry '" + entry.getName() + "' escapes destination " + destRoot);
+                    }
+                    File filePath = target.toFile();
                     if (!entry.isDirectory()) {
                         if (filePath.getParentFile() != null && !filePath.getParentFile().exists()) {
                             filePath.getParentFile().mkdirs();

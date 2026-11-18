@@ -13,18 +13,37 @@ public class EvoRcpVerifier {
     }
 
     public TaskResult verifyReady(Process process, File runtimeDir, File logDir, int port, long timeoutSeconds) {
+        return verifyReady(process, runtimeDir, logDir, port, timeoutSeconds, RcpReadinessLevel.APPLICATION_INITIALIZED);
+    }
+
+    /**
+     * WP6: readiness verification with explicit levels. Success requires the
+     * configured minimum level to be actually verified. A timeout is FAILED and
+     * reports the highest level actually achieved - a live process alone is
+     * never accepted as a ready application (D-02).
+     */
+    public TaskResult verifyReady(Process process, File runtimeDir, File logDir, int port,
+                                  long timeoutSeconds, RcpReadinessLevel minimumLevel) {
         long startTime = System.currentTimeMillis();
         long deadline = startTime + (timeoutSeconds * 1000);
+
+        RcpReadinessLevel required = minimumLevel != null ? minimumLevel : RcpReadinessLevel.APPLICATION_INITIALIZED;
 
         if (process == null) {
             return TaskResult.failure("evo_verifier", "Process object is null.", null);
         }
+
+        RcpReadinessLevel achieved = null;
+        String evidence = "";
 
         while (System.currentTimeMillis() < deadline) {
             if (!process.isAlive()) {
                 int exitCode = process.exitValue();
                 return TaskResult.failure("evo_verifier", "EVO RCP process terminated unexpectedly during startup with exit code: " + exitCode, null);
             }
+
+            achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.PROCESS_STARTED);
+            achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.PROCESS_ALIVE);
 
             File logFile = findLatestLogFile(runtimeDir, logDir);
             if (logFile != null && logFile.exists()) {
@@ -34,22 +53,38 @@ public class EvoRcpVerifier {
                 }
             }
 
-            boolean isReadyByFile = checkReadinessFile(runtimeDir);
-            boolean isReadyByHttp = verifyServerStatusEndpoint(port);
-            boolean isReadyByLog = logFile != null && containsReadyMarker(logFile);
+            if (verifyServerStatusEndpoint(port)) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.HTTP_RESPONSIVE);
+            }
 
-            if (isReadyByFile || isReadyByHttp || isReadyByLog) {
-                String unresolvedErr = verifyOsgiResolution(port, logDir);
-                if (unresolvedErr != null) {
-                    return TaskResult.failure("evo_verifier", "EVO RCP process started but OSGi bundle resolution failed:\n" + unresolvedErr, null);
-                }
+            String osgiErr = verifyOsgiResolution(port, logDir);
+            if (osgiErr != null) {
+                return TaskResult.failure("evo_verifier", "EVO RCP process started but OSGi bundle resolution failed:\n" + osgiErr, null);
+            }
+            if (osgiVerified(port, logDir)) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.OSGI_RESOLVED);
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.REQUIRED_BUNDLES_ACTIVE);
+            }
 
+            boolean appInitialized = checkReadinessFile(runtimeDir)
+                    || (logFile != null && containsReadyMarker(logFile))
+                    || verifyServerStatusRunning(port);
+            if (appInitialized) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.APPLICATION_INITIALIZED);
+            }
+            if (verifyServerStatusRunning(port)) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.APPLICATION_HEALTHY);
+            }
+
+            evidence = "highest=" + achieved;
+            if (achieved.atLeast(required)) {
                 long duration = System.currentTimeMillis() - startTime;
                 return new TaskResult.Builder("evo_verifier")
                         .status(TaskStatus.SUCCESS)
-                        .message("EVO RCP product reached READY state on port " + port + " with all OSGi bundles verified.")
+                        .message("EVO RCP product reached readiness level " + achieved + " (required: " + required + ") on port " + port + ".")
                         .duration(duration)
                         .logFile(logFile)
+                        .diagnostic("readinessLevel", achieved.name())
                         .build();
             }
 
@@ -61,27 +96,108 @@ public class EvoRcpVerifier {
             }
         }
 
-        if (process.isAlive()) {
+        // WP6 (D-02): a timeout is FAILED. The result reports the highest
+        // level actually verified - never a success based on mere liveness.
+        return new TaskResult.Builder("evo_verifier")
+                .status(TaskStatus.FAILED)
+                .message("Timed out waiting for EVO RCP readiness after " + timeoutSeconds + "s. Highest level verified: "
+                        + (achieved != null ? achieved.name() : "NONE") + " (required: " + required + ").")
+                .diagnostic("readinessLevel", achieved != null ? achieved.name() : "NONE")
+                .diagnostic("requiredLevel", required.name())
+                .build();
+    }
+
+    /**
+     * WP6: probes readiness without a Process handle (used when re-attaching to
+     * an owned, already-running child whose liveness was verified via the
+     * ownership record). Returns the highest level actually verified.
+     */
+    public RcpReadinessLevel probeReadiness(File runtimeDir, File logDir, int port, long timeoutSeconds) {
+        long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000);
+        RcpReadinessLevel achieved = null;
+
+        while (System.currentTimeMillis() < deadline) {
             File logFile = findLatestLogFile(runtimeDir, logDir);
-            String fatalErr = checkFatalExceptions(logFile, logDir);
-            if (fatalErr != null) {
-                return TaskResult.failure("evo_verifier", "EVO RCP process startup failed with fatal exception:\n" + fatalErr, null);
+
+            if (verifyServerStatusEndpoint(port)) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.HTTP_RESPONSIVE);
+            }
+            if (osgiVerified(port, logDir)) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.OSGI_RESOLVED);
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.REQUIRED_BUNDLES_ACTIVE);
+            }
+            boolean appInitialized = checkReadinessFile(runtimeDir)
+                    || (logFile != null && containsReadyMarker(logFile))
+                    || verifyServerStatusRunning(port);
+            if (appInitialized) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.APPLICATION_INITIALIZED);
+            }
+            if (verifyServerStatusRunning(port)) {
+                achieved = RcpReadinessLevel.max(achieved, RcpReadinessLevel.APPLICATION_HEALTHY);
             }
 
-            String unresolvedErr = verifyOsgiResolution(port, logDir);
-            if (unresolvedErr != null) {
-                return TaskResult.failure("evo_verifier", "EVO RCP process is alive but OSGi bundle resolution failed:\n" + unresolvedErr, null);
+            if (achieved != null && achieved.atLeast(RcpReadinessLevel.APPLICATION_INITIALIZED)) {
+                return achieved;
             }
-
-            long duration = System.currentTimeMillis() - startTime;
-            return new TaskResult.Builder("evo_verifier")
-                    .status(TaskStatus.SUCCESS)
-                    .message("EVO RCP process is running and alive after " + timeoutSeconds + "s.")
-                    .duration(duration)
-                    .build();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
+        return achieved;
+    }
 
-        return TaskResult.failure("evo_verifier", "Timed out waiting for EVO RCP process startup after " + timeoutSeconds + "s.", null);
+    private boolean osgiVerified(int port, File logDir) {
+        if (port > 0) {
+            try {
+                java.net.URL url = new java.net.URI("http://127.0.0.1:" + port + "/server/osgi").toURL();
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(1500);
+                conn.setReadTimeout(1500);
+                if (conn.getResponseCode() == 200) {
+                    try (java.io.InputStream is = conn.getInputStream()) {
+                        String jsonText = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                        org.json.JSONObject obj = new org.json.JSONObject(jsonText);
+                        org.json.JSONArray bundles = obj.optJSONArray("bundles");
+                        if (bundles != null) {
+                            for (int i = 0; i < bundles.length(); i++) {
+                                org.json.JSONObject b = bundles.getJSONObject(i);
+                                String symName = b.optString("symbolicName", "");
+                                boolean resolved = b.optBoolean("resolved", true);
+                                String state = b.optString("state", "UNKNOWN");
+                                if ((!resolved || "INSTALLED".equals(state)) && symName.startsWith("eu.kalafatic.")) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // OSGi endpoint not reachable yet - not verified.
+            }
+        }
+        return false;
+    }
+
+    private boolean verifyServerStatusRunning(int port) {
+        if (port <= 0) return false;
+        try {
+            java.net.URL url = new java.net.URI("http://127.0.0.1:" + port + "/server/status").toURL();
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(1000);
+            conn.setReadTimeout(1000);
+            if (conn.getResponseCode() == 200) {
+                try (java.io.InputStream is = conn.getInputStream()) {
+                    String jsonText = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                    return jsonText.contains("RUNNING");
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 
     public String verifyOsgiResolution(int port, File logDir) {
@@ -236,7 +352,9 @@ public class EvoRcpVerifier {
     }
 
     private boolean checkReadinessFile(File runtimeDir) {
+        File runDir = runtimeDir != null ? runtimeDir.getParentFile() : null;
         File[] candidates = new File[] {
+            runDir != null ? new File(runDir, "evo_ready.txt") : null,
             new File("self-dev-run/evo_ready.txt"),
             runtimeDir != null ? new File(runtimeDir, "self-dev-run/evo_ready.txt") : null,
             runtimeDir != null ? new File(runtimeDir, "workspace/self-dev-run/evo_ready.txt") : null

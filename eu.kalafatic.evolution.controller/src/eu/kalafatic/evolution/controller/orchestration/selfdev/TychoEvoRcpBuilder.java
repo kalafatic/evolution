@@ -20,14 +20,16 @@ import eu.kalafatic.evolution.controller.resource.TargetPlatform;
 
 public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcpBuilder {
 
-    private boolean skipTests = true;
+    // WP3: tests are ENABLED by default. Skip only via the explicit build-policy
+    // escape hatch (SelfDevBuildPolicy / -Devo.build.skipTests).
+    private boolean skipTests = false;
 
     public TychoEvoRcpBuilder() {
         super("build_evo_rcp");
     }
 
     public boolean isSkipTests() {
-        return skipTests || Boolean.getBoolean("evo.build.skipTests");
+        return skipTests || SelfDevBuildPolicy.resolve(null).isSkipTests();
     }
 
     public void setSkipTests(boolean skipTests) {
@@ -158,12 +160,24 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         metadata.put("rootFolder", prodDef.getRootFolder());
         metadata.put("repositoryModule", prodDef.getRepositoryModule());
         metadata.put("platform", platform.toString());
+        metadata.put("os", platform.getOs());
+        metadata.put("arch", platform.getArch());
 
-        BuildArtifact buildArtifact = new BuildArtifact(ArtifactType.EVO_RCP, targetDir, context.getSourceRevision(), platform.getOs(), metadata);
+        // WP4: record authoritative artifact provenance (size, SHA-256, build ID,
+        // build/test results) in the per-run manifest store.
+        ArtifactManifestStore manifestStore = context.getArtifactManifestStore();
+        String buildId = manifestStore.nextBuildId();
+        SelfDevBuildPolicy policy = SelfDevBuildPolicy.resolve(context);
+        BuildArtifact buildArtifact = manifestStore.record(ArtifactType.EVO_RCP, targetDir,
+                context.getSourceRevision(), buildId,
+                "SUCCESS", policy.isSkipTests() ? "SKIPPED_BY_POLICY" : "BUILD_VERIFY_EXECUTED",
+                null, metadata);
 
         log("[MAVEN][ARTIFACT]");
         log("[MAVEN][ARTIFACT] Type: " + ArtifactType.EVO_RCP);
         log("[MAVEN][ARTIFACT] Path: " + targetDir.getAbsolutePath());
+        log("[MAVEN][ARTIFACT] BuildId: " + buildArtifact.getBuildId());
+        log("[MAVEN][ARTIFACT] SHA256: " + buildArtifact.getSha256());
         log("[MAVEN][ARTIFACT] Exists: true");
         log("[MAVEN][ARTIFACT] Validation: SUCCESS");
 
@@ -211,38 +225,19 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             log("[TychoEvoRcpBuilder] Product search error: " + e.getMessage());
         }
 
+        // WP3 (D-11): EXPORT never silently starts a Maven build. When the build
+        // artifact is missing, EXPORT fails explicitly and directs the operator
+        // to run BUILD_EVO first.
         if (exportedLocation == null || !exportedLocation.exists()) {
-            List<String> goals = Arrays.asList("validate", "clean", "verify");
-            List<String> args = new ArrayList<>();
-            args.add(platform.getProfile());
-            if (isSkipTests()) {
-                args.add("-DskipTests");
-            }
-
-            log("[TychoEvoRcpBuilder] Executing Tycho product export build for " + prodDef.getProductId() + " (" + platform + ")...");
-            TaskResult exportExecResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
-            if (!exportExecResult.isSuccess()) {
-                return new TaskResult.Builder("export_evo_rcp")
-                        .status(TaskStatus.FAILED)
-                        .message("Tycho product export build failed: " + exportExecResult.getMessage())
-                        .error(exportExecResult.getError())
-                        .logFile(logFile)
-                        .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
-                        .diagnostic("productDefinition", prodDef.toString())
-                        .diagnostic("targetPlatform", platform.toString())
-                        .diagnostic("mavenCommand", exportExecResult.getCommand())
-                        .build();
-            }
-
-            try {
-                exportedLocation = findExactExportedProduct(reactorRoot, prodDef, platform, context);
-            } catch (Exception e) {
-                return TaskResult.failure("export_evo_rcp", "Product discovery ambiguity error: " + e.getMessage(), e);
-            }
-        }
-
-        if (exportedLocation == null || !exportedLocation.exists()) {
-            return TaskResult.failure("export_evo_rcp", "Could not locate exact exported product for " + prodDef.getProductId() + " (" + platform + ") under " + reactorRoot.getAbsolutePath(), null);
+            return new TaskResult.Builder("export_evo_rcp")
+                    .status(TaskStatus.FAILED)
+                    .message("Export failed: expected build artifact for product " + prodDef.getProductId()
+                            + " (" + platform + ") was not found under " + reactorRoot.getAbsolutePath()
+                            + ". Run BUILD_EVO first; EXPORT never triggers an implicit build (D-11).")
+                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
+                    .diagnostic("productDefinition", prodDef.toString())
+                    .diagnostic("targetPlatform", platform.toString())
+                    .build();
         }
 
         File exportDir = context.getExportDirectory();
@@ -277,12 +272,31 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         metadata.put("rootFolder", prodDef.getRootFolder());
         metadata.put("repositoryModule", prodDef.getRepositoryModule());
         metadata.put("platform", platform.toString());
+        metadata.put("os", platform.getOs());
+        metadata.put("arch", platform.getArch());
 
-        BuildArtifact artifact = new BuildArtifact(ArtifactType.EVO_RCP, exportedLocation, context.getSourceRevision(), platform.getOs(), metadata);
+        // WP4: EXPORT records the artifact derived from the exact current build in
+        // the per-run manifest store, preserving the BUILD identity where available.
+        ArtifactManifestStore manifestStore = context.getArtifactManifestStore();
+        BuildArtifact priorBuild = null;
+        try {
+            priorBuild = manifestStore.resolve(ArtifactType.EVO_RCP);
+        } catch (Exception ignored) {
+            priorBuild = null;
+        }
+        String buildId = priorBuild != null && priorBuild.getBuildId() != null
+                ? priorBuild.getBuildId() : manifestStore.nextBuildId();
+        BuildArtifact artifact = manifestStore.record(ArtifactType.EVO_RCP, exportedLocation,
+                context.getSourceRevision(), buildId,
+                priorBuild != null ? priorBuild.getBuildResult() : null,
+                priorBuild != null ? priorBuild.getTestResult() : null,
+                "SUCCESS", metadata);
 
         log("[MAVEN][ARTIFACT]");
         log("[MAVEN][ARTIFACT] Type: " + ArtifactType.EVO_RCP);
         log("[MAVEN][ARTIFACT] Path: " + exportedLocation.getAbsolutePath());
+        log("[MAVEN][ARTIFACT] BuildId: " + artifact.getBuildId());
+        log("[MAVEN][ARTIFACT] SHA256: " + artifact.getSha256());
         log("[MAVEN][ARTIFACT] Exists: true");
         log("[MAVEN][ARTIFACT] Size: " + exportedLocation.length() + " bytes");
         log("[MAVEN][ARTIFACT] Validation: SUCCESS");
@@ -303,6 +317,19 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public BuildArtifact getArtifact(SelfDevContext context) {
         if (context == null) return null;
 
+        // WP4: authoritative artifact resolution through the per-run manifest store.
+        // A stale or checksum-mismatched entry is a hard failure (null).
+        try {
+            BuildArtifact recorded = context.getArtifactManifestStore().resolve(ArtifactType.EVO_RCP);
+            if (recorded != null) {
+                return recorded;
+            }
+        } catch (Exception e) {
+            System.err.println("[TychoEvoRcpBuilder] Manifest artifact resolution failed: " + e.getMessage());
+            return null;
+        }
+
+        // Fallback for pre-manifest runs: strict exact-product search (never first-match).
         File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
         ProductDefinition prodDef = getProductDefinition();
         TargetPlatform platform = resolveTargetPlatform(context);

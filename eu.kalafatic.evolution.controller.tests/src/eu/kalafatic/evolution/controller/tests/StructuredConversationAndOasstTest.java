@@ -97,16 +97,24 @@ public class StructuredConversationAndOasstTest {
         EvoDatasetArtifact loaded = EvoDatasetArtifact.load(tempFile);
         assertEquals(3, loaded.getTrainSamples().size());
 
-        NormalizedSample loadedText = loaded.getTrainSamples().get(0);
-        assertEquals(TrainingSampleType.TEXT, loadedText.getType());
+        // save() applies a deterministic shuffle (seed 42) before the train/val split,
+        // so samples are located by type rather than by position.
+        NormalizedSample loadedText = null;
+        NormalizedSample loadedInst = null;
+        NormalizedSample loadedConvo = null;
+        for (NormalizedSample s : loaded.getTrainSamples()) {
+            if (s.getType() == TrainingSampleType.TEXT) loadedText = s;
+            else if (s.getType() == TrainingSampleType.INSTRUCTION) loadedInst = s;
+            else if (s.getType() == TrainingSampleType.CONVERSATION) loadedConvo = s;
+        }
+
+        assertNotNull("TEXT sample must round-trip", loadedText);
         assertNull(loadedText.getConversationId());
 
-        NormalizedSample loadedInst = loaded.getTrainSamples().get(1);
-        assertEquals(TrainingSampleType.INSTRUCTION, loadedInst.getType());
+        assertNotNull("INSTRUCTION sample must round-trip", loadedInst);
         assertEquals("Write a python function", loadedInst.getInstruction());
 
-        NormalizedSample loadedConvo = loaded.getTrainSamples().get(2);
-        assertEquals(TrainingSampleType.CONVERSATION, loadedConvo.getType());
+        assertNotNull("CONVERSATION sample must round-trip", loadedConvo);
         assertEquals("q_comp_1", loadedConvo.getConversationId());
         assertEquals(2, loadedConvo.getConversationMessages().size());
         assertEquals("user", loadedConvo.getConversationMessages().get(0).getRole());
@@ -249,7 +257,13 @@ public class StructuredConversationAndOasstTest {
 
     @Test
     public void testOpenAssistantAttachedFileRegression() throws Exception {
+        // Resolve the repo-relative fixture path regardless of the test working directory.
         File inputFile = new File("forge-input/OpenAssistant/oasst_top1_2023-08-25_train-eng.jsonl");
+        File probe = inputFile;
+        for (int i = 0; i < 5 && !probe.exists(); i++) {
+            probe = new File("..", probe.getPath());
+        }
+        inputFile = probe;
         assertTrue("Input file must exist", inputFile.exists());
 
         eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONLAdapter adapter =
@@ -258,7 +272,9 @@ public class StructuredConversationAndOasstTest {
         eu.kalafatic.evolution.forge.data.api.source.DatasetItem item =
             new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, inputFile.getAbsolutePath(), "JSONL");
 
-        List<NormalizedSample> samples = adapter.convert(item, null);
+        eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext context =
+            new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext(0, null);
+        List<NormalizedSample> samples = adapter.convert(item, context);
         assertEquals(4353, samples.size());
 
         // Check Italian Dobermann conversation
@@ -297,8 +313,18 @@ public class StructuredConversationAndOasstTest {
         assertEquals(4266, loaded.getTrainSamples().size());
         assertEquals(87, loaded.getValSamples().size());
 
-        // Verify loaded Italian sample
-        NormalizedSample loadedDobber = loaded.getTrainSamples().get(0);
+        // Verify loaded Italian sample (locate by content: save() shuffles before splitting)
+        NormalizedSample loadedDobber = null;
+        for (NormalizedSample s : loaded.getTrainSamples()) {
+            if (s.getType() == TrainingSampleType.CONVERSATION
+                    && s.getConversationMessages() != null
+                    && !s.getConversationMessages().isEmpty()
+                    && s.getConversationMessages().get(0).getText().contains("Consigliami 5 nomi")) {
+                loadedDobber = s;
+                break;
+            }
+        }
+        assertNotNull("Dobermann conversation must round-trip", loadedDobber);
         assertEquals(TrainingSampleType.CONVERSATION, loadedDobber.getType());
         assertEquals(2, loadedDobber.getConversationMessages().size());
         assertTrue(loadedDobber.getConversationMessages().get(0).getText().contains("Consigliami 5 nomi"));

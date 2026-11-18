@@ -141,6 +141,9 @@ public class GitTool implements ITool {
                 if (gitSettings.getLocalPath() != null && !gitSettings.getLocalPath().isEmpty()) {
                     File subDir = new File(workingDir, gitSettings.getLocalPath());
                     if (subDir.exists() && subDir.isDirectory()) {
+                        // WP9: working-directory retargeting is never silent.
+                        System.out.println("[GitTool] Retargeting git working directory: "
+                                + workingDir.getAbsolutePath() + " -> " + subDir.getAbsolutePath());
                         gitWorkingDir = subDir;
                     }
                 }

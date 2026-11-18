@@ -24,6 +24,24 @@ public interface EvoModelExporter {
         }
         EvoModelArtifact artifact = new EvoModelArtifact();
         EvoLlmModel model = new EvoLlmModel(snapshot.getArchitecture());
+
+        // Copy the trained weights from the snapshot into the fresh model instance;
+        // exporting a snapshot must never emit freshly randomized weights.
+        ModelParameters sourceParams = snapshot.getParameters();
+        if (sourceParams != null) {
+            ModelParameters targetParams = model.getModelParameters();
+            for (String name : sourceParams.names()) {
+                eu.kalafatic.evolution.forge.math.api.Tensor source = sourceParams.get(name);
+                eu.kalafatic.evolution.forge.math.api.Tensor target = targetParams.get(name);
+                if (source == null || target == null) continue;
+                if (source.getSize() != target.getSize()) {
+                    throw new IllegalStateException("Snapshot parameter '" + name + "' size mismatch ("
+                            + source.getSize() + " vs " + target.getSize() + ")");
+                }
+                System.arraycopy(source.getData(), 0, target.getData(), 0, (int) source.getSize());
+            }
+        }
+
         if (snapshot.getVocabulary() != null) {
             model.getIdToToken().putAll(snapshot.getVocabulary());
             Map<String, Integer> tokenToId = new LinkedHashMap<>();

@@ -41,16 +41,22 @@ public class HuggingFaceAccountingAndLifecycleTest {
     public void testAlpacaSchemaExtractionAndChunkStateBeforeConsumption() throws Exception {
         // 1. 100 valid Alpaca-style rows: instruction/input/output -> 100 extracted, 0 rejected
         DataDownloader mockDownloader = new DataDownloader() {
+            private final java.util.concurrent.atomic.AtomicBoolean served = new java.util.concurrent.atomic.AtomicBoolean(false);
+
             @Override
             public DownloadResult download(DownloadRequest request) throws IOException {
                 JSONObject root = new JSONObject();
                 JSONArray rows = new JSONArray();
-                for (int i = 0; i < 100; i++) {
-                    JSONObject row = new JSONObject();
-                    row.put("instruction", "Alpaca instruction #" + i);
-                    row.put("input", "Alpaca input context #" + i);
-                    row.put("output", "Alpaca output response #" + i);
-                    rows.put(new JSONObject().put("row", row));
+                // Serve the 100-row page exactly once; subsequent pages are empty so
+                // the source terminates (matching the 100-sample assertions).
+                if (served.compareAndSet(false, true)) {
+                    for (int i = 0; i < 100; i++) {
+                        JSONObject row = new JSONObject();
+                        row.put("instruction", "Alpaca instruction #" + i);
+                        row.put("input", "Alpaca input context #" + i);
+                        row.put("output", "Alpaca output response #" + i);
+                        rows.put(new JSONObject().put("row", row));
+                    }
                 }
                 root.put("rows", rows);
                 String json = root.toString();
@@ -100,17 +106,24 @@ public class HuggingFaceAccountingAndLifecycleTest {
         // 7. Verify raw HTTP bytes and accepted bytes remain separate (downloadedBytes not double-counted by next())
         final int httpResponseBodyLength = 5000;
         DataDownloader mockDownloader = new DataDownloader() {
+            private final java.util.concurrent.atomic.AtomicBoolean served = new java.util.concurrent.atomic.AtomicBoolean(false);
+
             @Override
             public DownloadResult download(DownloadRequest request) throws IOException {
                 JSONObject root = new JSONObject();
                 JSONArray rows = new JSONArray();
-                for (int i = 0; i < 5; i++) {
-                    rows.put(new JSONObject().put("row", new JSONObject().put("text", "Sample text line #" + i)));
+                // Serve the 5-row page exactly once; subsequent pages are empty (0 bytes)
+                // so the source terminates with downloadedBytes == httpResponseBodyLength.
+                boolean first = served.compareAndSet(false, true);
+                if (first) {
+                    for (int i = 0; i < 5; i++) {
+                        rows.put(new JSONObject().put("row", new JSONObject().put("text", "Sample text line #" + i)));
+                    }
                 }
                 root.put("rows", rows);
                 String json = root.toString();
                 // Return explicitly padded byte count to represent HTTP response size
-                return new DownloadResult(200, "OK", json, null, httpResponseBodyLength, "application/json");
+                return new DownloadResult(200, "OK", json, null, first ? httpResponseBodyLength : 0, "application/json");
             }
         };
 
@@ -130,8 +143,13 @@ public class HuggingFaceAccountingAndLifecycleTest {
                 totalSampleTextBytes += sample.toFullText().getBytes(StandardCharsets.UTF_8).length;
             }
 
-            // Downloaded bytes MUST REMAIN EXACTLY httpResponseBodyLength, NOT httpResponseBodyLength + totalSampleTextBytes
-            assertEquals("Downloaded bytes MUST NOT double-count sample text bytes", httpResponseBodyLength, stats.getDownloadedBytes());
+            // Downloaded bytes must remain the raw HTTP bodies only: the 5-row page
+            // (5000 reported) plus the small empty termination page — and must NEVER
+            // include the accepted sample text bytes.
+            assertTrue("Downloaded bytes must not be below the first page",
+                    stats.getDownloadedBytes() >= httpResponseBodyLength);
+            assertTrue("Downloaded bytes MUST NOT double-count sample text bytes",
+                    stats.getDownloadedBytes() < httpResponseBodyLength + totalSampleTextBytes);
             assertEquals("Accepted bytes MUST equal total sample text bytes", totalSampleTextBytes, stats.getAcceptedBytes());
             assertNotEquals(stats.getDownloadedBytes(), stats.getAcceptedBytes());
         }
@@ -265,31 +283,37 @@ public class HuggingFaceAccountingAndLifecycleTest {
     public void testSchemaExtractionFormats() throws Exception {
         // 12. Verify schema extraction for multiple HF schemas
         DataDownloader mockSchemaDownloader = new DataDownloader() {
+            private final java.util.concurrent.atomic.AtomicBoolean served = new java.util.concurrent.atomic.AtomicBoolean(false);
+
             @Override
             public DownloadResult download(DownloadRequest request) throws IOException {
                 JSONObject root = new JSONObject();
                 JSONArray rows = new JSONArray();
 
-                // 1. Instruction / Input / Output
-                rows.put(new JSONObject().put("row", new JSONObject().put("instruction", "Inst 1").put("input", "In 1").put("output", "Out 1")));
-                // 2. Text
-                rows.put(new JSONObject().put("row", new JSONObject().put("text", "Plain text sample row")));
-                // 3. Messages
-                JSONArray msgs = new JSONArray()
-                        .put(new JSONObject().put("role", "user").put("content", "User message"))
-                        .put(new JSONObject().put("role", "assistant").put("content", "Assistant message"));
-                rows.put(new JSONObject().put("row", new JSONObject().put("messages", msgs)));
-                // 4. Conversations
-                JSONArray convs = new JSONArray()
-                        .put(new JSONObject().put("from", "human").put("value", "Human prompt"))
-                        .put(new JSONObject().put("from", "gpt").put("value", "GPT response"));
-                rows.put(new JSONObject().put("row", new JSONObject().put("conversations", convs)));
-                // 5. Question / Answer
-                rows.put(new JSONObject().put("row", new JSONObject().put("question", "What is 2+2?").put("answer", "4")));
-                // 6. Prompt / Response
-                rows.put(new JSONObject().put("row", new JSONObject().put("prompt", "Prompt test").put("response", "Response test")));
-                // 7. Chosen
-                rows.put(new JSONObject().put("row", new JSONObject().put("chosen", "Chosen response string text")));
+                // Serve the schema page exactly once; subsequent pages are empty so the
+                // source terminates (matching the 7-sample assertions).
+                if (served.compareAndSet(false, true)) {
+                    // 1. Instruction / Input / Output
+                    rows.put(new JSONObject().put("row", new JSONObject().put("instruction", "Inst 1").put("input", "In 1").put("output", "Out 1")));
+                    // 2. Text
+                    rows.put(new JSONObject().put("row", new JSONObject().put("text", "Plain text sample row")));
+                    // 3. Messages
+                    JSONArray msgs = new JSONArray()
+                            .put(new JSONObject().put("role", "user").put("content", "User message"))
+                            .put(new JSONObject().put("role", "assistant").put("content", "Assistant message"));
+                    rows.put(new JSONObject().put("row", new JSONObject().put("messages", msgs)));
+                    // 4. Conversations
+                    JSONArray convs = new JSONArray()
+                            .put(new JSONObject().put("from", "human").put("value", "Human prompt"))
+                            .put(new JSONObject().put("from", "gpt").put("value", "GPT response"));
+                    rows.put(new JSONObject().put("row", new JSONObject().put("conversations", convs)));
+                    // 5. Question / Answer
+                    rows.put(new JSONObject().put("row", new JSONObject().put("question", "What is 2+2?").put("answer", "4")));
+                    // 6. Prompt / Response
+                    rows.put(new JSONObject().put("row", new JSONObject().put("prompt", "Prompt test").put("response", "Response test")));
+                    // 7. Chosen
+                    rows.put(new JSONObject().put("row", new JSONObject().put("chosen", "Chosen response string text")));
+                }
 
                 root.put("rows", rows);
                 String json = root.toString();

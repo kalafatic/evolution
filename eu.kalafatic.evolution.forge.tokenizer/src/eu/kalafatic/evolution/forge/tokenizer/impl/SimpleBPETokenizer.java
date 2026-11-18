@@ -124,6 +124,13 @@ public class SimpleBPETokenizer implements Tokenizer {
             }
         }
 
+        // Pad the vocabulary to the requested target size with never-occurring placeholder
+        // tokens. This makes the produced vocabulary size deterministic and consistent
+        // with the model architecture dimensions derived from the training target.
+        while (vocab.size() < targetVocabSize) {
+            vocab.put("<pad_" + id + ">", id++);
+        }
+
         updateInvVocab();
     }
 

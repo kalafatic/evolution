@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Event list response DTO for TEIP 1.0.
+ * Event list response DTO for TEIP 1.1.
  */
 public class TeipEventsResponse {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String executionId;
     private List<TeipEvent> events = new ArrayList<>();
     private boolean hasMore = false;

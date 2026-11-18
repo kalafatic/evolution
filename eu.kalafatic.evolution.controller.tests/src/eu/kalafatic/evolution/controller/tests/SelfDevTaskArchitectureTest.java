@@ -50,6 +50,24 @@ public class SelfDevTaskArchitectureTest {
         supervisorPkg.mkdirs();
 
         orchestrator = new SelfDevOrchestrator(mockRepoRoot, null);
+
+        // Install a valid resolved-resource snapshot for this run so the
+        // orchestrator-level preflight gate (WP2) passes deterministically,
+        // independent of the host EMF configuration.
+        installValidSnapshot(orchestrator.getContext());
+    }
+
+    private void installValidSnapshot(SelfDevContext context) {
+        context.setResolvedResources(new eu.kalafatic.evolution.controller.orchestration.selfdev.ResolvedSelfDevResources(
+                context.getRepositoryRoot(), context.getProjectRoot(),
+                context.getSourceReactorDirectory(), context.getPreparedReactorDirectory(),
+                context.getBuildDirectory(), context.getExportDirectory(),
+                context.getRuntimeDirectory(), context.getLogDirectory(),
+                context.getSupervisorDirectory(), context.getGenomeDirectory(),
+                context.getOs(), context.getWs(), context.getArch(),
+                context.getProductId(), context.getLauncher(),
+                new File(System.getProperty("java.home"), "bin/java"),
+                new File("mvn")));
     }
 
     @Test
@@ -85,7 +103,9 @@ public class SelfDevTaskArchitectureTest {
         assertTrue(builderObj instanceof TychoEvoRcpBuilder);
 
         TychoEvoRcpBuilder evoBuilder = (TychoEvoRcpBuilder) builderObj;
-        assertTrue("TychoEvoRcpBuilder must default skipTests to true for MAVEN_EVO", evoBuilder.isSkipTests());
+        // WP3: tests are ENABLED by default; skipping requires the explicit
+        // smoke-build escape hatch (-Devo.build.skipTests=true).
+        assertFalse("TychoEvoRcpBuilder must NOT skip tests by default (WP3)", evoBuilder.isSkipTests());
     }
 
     @Test
@@ -113,11 +133,15 @@ public class SelfDevTaskArchitectureTest {
         assertNotNull(exportEvo);
         assertTrue("EXPORT_EVO must depend on BUILD_EVO", exportEvo.getDependencies().contains("BUILD_EVO"));
 
-        // Executing BUILD_EVO without executing COPY first should automatically execute COPY dependency or block if copy fails
+        // Simulate a failed COPY so the dependency path is verified without executing
+        // the real repository copy + Tycho build inside a unit test.
+        orchestrator.getContext().recordTaskResult(TaskResult.failure("COPY", "Simulated COPY failure", null));
+
         TaskResult res = orchestrator.executeTaskWithDependencies("BUILD_EVO");
         assertNotNull(res);
-        // Because COPY ran first, if copy succeeded or failed, result reflects topological dependency execution
+        assertEquals("BUILD_EVO must be BLOCKED when its COPY dependency failed", TaskStatus.BLOCKED, res.getStatus());
         assertTrue("Task result must be recorded in context", orchestrator.getContext().getTaskResult("COPY") != null);
+        assertTrue("Block message must identify the failed COPY dependency", res.getMessage().contains("COPY"));
     }
 
     @Test
@@ -179,9 +203,14 @@ public class SelfDevTaskArchitectureTest {
     @Test
     public void testStartEvoSupervisorDependencySatisfiesCreateProject() {
         SelfDevContext context = orchestrator.getContext();
-        // Record successful START_EVO_SUPERVISOR task result in context
+        // Record successful START_EVO_SUPERVISOR task result in context.
+        // WP2 removed the dependency forgery: a START_EVO_SUPERVISOR success must
+        // NOT fabricate a START_EVO success.
         TaskResult superEvoSuccess = TaskResult.success("START_EVO_SUPERVISOR", "Supervisor started EVO RCP");
         context.recordTaskResult(superEvoSuccess);
+        // Record a genuinely FAILED START_EVO so the orchestrator does not attempt
+        // the real build/export/deploy/start pipeline inside a unit test.
+        context.recordTaskResult(TaskResult.failure("START_EVO", "Simulated START_EVO failure", null));
 
         // Record a mock successful CREATE_EVO_PROJECT dependency execution override
         SelfDevTask fakeCreateProject = new AbstractSelfDevTask("CREATE_EVO_PROJECT", "Create Evo Project") {
@@ -201,12 +230,17 @@ public class SelfDevTaskArchitectureTest {
 
             TaskResult res = orchestrator.executeTaskWithDependencies("CREATE_EVO_PROJECT");
             assertNotNull(res);
-            assertTrue("CREATE_EVO_PROJECT must succeed when START_EVO_SUPERVISOR was already executed successfully", res.isSuccess());
-            assertNotNull("START_EVO task result must be marked satisfied in context", context.getTaskResult("START_EVO"));
-            assertTrue(context.getTaskResult("START_EVO").isSuccess());
+            assertEquals("CREATE_EVO_PROJECT must be BLOCKED when START_EVO was not genuinely satisfied",
+                    TaskStatus.BLOCKED, res.getStatus());
+            TaskResult startEvoResult = context.getTaskResult("START_EVO");
+            assertNotNull(startEvoResult);
+            assertFalse("START_EVO task result must NOT be fabricated from START_EVO_SUPERVISOR success",
+                    startEvoResult.isSuccess());
+            assertTrue("Block message must identify the missing START_EVO dependency",
+                    res.getMessage().contains("START_EVO"));
 
         } catch (Exception e) {
-            fail("Exception executing CREATE_EVO_PROJECT with START_EVO_SUPERVISOR satisfied: " + e.getMessage());
+            fail("Exception executing CREATE_EVO_PROJECT without START_EVO satisfaction: " + e.getMessage());
         }
     }
 }

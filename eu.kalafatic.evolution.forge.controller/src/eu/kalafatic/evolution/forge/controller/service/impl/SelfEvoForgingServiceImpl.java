@@ -29,6 +29,8 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
     public static final String MCP_URL = "http://" + MCP_ADDRESS + "/mcp";
 
     private final Map<String, ForgingStats> sessionStats = new ConcurrentHashMap<>();
+    private final Map<String, ForgeJob> sessionJobs = new ConcurrentHashMap<>();
+    private final Map<String, java.util.concurrent.Future<?>> sessionTasks = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final ForgeOrchestrator forgeOrchestrator = new ForgeOrchestratorImpl();
 
@@ -47,11 +49,12 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
     public void startForging(String sessionId, Path projectPath, List<String> dataSources) throws Exception {
         updateStats(sessionId, new ForgingStats("STARTING", 0, 0, 0, 0, 0.0, "0", ""));
 
-        executor.submit(() -> {
+        java.util.concurrent.Future<?> task = executor.submit(() -> {
             try {
                 JSONObject uiState = getUiStateViaReflection(sessionId);
 
                 ForgeJob job = new ForgeJob(sessionId);
+                sessionJobs.put(sessionId, job);
 
                 Object rawTargetObj = uiState.has("targetUsableBytes") ? uiState.get("targetUsableBytes")
                         : (uiState.has("minimumUsableBytes") ? uiState.get("minimumUsableBytes") : null);
@@ -163,17 +166,78 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     job.setOutputModelName(uiState.getString("outputModelName").trim());
                 }
 
-                // Delegate complete job execution to the authoritative ForgeOrchestrator
-                forgeOrchestrator.executeJob(job, projectPath);
+                // Delegate complete job execution to the authoritative ForgeOrchestrator.
+                // A poller publishes REAL job progress (stage progressPercent) to the stats
+                // map while the job runs — no fabricated losses or stages.
+                updateStats(sessionId, new ForgingStats("RUNNING", 0, job.getSourcePaths().size(),
+                        job.getSourcePaths().size(), 0, 0.0, "0", ""));
+                Thread poller = startStatsPoller(sessionId, job);
+                try {
+                    forgeOrchestrator.executeJob(job, projectPath);
+                } finally {
+                    poller.interrupt();
+                    sessionJobs.remove(sessionId);
+                }
 
+                // Final stats derived from the REAL job result.
+                String status = mapJobState(job.getState());
+                int progress = job.getProgressPercent();
+                eu.kalafatic.evolution.forge.trainer.api.TrainingResult trainingResult = job.getTrainingResult();
+                double realLoss = trainingResult != null ? trainingResult.getLastLoss() : 0.0;
+                String epoch = trainingResult != null
+                        ? trainingResult.getCompletedEpochs() + "/" + trainingResult.getPlannedEpochs() : "0";
                 String runFolderStr = job.getRunDirectory() != null ? job.getRunDirectory().toAbsolutePath().toString() : "";
-                updateStats(sessionId, new ForgingStats("COMPLETE", 100, job.getSourcePaths().size(), job.getSourceProfiles().size(), 100, 0.05, "DONE", runFolderStr));
+                updateStats(sessionId, new ForgingStats(status, progress,
+                        job.getSourcePaths().size(), job.getSourcePaths().size(), 0, realLoss, epoch, runFolderStr));
 
             } catch (Exception e) {
                 e.printStackTrace();
                 updateStats(sessionId, new ForgingStats("ERROR", 0, 0, 0, 0, 0.0, "ERR", ""));
+                sessionJobs.remove(sessionId);
             }
         });
+        sessionTasks.put(sessionId, task);
+    }
+
+    private Thread startStatsPoller(String sessionId, ForgeJob job) {
+        Thread poller = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    eu.kalafatic.evolution.forge.trainer.api.TrainingResult trainingResult = job.getTrainingResult();
+                    double realLoss = trainingResult != null ? trainingResult.getLastLoss() : 0.0;
+                    String epoch = trainingResult != null
+                            ? trainingResult.getCompletedEpochs() + "/" + trainingResult.getPlannedEpochs() : "0";
+                    updateStats(sessionId, new ForgingStats(mapJobState(job.getState()),
+                            job.getProgressPercent(),
+                            job.getSourcePaths().size(), job.getSourcePaths().size(), 0,
+                            realLoss, epoch, ""));
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                    break;
+                } catch (Exception ignored) {
+                    break;
+                }
+            }
+        }, "self-evo-stats-poller-" + sessionId);
+        poller.setDaemon(true);
+        poller.start();
+        return poller;
+    }
+
+    private String mapJobState(ForgeJob.JobState state) {
+        if (state == null) return "RUNNING";
+        return switch (state) {
+            case CREATED -> "STARTING";
+            case ANALYZING, PREPARING, READY_TO_TRAIN -> "PREPARING";
+            case TRAINING -> "TRAINING";
+            case EVALUATING, VALIDATING, OPTIMIZING -> "EVALUATING";
+            case FINALIZING -> "EXPORTING";
+            case COMPLETED -> "COMPLETE";
+            case PAUSED -> "PAUSED";
+            case ABORTED, CANCELLED -> "CANCELLED";
+            case FAILED -> "ERROR";
+            case STOPPED -> "STOPPED";
+        };
     }
 
     public String createModel(String baseUrl, String modelName, String modelfileContent) throws Exception {
@@ -215,7 +279,25 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
     @Override
     public void stopForging(String sessionId) {
-        sessionStats.remove(sessionId);
+        // Actually stop the running forge job: request a graceful stop from the
+        // active trainer via ForgeSessionManager, and update the stats honestly.
+        boolean requested = false;
+        try {
+            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            Object manager = clazz.getMethod("getInstance").invoke(null);
+            requested = (Boolean) clazz.getMethod("requestFinish", String.class).invoke(manager, sessionId);
+        } catch (Exception ignored) {
+            // ForgeSessionManager unavailable: fall back to dropping the local task state.
+        }
+        updateStats(sessionId, new ForgingStats("STOPPING", 0, 0, 0, 0, 0.0, "0", ""));
+        if (!requested) {
+            java.util.concurrent.Future<?> task = sessionTasks.remove(sessionId);
+            if (task != null && !task.isDone()) {
+                task.cancel(true);
+            }
+            sessionJobs.remove(sessionId);
+            sessionStats.remove(sessionId);
+        }
     }
 
     private String getCodebasePathViaReflection() {

@@ -33,8 +33,9 @@ public class LlmCheckTask extends AbstractSelfDevTask {
                 return TaskResult.failure(id, "LLM service check returned HTTP " + responseCode + " at " + llmUrl, null);
             }
         } catch (Exception e) {
-            logInfo("LLM check fallback: endpoint exception (" + e.getMessage() + "). Accepting configuration requirement.");
-            return TaskResult.success(id, "LLM check completed (fallback: " + e.getMessage() + ")");
+            // WP2 (D-05): endpoint failure is an honest failure, never a silent
+            // "fallback success".
+            return TaskResult.failure(id, "LLM service check failed at " + llmUrl + ": " + e.getMessage(), e);
         }
     }
 }

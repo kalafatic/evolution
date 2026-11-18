@@ -1,5 +1,10 @@
 # TEIP 1.0 — Operations and Administration Guide
 
+> **Status note:** describes the **1.0** implementation. Canonical specification:
+> `docs/protocol/TEIP-1.1.md`. In 1.1, authentication is mandatory (dev-mode opt-out must be
+> explicit), idempotency/event state is persisted, and dispatch configuration replaces the
+> hardcoded model/endpoint (see WP-3.3).
+
 ## 1. Enabling and Disabling TEIP Integration
 
 TEIP 1.0 is integrated natively into EVO's embedded `EvolutionServer`. When EVO starts, TEIP endpoints are automatically available under `/teip/v1`.

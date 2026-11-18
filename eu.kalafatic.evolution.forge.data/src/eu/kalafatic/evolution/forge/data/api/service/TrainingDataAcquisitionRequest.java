@@ -18,6 +18,9 @@ public class TrainingDataAcquisitionRequest {
     private TrainingDataPreferences preferences;
     private TrainingDataAcquisitionPlan plan;
     private String runId;
+    private final java.util.concurrent.atomic.AtomicBoolean cancellationFlag = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private boolean allowAmplification = true;
+    private double amplificationMinCoveragePercent = 30.0;
 
     public TrainingDataAcquisitionRequest() {}
 
@@ -35,6 +38,47 @@ public class TrainingDataAcquisitionRequest {
         if (source != null) {
             this.sources.add(source);
         }
+        return this;
+    }
+
+    /**
+     * Cooperative cancellation: the acquisition loop checks this flag between
+     * records and between sources and stops with Status.CANCELLED.
+     */
+    public java.util.concurrent.atomic.AtomicBoolean getCancellationFlag() {
+        return cancellationFlag;
+    }
+
+    public boolean isCancellationRequested() {
+        return cancellationFlag.get();
+    }
+
+    public TrainingDataAcquisitionRequest cancel() {
+        cancellationFlag.set(true);
+        return this;
+    }
+
+    /**
+     * Enables/disables coverage-gated amplification of accepted samples when
+     * explicit sources are exhausted close to the target. Amplification copies
+     * are explicitly marked (source suffix "#amplified") and capped at the
+     * first-pass yield.
+     */
+    public boolean isAllowAmplification() {
+        return allowAmplification;
+    }
+
+    public TrainingDataAcquisitionRequest setAllowAmplification(boolean allowAmplification) {
+        this.allowAmplification = allowAmplification;
+        return this;
+    }
+
+    public double getAmplificationMinCoveragePercent() {
+        return amplificationMinCoveragePercent;
+    }
+
+    public TrainingDataAcquisitionRequest setAmplificationMinCoveragePercent(double amplificationMinCoveragePercent) {
+        this.amplificationMinCoveragePercent = amplificationMinCoveragePercent;
         return this;
     }
 

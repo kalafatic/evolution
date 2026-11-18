@@ -116,4 +116,8 @@
          id="eu.kalafatic.evolution.forge.agent"
          version="0.0.0"/>
 
+   <plugin
+         id="eu.kalafatic.evolution.enr"
+         version="0.0.0"/>
+
 </feature>

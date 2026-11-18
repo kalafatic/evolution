@@ -24,24 +24,62 @@ public class EvoRcpRuntime implements ProcessLifecycle {
                     .build();
         }
 
+        // WP5/WP6 (D-23): when this JVM has no live handle, adopt a running child
+        // ONLY via the current run's ownership record with verified identity,
+        // matching effective port AND verified readiness.
+        ProcessOwnershipRecord priorOwnership =
+                ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.EVO_RCP);
+        if (priorOwnership != null
+                && ProcessOwnershipRecord.isOwnedByRun(priorOwnership, context)
+                && ProcessOwnershipRecord.verifyIdentity(priorOwnership)
+                && priorOwnership.getEffectivePorts().containsKey("server")) {
+            Integer recordedPort = priorOwnership.getEffectivePorts().get("server");
+            if (recordedPort != null && recordedPort.intValue() == context.getEffectiveServerPort()) {
+                RcpReadinessLevel probed = verifier.probeReadiness(
+                        new File(context.getRuntimeDirectory(), "evo"),
+                        context.getLogDirectory(),
+                        context.getEffectiveServerPort(),
+                        15);
+                if (probed != null && probed.atLeast(RcpReadinessLevel.APPLICATION_INITIALIZED)) {
+                    return new TaskResult.Builder("start_evo_rcp")
+                            .status(TaskStatus.SUCCESS)
+                            .message("EVO RCP process for run " + context.getRunId() + " is already running and ready (PID "
+                                    + priorOwnership.getPid() + ", readiness " + probed + ").")
+                            .diagnostic("readinessLevel", probed.name())
+                            .build();
+                }
+                return TaskResult.failure("start_evo_rcp",
+                        "Owned EVO process for run " + context.getRunId() + " exists (PID " + priorOwnership.getPid()
+                        + ") but did not reach required readiness (highest verified: "
+                        + (probed != null ? probed.name() : "NONE") + "). Run STOP_EVO first.", null);
+            }
+        }
+
         File evoRuntimeDir = new File(context.getRuntimeDirectory(), "evo");
         BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
 
-        if (artifact == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-            String reqProductId = "evolution";
-            if (context.getResourceManager() != null && context.getResourceManager().getProductDefinition() != null) {
-                reqProductId = context.getResourceManager().getProductDefinition().getProductId().toLowerCase();
+        // WP4 (D-10): START_EVO must consume the exact recorded artifact from the
+        // per-run manifest store. Arbitrary ZIP scans are forbidden; a stale or
+        // checksum-mismatched record is a hard failure.
+        ArtifactManifestStore manifestStore = context.getArtifactManifestStore();
+        try {
+            BuildArtifact manifestArtifact = manifestStore.resolve(ArtifactType.EVO_RCP);
+            if (manifestArtifact != null) {
+                artifact = manifestArtifact;
+            } else if (artifact != null && artifact.getPath() != null && artifact.getPath().exists()) {
+                // In-memory artifact without a manifest entry: verify it came from
+                // the current run's export directory before use.
+                File exportDir = context.getExportDirectory();
+                File artifactPath = artifact.getPath().getAbsoluteFile();
+                boolean inExport = exportDir != null && artifactPath.getAbsolutePath().startsWith(exportDir.getAbsolutePath());
+                boolean inRuntime = artifactPath.getAbsolutePath().startsWith(context.getRuntimeDirectory().getAbsolutePath());
+                if (!inExport && !inRuntime) {
+                    System.err.println("[start_evo_rcp] Rejecting artifact outside run export/runtime dirs: " + artifactPath);
+                    artifact = null;
+                }
             }
-            final String filterProductId = reqProductId;
-            File[] zips = context.getExportDirectory().listFiles((dir, name) -> {
-                String lname = name.toLowerCase();
-                return (lname.endsWith(".zip") || lname.endsWith(".tar.gz")) &&
-                       (lname.startsWith(filterProductId + "-") || lname.startsWith(filterProductId + "_") || lname.equals(filterProductId + ".zip"));
-            });
-            if (zips != null && zips.length > 0) {
-                artifact = new BuildArtifact(ArtifactType.EVO_RCP, zips[0], context.getSourceRevision(), null, null);
-                context.recordArtifact(artifact);
-            }
+        } catch (java.io.IOException manifestError) {
+            return TaskResult.failure("start_evo_rcp", "Artifact manifest validation failed: " + manifestError.getMessage(), manifestError);
         }
 
         File executable = null;
@@ -77,6 +115,14 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         }
 
         int effectiveServerPort = context.getEffectiveServerPort();
+
+        // WP6/WP7: an occupied child port must prevent an unsafe direct launch.
+        // The check is performed immediately before launch and reports a conflict.
+        if (!isPortAvailable(effectiveServerPort)) {
+            return TaskResult.failure("start_evo_rcp",
+                    "Port conflict: effective server port " + effectiveServerPort
+                    + " is already in use. Refusing to launch a duplicate EVO child (run " + context.getRunId() + ").", null);
+        }
 
         // Prepare OS network / firewall access before process launch
         eu.kalafatic.evolution.controller.orchestration.selfdev.net.NetworkAccessResult netResult =
@@ -129,6 +175,12 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(executable.getParentFile());
+            // Pass the run-scoped state directory explicitly so the child writes readiness
+            // markers into the run directory instead of guessing a legacy CWD-relative location.
+            File runDir = context.getRuntimeDirectory() != null ? context.getRuntimeDirectory().getParentFile() : null;
+            if (runDir != null) {
+                pb.environment().put("EVO_SELFDEV_STATE_DIR", runDir.getAbsolutePath());
+            }
 
             File logFile = new File(logDir, "evo_runtime.log");
             File stdoutFile = new File(logDir, "start.stdout.log");
@@ -179,12 +231,27 @@ public class EvoRcpRuntime implements ProcessLifecycle {
             Thread.sleep(1500);
             if (!evoProcess.isAlive()) {
                 int exitCode = evoProcess.exitValue();
+                // WP5: persist the failed ownership outcome.
+                ProcessOwnershipRecord failed =
+                        ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.EVO_RCP);
+                if (failed != null) {
+                    ProcessOwnershipRecord.clear(context, ProcessOwnershipRecord.ProcessKind.EVO_RCP, exitCode);
+                }
                 if (isSecurityBlockExitCode(exitCode)) {
                     long duration = System.currentTimeMillis() - startTime;
                     return buildSecurityBlockResult("start_evo_rcp", executable, "Process terminated immediately with exit code " + exitCode, null, exitCode, duration, logFile);
                 }
                 return TaskResult.failure("start_evo_rcp", "EVO RCP process exited immediately with exit code " + exitCode, null);
             }
+
+            // WP5: persist the run-scoped EVO ownership record.
+            java.util.Map<String, Integer> ports = new java.util.LinkedHashMap<>();
+            ports.put("server", effectiveServerPort);
+            ProcessOwnershipRecord ownership = ProcessOwnershipRecord.snapshot(
+                    ProcessOwnershipRecord.ProcessKind.EVO_RCP, context, evoProcess,
+                    executable.getAbsolutePath(), cmdStr, executable.getParentFile(),
+                    new File(context.getRuntimeDirectory(), "evo"), ports);
+            ProcessOwnershipRecord.write(context, ownership);
 
             long duration = System.currentTimeMillis() - startTime;
             return new TaskResult.Builder("start_evo_rcp")
@@ -202,6 +269,16 @@ public class EvoRcpRuntime implements ProcessLifecycle {
                 return buildSecurityBlockResult("start_evo_rcp", executable, "Process creation failed", e, -1, duration, null);
             }
             return TaskResult.failure("start_evo_rcp", "Failed to launch EVO RCP process: " + e.getMessage(), e);
+        }
+    }
+
+    public static boolean isPortAvailable(int port) {
+        try (java.net.ServerSocket ss = new java.net.ServerSocket()) {
+            ss.setReuseAddress(true);
+            ss.bind(new java.net.InetSocketAddress("127.0.0.1", port));
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -298,7 +375,14 @@ public class EvoRcpRuntime implements ProcessLifecycle {
     @Override
     public TaskResult stop(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
-        if (evoProcess == null || !evoProcess.isAlive()) {
+
+        // WP5: ownership-record-first stop. When this JVM has no live handle for
+        // the child, the current run's ownership record (identity-verified) is
+        // the only acceptable termination target.
+        ProcessOwnershipRecord ownership =
+                context != null ? ProcessOwnershipRecord.read(context, ProcessOwnershipRecord.ProcessKind.EVO_RCP) : null;
+
+        if ((evoProcess == null || !evoProcess.isAlive()) && ownership == null) {
             return new TaskResult.Builder("stop_evo_rcp")
                     .status(TaskStatus.SUCCESS)
                     .message("EVO RCP process is not running.")
@@ -306,18 +390,48 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         }
 
         try {
-            evoProcess.destroy();
-            boolean exited = evoProcess.waitFor(10, TimeUnit.SECONDS);
-            if (!exited) {
-                evoProcess.destroyForcibly();
-                evoProcess.waitFor(5, TimeUnit.SECONDS);
+            int exitStatus = 0;
+            if (evoProcess != null && evoProcess.isAlive()) {
+                evoProcess.destroy();
+                boolean exited = evoProcess.waitFor(10, TimeUnit.SECONDS);
+                if (!exited) {
+                    evoProcess.destroyForcibly();
+                    evoProcess.waitFor(5, TimeUnit.SECONDS);
+                }
+                evoProcess = null;
+            } else if (ownership != null) {
+                if (!ProcessOwnershipRecord.verifyIdentity(ownership)) {
+                    System.err.println("[STOP_EVO] Refusing to terminate PID " + ownership.getPid()
+                            + ": identity does not match the ownership record (stale or recycled PID).");
+                    exitStatus = -1;
+                } else {
+                    ProcessOwnershipRecord.terminateOwnedProcessTree(ownership);
+                    // Bounded wait for the owned process to exit.
+                    try {
+                        ProcessHandle.of(ownership.getPid()).ifPresent(h -> {
+                            try {
+                                h.onExit().get(5, TimeUnit.SECONDS);
+                            } catch (Exception ignored) {}
+                        });
+                        if (ProcessHandle.of(ownership.getPid()).map(ProcessHandle::isAlive).orElse(false)) {
+                            exitStatus = -1;
+                        }
+                    } catch (Exception e) {
+                        exitStatus = -1;
+                    }
+                }
             }
-            evoProcess = null;
+            if (context != null && ownership != null) {
+                ProcessOwnershipRecord.clear(context, ProcessOwnershipRecord.ProcessKind.EVO_RCP, exitStatus);
+            }
 
             long duration = System.currentTimeMillis() - startTime;
+            if (exitStatus != 0) {
+                return TaskResult.failure("stop_evo_rcp", "EVO RCP stop refused: ownership identity verification failed.", null);
+            }
             return new TaskResult.Builder("stop_evo_rcp")
                     .status(TaskStatus.SUCCESS)
-                    .message("EVO RCP process stopped successfully.")
+                    .message("EVO RCP process stopped successfully (identity-verified).")
                     .duration(duration)
                     .build();
 

@@ -31,7 +31,15 @@ public class JSONLAdapter implements DatasetSourceAdapter {
     public boolean supports(DatasetItem item) {
         if (item == null || item.getPath() == null) return false;
         String path = item.getPath().trim().toLowerCase();
-        return path.endsWith(".jsonl") || path.endsWith(".jsonl.gz") || "JSONL".equalsIgnoreCase(item.getType());
+        if (path.endsWith(".jsonl") || path.endsWith(".jsonl.gz") || "JSONL".equalsIgnoreCase(item.getType())) {
+            // Yield OASST/OpenAssistant corpora to the specialized OASST1Adapter so its
+            // tree reconstruction is not shadowed by the generic JSONL parser.
+            if (path.contains("oasst") || path.contains("openassistant")) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override

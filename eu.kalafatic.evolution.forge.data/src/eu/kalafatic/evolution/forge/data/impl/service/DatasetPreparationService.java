@@ -14,6 +14,7 @@ import eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry;
 import eu.kalafatic.evolution.forge.data.impl.source.DatasetMetadataFilter;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -158,8 +159,8 @@ public class DatasetPreparationService {
                 int count = converted != null ? converted.size() : 0;
                 totalRecordsRead += count;
 
-                context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d recordsAccepted=%d recordsRejected=0 duplicates=0",
-                        item.getPath(), count, count));
+                context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d status=READ (dedup/rejection applied in merge stage)",
+                        item.getPath(), count));
 
                 if (converted != null) {
                     allRawSamples.addAll(converted);
@@ -386,14 +387,13 @@ public class DatasetPreparationService {
                                 .sorted()
                                 .collect(Collectors.toList());
                         for (Path cp : childFiles) {
-                            File cf = cp.toFile();
-                            sb.append(cf.getAbsolutePath()).append(":").append(cf.lastModified()).append(":").append(cf.length()).append(";");
+                            sb.append(cp.toString()).append(":").append(sha256FileContent(cp.toFile())).append(";");
                         }
                     } catch (Exception ignored) {
-                        sb.append(f.lastModified()).append(":").append(f.length());
+                        sb.append(f.getAbsolutePath()).append(":").append(sha256FileContent(f));
                     }
                 } else {
-                    sb.append(f.lastModified()).append(":").append(f.length());
+                    sb.append(f.getAbsolutePath()).append(":").append(sha256FileContent(f));
                 }
             }
             sb.append(";");
@@ -410,6 +410,31 @@ public class DatasetPreparationService {
             return hex.substring(0, 16);
         } catch (Exception ex) {
             return String.valueOf(sb.toString().hashCode());
+        }
+    }
+
+    /**
+     * Content-based file fingerprint: a change to the file content invalidates the
+     * cache even when timestamps/sizes are preserved (copy/sync tooling).
+     */
+    private String sha256FileContent(File file) {
+        try (InputStream in = Files.newInputStream(file.toPath())) {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[8192];
+            int read;
+            while ((read = in.read(buf)) > 0) {
+                md.update(buf, 0, read);
+            }
+            StringBuilder hex = new StringBuilder();
+            for (byte b : md.digest()) {
+                String h = Integer.toHexString(0xff & b);
+                if (h.length() == 1) hex.append('0');
+                hex.append(h);
+            }
+            return hex.toString();
+        } catch (Exception ex) {
+            // Fall back to size+mtime when content cannot be read.
+            return "unreadable:" + file.lastModified() + ":" + file.length();
         }
     }
 }

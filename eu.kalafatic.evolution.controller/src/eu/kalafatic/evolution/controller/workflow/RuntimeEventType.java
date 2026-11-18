@@ -89,6 +89,18 @@ public enum RuntimeEventType {
     REASONING_TRACE(EventCategory.COGNITIVE),
     INTENT_GROUNDED(EventCategory.COGNITIVE),
 
+    // 11. COGNITIVE SERVICES (Shared Cognitive Infrastructure)
+    MEMORY_STORED(EventCategory.WORKSPACE),
+    MEMORY_UPDATED(EventCategory.WORKSPACE),
+    MEMORY_RETRACTED(EventCategory.WORKSPACE),
+    MEMORY_CONSOLIDATED(EventCategory.WORKSPACE),
+    KNOWLEDGE_EXTRACTED(EventCategory.WORKSPACE),
+    SESSION_REGISTERED(EventCategory.KERNEL),
+    SESSION_SNAPSHOT_CREATED(EventCategory.KERNEL),
+    SESSION_RESTORED(EventCategory.KERNEL),
+    CONTEXT_RECONSTRUCTED(EventCategory.WORKSPACE),
+    PREFERENCE_UPDATED(EventCategory.WORKSPACE),
+
     // 10. FORGE (AI Model Design)
     FORGE_SESSION_CREATED(EventCategory.UI),
     FORGE_SESSION_SWITCHED(EventCategory.UI),

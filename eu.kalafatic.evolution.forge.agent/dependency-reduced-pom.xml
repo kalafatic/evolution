@@ -42,7 +42,7 @@
       <version>5.19.1.v20260612-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/com.sun.jna/5.19.1.v20260612-1000/com.sun.jna-5.19.1.v20260612-1000.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/com.sun.jna/5.19.1.v20260612-1000/com.sun.jna-5.19.1.v20260612-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -50,7 +50,7 @@
       <version>2.41.0.v20251025-0946</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore/2.41.0.v20251025-0946/org.eclipse.emf.ecore-2.41.0.v20251025-0946.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore/2.41.0.v20251025-0946/org.eclipse.emf.ecore-2.41.0.v20251025-0946.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -58,7 +58,7 @@
       <version>3.24.0.v20251031-2243</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.launching/3.24.0.v20251031-2243/org.eclipse.jdt.launching-3.24.0.v20251031-2243.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.launching/3.24.0.v20251031-2243/org.eclipse.jdt.launching-3.24.0.v20251031-2243.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -66,7 +66,7 @@
       <version>3.20.300.v20251111-0312</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.common/3.20.300.v20251111-0312/org.eclipse.equinox.common-3.20.300.v20251111-0312.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.common/3.20.300.v20251111-0312/org.eclipse.equinox.common-3.20.300.v20251111-0312.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -74,7 +74,7 @@
       <version>3.15.0.v20251113-1013</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.console/3.15.0.v20251113-1013/org.eclipse.ui.console-3.15.0.v20251113-1013.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.console/3.15.0.v20251113-1013/org.eclipse.ui.console-3.15.0.v20251113-1013.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -82,7 +82,7 @@
       <version>7.5.0.202512021534-r</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jgit/7.5.0.202512021534-r/org.eclipse.jgit-7.5.0.202512021534-r.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jgit/7.5.0.202512021534-r/org.eclipse.jgit-7.5.0.202512021534-r.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -90,7 +90,7 @@
       <version>7.5.0.202512021534-r</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.egit.ui/7.5.0.202512021534-r/org.eclipse.egit.ui-7.5.0.202512021534-r.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.egit.ui/7.5.0.202512021534-r/org.eclipse.egit.ui-7.5.0.202512021534-r.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -98,7 +98,7 @@
       <version>3.23.200.v20251107-0507</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.debug.core/3.23.200.v20251107-0507/org.eclipse.debug.core-3.23.200.v20251107-0507.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.debug.core/3.23.200.v20251107-0507/org.eclipse.debug.core-3.23.200.v20251107-0507.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -106,7 +106,7 @@
       <version>7.5.0.202512021534-r</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.egit.core/7.5.0.202512021534-r/org.eclipse.egit.core-7.5.0.202512021534-r.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.egit.core/7.5.0.202512021534-r/org.eclipse.egit.core-7.5.0.202512021534-r.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -115,7 +115,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/json-20140107.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent.api/lib/json-20140107.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent.api/lib/json-20140107.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -123,7 +123,7 @@
       <version>3.132.0.v20251124-0642</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.swt/3.132.0.v20251124-0642/org.eclipse.swt-3.132.0.v20251124-0642.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.swt/3.132.0.v20251124-0642/org.eclipse.swt-3.132.0.v20251124-0642.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -131,7 +131,7 @@
       <version>3.23.100.v20251106-1705</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.resources/3.23.100.v20251106-1705/org.eclipse.core.resources-3.23.100.v20251106-1705.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.resources/3.23.100.v20251106-1705/org.eclipse.core.resources-3.23.100.v20251106-1705.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -139,7 +139,7 @@
       <version>2.1.200.20251112-1342</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.launching/2.1.200.20251112-1342/org.eclipse.m2e.launching-2.1.200.20251112-1342.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.launching/2.1.200.20251112-1342/org.eclipse.m2e.launching-2.1.200.20251112-1342.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -148,7 +148,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/json-20140107.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/json-20140107.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/json-20140107.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -157,7 +157,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-annotations-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/jackson-annotations-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/jackson-annotations-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -166,7 +166,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-core-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/jackson-core-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/jackson-core-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -175,7 +175,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-databind-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/jackson-databind-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/jackson-databind-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -184,7 +184,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jbcrypt-0.4.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/jbcrypt-0.4.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/jbcrypt-0.4.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -193,7 +193,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/nanohttpd-2.3.1.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/nanohttpd-2.3.1.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/nanohttpd-2.3.1.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -202,7 +202,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/slf4j-api-1.7.36.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/slf4j-api-1.7.36.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/slf4j-api-1.7.36.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -211,7 +211,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/sqlite-jdbc-3.45.2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.controller/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.controller/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -219,7 +219,7 @@
       <version>3.13.300.v20250924-1052</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.navigator/3.13.300.v20250924-1052/org.eclipse.ui.navigator-3.13.300.v20250924-1052.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.navigator/3.13.300.v20250924-1052/org.eclipse.ui.navigator-3.13.300.v20250924-1052.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -227,7 +227,7 @@
       <version>2.44.0.v20251025-0946</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.emf.common/2.44.0.v20251025-0946/org.eclipse.emf.common-2.44.0.v20251025-0946.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.emf.common/2.44.0.v20251025-0946/org.eclipse.emf.common-2.44.0.v20251025-0946.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -235,7 +235,7 @@
       <version>3.34.100.v20251111-1421</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.runtime/3.34.100.v20251111-1421/org.eclipse.core.runtime-3.34.100.v20251111-1421.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.runtime/3.34.100.v20251111-1421/org.eclipse.core.runtime-3.34.100.v20251111-1421.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -243,7 +243,7 @@
       <version>2.39.0.v20250910-1205</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore.xmi/2.39.0.v20250910-1205/org.eclipse.emf.ecore.xmi-2.39.0.v20250910-1205.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore.xmi/2.39.0.v20250910-1205/org.eclipse.emf.ecore.xmi-2.39.0.v20250910-1205.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -251,7 +251,7 @@
       <version>2.7.600.20251121-1832</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.core/2.7.600.20251121-1832/org.eclipse.m2e.core-2.7.600.20251121-1832.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.core/2.7.600.20251121-1832/org.eclipse.m2e.core-2.7.600.20251121-1832.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -259,7 +259,7 @@
       <version>3.38.100.v20251108-1551</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jface/3.38.100.v20251108-1551/org.eclipse.jface-3.38.100.v20251108-1551.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jface/3.38.100.v20251108-1551/org.eclipse.jface-3.38.100.v20251108-1551.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -268,7 +268,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/json-20140107.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/json-20140107.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/json-20140107.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -277,7 +277,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-annotations-2.20.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/jackson-annotations-2.20.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/jackson-annotations-2.20.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -286,7 +286,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-core-2.20.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/jackson-core-2.20.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/jackson-core-2.20.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -295,7 +295,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-databind-2.20.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/jackson-databind-2.20.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/jackson-databind-2.20.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -304,7 +304,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jbcrypt-0.4.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/jbcrypt-0.4.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/jbcrypt-0.4.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -313,7 +313,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/nanohttpd-2.3.1.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/nanohttpd-2.3.1.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/nanohttpd-2.3.1.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -322,7 +322,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/slf4j-api-1.7.36.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/slf4j-api-1.7.36.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/slf4j-api-1.7.36.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -331,7 +331,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/sqlite-jdbc-3.45.2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.servers/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.servers/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -340,7 +340,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/json-20140107.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/json-20140107.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/json-20140107.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -349,7 +349,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-annotations-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jackson-annotations-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/jackson-annotations-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -358,7 +358,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-core-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jackson-core-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/jackson-core-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -367,7 +367,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-databind-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jackson-databind-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/jackson-databind-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -376,7 +376,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jbcrypt-0.4.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jbcrypt-0.4.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/jbcrypt-0.4.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -385,7 +385,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/nanohttpd-2.3.1.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/nanohttpd-2.3.1.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/nanohttpd-2.3.1.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -394,7 +394,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/slf4j-api-1.7.36.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/slf4j-api-1.7.36.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/slf4j-api-1.7.36.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -403,7 +403,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/sqlite-jdbc-3.45.2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.model/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -411,7 +411,7 @@
       <version>3.207.400.v20251015-1301</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui/3.207.400.v20251015-1301/org.eclipse.ui-3.207.400.v20251015-1301.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui/3.207.400.v20251015-1301/org.eclipse.ui-3.207.400.v20251015-1301.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -419,7 +419,7 @@
       <version>4.13.2.v20240929-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.junit/4.13.2.v20240929-1000/org.junit-4.13.2.v20240929-1000.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.junit/4.13.2.v20240929-1000/org.junit-4.13.2.v20240929-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -428,7 +428,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/json-20140107.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/json-20140107.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/json-20140107.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -437,7 +437,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-annotations-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/jackson-annotations-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/jackson-annotations-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -446,7 +446,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-core-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/jackson-core-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/jackson-core-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -455,7 +455,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jackson-databind-2.17.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/jackson-databind-2.17.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/jackson-databind-2.17.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -464,7 +464,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/jbcrypt-0.4.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/jbcrypt-0.4.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/jbcrypt-0.4.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -473,7 +473,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/nanohttpd-2.3.1.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/nanohttpd-2.3.1.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/nanohttpd-2.3.1.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -482,7 +482,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/slf4j-api-1.7.36.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/slf4j-api-1.7.36.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/slf4j-api-1.7.36.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>eu.kalafatic.evolution</groupId>
@@ -491,7 +491,7 @@
       <type>eclipse-plugin</type>
       <classifier>lib/sqlite-jdbc-3.45.2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/app/eu.kalafatic.evolution.forge.agent/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
+      <systemPath>/home/petr/git/evolution-121126/eu.kalafatic.evolution.forge.agent/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -499,7 +499,7 @@
       <version>3.137.0.v20251114-0005</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.workbench/3.137.0.v20251114-0005/org.eclipse.ui.workbench-3.137.0.v20251114-0005.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.workbench/3.137.0.v20251114-0005/org.eclipse.ui.workbench-3.137.0.v20251114-0005.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -507,7 +507,7 @@
       <version>3.24.0.202511201732</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.gef/3.24.0.202511201732/org.eclipse.gef-3.24.0.202511201732.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.gef/3.24.0.202511201732/org.eclipse.gef-3.24.0.202511201732.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -515,7 +515,7 @@
       <version>3.13.700.v20251009-1850</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.forms/3.13.700.v20251009-1850/org.eclipse.ui.forms-3.13.700.v20251009-1850.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.forms/3.13.700.v20251009-1850/org.eclipse.ui.forms-3.13.700.v20251009-1850.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -523,7 +523,7 @@
       <version>3.12.800.v20250924-1436</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.views/3.12.800.v20250924-1436/org.eclipse.ui.views-3.12.800.v20250924-1436.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.views/3.12.800.v20250924-1436/org.eclipse.ui.views-3.12.800.v20250924-1436.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -531,7 +531,7 @@
       <version>3.9.900.v20250924-1033</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.navigator.resources/3.9.900.v20250924-1033/org.eclipse.ui.navigator.resources-3.9.900.v20250924-1033.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.navigator.resources/3.9.900.v20250924-1033/org.eclipse.ui.navigator.resources-3.9.900.v20250924-1033.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -539,7 +539,7 @@
       <version>3.22.800.v20251112-0859</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.ide/3.22.800.v20251112-0859/org.eclipse.ui.ide-3.22.800.v20251112-0859.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.ide/3.22.800.v20251112-0859/org.eclipse.ui.ide-3.22.800.v20251112-0859.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -547,7 +547,7 @@
       <version>1.6.600.v20251111-1040</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.ui.sdk.scheduler/1.6.600.v20251111-1040/org.eclipse.equinox.p2.ui.sdk.scheduler-1.6.600.v20251111-1040.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.ui.sdk.scheduler/1.6.600.v20251111-1040/org.eclipse.equinox.p2.ui.sdk.scheduler-1.6.600.v20251111-1040.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -555,7 +555,7 @@
       <version>1.3.500.v20250521-0421</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.ui.sdk/1.3.500.v20250521-0421/org.eclipse.equinox.p2.ui.sdk-1.3.500.v20250521-0421.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.ui.sdk/1.3.500.v20250521-0421/org.eclipse.equinox.p2.ui.sdk-1.3.500.v20250521-0421.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -563,7 +563,7 @@
       <version>2.8.1000.v20251111-1030</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.ui/2.8.1000.v20251111-1030/org.eclipse.equinox.p2.ui-2.8.1000.v20251111-1030.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.ui/2.8.1000.v20251111-1030/org.eclipse.equinox.p2.ui-2.8.1000.v20251111-1030.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -571,7 +571,7 @@
       <version>1.4.600.v20250728-0401</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.updatechecker/1.4.600.v20250728-0401/org.eclipse.equinox.p2.updatechecker-1.4.600.v20250728-0401.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.updatechecker/1.4.600.v20250728-0401/org.eclipse.equinox.p2.updatechecker-1.4.600.v20250728-0401.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -579,7 +579,7 @@
       <version>1.3.800.v20250606-0550</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.updatesite/1.3.800.v20250606-0550/org.eclipse.equinox.p2.updatesite-1.3.800.v20250606-0550.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.updatesite/1.3.800.v20250606-0550/org.eclipse.equinox.p2.updatesite-1.3.800.v20250606-0550.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -587,7 +587,7 @@
       <version>1.3.700.v20250616-0711</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.discovery/1.3.700.v20250616-0711/org.eclipse.equinox.p2.discovery-1.3.700.v20250616-0711.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.discovery/1.3.700.v20250616-0711/org.eclipse.equinox.p2.discovery-1.3.700.v20250616-0711.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -595,7 +595,7 @@
       <version>4.8.200.v20250707-1559</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.help.ui/4.8.200.v20250707-1559/org.eclipse.help.ui-4.8.200.v20250707-1559.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.help.ui/4.8.200.v20250707-1559/org.eclipse.help.ui-4.8.200.v20250707-1559.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -603,7 +603,7 @@
       <version>3.8.700.v20251031-0712</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.browser/3.8.700.v20251031-0712/org.eclipse.ui.browser-3.8.700.v20251031-0712.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.browser/3.8.700.v20251031-0712/org.eclipse.ui.browser-3.8.700.v20251031-0712.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -611,7 +611,7 @@
       <version>3.11.600.v20251105-1253</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.compare/3.11.600.v20251105-1253/org.eclipse.compare-3.11.600.v20251105-1253.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.compare/3.11.600.v20251105-1253/org.eclipse.compare-3.11.600.v20251105-1253.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -619,7 +619,7 @@
       <version>3.12.500.v20251103-0733</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.commands/3.12.500.v20251103-0733/org.eclipse.core.commands-3.12.500.v20251103-0733.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.commands/3.12.500.v20251103-0733/org.eclipse.core.commands-3.12.500.v20251103-0733.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -627,7 +627,7 @@
       <version>1.13.700.v20251023-1511</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding/1.13.700.v20251023-1511/org.eclipse.core.databinding-1.13.700.v20251023-1511.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding/1.13.700.v20251023-1511/org.eclipse.core.databinding-1.13.700.v20251023-1511.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -635,7 +635,7 @@
       <version>1.10.500.v20250916-0941</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding.beans/1.10.500.v20250916-0941/org.eclipse.core.databinding.beans-1.10.500.v20250916-0941.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding.beans/1.10.500.v20250916-0941/org.eclipse.core.databinding.beans-1.10.500.v20250916-0941.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -643,7 +643,7 @@
       <version>1.13.500.v20251103-0735</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding.observable/1.13.500.v20251103-0735/org.eclipse.core.databinding.observable-1.13.500.v20251103-0735.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding.observable/1.13.500.v20251103-0735/org.eclipse.core.databinding.observable-1.13.500.v20251103-0735.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -651,7 +651,7 @@
       <version>1.10.500.v20250916-0931</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding.property/1.10.500.v20250916-0931/org.eclipse.core.databinding.property-1.10.500.v20250916-0931.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.databinding.property/1.10.500.v20250916-0931/org.eclipse.core.databinding.property-1.10.500.v20250916-0931.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -659,7 +659,7 @@
       <version>3.8.500.v20251103-0746</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.filebuffers/3.8.500.v20251103-0746/org.eclipse.core.filebuffers-3.8.500.v20251103-0746.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.filebuffers/3.8.500.v20251103-0746/org.eclipse.core.filebuffers-3.8.500.v20251103-0746.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -667,7 +667,7 @@
       <version>1.11.400.v20251107-0507</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.filesystem/1.11.400.v20251107-0507/org.eclipse.core.filesystem-1.11.400.v20251107-0507.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.filesystem/1.11.400.v20251107-0507/org.eclipse.core.filesystem-1.11.400.v20251107-0507.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -675,7 +675,7 @@
       <version>3.12.600.v20250906-0651</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.registry/3.12.600.v20250906-0651/org.eclipse.equinox.registry-3.12.600.v20250906-0651.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.registry/3.12.600.v20250906-0651/org.eclipse.equinox.registry-3.12.600.v20250906-0651.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -683,7 +683,7 @@
       <version>3.9.800.v20251105-1620</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.contenttype/3.9.800.v20251105-1620/org.eclipse.core.contenttype-3.9.800.v20251105-1620.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.contenttype/3.9.800.v20251105-1620/org.eclipse.core.contenttype-3.9.800.v20251105-1620.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -691,7 +691,7 @@
       <version>3.15.700.v20250725-1147</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.jobs/3.15.700.v20250725-1147/org.eclipse.core.jobs-3.15.700.v20250725-1147.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.jobs/3.15.700.v20250725-1147/org.eclipse.core.jobs-3.15.700.v20250725-1147.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -699,7 +699,7 @@
       <version>3.21.0.202512020742</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.draw2d/3.21.0.202512020742/org.eclipse.draw2d-3.21.0.202512020742.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.draw2d/3.21.0.202512020742/org.eclipse.draw2d-3.21.0.202512020742.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -707,7 +707,7 @@
       <version>2.13.200.v20251111-1620</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.core/2.13.200.v20251111-1620/org.eclipse.equinox.p2.core-2.13.200.v20251111-1620.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.core/2.13.200.v20251111-1620/org.eclipse.equinox.p2.core-2.13.200.v20251111-1620.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -715,7 +715,7 @@
       <version>2.11.0.v20251111-1028</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.engine/2.11.0.v20251111-1028/org.eclipse.equinox.p2.engine-2.11.0.v20251111-1028.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.engine/2.11.0.v20251111-1028/org.eclipse.equinox.p2.engine-2.11.0.v20251111-1028.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -723,7 +723,7 @@
       <version>2.9.600.v20251108-0408</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.metadata/2.9.600.v20251108-0408/org.eclipse.equinox.p2.metadata-2.9.600.v20251108-0408.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.metadata/2.9.600.v20251108-0408/org.eclipse.equinox.p2.metadata-2.9.600.v20251108-0408.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -731,7 +731,7 @@
       <version>2.7.700.v20250720-1530</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.operations/2.7.700.v20250720-1530/org.eclipse.equinox.p2.operations-2.7.700.v20250720-1530.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.operations/2.7.700.v20250720-1530/org.eclipse.equinox.p2.operations-2.7.700.v20250720-1530.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -739,7 +739,7 @@
       <version>1.15.400.v20250925-0701</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jface.databinding/1.15.400.v20250925-0701/org.eclipse.jface.databinding-1.15.400.v20250925-0701.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jface.databinding/1.15.400.v20250925-0701/org.eclipse.jface.databinding-1.15.400.v20250925-0701.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -747,7 +747,7 @@
       <version>3.29.0.v20251112-0859</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jface.text/3.29.0.v20251112-0859/org.eclipse.jface.text-3.29.0.v20251112-0859.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jface.text/3.29.0.v20251112-0859/org.eclipse.jface.text-3.29.0.v20251112-0859.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -755,7 +755,7 @@
       <version>3.14.500.v20251103-0730</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.text/3.14.500.v20251103-0730/org.eclipse.text-3.14.500.v20251103-0730.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.text/3.14.500.v20251103-0730/org.eclipse.text-3.14.500.v20251103-0730.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -763,15 +763,15 @@
       <version>3.24.0.v20251126-0427</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.osgi/3.24.0.v20251126-0427/org.eclipse.osgi-3.24.0.v20251126-0427.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.osgi/3.24.0.v20251126-0427/org.eclipse.osgi-3.24.0.v20251126-0427.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
-      <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
+      <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
       <version>3.132.0.v20251124-0642</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.swt.win32.win32.x86_64/3.132.0.v20251124-0642/org.eclipse.swt.win32.win32.x86_64-3.132.0.v20251124-0642.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.swt.gtk.linux.x86_64/3.132.0.v20251124-0642/org.eclipse.swt.gtk.linux.x86_64-3.132.0.v20251124-0642.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -779,7 +779,7 @@
       <version>3.20.200.v20251125-0939</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.editors/3.20.200.v20251125-0939/org.eclipse.ui.editors-3.20.200.v20251125-0939.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.editors/3.20.200.v20251125-0939/org.eclipse.ui.editors-3.20.200.v20251125-0939.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -787,7 +787,7 @@
       <version>3.19.400.v20251105-0815</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.workbench.texteditor/3.19.400.v20251105-0815/org.eclipse.ui.workbench.texteditor-3.19.400.v20251105-0815.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.workbench.texteditor/3.19.400.v20251105-0815/org.eclipse.ui.workbench.texteditor-3.19.400.v20251105-0815.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -795,7 +795,7 @@
       <version>3.10.500.v20250924-1036</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.views.properties.tabbed/3.10.500.v20250924-1036/org.eclipse.ui.views.properties.tabbed-3.10.500.v20250924-1036.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.views.properties.tabbed/3.10.500.v20250924-1036/org.eclipse.ui.views.properties.tabbed-3.10.500.v20250924-1036.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -803,7 +803,7 @@
       <version>3.5.900.v20251112-1253</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.update.configurator/3.5.900.v20251112-1253/org.eclipse.update.configurator-3.5.900.v20251112-1253.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.update.configurator/3.5.900.v20251112-1253/org.eclipse.update.configurator-3.5.900.v20251112-1253.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -811,7 +811,7 @@
       <version>1.17.0.202511111557</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.zest.core/1.17.0.202511111557/org.eclipse.zest.core-1.17.0.202511111557.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.zest.core/1.17.0.202511111557/org.eclipse.zest.core-1.17.0.202511111557.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -819,7 +819,7 @@
       <version>1.19.0.v20250506-1400</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.batik.constants/1.19.0.v20250506-1400/org.apache.batik.constants-1.19.0.v20250506-1400.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.batik.constants/1.19.0.v20250506-1400/org.apache.batik.constants-1.19.0.v20250506-1400.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -827,7 +827,7 @@
       <version>1.19.0.v20250506-1400</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.batik.css/1.19.0.v20250506-1400/org.apache.batik.css-1.19.0.v20250506-1400.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.batik.css/1.19.0.v20250506-1400/org.apache.batik.css-1.19.0.v20250506-1400.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -835,7 +835,7 @@
       <version>1.0.0.v20240917-0534</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.orbit.xml-apis-ext/1.0.0.v20240917-0534/org.eclipse.orbit.xml-apis-ext-1.0.0.v20240917-0534.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.orbit.xml-apis-ext/1.0.0.v20240917-0534/org.eclipse.orbit.xml-apis-ext-1.0.0.v20240917-0534.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -843,7 +843,7 @@
       <version>2.11.0.v20250506-1400</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.xmlgraphics/2.11.0.v20250506-1400/org.apache.xmlgraphics-2.11.0.v20250506-1400.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.xmlgraphics/2.11.0.v20250506-1400/org.apache.xmlgraphics-2.11.0.v20250506-1400.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -851,7 +851,7 @@
       <version>1.19.0.v20250506-1400</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.batik.i18n/1.19.0.v20250506-1400/org.apache.batik.i18n-1.19.0.v20250506-1400.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.batik.i18n/1.19.0.v20250506-1400/org.apache.batik.i18n-1.19.0.v20250506-1400.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -859,7 +859,7 @@
       <version>1.19.0.v20250506-1400</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.batik.util/1.19.0.v20250506-1400/org.apache.batik.util-1.19.0.v20250506-1400.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.batik.util/1.19.0.v20250506-1400/org.apache.batik.util-1.19.0.v20250506-1400.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -867,7 +867,7 @@
       <version>10.5.1.v20260812-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.core/10.5.1.v20260812-1000/org.apache.lucene.core-10.5.1.v20260812-1000.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.lucene.core/10.5.1.v20260812-1000/org.apache.lucene.core-10.5.1.v20260812-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -875,7 +875,7 @@
       <version>10.5.1.v20260812-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-common/10.5.1.v20260812-1000/org.apache.lucene.analysis-common-10.5.1.v20260812-1000.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-common/10.5.1.v20260812-1000/org.apache.lucene.analysis-common-10.5.1.v20260812-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -883,7 +883,7 @@
       <version>10.5.1.v20260812-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-smartcn/10.5.1.v20260812-1000/org.apache.lucene.analysis-smartcn-10.5.1.v20260812-1000.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-smartcn/10.5.1.v20260812-1000/org.apache.lucene.analysis-smartcn-10.5.1.v20260812-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -891,7 +891,7 @@
       <version>2.12.2.v20230928-1306</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.xerces/2.12.2.v20230928-1306/org.apache.xerces-2.12.2.v20230928-1306.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.xerces/2.12.2.v20230928-1306/org.apache.xerces-2.12.2.v20230928-1306.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -899,7 +899,7 @@
       <version>1.2.0.v20230928-1222</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.xml.resolver/1.2.0.v20230928-1222/org.apache.xml.resolver-1.2.0.v20230928-1222.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.apache.xml.resolver/1.2.0.v20230928-1222/org.apache.xml.resolver-1.2.0.v20230928-1222.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -907,7 +907,7 @@
       <version>3.9.500.v20250608-0434</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.expressions/3.9.500.v20250608-0434/org.eclipse.core.expressions-3.9.500.v20250608-0434.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.expressions/3.9.500.v20250608-0434/org.eclipse.core.expressions-3.9.500.v20250608-0434.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -915,7 +915,7 @@
       <version>3.8.800.v20250718-1505</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.compare.core/3.8.800.v20250718-1505/org.eclipse.compare.core-3.8.800.v20250718-1505.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.compare.core/3.8.800.v20250718-1505/org.eclipse.compare.core-3.8.800.v20250718-1505.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -923,7 +923,7 @@
       <version>3.131.0.v20251009-2047</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.swt.svg/3.131.0.v20251009-2047/org.eclipse.swt.svg-3.131.0.v20251009-2047.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.swt.svg/3.131.0.v20251009-2047/org.eclipse.swt.svg-3.131.0.v20251009-2047.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -931,7 +931,7 @@
       <version>3.12.100.v20251111-0704</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.preferences/3.12.100.v20251111-0704/org.eclipse.equinox.preferences-3.12.100.v20251111-0704.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.preferences/3.12.100.v20251111-0704/org.eclipse.equinox.preferences-3.12.100.v20251111-0704.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -939,7 +939,7 @@
       <version>1.5.800.v20250613-1119</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.net/1.5.800.v20250613-1119/org.eclipse.core.net-1.5.800.v20250613-1119.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.net/1.5.800.v20250613-1119/org.eclipse.core.net-1.5.800.v20250613-1119.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -947,7 +947,7 @@
       <version>1.4.700.v20250622-1644</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.security/1.4.700.v20250622-1644/org.eclipse.equinox.security-1.4.700.v20250622-1644.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.security/1.4.700.v20250622-1644/org.eclipse.equinox.security-1.4.700.v20250622-1644.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -955,7 +955,7 @@
       <version>1.7.500.v20250629-0337</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.app/1.7.500.v20250629-0337/org.eclipse.equinox.app-1.7.500.v20250629-0337.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.app/1.7.500.v20250629-0337/org.eclipse.equinox.app-1.7.500.v20250629-0337.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -963,7 +963,7 @@
       <version>3.6.700.v20250913-1442</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.variables/3.6.700.v20250913-1442/org.eclipse.core.variables-3.6.700.v20250913-1442.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.core.variables/3.6.700.v20250913-1442/org.eclipse.core.variables-3.6.700.v20250913-1442.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -971,7 +971,7 @@
       <version>3.19.100.v20251114-0802</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.debug.ui/3.19.100.v20251114-0802/org.eclipse.debug.ui-3.19.100.v20251114-0802.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.debug.ui/3.19.100.v20251114-0802/org.eclipse.debug.ui-3.19.100.v20251114-0802.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -979,7 +979,7 @@
       <version>3.10.600.v20250613-0437</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.help/3.10.600.v20250613-0437/org.eclipse.help-3.10.600.v20250613-0437.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.help/3.10.600.v20250613-0437/org.eclipse.help-3.10.600.v20250613-0437.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -987,7 +987,7 @@
       <version>1.6.600.v20251023-1358</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.services/1.6.600.v20251023-1358/org.eclipse.e4.ui.services-1.6.600.v20251023-1358.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.services/1.6.600.v20251023-1358/org.eclipse.e4.ui.services-1.6.600.v20251023-1358.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -995,7 +995,7 @@
       <version>1.1.700.v20250916-0927</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.commands/1.1.700.v20250916-0927/org.eclipse.e4.core.commands-1.1.700.v20250916-0927.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.commands/1.1.700.v20250916-0927/org.eclipse.e4.core.commands-1.1.700.v20250916-0927.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1003,7 +1003,7 @@
       <version>1.9.700.v20250609-0907</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di/1.9.700.v20250609-0907/org.eclipse.e4.core.di-1.9.700.v20250609-0907.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di/1.9.700.v20250609-0907/org.eclipse.e4.core.di-1.9.700.v20250609-0907.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1011,7 +1011,7 @@
       <version>1.13.200.v20250609-0437</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.contexts/1.13.200.v20250609-0437/org.eclipse.e4.core.contexts-1.13.200.v20250609-0437.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.contexts/1.13.200.v20250609-0437/org.eclipse.e4.core.contexts-1.13.200.v20250609-0437.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1019,7 +1019,7 @@
       <version>2.5.300.v20251112-1253</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.services/2.5.300.v20251112-1253/org.eclipse.e4.core.services-2.5.300.v20251112-1253.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.services/2.5.300.v20251112-1253/org.eclipse.e4.core.services-2.5.300.v20251112-1253.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1027,7 +1027,7 @@
       <version>1.8.400.v20240413-1529</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.annotations/1.8.400.v20240413-1529/org.eclipse.e4.core.di.annotations-1.8.400.v20240413-1529.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.annotations/1.8.400.v20240413-1529/org.eclipse.e4.core.di.annotations-1.8.400.v20240413-1529.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1035,7 +1035,7 @@
       <version>0.18.300.v20240413-1529</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.extensions/0.18.300.v20240413-1529/org.eclipse.e4.core.di.extensions-0.18.300.v20240413-1529.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.extensions/0.18.300.v20240413-1529/org.eclipse.e4.core.di.extensions-0.18.300.v20240413-1529.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1043,7 +1043,7 @@
       <version>0.17.900.v20250609-0432</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.extensions.supplier/0.17.900.v20250609-0432/org.eclipse.e4.core.di.extensions.supplier-0.17.900.v20250609-0432.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.extensions.supplier/0.17.900.v20250609-0432/org.eclipse.e4.core.di.extensions.supplier-0.17.900.v20250609-0432.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1051,7 +1051,7 @@
       <version>0.6.100.v20251103-0738</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.emf.xpath/0.6.100.v20251103-0738/org.eclipse.e4.emf.xpath-0.6.100.v20251103-0738.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.emf.xpath/0.6.100.v20251103-0738/org.eclipse.e4.emf.xpath-0.6.100.v20251103-0738.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1059,7 +1059,7 @@
       <version>0.14.800.v20250916-0937</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.bindings/0.14.800.v20250916-0937/org.eclipse.e4.ui.bindings-0.14.800.v20250916-0937.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.bindings/0.14.800.v20250916-0937/org.eclipse.e4.ui.bindings-0.14.800.v20250916-0937.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1067,7 +1067,7 @@
       <version>2.4.700.v20251029-0840</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.model.workbench/2.4.700.v20251029-0840/org.eclipse.e4.ui.model.workbench-2.4.700.v20251029-0840.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.model.workbench/2.4.700.v20251029-0840/org.eclipse.e4.ui.model.workbench-2.4.700.v20251029-0840.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1075,7 +1075,7 @@
       <version>0.14.600.v20251112-0859</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.css.core/0.14.600.v20251112-0859/org.eclipse.e4.ui.css.core-0.14.600.v20251112-0859.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.css.core/0.14.600.v20251112-0859/org.eclipse.e4.ui.css.core-0.14.600.v20251112-0859.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1083,7 +1083,7 @@
       <version>0.15.700.v20251023-1511</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.css.swt/0.15.700.v20251023-1511/org.eclipse.e4.ui.css.swt-0.15.700.v20251023-1511.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.css.swt/0.15.700.v20251023-1511/org.eclipse.e4.ui.css.swt-0.15.700.v20251023-1511.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1091,7 +1091,7 @@
       <version>0.14.600.v20251023-0615</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.css.swt.theme/0.14.600.v20251023-0615/org.eclipse.e4.ui.css.swt.theme-0.14.600.v20251023-0615.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.css.swt.theme/0.14.600.v20251023-0615/org.eclipse.e4.ui.css.swt.theme-0.14.600.v20251023-0615.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1099,7 +1099,7 @@
       <version>1.5.700.v20250917-0901</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.di/1.5.700.v20250917-0901/org.eclipse.e4.ui.di-1.5.700.v20250917-0901.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.di/1.5.700.v20250917-0901/org.eclipse.e4.ui.di-1.5.700.v20250917-0901.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1107,7 +1107,7 @@
       <version>1.6.200.v20250917-0721</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.dialogs/1.6.200.v20250917-0721/org.eclipse.e4.ui.dialogs-1.6.200.v20250917-0721.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.dialogs/1.6.200.v20250917-0721/org.eclipse.e4.ui.dialogs-1.6.200.v20250917-0721.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1115,7 +1115,7 @@
       <version>3.17.300.v20250917-0547</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.ide/3.17.300.v20250917-0547/org.eclipse.e4.ui.ide-3.17.300.v20250917-0547.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.ide/3.17.300.v20250917-0547/org.eclipse.e4.ui.ide-3.17.300.v20250917-0547.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1123,7 +1123,7 @@
       <version>0.4.900.v20251023-1511</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.progress/0.4.900.v20251023-1511/org.eclipse.e4.ui.progress-0.4.900.v20251023-1511.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.progress/0.4.900.v20251023-1511/org.eclipse.e4.ui.progress-0.4.900.v20251023-1511.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1131,7 +1131,7 @@
       <version>1.18.100.v20251023-1358</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench/1.18.100.v20251023-1358/org.eclipse.e4.ui.workbench-1.18.100.v20251023-1358.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench/1.18.100.v20251023-1358/org.eclipse.e4.ui.workbench-1.18.100.v20251023-1358.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1139,7 +1139,7 @@
       <version>0.17.1000.v20251023-0611</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench.swt/0.17.1000.v20251023-0611/org.eclipse.e4.ui.workbench.swt-0.17.1000.v20251023-0611.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench.swt/0.17.1000.v20251023-0611/org.eclipse.e4.ui.workbench.swt-0.17.1000.v20251023-0611.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1147,7 +1147,7 @@
       <version>1.7.300.v20250518-0609</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.event/1.7.300.v20250518-0609/org.eclipse.equinox.event-1.7.300.v20250518-0609.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.event/1.7.300.v20250518-0609/org.eclipse.equinox.event-1.7.300.v20250518-0609.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1155,7 +1155,7 @@
       <version>1.4.300.v20251002-1328</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.widgets/1.4.300.v20251002-1328/org.eclipse.e4.ui.widgets-1.4.300.v20251002-1328.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.widgets/1.4.300.v20251002-1328/org.eclipse.e4.ui.widgets-1.4.300.v20251002-1328.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1163,7 +1163,7 @@
       <version>2.17.0.v20250910-1205</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore.change/2.17.0.v20250910-1205/org.eclipse.emf.ecore.change-2.17.0.v20250910-1205.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore.change/2.17.0.v20250910-1205/org.eclipse.emf.ecore.change-2.17.0.v20250910-1205.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1171,7 +1171,7 @@
       <version>1.5.900.v20251007-0832</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench.addons.swt/1.5.900.v20251007-0832/org.eclipse.e4.ui.workbench.addons.swt-1.5.900.v20251007-0832.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench.addons.swt/1.5.900.v20251007-0832/org.eclipse.e4.ui.workbench.addons.swt-1.5.900.v20251007-0832.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1179,7 +1179,7 @@
       <version>0.16.1000.v20251114-0005</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench.renderers.swt/0.16.1000.v20251114-0005/org.eclipse.e4.ui.workbench.renderers.swt-0.16.1000.v20251114-0005.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench.renderers.swt/0.16.1000.v20251114-0005/org.eclipse.e4.ui.workbench.renderers.swt-0.16.1000.v20251114-0005.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1187,7 +1187,7 @@
       <version>0.17.600.v20250918-0518</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench3/0.17.600.v20250918-0518/org.eclipse.e4.ui.workbench3-0.17.600.v20250918-0518.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.e4.ui.workbench3/0.17.600.v20250918-0518/org.eclipse.e4.ui.workbench3-0.17.600.v20250918-0518.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1195,7 +1195,7 @@
       <version>1.3.600.v20251023-1158</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.urischeme/1.3.600.v20251023-1158/org.eclipse.urischeme-1.3.600.v20251023-1158.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.urischeme/1.3.600.v20251023-1158/org.eclipse.urischeme-1.3.600.v20251023-1158.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1203,7 +1203,7 @@
       <version>3.10.900.v20251104-0924</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.team.core/3.10.900.v20251104-0924/org.eclipse.team.core-3.10.900.v20251104-0924.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.team.core/3.10.900.v20251104-0924/org.eclipse.team.core-3.10.900.v20251104-0924.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1211,7 +1211,7 @@
       <version>7.5.0.202512021534-r</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jgit.ssh.apache/7.5.0.202512021534-r/org.eclipse.jgit.ssh.apache-7.5.0.202512021534-r.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jgit.ssh.apache/7.5.0.202512021534-r/org.eclipse.jgit.ssh.apache-7.5.0.202512021534-r.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1219,7 +1219,7 @@
       <version>7.5.0.202512021534-r</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jgit.http.apache/7.5.0.202512021534-r/org.eclipse.jgit.http.apache-7.5.0.202512021534-r.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jgit.http.apache/7.5.0.202512021534-r/org.eclipse.jgit.http.apache-7.5.0.202512021534-r.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1227,7 +1227,7 @@
       <version>3.11.300.v20251105-1148</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.team.ui/3.11.300.v20251105-1148/org.eclipse.team.ui-3.11.300.v20251105-1148.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.team.ui/3.11.300.v20251105-1148/org.eclipse.team.ui-3.11.300.v20251105-1148.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1235,7 +1235,7 @@
       <version>2.15.0.v20250910-1205</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore.edit/2.15.0.v20250910-1205/org.eclipse.emf.ecore.edit-2.15.0.v20250910-1205.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.emf.ecore.edit/2.15.0.v20250910-1205/org.eclipse.emf.ecore.edit-2.15.0.v20250910-1205.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1243,7 +1243,7 @@
       <version>2.23.0.v20250910-1205</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.emf.edit/2.23.0.v20250910-1205/org.eclipse.emf.edit-2.23.0.v20250910-1205.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.emf.edit/2.23.0.v20250910-1205/org.eclipse.emf.edit-2.23.0.v20250910-1205.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1251,7 +1251,7 @@
       <version>1.5.400.v20250715-0436</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.bidi/1.5.400.v20250715-0436/org.eclipse.equinox.bidi-1.5.400.v20250715-0436.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.bidi/1.5.400.v20250715-0436/org.eclipse.equinox.bidi-1.5.400.v20250715-0436.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1259,7 +1259,7 @@
       <version>2.3.500.v20250716-0529</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.frameworkadmin/2.3.500.v20250716-0529/org.eclipse.equinox.frameworkadmin-2.3.500.v20250716-0529.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.frameworkadmin/2.3.500.v20250716-0529/org.eclipse.equinox.frameworkadmin-2.3.500.v20250716-0529.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1267,7 +1267,7 @@
       <version>1.3.400.v20250515-0513</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.frameworkadmin.equinox/1.3.400.v20250515-0513/org.eclipse.equinox.frameworkadmin.equinox-1.3.400.v20250515-0513.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.frameworkadmin.equinox/1.3.400.v20250515-0513/org.eclipse.equinox.frameworkadmin.equinox-1.3.400.v20250515-0513.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1275,7 +1275,7 @@
       <version>1.5.800.v20250620-1926</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.artifact.repository/1.5.800.v20250620-1926/org.eclipse.equinox.p2.artifact.repository-1.5.800.v20250620-1926.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.artifact.repository/1.5.800.v20250620-1926/org.eclipse.equinox.p2.artifact.repository-1.5.800.v20250620-1926.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1283,7 +1283,7 @@
       <version>1.3.600.v20250517-0338</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.jarprocessor/1.3.600.v20250517-0338/org.eclipse.equinox.p2.jarprocessor-1.3.600.v20250517-0338.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.jarprocessor/1.3.600.v20250517-0338/org.eclipse.equinox.p2.jarprocessor-1.3.600.v20250517-0338.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1291,7 +1291,7 @@
       <version>2.9.600.v20251118-0500</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.repository/2.9.600.v20251118-0500/org.eclipse.equinox.p2.repository-2.9.600.v20251118-0500.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.repository/2.9.600.v20251118-0500/org.eclipse.equinox.p2.repository-2.9.600.v20251118-0500.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1299,7 +1299,7 @@
       <version>2.6.800.v20250714-1236</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.director/2.6.800.v20250714-1236/org.eclipse.equinox.p2.director-2.6.800.v20250714-1236.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.director/2.6.800.v20250714-1236/org.eclipse.equinox.p2.director-2.6.800.v20250714-1236.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1307,7 +1307,7 @@
       <version>1.5.700.v20251111-1031</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.simpleconfigurator/1.5.700.v20251111-1031/org.eclipse.equinox.simpleconfigurator-1.5.700.v20251111-1031.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.simpleconfigurator/1.5.700.v20251111-1031/org.eclipse.equinox.simpleconfigurator-1.5.700.v20251111-1031.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1315,7 +1315,7 @@
       <version>1.4.800.v20250922-0444</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.directorywatcher/1.4.800.v20250922-0444/org.eclipse.equinox.p2.directorywatcher-1.4.800.v20250922-0444.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.directorywatcher/1.4.800.v20250922-0444/org.eclipse.equinox.p2.directorywatcher-1.4.800.v20250922-0444.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1323,7 +1323,7 @@
       <version>2.4.600.v20250722-0413</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.touchpoint.eclipse/2.4.600.v20250722-0413/org.eclipse.equinox.p2.touchpoint.eclipse-2.4.600.v20250722-0413.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.touchpoint.eclipse/2.4.600.v20250722-0413/org.eclipse.equinox.p2.touchpoint.eclipse-2.4.600.v20250722-0413.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1331,7 +1331,7 @@
       <version>1.9.600.v20250720-0951</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.publisher/1.9.600.v20250720-0951/org.eclipse.equinox.p2.publisher-1.9.600.v20250720-0951.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.publisher/1.9.600.v20250720-0951/org.eclipse.equinox.p2.publisher-1.9.600.v20250720-0951.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1339,7 +1339,7 @@
       <version>1.6.700.v20251107-1554</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.publisher.eclipse/1.6.700.v20251107-1554/org.eclipse.equinox.p2.publisher.eclipse-1.6.700.v20251107-1554.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.publisher.eclipse/1.6.700.v20251107-1554/org.eclipse.equinox.p2.publisher.eclipse-1.6.700.v20251107-1554.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1347,7 +1347,7 @@
       <version>1.5.700.v20250720-0955</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.metadata.repository/1.5.700.v20250720-0955/org.eclipse.equinox.p2.metadata.repository-1.5.700.v20250720-0955.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.metadata.repository/1.5.700.v20250720-0955/org.eclipse.equinox.p2.metadata.repository-1.5.700.v20250720-0955.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1355,7 +1355,7 @@
       <version>1.5.700.v20250720-1526</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.extensionlocation/1.5.700.v20250720-1526/org.eclipse.equinox.p2.extensionlocation-1.5.700.v20250720-1526.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.extensionlocation/1.5.700.v20250720-1526/org.eclipse.equinox.p2.extensionlocation-1.5.700.v20250720-1526.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1363,7 +1363,7 @@
       <version>1.3.700.v20250715-0459</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.garbagecollector/1.3.700.v20250715-0459/org.eclipse.equinox.p2.garbagecollector-1.3.700.v20250715-0459.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.p2.garbagecollector/1.3.700.v20250715-0459/org.eclipse.equinox.p2.garbagecollector-1.3.700.v20250715-0459.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1371,7 +1371,7 @@
       <version>2.3.600.v20250729-0655</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.simpleconfigurator.manipulator/2.3.600.v20250729-0655/org.eclipse.equinox.simpleconfigurator.manipulator-2.3.600.v20250729-0655.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.simpleconfigurator.manipulator/2.3.600.v20250729-0655/org.eclipse.equinox.simpleconfigurator.manipulator-2.3.600.v20250729-0655.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1379,7 +1379,7 @@
       <version>1.4.700.v20251111-0659</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.security.ui/1.4.700.v20251111-0659/org.eclipse.equinox.security.ui-1.4.700.v20251111-0659.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.security.ui/1.4.700.v20251111-0659/org.eclipse.equinox.security.ui-1.4.700.v20251111-0659.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1387,7 +1387,7 @@
       <version>4.5.300.v20251201-0920</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.help.base/4.5.300.v20251201-0920/org.eclipse.help.base-4.5.300.v20251201-0920.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.help.base/4.5.300.v20251201-0920/org.eclipse.help.base-4.5.300.v20251201-0920.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1395,7 +1395,7 @@
       <version>3.44.0.v20251118-1842</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core/3.44.0.v20251118-1842/org.eclipse.jdt.core-3.44.0.v20251118-1842.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core/3.44.0.v20251118-1842/org.eclipse.jdt.core-3.44.0.v20251118-1842.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1403,7 +1403,7 @@
       <version>3.44.0.v20251118-1623</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core.compiler.batch/3.44.0.v20251118-1623/org.eclipse.jdt.core.compiler.batch-3.44.0.v20251118-1623.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core.compiler.batch/3.44.0.v20251118-1623/org.eclipse.jdt.core.compiler.batch-3.44.0.v20251118-1623.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1411,7 +1411,7 @@
       <version>1.23.200.v20251125-1647</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core.manipulation/1.23.200.v20251125-1647/org.eclipse.jdt.core.manipulation-1.23.200.v20251125-1647.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core.manipulation/1.23.200.v20251125-1647/org.eclipse.jdt.core.manipulation-1.23.200.v20251125-1647.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1419,7 +1419,7 @@
       <version>3.15.100.v20251023-1358</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ltk.core.refactoring/3.15.100.v20251023-1358/org.eclipse.ltk.core.refactoring-3.15.100.v20251023-1358.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ltk.core.refactoring/3.15.100.v20251023-1358/org.eclipse.ltk.core.refactoring-3.15.100.v20251023-1358.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1427,7 +1427,7 @@
       <version>3.16.600.v20250920-0652</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.search.core/3.16.600.v20250920-0652/org.eclipse.search.core-3.16.600.v20250920-0652.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.search.core/3.16.600.v20250920-0652/org.eclipse.search.core-3.16.600.v20250920-0652.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1436,7 +1436,7 @@
       <type>eclipse-plugin</type>
       <classifier>jdimodel.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.jdt.debug-3.25.0.v20251031-2243.jar/jdimodel.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.jdt.debug-3.25.0.v20251031-2243.jar/jdimodel.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1444,7 +1444,7 @@
       <version>3.15.200.v20251112-0612</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.debug.ui/3.15.200.v20251112-0612/org.eclipse.jdt.debug.ui-3.15.200.v20251112-0612.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.debug.ui/3.15.200.v20251112-0612/org.eclipse.jdt.debug.ui-3.15.200.v20251112-0612.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1452,7 +1452,7 @@
       <version>3.36.0.v20251114-2328</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.ui/3.36.0.v20251114-2328/org.eclipse.jdt.ui-3.36.0.v20251114-2328.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.ui/3.36.0.v20251114-2328/org.eclipse.jdt.ui-3.36.0.v20251114-2328.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1460,7 +1460,7 @@
       <version>3.17.400.v20251107-0917</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.search/3.17.400.v20251107-0917/org.eclipse.search-3.17.400.v20251107-0917.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.search/3.17.400.v20251107-0917/org.eclipse.search-3.17.400.v20251107-0917.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1468,7 +1468,7 @@
       <version>3.13.700.v20251103-0737</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ltk.ui.refactoring/3.13.700.v20251103-0737/org.eclipse.ltk.ui.refactoring-3.13.700.v20251103-0737.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ltk.ui.refactoring/3.13.700.v20251103-0737/org.eclipse.ltk.ui.refactoring-3.13.700.v20251103-0737.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1476,7 +1476,7 @@
       <version>0.7.500.v20250919-0627</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jface.notifications/0.7.500.v20250919-0627/org.eclipse.jface.notifications-0.7.500.v20250919-0627.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.jface.notifications/0.7.500.v20250919-0627/org.eclipse.jface.notifications-0.7.500.v20250919-0627.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1484,7 +1484,7 @@
       <version>3.2.1.2</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.catalog/3.2.1.2/org.eclipse.m2e.archetype.catalog-3.2.1.2.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.catalog/3.2.1.2/org.eclipse.m2e.archetype.catalog-3.2.1.2.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1492,7 +1492,7 @@
       <version>3.2.104</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.common/3.2.104/org.eclipse.m2e.archetype.common-3.2.104.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.common/3.2.104/org.eclipse.m2e.archetype.common-3.2.104.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1500,7 +1500,7 @@
       <version>3.9.1101.20251020-1549</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.maven.runtime/3.9.1101.20251020-1549/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.maven.runtime/3.9.1101.20251020-1549/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1509,7 +1509,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/aopalliance-1.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/aopalliance-1.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/aopalliance-1.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1518,7 +1518,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/asm-9.8.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/asm-9.8.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/asm-9.8.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1527,7 +1527,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/error_prone_annotations-2.38.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/error_prone_annotations-2.38.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/error_prone_annotations-2.38.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1536,7 +1536,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/gson-2.13.1.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/gson-2.13.1.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/gson-2.13.1.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1545,7 +1545,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/guice-5.1.0-classes.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/guice-5.1.0-classes.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/guice-5.1.0-classes.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1554,7 +1554,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/httpclient-4.5.14.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/httpclient-4.5.14.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/httpclient-4.5.14.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1563,7 +1563,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/httpcore-4.4.16.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/httpcore-4.4.16.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/httpcore-4.4.16.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1572,7 +1572,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/jansi-2.4.2.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/jansi-2.4.2.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/jansi-2.4.2.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1581,7 +1581,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/jcl-over-slf4j-1.7.36.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/jcl-over-slf4j-1.7.36.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/jcl-over-slf4j-1.7.36.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1590,7 +1590,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-artifact-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-artifact-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-artifact-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1599,7 +1599,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-builder-support-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-builder-support-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-builder-support-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1608,7 +1608,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-compat-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-compat-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-compat-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1617,7 +1617,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-core-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-core-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-core-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1626,7 +1626,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-embedder-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-embedder-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-embedder-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1635,7 +1635,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-model-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-model-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-model-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1644,7 +1644,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-model-builder-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-model-builder-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-model-builder-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1653,7 +1653,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-plugin-api-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-plugin-api-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-plugin-api-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1662,7 +1662,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-repository-metadata-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-repository-metadata-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-repository-metadata-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1671,7 +1671,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-api-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-api-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-api-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1680,7 +1680,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-connector-basic-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-connector-basic-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-connector-basic-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1689,7 +1689,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-impl-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-impl-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-impl-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1698,7 +1698,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-named-locks-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-named-locks-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-named-locks-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1707,7 +1707,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-provider-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-provider-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-provider-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1716,7 +1716,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-spi-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-spi-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-spi-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1725,7 +1725,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-transport-file-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-transport-file-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-transport-file-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1734,7 +1734,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-transport-http-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-transport-http-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-transport-http-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1743,7 +1743,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-transport-wagon-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-transport-wagon-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-transport-wagon-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1752,7 +1752,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-resolver-util-1.9.24.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-util-1.9.24.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-resolver-util-1.9.24.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1761,7 +1761,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-settings-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-settings-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-settings-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1770,7 +1770,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-settings-builder-3.9.11.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-settings-builder-3.9.11.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-settings-builder-3.9.11.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1779,7 +1779,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/maven-shared-utils-3.4.2.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-shared-utils-3.4.2.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/maven-shared-utils-3.4.2.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1788,7 +1788,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/org.eclipse.sisu.inject-0.9.0.M4.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/org.eclipse.sisu.inject-0.9.0.M4.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/org.eclipse.sisu.inject-0.9.0.M4.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1797,7 +1797,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/org.eclipse.sisu.plexus-0.9.0.M4.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/org.eclipse.sisu.plexus-0.9.0.M4.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/org.eclipse.sisu.plexus-0.9.0.M4.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1806,7 +1806,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-build-api-0.0.7.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-build-api-0.0.7.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-build-api-0.0.7.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1815,7 +1815,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-build-api-1.2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-build-api-1.2.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-build-api-1.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1824,7 +1824,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-cipher-2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-cipher-2.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-cipher-2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1833,7 +1833,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-classworlds-2.9.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-classworlds-2.9.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-classworlds-2.9.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1842,7 +1842,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-component-annotations-2.2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-component-annotations-2.2.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-component-annotations-2.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1851,7 +1851,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-interpolation-1.28.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-interpolation-1.28.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-interpolation-1.28.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1860,7 +1860,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-sec-dispatcher-2.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-sec-dispatcher-2.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-sec-dispatcher-2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1869,7 +1869,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/plexus-utils-3.6.0.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-utils-3.6.0.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/plexus-utils-3.6.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1878,7 +1878,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/wagon-file-3.5.3.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-file-3.5.3.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-file-3.5.3.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1887,7 +1887,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/wagon-http-3.5.3.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-http-3.5.3.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-http-3.5.3.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1896,7 +1896,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/wagon-http-shared-3.5.3.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-http-shared-3.5.3.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-http-shared-3.5.3.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1905,7 +1905,7 @@
       <type>eclipse-plugin</type>
       <classifier>jars/wagon-provider-api-3.5.3.jar</classifier>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-provider-api-3.5.3.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/.cache/tycho/org.eclipse.m2e.maven.runtime-3.9.1101.20251020-1549.jar/jars/wagon-provider-api-3.5.3.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1913,7 +1913,7 @@
       <version>2.0.6.v20230720-0727</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.jdom2/2.0.6.v20230720-0727/org.jdom2-2.0.6.v20230720-0727.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.jdom2/2.0.6.v20230720-0727/org.jdom2-2.0.6.v20230720-0727.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1921,7 +1921,7 @@
       <version>3.2.1.2</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.descriptor/3.2.1.2/org.eclipse.m2e.archetype.descriptor-3.2.1.2.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.descriptor/3.2.1.2/org.eclipse.m2e.archetype.descriptor-3.2.1.2.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1929,7 +1929,7 @@
       <version>0.13.1.2</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.maven-artifact-transfer/0.13.1.2/org.eclipse.m2e.archetype.maven-artifact-transfer-0.13.1.2.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.archetype.maven-artifact-transfer/0.13.1.2/org.eclipse.m2e.archetype.maven-artifact-transfer-0.13.1.2.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1937,7 +1937,7 @@
       <version>2.4.101.20251127-1007</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.core.ui/2.4.101.20251127-1007/org.eclipse.m2e.core.ui-2.4.101.20251127-1007.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.core.ui/2.4.101.20251127-1007/org.eclipse.m2e.core.ui-2.4.101.20251127-1007.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1945,7 +1945,7 @@
       <version>2.0.700.20250418-1315</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.model.edit/2.0.700.20250418-1315/org.eclipse.m2e.model.edit-2.0.700.20250418-1315.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.model.edit/2.0.700.20250418-1315/org.eclipse.m2e.model.edit-2.0.700.20250418-1315.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1953,7 +1953,7 @@
       <version>1.3.500.v20250320-0611</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.trace/1.3.500.v20250320-0611/org.eclipse.ui.trace-1.3.500.v20250320-0611.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.ui.trace/1.3.500.v20250320-0611/org.eclipse.ui.trace-1.3.500.v20250320-0611.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1961,7 +1961,7 @@
       <version>2.5.0.20251112-1507</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.jdt/2.5.0.20251112-1507/org.eclipse.m2e.jdt-2.5.0.20251112-1507.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.m2e.jdt/2.5.0.20251112-1507/org.eclipse.m2e.jdt-2.5.0.20251112-1507.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1969,7 +1969,7 @@
       <version>1.4.0.v202308161955</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.uriresolver/1.4.0.v202308161955/org.eclipse.wst.common.uriresolver-1.4.0.v202308161955.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.uriresolver/1.4.0.v202308161955/org.eclipse.wst.common.uriresolver-1.4.0.v202308161955.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1977,7 +1977,7 @@
       <version>1.2.800.v202508180220</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.emf/1.2.800.v202508180220/org.eclipse.wst.common.emf-1.2.800.v202508180220.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.emf/1.2.800.v202508180220/org.eclipse.wst.common.emf-1.2.800.v202508180220.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1985,7 +1985,7 @@
       <version>1.2.1500.v202508302230</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.sse.core/1.2.1500.v202508302230/org.eclipse.wst.sse.core-1.2.1500.v202508302230.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.sse.core/1.2.1500.v202508302230/org.eclipse.wst.sse.core-1.2.1500.v202508302230.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -1993,7 +1993,7 @@
       <version>1.2.1000.v202508302152</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.xml.core/1.2.1000.v202508302152/org.eclipse.wst.xml.core-1.2.1000.v202508302152.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.xml.core/1.2.1000.v202508302152/org.eclipse.wst.xml.core-1.2.1000.v202508302152.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -2001,7 +2001,7 @@
       <version>3.7.400.v20250516-0916</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.osgi.util/3.7.400.v20250516-0916/org.eclipse.osgi.util-3.7.400.v20250516-0916.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.osgi.util/3.7.400.v20250516-0916/org.eclipse.osgi.util-3.7.400.v20250516-0916.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -2009,7 +2009,7 @@
       <version>1.4.100.v202508180220</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.core/1.4.100.v202508180220/org.eclipse.wst.common.core-1.4.100.v202508180220.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.core/1.4.100.v202508180220/org.eclipse.wst.common.core-1.4.100.v202508180220.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -2017,7 +2017,7 @@
       <version>1.3.0.v202308161955</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.frameworks/1.3.0.v202308161955/org.eclipse.wst.common.frameworks-1.3.0.v202308161955.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.frameworks/1.3.0.v202308161955/org.eclipse.wst.common.frameworks-1.3.0.v202308161955.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -2025,7 +2025,7 @@
       <version>1.1.0.v202308161955</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.environment/1.1.0.v202308161955/org.eclipse.wst.common.environment-1.1.0.v202308161955.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.wst.common.environment/1.1.0.v202308161955/org.eclipse.wst.common.environment-1.1.0.v202308161955.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -2033,15 +2033,7 @@
       <version>2.0.400.202509061530</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.zest.layouts/2.0.400.202509061530/org.eclipse.zest.layouts-2.0.400.202509061530.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>p2.eclipse.plugin</groupId>
-      <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
-      <version>3.132.0.v20251124-0642</version>
-      <type>eclipse-plugin</type>
-      <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.swt.gtk.linux.x86_64/3.132.0.v20251124-0642/org.eclipse.swt.gtk.linux.x86_64-3.132.0.v20251124-0642.jar</systemPath>
+      <systemPath>/home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.zest.layouts/2.0.400.202509061530/org.eclipse.zest.layouts-2.0.400.202509061530.jar</systemPath>
     </dependency>
   </dependencies>
 </project>

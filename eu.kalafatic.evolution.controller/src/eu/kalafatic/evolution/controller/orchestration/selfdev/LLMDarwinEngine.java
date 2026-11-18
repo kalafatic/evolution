@@ -1606,7 +1606,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			trainer = new EvoLlmTrainer(model);
 			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
-			double trainLoss = 2.5;
+			double trainLoss = Double.NaN;
 			try {
 				trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
 					@Override
@@ -1633,8 +1633,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			} finally {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
 			}
-			trainLoss = trainer.getLossHistory().isEmpty() ? 2.5
-					: trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+			// Honest failure handling: no measured loss without actual training; the
+			// caller assigns the documented safe-penalty score on exception.
+			if (trainer.getLossHistory().isEmpty()) {
+				throw new IllegalStateException("Candidate training produced no loss history (no training executed)");
+			}
+			trainLoss = trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
 
 			List<Double> candLossHist = trainer.getLossHistory();
 			if (candLossHist != null && !candLossHist.isEmpty()) {
@@ -1645,20 +1649,25 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
 			}
 
-			// Reuse EvoLlmTrainer's optimized validation evaluation
-			double valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : trainLoss;
-
 			if (Double.isNaN(trainLoss) || Double.isInfinite(trainLoss)) {
-				trainLoss = 10.0;
+				throw new IllegalStateException("Non-finite training loss for candidate (no penalty fabrication)");
 			}
+
+			// Validation loss: only measured when a validation split exists; NaN otherwise.
+			double valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : Double.NaN;
 			if (Double.isNaN(valLoss) || Double.isInfinite(valLoss)) {
-				valLoss = 10.0;
+				if (!valSamples.isEmpty()) {
+					throw new IllegalStateException("Non-finite validation loss for candidate");
+				}
 			}
 
 			// Combine validation loss (75%) and training loss (25%) with size penalty to
-			// prevent overfitting and encourage generalizability
+			// prevent overfitting and encourage generalizability. When no validation
+			// split exists, fitness degrades honestly to the training loss (documented).
 			double sizePenalty = paramCount * 0.00000001;
-			double fitness = (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty;
+			double fitness = !Double.isNaN(valLoss)
+					? (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty
+					: trainLoss + sizePenalty;
 
 			// Snapshot candidate-trained weights safely to preserve candidate independence and survive evaluation
 			List<float[]> weightSnapshot = new ArrayList<>();

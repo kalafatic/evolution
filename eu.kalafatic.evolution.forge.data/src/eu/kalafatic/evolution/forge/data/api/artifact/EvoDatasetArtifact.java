@@ -16,7 +16,9 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -26,6 +28,8 @@ import java.util.zip.ZipOutputStream;
  * Zip-based container containing data.jsonl, metadata.json, profile.json, and report.txt.
  */
 public class EvoDatasetArtifact {
+
+    public static final String FORMAT_VERSION = "1.1";
 
     public enum Status {
         CREATING,
@@ -50,6 +54,12 @@ public class EvoDatasetArtifact {
     private List<NormalizedSample> trainSamples = new ArrayList<>();
     private List<NormalizedSample> valSamples = new ArrayList<>();
 
+    private String tokenizerType;
+    private String tokenizerVersion;
+    private int tokenizerVocabSize;
+    private final List<String> tokenizerSpecialTokens = new ArrayList<>();
+    private String loadDiagnostics = "";
+
     public EvoDatasetArtifact(File artifactFile) {
         this.artifactFile = artifactFile;
         if (artifactFile != null) {
@@ -57,8 +67,56 @@ public class EvoDatasetArtifact {
         }
     }
 
+    public void setTokenizerIdentity(String type, String version, int vocabSize, List<String> specialTokens) {
+        this.tokenizerType = type;
+        this.tokenizerVersion = version;
+        this.tokenizerVocabSize = vocabSize;
+        this.tokenizerSpecialTokens.clear();
+        if (specialTokens != null) {
+            this.tokenizerSpecialTokens.addAll(specialTokens);
+        }
+    }
+
+    public String getTokenizerType() { return tokenizerType; }
+    public String getTokenizerVersion() { return tokenizerVersion; }
+    public int getTokenizerVocabSize() { return tokenizerVocabSize; }
+    public List<String> getTokenizerSpecialTokens() { return new ArrayList<>(tokenizerSpecialTokens); }
+
+    /**
+     * Non-empty when loading produced integrity/format warnings or the artifact
+     * was detected as corrupted.
+     */
+    public String getLoadDiagnostics() { return loadDiagnostics; }
+
+    /**
+     * Validates that a training tokenizer is compatible with the tokenizer
+     * identity declared by this dataset (when one is declared). A dataset without
+     * a declared tokenizer is treated as raw text (tokenizer-agnostic) and passes.
+     *
+     * @throws IllegalStateException when the declared tokenizer mismatches
+     */
+    public void validateTokenizerCompatibility(String tokenizerType, int vocabSize) {
+        if (this.tokenizerType == null || this.tokenizerType.isEmpty()) {
+            return; // no declared identity: dataset is raw text
+        }
+        if (!this.tokenizerType.equals(tokenizerType)) {
+            throw new IllegalStateException(String.format(
+                    "Tokenizer mismatch: dataset '%s' was prepared with tokenizer '%s' but training uses '%s'.",
+                    name != null ? name : artifactFile.getName(), this.tokenizerType, tokenizerType));
+        }
+        if (this.tokenizerVocabSize > 0 && vocabSize != this.tokenizerVocabSize) {
+            throw new IllegalStateException(String.format(
+                    "Tokenizer vocabulary mismatch: dataset '%s' declares vocab size %d but training uses %d.",
+                    name != null ? name : artifactFile.getName(), this.tokenizerVocabSize, vocabSize));
+        }
+    }
+
     public void save(List<NormalizedSample> allSamples, DatasetSourceConfig config, DatasetSourceStats stats, double valSplit) throws Exception {
-        this.status = Status.PREPARING;
+        // Preserve terminal statuses set explicitly by the caller (e.g. CANCELLED
+        // after an interrupted acquisition); only default the status when unset.
+        if (this.status == null || this.status == Status.CREATING) {
+            this.status = Status.PREPARING;
+        }
         this.sourceConfig = config;
         this.stats = stats;
         this.validationSplitRatio = valSplit;
@@ -134,49 +192,53 @@ public class EvoDatasetArtifact {
         long actualTrainingBytes = 0;
         long actualValidationBytes = 0;
 
+        // Serialize payloads first so per-entry SHA-256 checksums can be recorded
+        // in metadata.json (integrity layer, format v1.1).
+        byte[] trainEntryBytes = serializeSamplesToJsonl(trainSamples);
+        byte[] valEntryBytes = serializeSamplesToJsonl(valSamples);
+        actualTrainingBytes = trainEntryBytes.length;
+        actualValidationBytes = valEntryBytes.length;
+
+        if (stats != null) {
+            stats.setTrainingBytes(actualTrainingBytes);
+            stats.setValidationBytes(actualValidationBytes);
+        }
+
+        byte[] reportEntryBytes = buildReportText().getBytes(StandardCharsets.UTF_8);
+        String trainSha256 = sha256Hex(trainEntryBytes);
+        String valSha256 = sha256Hex(valEntryBytes);
+        String reportSha256 = sha256Hex(reportEntryBytes);
+        byte[] metaEntryBytes = buildMetadataJson(trainSha256, valSha256, reportSha256,
+                actualTrainingBytes, actualValidationBytes).getBytes(StandardCharsets.UTF_8);
+
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(tempFile), StandardCharsets.UTF_8)) {
 
             // 1. data.jsonl
             ZipEntry zeData = new ZipEntry("data.jsonl");
             zeData.setTime(fixedTimestamp);
             zos.putNextEntry(zeData);
-            for (NormalizedSample s : trainSamples) {
-                byte[] lineBytes = (s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8);
-                zos.write(lineBytes);
-                actualTrainingBytes += lineBytes.length;
-            }
+            zos.write(trainEntryBytes);
             zos.closeEntry();
 
             // 2. val_data.jsonl
             ZipEntry zeVal = new ZipEntry("val_data.jsonl");
             zeVal.setTime(fixedTimestamp);
             zos.putNextEntry(zeVal);
-            for (NormalizedSample s : valSamples) {
-                byte[] lineBytes = (s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8);
-                zos.write(lineBytes);
-                actualValidationBytes += lineBytes.length;
-            }
+            zos.write(valEntryBytes);
             zos.closeEntry();
-
-            if (stats != null) {
-                stats.setTrainingBytes(actualTrainingBytes);
-                stats.setValidationBytes(actualValidationBytes);
-            }
 
             // 3. metadata.json
             ZipEntry zeMeta = new ZipEntry("metadata.json");
             zeMeta.setTime(fixedTimestamp);
             zos.putNextEntry(zeMeta);
-            String metaJson = buildMetadataJson();
-            zos.write(metaJson.getBytes(StandardCharsets.UTF_8));
+            zos.write(metaEntryBytes);
             zos.closeEntry();
 
             // 4. report.txt
             ZipEntry zeReport = new ZipEntry("report.txt");
             zeReport.setTime(fixedTimestamp);
             zos.putNextEntry(zeReport);
-            String reportText = buildReportText();
-            zos.write(reportText.getBytes(StandardCharsets.UTF_8));
+            zos.write(reportEntryBytes);
             zos.closeEntry();
         }
 
@@ -187,8 +249,36 @@ public class EvoDatasetArtifact {
             java.nio.file.Files.move(tempFile.toPath(), artifactFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // Post-serialization structural and semantic validation
+        // Post-serialization structural and semantic validation (single read pass;
+        // load() verifies entry checksums and reports corruption via status).
         validateArtifact(artifactFile);
+    }
+
+    private static byte[] serializeSamplesToJsonl(List<NormalizedSample> samples) {
+        try {
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            for (NormalizedSample s : samples) {
+                byte[] lineBytes = (s.toJsonLine() + "\n").getBytes(StandardCharsets.UTF_8);
+                baos.write(lineBytes);
+            }
+            return baos.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Failed to serialize dataset samples", e);
+        }
+    }
+
+    private static String sha256Hex(byte[] bytes) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(bytes);
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 
     private void validateArtifact(File file) throws Exception {
@@ -198,6 +288,10 @@ public class EvoDatasetArtifact {
         }
 
         EvoDatasetArtifact loaded = load(file);
+        if (loaded.getStatus() == Status.CORRUPTED) {
+            this.status = Status.FAILED;
+            throw new IllegalStateException("Validation failed: dataset artifact integrity check failed: " + loaded.getLoadDiagnostics());
+        }
         if (loaded.getTrainSamples().isEmpty()) {
             this.status = Status.FAILED;
             throw new IllegalStateException("Validation failed: Dataset artifact contains 0 training samples.");
@@ -215,8 +309,130 @@ public class EvoDatasetArtifact {
         EvoDatasetArtifact artifact = new EvoDatasetArtifact(file);
         artifact.trainSamples.clear();
         artifact.valSamples.clear();
+        artifact.loadDiagnostics = "";
         Status loadedStatus = null;
 
+        // Pass 1: metadata.json (integrity manifest, tokenizer identity, format version)
+        Map<String, String> entrySha256 = new HashMap<>();
+        String formatVersion = null;
+        JSONObject metaJson = null;
+
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file), StandardCharsets.UTF_8)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName();
+                if (name == null || name.contains("..") || name.startsWith("/") || name.contains("\\..") || name.contains("../")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                if ("metadata.json".equals(new File(name).getName())) {
+                    byte[] entryBytes = zis.readAllBytes();
+                    metaJson = new JSONObject(new String(entryBytes, StandardCharsets.UTF_8));
+                }
+                zis.closeEntry();
+            }
+        }
+
+        if (metaJson != null) {
+            try {
+                formatVersion = metaJson.optString("formatVersion", null);
+                String statusStr = metaJson.optString("status", null);
+                if (statusStr != null) {
+                    try {
+                        loadedStatus = Status.valueOf(statusStr);
+                    } catch (Exception ignored) {}
+                }
+
+                if (formatVersion != null && !formatVersion.isEmpty()) {
+                    String major = formatVersion.contains(".") ? formatVersion.substring(0, formatVersion.indexOf('.')) : formatVersion;
+                    if (!"1".equals(major)) {
+                        artifact.status = Status.CORRUPTED;
+                        artifact.loadDiagnostics = "Unsupported .evodata format version: " + formatVersion;
+                    }
+                }
+
+                JSONObject filesObj = metaJson.optJSONObject("files");
+                if (filesObj != null) {
+                    for (String key : filesObj.keySet()) {
+                        JSONObject fObj = filesObj.optJSONObject(key);
+                        if (fObj != null) {
+                            String sha = fObj.optString("sha256", "");
+                            if (!sha.isEmpty()) {
+                                entrySha256.put(key, sha);
+                            }
+                        }
+                    }
+                }
+
+                JSONObject tokenizerObj = metaJson.optJSONObject("tokenizer");
+                if (tokenizerObj != null) {
+                    artifact.tokenizerType = tokenizerObj.optString("type", null);
+                    artifact.tokenizerVersion = tokenizerObj.optString("version", null);
+                    artifact.tokenizerVocabSize = tokenizerObj.optInt("vocabSize", 0);
+                    JSONArray specialArr = tokenizerObj.optJSONArray("specialTokens");
+                    if (specialArr != null) {
+                        for (int i = 0; i < specialArr.length(); i++) {
+                            artifact.tokenizerSpecialTokens.add(specialArr.optString(i));
+                        }
+                    }
+                }
+
+                artifact.stats = new DatasetSourceStats();
+                JSONObject statsObj = metaJson.optJSONObject("statistics");
+
+                long req = metaJson.optLong("requestedUsableBytes", statsObj != null ? statsObj.optLong("requestedUsableBytes", 0) : 0);
+                long actual = metaJson.optLong("actualUsableBytes", metaJson.optLong("acceptedBytes", statsObj != null ? statsObj.optLong("acceptedBytes", 0) : 0));
+                long dl = metaJson.optLong("downloadedBytes", 0);
+
+                JSONArray sourcesArray = metaJson.optJSONArray("sources");
+                if (sourcesArray != null && sourcesArray.length() > 0) {
+                    JSONObject srcObj = sourcesArray.optJSONObject(0);
+                    if (srcObj != null) {
+                        if (dl == 0) dl = srcObj.optLong("downloadedBytes", 0);
+                        if (actual == 0) actual = srcObj.optLong("acceptedBytes", 0);
+                    }
+                }
+
+                artifact.stats.setRequestedUsableBytes(req);
+                artifact.stats.setAcceptedBytes(actual);
+                artifact.stats.setDownloadedBytes(dl);
+                artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", actual));
+                artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", dl));
+                artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", 0));
+                artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", 0));
+                artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", statsObj != null ? statsObj.optLong("totalTrainingBytes", 0) : 0));
+                artifact.stats.setValidationBytes(metaJson.optLong("validationBytes", 0));
+
+                long accRecs = metaJson.optLong("acceptedRecords", statsObj != null ? statsObj.optLong("acceptedRecords", 0) : 0);
+                long rejRecs = metaJson.optLong("rejectedRecords", statsObj != null ? statsObj.optLong("rejectedRecords", 0) : 0);
+                long dupRecs = metaJson.optLong("duplicateRecords", statsObj != null ? statsObj.optLong("duplicateRecords", 0) : 0);
+                artifact.stats.setAcceptedRecords(accRecs);
+                artifact.stats.setRejectedRecords(rejRecs);
+                artifact.stats.setDuplicateRecords(dupRecs);
+
+                if (statsObj != null) {
+                    artifact.stats.setExactDuplicates(statsObj.optLong("exactDuplicates", 0));
+                    artifact.stats.setNormalizedDuplicates(statsObj.optLong("normalizedDuplicates", 0));
+                    artifact.stats.setNearDuplicates(statsObj.optLong("nearDuplicates", 0));
+                    artifact.stats.setMalformedJsonCount(statsObj.optLong("malformedJsonCount", 0));
+                    artifact.stats.setEmptyMeaninglessCount(statsObj.optLong("emptyMeaninglessCount", 0));
+                    artifact.stats.setCorruptedTextCount(statsObj.optLong("corruptedTextCount", 0));
+                    artifact.stats.setInvalidQaCount(statsObj.optLong("invalidQaCount", 0));
+                    artifact.stats.setTrainValLeakageCount(statsObj.optLong("trainValLeakageCount", 0));
+                }
+            } catch (Exception e) {
+                artifact.status = Status.CORRUPTED;
+                artifact.loadDiagnostics = "Metadata parsing failed: " + e.getMessage();
+            }
+        } else {
+            // Legacy artifacts without metadata.json remain loadable.
+            if (artifact.loadDiagnostics.isEmpty()) {
+                artifact.loadDiagnostics = "No metadata.json entry found; integrity checks skipped.";
+            }
+        }
+
+        // Pass 2: data entries with checksum verification
+        List<String> integrityFailures = new ArrayList<>();
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file), StandardCharsets.UTF_8)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -227,64 +443,18 @@ public class EvoDatasetArtifact {
                     continue;
                 }
                 String normalizedName = new File(name).getName();
-                if ("metadata.json".equals(normalizedName)) {
-                    byte[] entryBytes = zis.readAllBytes();
-                    String metaStr = new String(entryBytes, StandardCharsets.UTF_8);
-                    try {
-                        JSONObject metaJson = new JSONObject(metaStr);
-                        String statusStr = metaJson.optString("status", null);
-                        if (statusStr != null) {
-                            try {
-                                loadedStatus = Status.valueOf(statusStr);
-                            } catch (Exception ignored) {}
-                        }
-                        artifact.stats = new DatasetSourceStats();
-                        JSONObject statsObj = metaJson.optJSONObject("statistics");
-
-                        long req = metaJson.optLong("requestedUsableBytes", statsObj != null ? statsObj.optLong("requestedUsableBytes", 0) : 0);
-                        long actual = metaJson.optLong("actualUsableBytes", metaJson.optLong("acceptedBytes", statsObj != null ? statsObj.optLong("acceptedBytes", 0) : 0));
-                        long dl = metaJson.optLong("downloadedBytes", 0);
-
-                        JSONArray sourcesArray = metaJson.optJSONArray("sources");
-                        if (sourcesArray != null && sourcesArray.length() > 0) {
-                            JSONObject srcObj = sourcesArray.optJSONObject(0);
-                            if (srcObj != null) {
-                                if (dl == 0) dl = srcObj.optLong("downloadedBytes", 0);
-                                if (actual == 0) actual = srcObj.optLong("acceptedBytes", 0);
-                            }
-                        }
-
-                        artifact.stats.setRequestedUsableBytes(req);
-                        artifact.stats.setAcceptedBytes(actual);
-                        artifact.stats.setDownloadedBytes(dl);
-                        artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", actual));
-                        artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", dl));
-                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", 0));
-                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", 0));
-                        artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", statsObj != null ? statsObj.optLong("totalTrainingBytes", 0) : 0));
-                        artifact.stats.setValidationBytes(metaJson.optLong("validationBytes", 0));
-
-                        long accRecs = metaJson.optLong("acceptedRecords", statsObj != null ? statsObj.optLong("acceptedRecords", 0) : 0);
-                        long rejRecs = metaJson.optLong("rejectedRecords", statsObj != null ? statsObj.optLong("rejectedRecords", 0) : 0);
-                        long dupRecs = metaJson.optLong("duplicateRecords", statsObj != null ? statsObj.optLong("duplicateRecords", 0) : 0);
-                        artifact.stats.setAcceptedRecords(accRecs);
-                        artifact.stats.setRejectedRecords(rejRecs);
-                        artifact.stats.setDuplicateRecords(dupRecs);
-
-                        if (statsObj != null) {
-                            artifact.stats.setExactDuplicates(statsObj.optLong("exactDuplicates", 0));
-                            artifact.stats.setNormalizedDuplicates(statsObj.optLong("normalizedDuplicates", 0));
-                            artifact.stats.setNearDuplicates(statsObj.optLong("nearDuplicates", 0));
-                            artifact.stats.setMalformedJsonCount(statsObj.optLong("malformedJsonCount", 0));
-                            artifact.stats.setEmptyMeaninglessCount(statsObj.optLong("emptyMeaninglessCount", 0));
-                            artifact.stats.setCorruptedTextCount(statsObj.optLong("corruptedTextCount", 0));
-                            artifact.stats.setInvalidQaCount(statsObj.optLong("invalidQaCount", 0));
-                            artifact.stats.setTrainValLeakageCount(statsObj.optLong("trainValLeakageCount", 0));
-                        }
-                    } catch (Exception ignored) {}
-                } else if ("data.jsonl".equals(normalizedName) || "val_data.jsonl".equals(normalizedName)) {
+                if ("data.jsonl".equals(normalizedName) || "val_data.jsonl".equals(normalizedName)) {
                     boolean isVal = "val_data.jsonl".equals(normalizedName);
                     byte[] entryBytes = zis.readAllBytes();
+
+                    String storedSha = entrySha256.get(normalizedName);
+                    if (storedSha != null && !storedSha.isEmpty()) {
+                        String computedSha = sha256Hex(entryBytes);
+                        if (!storedSha.equals(computedSha)) {
+                            integrityFailures.add(normalizedName + " checksum mismatch (stored " + storedSha + ", computed " + computedSha + ")");
+                        }
+                    }
+
                     String content = new String(entryBytes, StandardCharsets.UTF_8);
                     String[] lines = content.split("\n");
 
@@ -360,16 +530,22 @@ public class EvoDatasetArtifact {
             }
         }
 
-        if (loadedStatus != null) {
+        if (!integrityFailures.isEmpty()) {
+            artifact.status = Status.CORRUPTED;
+            artifact.loadDiagnostics = "Integrity verification failed: " + String.join("; ", integrityFailures);
+        }
+
+        if (loadedStatus != null && artifact.status != Status.CORRUPTED) {
             artifact.status = loadedStatus;
-        } else {
+        } else if (loadedStatus == null && artifact.status != Status.CORRUPTED) {
             artifact.status = Status.READY;
         }
         return artifact;
     }
 
-    private String buildMetadataJson() {
-        long now = System.currentTimeMillis();
+    private String buildMetadataJson(String trainSha256, String valSha256, String reportSha256, long trainBytes, long valBytes) {
+        // Deterministic timestamp keeps byte-level reproducibility of the archive.
+        long deterministicTimestamp = 1704067200000L;
         long acceptedRecs = stats != null ? stats.getAcceptedRecords() : (trainSamples.size() + valSamples.size());
         long rejectedRecs = stats != null ? stats.getRejectedRecords() : 0;
         long duplicateRecs = stats != null ? stats.getDuplicateRecords() : 0;
@@ -379,22 +555,48 @@ public class EvoDatasetArtifact {
 
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
-        sb.append("  \"formatVersion\": \"1.0\",\n");
+        sb.append("  \"formatVersion\": \"").append(FORMAT_VERSION).append("\",\n");
         sb.append("  \"datasetId\": \"").append(name != null ? name : "evodata").append("\",\n");
         sb.append("  \"name\": \"").append(name != null ? name : "evodata").append("\",\n");
-        sb.append("  \"createdTimestamp\": ").append(now).append(",\n");
-        sb.append("  \"timestamp\": ").append(now).append(",\n");
+        sb.append("  \"createdTimestamp\": ").append(deterministicTimestamp).append(",\n");
+        sb.append("  \"timestamp\": ").append(deterministicTimestamp).append(",\n");
         sb.append("  \"status\": \"").append(status.name()).append("\",\n");
         sb.append("  \"source\": \"").append(sourceConfig != null ? sourceConfig.getSourceType() : "UNKNOWN").append("\",\n");
         sb.append("  \"repository\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
         sb.append("  \"sources\": [\n");
         sb.append("    {\n");
         sb.append("      \"sourceType\": \"").append(sourceConfig != null ? sourceConfig.getSourceType() : "UNKNOWN").append("\",\n");
-        sb.append("      \"target\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
+        sb.append("      \"repository\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
+        if (sourceConfig != null && sourceConfig.getRevision() != null && !sourceConfig.getRevision().isEmpty()) {
+            sb.append("      \"revision\": \"").append(sourceConfig.getRevision()).append("\",\n");
+        }
+        if (sourceConfig != null && sourceConfig.getConfiguration() != null && !sourceConfig.getConfiguration().isEmpty()) {
+            sb.append("      \"configuration\": \"").append(sourceConfig.getConfiguration()).append("\",\n");
+        }
+        if (sourceConfig != null && sourceConfig.getSplit() != null) {
+            sb.append("      \"split\": \"").append(sourceConfig.getSplit()).append("\",\n");
+        }
         sb.append("      \"downloadedBytes\": ").append(downloadedB).append(",\n");
         sb.append("      \"acceptedBytes\": ").append(acceptedB).append("\n");
         sb.append("    }\n");
         sb.append("  ],\n");
+        sb.append("  \"files\": {\n");
+        sb.append("    \"data.jsonl\": { \"sha256\": \"").append(trainSha256).append("\", \"bytes\": ").append(trainBytes).append(" },\n");
+        sb.append("    \"val_data.jsonl\": { \"sha256\": \"").append(valSha256).append("\", \"bytes\": ").append(valBytes).append(" }\n");
+        sb.append("  },\n");
+        if (tokenizerType != null && !tokenizerType.isEmpty()) {
+            sb.append("  \"tokenizer\": {\n");
+            sb.append("    \"type\": \"").append(tokenizerType).append("\",\n");
+            sb.append("    \"version\": \"").append(tokenizerVersion != null ? tokenizerVersion : "unknown").append("\",\n");
+            sb.append("    \"vocabSize\": ").append(tokenizerVocabSize).append(",\n");
+            sb.append("    \"specialTokens\": [");
+            for (int i = 0; i < tokenizerSpecialTokens.size(); i++) {
+                if (i > 0) sb.append(", ");
+                sb.append("\"").append(tokenizerSpecialTokens.get(i).replace("\"", "\\\"")).append("\"");
+            }
+            sb.append("]\n");
+            sb.append("  },\n");
+        }
         sb.append("  \"statistics\": {\n");
         sb.append("    \"totalSamples\": ").append(trainSamples.size() + valSamples.size()).append(",\n");
         sb.append("    \"trainSamples\": ").append(trainSamples.size()).append(",\n");
@@ -491,7 +693,17 @@ public class EvoDatasetArtifact {
         sb.append("QUALITY LIMITATIONS & VERIFICATION SUMMARY:\n");
         sb.append("  - Exact & Normalized Deduplication: APPLIED\n");
         sb.append("  - Train/Val Leakage Prevention: APPLIED\n");
-        sb.append("  - Noise, Corrupted Text & Invalid Q&A Filtering: APPLIED\n");
+        if (stats != null && (stats.getCorruptedTextCount() > 0 || stats.getInvalidQaCount() > 0
+                || stats.getEmptyMeaninglessCount() > 0)) {
+            sb.append("  - Noise, Corrupted Text & Invalid Q&A Filtering: APPLIED\n");
+        } else {
+            sb.append("  - Noise, Corrupted Text & Invalid Q&A Filtering: NOT APPLIED IN THIS PIPELINE\n");
+        }
+        sb.append("  - Integrity: per-entry SHA-256 checksums recorded in metadata.json (format ").append(FORMAT_VERSION).append(")\n");
+        if (tokenizerType != null && !tokenizerType.isEmpty()) {
+            sb.append("  - Tokenizer: ").append(tokenizerType).append(" ").append(tokenizerVersion != null ? tokenizerVersion : "")
+                    .append(" (vocab ").append(tokenizerVocabSize).append(")\n");
+        }
         sb.append("  - Remaining Limitations: High-level semantic overlap or specialized domain nuances may persist.\n");
         sb.append("------------------------------------------\n");
         return sb.toString();
@@ -502,6 +714,76 @@ public class EvoDatasetArtifact {
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public List<NormalizedSample> getTrainSamples() { return trainSamples; }
+
+    /**
+     * Rewrites only the metadata.json entry of an existing archive to record the
+     * tokenizer identity (type/version/vocab/special tokens). Data entries remain
+     * byte-identical, so payload checksums and reproducibility are preserved.
+     */
+    public void rewriteMetadataWithTokenizerIdentity(String type, String version, int vocabSize, List<String> specialTokens) throws Exception {
+        if (artifactFile == null || !artifactFile.exists()) {
+            throw new IllegalStateException("Artifact file does not exist: " + artifactFile);
+        }
+        setTokenizerIdentity(type, version, vocabSize, specialTokens);
+
+        Map<String, byte[]> entries = new HashMap<>();
+        byte[] reportBytes = null;
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(artifactFile), StandardCharsets.UTF_8)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName();
+                if (name != null && !name.contains("..")) {
+                    String normalized = new File(name).getName();
+                    byte[] bytes = zis.readAllBytes();
+                    if ("report.txt".equals(normalized)) {
+                        reportBytes = bytes;
+                    } else if (!"metadata.json".equals(normalized)) {
+                        entries.put(normalized, bytes);
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
+
+        byte[] trainBytes = entries.get("data.jsonl");
+        byte[] valBytes = entries.get("val_data.jsonl");
+        if (trainBytes == null) {
+            throw new IllegalStateException("Artifact has no data.jsonl entry");
+        }
+        byte[] newReportBytes = (reportBytes != null) ? reportBytes : buildReportText().getBytes(StandardCharsets.UTF_8);
+        byte[] metaBytes = buildMetadataJson(
+                sha256Hex(trainBytes),
+                sha256Hex(valBytes != null ? valBytes : new byte[0]),
+                sha256Hex(newReportBytes),
+                trainBytes.length,
+                valBytes != null ? valBytes.length : 0
+        ).getBytes(StandardCharsets.UTF_8);
+
+        File tempFile = new File(artifactFile.getAbsolutePath() + ".tmp");
+        long fixedTimestamp = 1704067200000L;
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(tempFile), StandardCharsets.UTF_8)) {
+            writeEntry(zos, "data.jsonl", trainBytes, fixedTimestamp);
+            if (valBytes != null) {
+                writeEntry(zos, "val_data.jsonl", valBytes, fixedTimestamp);
+            }
+            writeEntry(zos, "metadata.json", metaBytes, fixedTimestamp);
+            writeEntry(zos, "report.txt", newReportBytes, fixedTimestamp);
+        }
+        if (artifactFile.exists()) {
+            artifactFile.delete();
+        }
+        if (!tempFile.renameTo(artifactFile)) {
+            java.nio.file.Files.move(tempFile.toPath(), artifactFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static void writeEntry(ZipOutputStream zos, String name, byte[] bytes, long timestamp) throws java.io.IOException {
+        ZipEntry entry = new ZipEntry(name);
+        entry.setTime(timestamp);
+        zos.putNextEntry(entry);
+        zos.write(bytes);
+        zos.closeEntry();
+    }
     public List<NormalizedSample> getValSamples() { return valSamples; }
     public List<NormalizedSample> getSamples() {
         List<NormalizedSample> all = new ArrayList<>(trainSamples);

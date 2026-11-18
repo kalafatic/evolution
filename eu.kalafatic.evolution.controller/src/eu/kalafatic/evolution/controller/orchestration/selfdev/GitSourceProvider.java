@@ -69,16 +69,31 @@ public class GitSourceProvider implements SourceProvider {
 
     @Override
     public TaskResult updateRepository(File repoRoot) {
+        // WP9 (D-08): pull/fetch are Git mutations. Under the simulation
+        // boundary (default) they are never executed; the update is validated
+        // and reported honestly.
+        boolean simulation = Boolean.parseBoolean(System.getProperty("evo.git.simulation", "true"));
         try {
             String remote = getRemote(repoRoot);
             if ("none".equalsIgnoreCase(remote)) {
                 return new TaskResult.Builder("GIT_UPDATE")
                         .status(TaskStatus.SUCCESS)
-                        .message("No remote configured, skipping pull/fetch.")
+                        .message(simulation
+                                ? "No remote configured; update skipped (simulation mode - no git mutation)."
+                                : "No remote configured, skipping pull/fetch.")
                         .build();
             }
+            if (simulation) {
+                return new TaskResult.Builder("GIT_UPDATE")
+                        .status(TaskStatus.SUCCESS)
+                        .message("Repository update SIMULATED (pull --ff-only / fetch not executed). Remote: " + remote)
+                        .diagnostic("simulated", "true")
+                        .build();
+            }
+            boolean pulled = false;
             try {
                 gitTool.execute("pull --ff-only", repoRoot, null);
+                pulled = true;
             } catch (Exception e) {
                 try {
                     gitTool.execute("fetch origin", repoRoot, null);
@@ -91,7 +106,8 @@ public class GitSourceProvider implements SourceProvider {
             }
             return new TaskResult.Builder("GIT_UPDATE")
                     .status(TaskStatus.SUCCESS)
-                    .message("Repository updated from remote.")
+                    .message(pulled ? "Repository updated from remote." : "Repository fetched (pull failed).")
+                    .diagnostic("updated", String.valueOf(pulled))
                     .build();
         } catch (Exception e) {
             return new TaskResult.Builder("GIT_UPDATE")

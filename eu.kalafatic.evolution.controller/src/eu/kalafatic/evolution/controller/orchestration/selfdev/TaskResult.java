@@ -48,6 +48,10 @@ public class TaskResult {
         return new Builder(taskId).status(TaskStatus.SKIPPED).message(message).build();
     }
 
+    public static TaskResult cancelled(String taskId, String message) {
+        return new Builder(taskId).status(TaskStatus.CANCELLED).message(message).build();
+    }
+
     public String getTaskId() {
         return taskId;
     }

@@ -62,6 +62,10 @@ public class EvoModelQuantizer {
         QuantizationConfig.QuantizationScheme scheme = config.getScheme();
         EvoDtype targetDtype = scheme.getEvoDtype();
 
+        if (targetDtype == EvoDtype.INT4) {
+            throw new UnsupportedOperationException("INT4 quantization requires packed nibble storage which is not implemented yet; use F16, BF16 or INT8");
+        }
+
         EvoModelArtifact quantized = new EvoModelArtifact();
 
         // Copy model architecture and tokenizer descriptors
@@ -101,13 +105,18 @@ public class EvoModelQuantizer {
             quantizedWeightData.add(qData);
             weightDtypes.add(targetDtype);
 
-            String weightName = sourceArtifact.getWeightNames().size() > i ? sourceArtifact.getWeightNames().get(i) : "weight_" + i;
-            meta.put("tensor_scale_" + weightName, String.valueOf(scale));
+            if (targetDtype == EvoDtype.INT8) {
+                String weightName = sourceArtifact.getWeightNames().size() > i ? sourceArtifact.getWeightNames().get(i) : "weight_" + i;
+                meta.put("tensor_scale_" + weightName, String.valueOf(scale));
+            }
         }
 
-        // Replace weight data in quantized artifact
+        // Replace weight data AND the dtype list in the quantized artifact; without the
+        // dtype list the artifact would silently remain F32 on disk.
         quantized.getWeightData().clear();
         quantized.getWeightData().addAll(quantizedWeightData);
+        quantized.getWeightDtypes().clear();
+        quantized.getWeightDtypes().addAll(weightDtypes);
 
         quantized.recalculateManifestAndHash();
 

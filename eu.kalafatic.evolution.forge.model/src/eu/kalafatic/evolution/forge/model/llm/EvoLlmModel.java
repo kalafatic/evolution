@@ -92,7 +92,7 @@ public class EvoLlmModel {
     private static void initXavier(Tensor tensor, int fanIn, int fanOut) {
         float[] data = tensor.getData();
         if (data == null) return;
-        Random rand = new Random();
+        Random rand = new Random(42);
         float std = (float) Math.sqrt(2.0 / (fanIn + fanOut));
         for (int i = 0; i < data.length; i++) {
             data[i] = (float) (rand.nextGaussian() * std);
@@ -144,13 +144,18 @@ public class EvoLlmModel {
 
     /**
      * KV-Cached forward pass for high-performance auto-regressive generation.
+     * Applies the positional encoding at the correct absolute position offset:
+     * prefill starts at 0, each subsequent single-token step uses the cached
+     * sequence length as the position offset.
      */
     public Tensor forwardWithCache(int[] inputIds, KVCache kvCache) {
         if (inputIds == null || inputIds.length == 0) {
             throw new IllegalArgumentException("Input token IDs cannot be null or empty");
         }
+        int positionOffset = (kvCache != null) ? kvCache.getCachedSequenceLength() : 0;
+
         Tensor x = embedding.forward(inputIds);
-        x = positionalEncoding.forward(x);
+        x = positionalEncoding.forwardAtOffset(x, positionOffset);
 
         for (int i = 0; i < blocks.size(); i++) {
             KVCache.LayerKVCache layerCache = (kvCache != null) ? kvCache.getLayerCache(i) : null;
@@ -171,29 +176,57 @@ public class EvoLlmModel {
 
     /**
      * Overload for forward pass accepting attention mask (single array or matrix).
+     * Mask semantics: 1.0 = attend, 0.0 = masked (e.g. padding position).
      */
     public Tensor forward(int[] inputIds, float[] attentionMask) {
-        return forward(inputIds);
+        if (inputIds == null || inputIds.length == 0) {
+            throw new IllegalArgumentException("Input token IDs cannot be null or empty");
+        }
+        if (attentionMask != null && attentionMask.length != inputIds.length) {
+            throw new IllegalArgumentException("Attention mask length (" + attentionMask.length
+                    + ") must match input length (" + inputIds.length + ")");
+        }
+        Tensor x = embedding.forward(inputIds);
+        x = positionalEncoding.forward(x);
+
+        for (TransformerBlock block : blocks) {
+            x = block.forward(x, attentionMask);
+        }
+        this.lastFinalNormed = outputNorm.forward(x);
+        return lastFinalNormed.matmul(lmHead);
     }
 
     /**
      * Batched forward pass for training with loss mask support: [B, T] -> Logits [B, T, V].
+     * Processes every batch row (no fake single-row batching) and stacks the per-row
+     * logits into a [B, T, V] row-major tensor.
      */
     public ForwardContext forward(int[][] batchInput, float[][] attentionMask) {
-        Tensor x = embedding.forward(batchInput[0]);
-        x = positionalEncoding.forward(x);
+        if (batchInput == null || batchInput.length == 0) {
+            throw new IllegalArgumentException("Batch input cannot be null or empty");
+        }
+        if (attentionMask != null && attentionMask.length != batchInput.length) {
+            throw new IllegalArgumentException("Attention mask batch size (" + attentionMask.length
+                    + ") must match input batch size (" + batchInput.length + ")");
+        }
+        int b = batchInput.length;
+        int t = batchInput[0].length;
+        int v = getVocabSize();
 
-        ForwardContext context = new ForwardContext(null, x, null, null);
+        Tensor logits = new SimpleTensor(new long[]{b, t, v});
+        float[] logitsData = logits.getData();
 
-        for (TransformerBlock block : blocks) {
-            context.blockInputs.add(x);
-            x = block.forward(x);
+        for (int i = 0; i < b; i++) {
+            if (batchInput[i] == null || batchInput[i].length != t) {
+                throw new IllegalArgumentException("All batch rows must have equal length " + t + ", row " + i + " differs");
+            }
+            float[] rowMask = (attentionMask != null) ? attentionMask[i] : null;
+            Tensor rowLogits = forward(batchInput[i], rowMask);
+            System.arraycopy(rowLogits.getData(), 0, logitsData, i * t * v, t * v);
         }
 
-        Tensor finalNormed = outputNorm.forward(x);
-        Tensor logits = finalNormed.matmul(lmHead);
-
-        return new ForwardContext(null, x, finalNormed, logits);
+        this.lastFinalNormed = null;
+        return new ForwardContext(null, logits, null, logits);
     }
 
     /**

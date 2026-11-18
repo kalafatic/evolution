@@ -2,7 +2,11 @@ package eu.kalafatic.evolution.gpu.diag;
 
 import java.io.File;
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -89,16 +93,38 @@ public class CudaComputeVerifier {
             if (Files.exists(path)) {
                 try (Arena arena = Arena.ofConfined()) {
                     SymbolLookup lookup = SymbolLookup.libraryLookup(path, arena);
-                    boolean cuInitFound = lookup.find("cuInit").isPresent();
-                    boolean cuDriverVerFound = lookup.find("cuDriverGetVersion").isPresent();
+                    var cuInitSymbol = lookup.find("cuInit");
+                    var cuDriverVerSymbol = lookup.find("cuDriverGetVersion");
 
-                    if (cuInitFound || cuDriverVerFound) {
-                        info.setComputeCapable(true);
-                        info.setComputeDeviceType("CUDA_GPU_VERIFIED");
-                    } else {
+                    if (cuInitSymbol.isEmpty() && cuDriverVerSymbol.isEmpty()) {
                         info.setComputeCapable(false);
                         info.setComputeDeviceType("CPU_FALLBACK");
                         info.addError("CUDA Driver API library loaded, but expected symbols (cuInit/cuDriverGetVersion) were absent.");
+                        return;
+                    }
+
+                    // Symbol presence alone does not prove a usable CUDA context;
+                    // attempt a real cuInit(0) call when FFM linkage is available.
+                    boolean cuInitOk = false;
+                    if (cuInitSymbol.isPresent()) {
+                        try {
+                            MethodHandle cuInit = Linker.nativeLinker().downcallHandle(
+                                    cuInitSymbol.get(),
+                                    FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
+                            cuInitOk = ((int) cuInit.invokeExact(0)) == 0;
+                        } catch (Throwable t) {
+                            info.addError("cuInit(0) invocation failed: " + t.getMessage());
+                        }
+                    }
+
+                    if (cuInitOk) {
+                        info.setComputeCapable(true);
+                        info.setComputeDeviceType("CUDA_DRIVER_VERIFIED");
+                    } else {
+                        info.setComputeCapable(false);
+                        info.setComputeDeviceType("CUDA_DRIVER_SYMBOLS_PRESENT");
+                        info.addError("CUDA driver symbols present but cuInit(0) did not succeed; "
+                                + "a usable CUDA context was NOT verified. This label does not imply GPU compute capability.");
                     }
                 }
             }

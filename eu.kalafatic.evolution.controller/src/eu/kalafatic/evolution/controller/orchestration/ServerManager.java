@@ -402,7 +402,7 @@ public class ServerManager {
         }
 
         // Primary HTTP Server
-        java.io.File readyFile = new java.io.File("self-dev-run/evo_ready.txt");
+        java.io.File readyFile = resolveReadinessFile();
         if (readyFile.exists()) {
             readyFile.delete();
         }
@@ -434,12 +434,12 @@ public class ServerManager {
             activeServers.put(port, server);
             this.primaryPort = port;
 
-            // Write readiness marker file
-            java.io.File runDir = new java.io.File("self-dev-run");
-            if (!runDir.exists()) {
-                runDir.mkdirs();
+            // Write readiness marker file (run-scoped state dir when provided by the parent
+            // Self-Dev launch, legacy CWD-relative location otherwise)
+            java.io.File rf = resolveReadinessFile();
+            if (!rf.getParentFile().exists()) {
+                rf.getParentFile().mkdirs();
             }
-            java.io.File rf = new java.io.File(runDir, "evo_ready.txt");
             try {
                 java.nio.file.Files.write(rf.toPath(), String.valueOf(System.currentTimeMillis()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             } catch (Exception ignored) {}
@@ -654,5 +654,18 @@ public class ServerManager {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Resolves the Self-Dev readiness marker file location. When the parent Self-Dev
+     * launch provided a run-scoped state directory (EVO_SELFDEV_STATE_DIR), the marker
+     * is written there; otherwise the legacy CWD-relative location is used.
+     */
+    private java.io.File resolveReadinessFile() {
+        String stateDir = System.getenv("EVO_SELFDEV_STATE_DIR");
+        if (stateDir != null && !stateDir.trim().isEmpty()) {
+            return new java.io.File(new java.io.File(stateDir.trim()), "evo_ready.txt");
+        }
+        return new java.io.File("self-dev-run/evo_ready.txt");
     }
 }

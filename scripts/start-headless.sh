@@ -1,27 +1,31 @@
 #!/bin/bash
-# Evolution Platform - Headless Starter
+# Evolution Platform - Headless Product Starter
 
-PORT=${1:-28080}
+set -euo pipefail
 
-# Build classpath from target jars and local libs
-CP="eu.kalafatic.evolution.controller/target/eu.kalafatic.evolution.controller-2.6.5-SNAPSHOT.jar"
-CP="$CP:eu.kalafatic.evolution.model/target/eu.kalafatic.evolution.model-2.6.5-SNAPSHOT.jar"
-CP="$CP:eu.kalafatic.utils/target/eu.kalafatic.utils-2.6.5-SNAPSHOT.jar"
+PORT="${1:-28080}"
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "${SCRIPT_DIR}/.."
 
-# Add bundled libs from controller
-for jar in eu.kalafatic.evolution.controller/lib/*.jar; do
-    CP="$CP:$jar"
-done
+JAVA_MAJOR="$(java -version 2>&1 | awk -F'"' '/version/ {print $2; exit}' | cut -d. -f1)"
+if [[ "${JAVA_MAJOR}" != "21" && -d /usr/lib/jvm/java-21-openjdk-amd64 ]]; then
+    export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+    export PATH="${JAVA_HOME}/bin:${PATH}"
+    JAVA_MAJOR="$(java -version 2>&1 | awk -F'"' '/version/ {print $2; exit}' | cut -d. -f1)"
+fi
+if [[ "${JAVA_MAJOR}" != "21" ]]; then
+    echo "ERROR: JDK 21 is required. Set JAVA_HOME to a JDK 21 installation." >&2
+    exit 1
+fi
 
-# Resolve core OSGi/EMF dependencies from Tycho cache for standalone execution
-TYCHO_CACHE="$HOME/.m2/repository/.cache/tycho"
-CORE_REPO="$TYCHO_CACHE/https/ca.mirrors.cicku.me/eclipse/releases/2025-12/202512101000/plugins"
+PRODUCT_DIR="eu.kalafatic.evolution.repository/target/products/headless/linux/gtk/x86_64/headless"
+LAUNCHER="${PRODUCT_DIR}/eclipse"
 
-EMF_ECORE=$(find "$CORE_REPO" -name "org.eclipse.emf.ecore_*.jar" | head -n 1)
-EMF_COMMON=$(find "$CORE_REPO" -name "org.eclipse.emf.common_*.jar" | head -n 1)
-OSGI=$(find "$CORE_REPO" -name "org.eclipse.osgi_*.jar" | head -n 1)
+if [[ ! -x "${LAUNCHER}" ]]; then
+    echo "Headless product not found: ${LAUNCHER}" >&2
+    echo "Run scripts/build.sh first." >&2
+    exit 1
+fi
 
-CP="$CP:$EMF_ECORE:$EMF_COMMON:$OSGI"
-
-echo "Starting Evolution Headless Server on port $PORT..."
-java -cp "$CP" eu.kalafatic.evolution.controller.orchestration.EvolutionServer "$PORT"
+echo "Starting Evolution headless product on port ${PORT}..."
+exec "${LAUNCHER}" -nosplash -consoleLog --port "${PORT}"

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EVO Cognitive Services Administration</title>
+<style>
+  :root { --bg:#1e1e2e; --panel:#2a2a3c; --fg:#e0e0e0; --accent:#4f8cff; --ok:#4caf7d; --warn:#d9a441; --err:#e05555; --border:#3a3a4e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--fg); font-size:13px; }
+  header { background:var(--panel); padding:10px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+  header h1 { font-size:15px; margin:0; font-weight:600; }
+  nav { background:var(--panel); border-bottom:1px solid var(--border); padding:0 12px; }
+  nav button { background:none; border:none; color:var(--fg); padding:10px 14px; cursor:pointer; font-size:13px; border-bottom:2px solid transparent; }
+  nav button.active { border-bottom-color:var(--accent); color:var(--accent); }
+  main { padding:16px; max-width:1200px; }
+  section { display:none; }
+  section.active { display:block; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:14px; }
+  .card h2 { margin:0 0 10px 0; font-size:14px; color:var(--accent); }
+  .stats { display:flex; gap:12px; flex-wrap:wrap; }
+  .stat { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:10px 16px; min-width:120px; }
+  .stat .value { font-size:20px; font-weight:700; }
+  .stat .label { color:#9a9ab0; font-size:11px; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:#9a9ab0; font-weight:600; font-size:11px; text-transform:uppercase; }
+  tr:hover td { background:rgba(79,140,255,0.06); }
+  button.btn { background:var(--accent); border:none; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; }
+  button.btn.secondary { background:#44445c; }
+  button.btn.danger { background:var(--err); }
+  input, select, textarea { background:var(--bg); border:1px solid var(--border); color:var(--fg); padding:6px 8px; border-radius:4px; font-size:12px; width:100%; }
+  .row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+  .row label { min-width:120px; color:#9a9ab0; font-size:12px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; }
+  .badge.ok { background:rgba(76,175,125,0.2); color:var(--ok); }
+  .badge.warn { background:rgba(217,164,65,0.2); color:var(--warn); }
+  .badge.err { background:rgba(224,85,85,0.2); color:var(--err); }
+  .badge.info { background:rgba(79,140,255,0.2); color:var(--accent); }
+  pre { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:10px; overflow:auto; max-height:400px; font-size:11px; white-space:pre-wrap; }
+  .note { color:#9a9ab0; font-size:11px; }
+  .security-fixed { color:var(--ok); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cognitive Services Administration</h1>
+  <span id="statusBadge" class="badge info">Loading...</span>
+</header>
+<nav>
+  <button data-section="overview" class="active">Overview</button>
+  <button data-section="apps">Applications &amp; Access</button>
+  <button data-section="memory">Memory Administration</button>
+  <button data-section="sessions">Conversations &amp; Sessions</button>
+  <button data-section="inspector">Context Inspector</button>
+  <button data-section="validation">Validation Administration</button>
+  <button data-section="audit">Audit &amp; Diagnostics</button>
+</nav>
+<main>
+  <!-- OVERVIEW -->
+  <section id="overview" class="active">
+    <div class="card"><h2>Platform Status</h2><div class="stats" id="overviewStats"></div></div>
+    <div class="card"><h2>Recent Operations</h2><pre id="overviewOperations">Loading...</pre></div>
+  </section>
+
+  <!-- APPLICATIONS & ACCESS -->
+  <section id="apps">
+    <div class="card">
+      <h2>Register Application</h2>
+      <div class="row"><label>Application ID</label><input id="appId" placeholder="dstudio"></div>
+      <div class="row"><label>Name</label><input id="appName" placeholder="Darwin Studio"></div>
+      <div class="row"><label>Kind</label>
+        <select id="appKind"><option>EVO</option><option>TRYST</option><option>DSTUDIO</option><option>DCODE</option><option>EXTERNAL_MCP</option></select></div>
+      <div class="row"><label>Owner user</label><input id="appOwner" placeholder="admin"></div>
+      <div class="row"><label></label><button class="btn" onclick="registerApp()">Register</button></div>
+    </div>
+    <div class="card"><h2>Registered Applications</h2><div id="appList"><span class="note">Loading...</span></div></div>
+    <div class="card">
+      <h2>Issue Token</h2>
+      <div class="row"><label>Application</label><select id="tokenApp"></select></div>
+      <div class="row"><label>User</label><input id="tokenUser" value="admin"></div>
+      <div class="row"><label>Scopes</label><input id="tokenScopes" value="context.get, context.search, memory.read, memory.write, session.create, session.read, session.write, project.read, decision.read"></div>
+      <div class="row"><label></label><button class="btn" onclick="issueToken()">Issue Token</button></div>
+      <div class="row"><label>Token (shown once)</label><textarea id="tokenResult" rows="3" readonly placeholder="Generated token appears here once"></textarea></div>
+    </div>
+    <div class="card"><h2>Token Grants</h2><div id="accessList"><span class="note">Loading...</span></div></div>
+  </section>
+
+  <!-- MEMORY -->
+  <section id="memory">
+    <div class="card">
+      <h2>Search Memory Records</h2>
+      <div class="row"><label>Query</label><input id="memQuery" placeholder="search terms"></div>
+      <div class="row"><label>Scope</label><select id="memScope"><option value="">All</option><option>USER</option><option>PROJECT</option><option>SESSION</option><option>TASK</option></select></div>
+      <div class="row"><label>Type</label><select id="memType"><option value="">All</option><option>FACT</option><option>PREFERENCE</option><option>DECISION</option><option>RULE</option><option>EPISODIC</option><option>SEMANTIC</option><option>PROCEDURAL</option><option>WORKING</option><option>PROJECT</option></select></div>
+      <div class="row"><label></label><button class="btn" onclick="searchMemory()">Search</button></div>
+    </div>
+    <div class="card"><h2>Records</h2><div id="memoryResults"><span class="note">No search performed</span></div></div>
+  </section>
+
+  <!-- SESSIONS -->
+  <section id="sessions">
+    <div class="card"><h2>Registered Sessions</h2><div id="sessionList"><span class="note">Loading...</span></div></div>
+  </section>
+
+  <!-- CONTEXT INSPECTOR -->
+  <section id="inspector">
+    <div class="card">
+      <h2>Context Reconstruction Inspector</h2>
+      <div class="row"><label>User</label><input id="ctxUser" value="admin"></div>
+      <div class="row"><label>Application</label><input id="ctxApp" value="evo"></div>
+      <div class="row"><label>Project</label><input id="ctxProject" placeholder="/path/to/project"></div>
+      <div class="row"><label>Session</label><input id="ctxSession" placeholder="optional session id"></div>
+      <div class="row"><label>Intent</label><input id="ctxIntent" placeholder="task description"></div>
+      <div class="row"><label>Budget (tokens)</label><input id="ctxBudget" type="number" value="12000"></div>
+      <div class="row"><label>Categories</label><input id="ctxCategories" value="user,session,project,memory,decisions,issues,procedures,continuity"></div>
+      <div class="row"><label></label><button class="btn" onclick="runInspector()">Reconstruct Context</button></div>
+    </div>
+    <div class="card"><h2>Context Package</h2><pre id="ctxResult">No reconstruction performed</pre></div>
+  </section>
+
+  <!-- VALIDATION -->
+  <section id="validation">
+    <div class="card">
+      <h2>Global Strict Validation</h2>
+      <div class="row"><label>Status</label><span id="globalStrictBadge" class="badge info">Loading...</span></div>
+      <div class="row"><label></label>
+        <button class="btn" onclick="setGlobalStrict(true)">Enable STRICT</button>
+        <button class="btn secondary" onclick="setGlobalStrict(false)">Disable (default)</button>
+      </div>
+      <p class="note">Security controls (authentication, authorization, application identity, user data access, application isolation, input safety, database integrity) are ALWAYS enabled and can never be disabled through this policy.</p>
+    </div>
+    <div class="card"><h2>Validation Categories and Rules</h2><div id="validationRules">Loading...</div></div>
+    <div class="card">
+      <h2>Actions</h2>
+      <div class="row">
+        <button class="btn secondary" onclick="runChecks()">Run Validation Checks</button>
+        <button class="btn secondary" onclick="restoreDefaults()">Restore Default Configuration</button>
+      </div>
+    </div>
+    <div class="card"><h2>Configuration Change History</h2><div id="validationHistory"><span class="note">Loading...</span></div></div>
+  </section>
+
+  <!-- AUDIT -->
+  <section id="audit">
+    <div class="card"><h2>Recent Audit Entries</h2><div id="auditList"><span class="note">Loading...</span></div></div>
+  </section>
+</main>
+
+<script>
+  var currentSection = 'overview';
+
+  function navClick(section) {
+    currentSection = section;
+    document.querySelectorAll('nav button').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-section') === section);
+    });
+    document.querySelectorAll('main section').forEach(function (s) {
+      s.classList.toggle('active', s.id === section);
+    });
+    loadSection(section);
+  }
+
+  document.querySelectorAll('nav button').forEach(function (b) {
+    b.addEventListener('click', function () { navClick(b.getAttribute('data-section')); });
+  });
+
+  function call(action, payload) {
+    try {
+      var result = window.cognitiveAction(action, JSON.stringify(payload || {}));
+      return JSON.parse(result);
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  }
+
+  function loadSection(section) {
+    if (section === 'overview') loadOverview();
+    if (section === 'apps') loadApplications();
+    if (section === 'memory') searchMemory();
+    if (section === 'sessions') loadSessions();
+    if (section === 'validation') loadValidation();
+    if (section === 'audit') loadAudit();
+  }
+
+  function badge(text, cls) { return '<span class="badge ' + cls + '">' + text + '</span>'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function loadOverview() {
+    var r = call('overview');
+    if (!r.ok) { document.getElementById('overviewStats').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    document.getElementById('statusBadge').innerHTML = badge(r.status, r.status === 'OPERATIONAL' ? 'ok' : 'warn');
+    var stats = [
+      ['applications', 'Applications'], ['sessions', 'Sessions'], ['memoryEntries', 'Memory Records'],
+      ['conversations', 'Conversation Records'], ['warnings', 'Warnings'], ['errors', 'Errors']
+    ];
+    document.getElementById('overviewStats').innerHTML = stats.map(function (s) {
+      return '<div class="stat"><div class="value">' + (r[s[0]] != null ? r[s[0]] : 0) + '</div><div class="label">' + s[1] + '</div></div>';
+    }).join('');
+    document.getElementById('overviewOperations').textContent = r.recent || 'No recent operations';
+  }
+
+  function loadApplications() {
+    var r = call('applications');
+    if (!r.ok) { document.getElementById('appList').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    var rows = (r.applications || []).map(function (a) {
+      return '<tr><td>' + esc(a.applicationId) + '</td><td>' + esc(a.name) + '</td><td>' + esc(a.kind) + '</td>' +
+        '<td>' + (a.enabled ? badge('ENABLED','ok') : badge('DISABLED','err')) + '</td></tr>';
+    }).join('');
+    document.getElementById('appList').innerHTML = '<table><tr><th>ID</th><th>Name</th><th>Kind</th><th>Status</th></tr>' +
+      (rows || '<tr><td colspan="4" class="note">No applications registered</td></tr>') + '</table>';
+    var options = (r.applications || []).map(function (a) {
+      return '<option value="' + esc(a.applicationId) + '">' + esc(a.applicationId) + '</option>';
+    }).join('');
+    document.getElementById('tokenApp').innerHTML = options;
+    loadAccesses();
+  }
+
+  function registerApp() {
+    var r = call('registerApplication', {
+      applicationId: document.getElementById('appId').value.trim(),
+      name: document.getElementById('appName').value.trim(),
+      kind: document.getElementById('appKind').value,
+      owner: document.getElementById('appOwner').value.trim()
+    });
+    alert(r.ok ? 'Application registered' : ('Failed: ' + r.error));
+    loadApplications();
+  }
+
+  function issueToken() {
+    var r = call('issueToken', {
+      applicationId: document.getElementById('tokenApp').value,
+      user: document.getElementById('tokenUser').value.trim(),
+      scopes: document.getElementById('tokenScopes').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+    });
+    document.getElementById('tokenResult').value = r.ok ? r.token : '';
+    if (!r.ok) alert('Failed: ' + r.error);
+    loadAccesses();
+  }
+
+  function loadAccesses() {
+    var r = call('accesses');
+    if (!r.ok) { document.getElementById('accessList').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    var rows = (r.accesses || []).map(function (a) {
+      return '<tr><td>' + esc(a.applicationId) + '</td><td>' + esc(a.username) + '</td><td>' + esc(a.scopes) + '</td>' +
+        '<td>' + (a.revoked ? badge('REVOKED','err') : badge('ACTIVE','ok')) + '</td>' +
+        '<td>' + esc(a.lastUsed || '-') + '</td>' +
+        '<td><button class="btn danger" onclick="revokeToken(' + a.id + ')">Revoke</button></td></tr>';
+    }).join('');
+    document.getElementById('accessList').innerHTML = '<table><tr><th>Application</th><th>User</th><th>Scopes</th><th>Status</th><th>Last Used</th><th></th></tr>' +
+      (rows || '<tr><td colspan="6" class="note">No token grants</td></tr>') + '</table>';
+  }
+
+  function revokeToken(id) {
+    var r = call('revokeToken', { id: id });
+    if (!r.ok) alert('Failed: ' + r.error);
+    loadAccesses();
+  }
+
+  function searchMemory() {
+    var r = call('memorySearch', {
+      query: document.getElementById('memQuery').value,
+      scope: document.getElementById('memScope').value || null,
+      type: document.getElementById('memType').value || null
+    });
+    if (!r.ok) { document.getElementById('memoryResults').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    var rows = (r.results || []).map(function (m) {
+      return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.type) + '</td><td>' + esc(m.scope) + '</td>' +
+        '<td>' + esc(m.content) + '</td><td>' + esc(m.validity) + '</td><td>' + (m.confidence != null ? m.confidence : '') + '</td>' +
+        '<td><button class="btn secondary" onclick="retractEntry(\'' + esc(m.id) + '\')">Retract</button></td></tr>';
+    }).join('');
+    document.getElementById('memoryResults').innerHTML = '<table><tr><th>ID</th><th>Type</th><th>Scope</th><th>Content</th><th>Validity</th><th>Confidence</th><th></th></tr>' +
+      (rows || '<tr><td colspan="7" class="note">No records</td></tr>') + '</table>';
+  }
+
+  function retractEntry(id) {
+    var r = call('memoryRetract', { id: id, reason: 'Administrator retraction' });
+    if (!r.ok) alert('Failed: ' + r.error);
+    searchMemory();
+  }
+
+  function loadSessions() {
+    var r = call('sessions');
+    if (!r.ok) { document.getElementById('sessionList').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    var rows = (r.sessions || []).map(function (s) {
+      return '<tr><td>' + esc(s.id) + '</td><td>' + esc(s.kind) + '</td><td>' + esc(s.status) + '</td>' +
+        '<td>' + esc(s.ownerUserId || '-') + '</td><td>' + esc(s.applicationId || '-') + '</td>' +
+        '<td>' + esc(s.projectRef || '-') + '</td><td>' + new Date(s.startedAt).toLocaleString() + '</td></tr>';
+    }).join('');
+    document.getElementById('sessionList').innerHTML = '<table><tr><th>ID</th><th>Kind</th><th>Status</th><th>User</th><th>Application</th><th>Project</th><th>Started</th></tr>' +
+      (rows || '<tr><td colspan="7" class="note">No sessions</td></tr>') + '</table>';
+  }
+
+  function runInspector() {
+    var r = call('contextGet', {
+      userId: document.getElementById('ctxUser').value.trim(),
+      applicationId: document.getElementById('ctxApp').value.trim(),
+      project: document.getElementById('ctxProject').value.trim() || null,
+      sessionId: document.getElementById('ctxSession').value.trim() || null,
+      intent: document.getElementById('ctxIntent').value.trim(),
+      budgetTokens: parseInt(document.getElementById('ctxBudget').value, 10) || 12000,
+      categories: document.getElementById('ctxCategories').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+    });
+    document.getElementById('ctxResult').textContent = r.ok ? JSON.stringify(r.package, null, 2) : ('Failed: ' + r.error);
+  }
+
+  function loadValidation() {
+    var r = call('validation');
+    if (!r.ok) { document.getElementById('validationRules').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    document.getElementById('globalStrictBadge').innerHTML = r.globalStrict
+      ? badge('STRICT ENABLED', 'warn') : badge('DISABLED (default)', 'ok');
+    var rows = (r.categories || []).map(function (c) {
+      var ruleRows = (c.rules || []).map(function (rule) {
+        var enabled = rule.securityFixed ? badge('SECURITY FIXED','ok') : (rule.enabled ? badge('ENABLED','ok') : badge('DISABLED','err'));
+        var mode = rule.securityFixed ? 'ALWAYS' : rule.mode;
+        return '<tr><td>' + esc(rule.ruleId) + '</td><td>' + esc(rule.description) + '</td><td>' + esc(mode) + '</td><td>' + enabled + '</td>' +
+          '<td>' + esc(rule.lastResult || '-') + '</td><td>' + (rule.warnings || 0) + '</td><td>' + (rule.errors || 0) + '</td>' +
+          '<td>' + (rule.securityFixed ? '<span class="security-fixed">cannot be disabled</span>' :
+            '<select onchange="setRuleMode(\'' + esc(rule.ruleId) + '\', this.value)">' +
+            '<option value="DISABLED"' + (rule.mode === 'DISABLED' ? ' selected' : '') + '>DISABLED</option>' +
+            '<option value="WARN"' + (rule.mode === 'WARN' ? ' selected' : '') + '>WARN</option>' +
+            '<option value="STRICT"' + (rule.mode === 'STRICT' ? ' selected' : '') + '>STRICT</option></select>') + '</td></tr>';
+      }).join('');
+      return '<tr class="note"><td colspan="8"><strong>' + esc(c.category) + '</strong></td></tr>' + ruleRows;
+    }).join('');
+    document.getElementById('validationRules').innerHTML = '<table><tr><th>Rule</th><th>Description</th><th>Mode</th><th>Status</th><th>Last Result</th><th>Warnings</th><th>Errors</th><th>Configure</th></tr>' +
+      (rows || '<tr><td colspan="8" class="note">No rules</td></tr>') + '</table>';
+    var history = (r.history || []).map(function (h) {
+      return '<tr><td>' + esc(h.timestamp) + '</td><td>' + esc(h.rule_id) + '</td><td>' + esc(h.old_mode) + ' → ' + esc(h.new_mode) + '</td><td>' + esc(h.changed_by || '-') + '</td></tr>';
+    }).join('');
+    document.getElementById('validationHistory').innerHTML = '<table><tr><th>Time</th><th>Rule</th><th>Change</th><th>Changed By</th></tr>' +
+      (history || '<tr><td colspan="4" class="note">No changes yet</td></tr>') + '</table>';
+  }
+
+  function setGlobalStrict(strict) {
+    var r = call('setGlobalStrict', { strict: strict });
+    if (!r.ok) alert('Failed: ' + r.error);
+    loadValidation();
+  }
+
+  function setRuleMode(ruleId, mode) {
+    var r = call('setRuleMode', { ruleId: ruleId, mode: mode });
+    if (!r.ok) alert('Failed: ' + r.error);
+    loadValidation();
+  }
+
+  function runChecks() {
+    var r = call('runChecks');
+    alert('Checks executed: ' + (r.ok ? r.executed + ' rules evaluated' : 'Failed: ' + r.error));
+    loadValidation();
+  }
+
+  function restoreDefaults() {
+    var r = call('restoreDefaults');
+    alert(r.ok ? 'Default configuration restored' : 'Failed: ' + r.error);
+    loadValidation();
+  }
+
+  function loadAudit() {
+    var r = call('audit');
+    if (!r.ok) { document.getElementById('auditList').innerHTML = '<span class="note">' + esc(r.error) + '</span>'; return; }
+    var rows = (r.entries || []).map(function (e) {
+      return '<tr><td>' + esc(e.timestamp) + '</td><td>' + esc(e.actor || '-') + '</td><td>' + esc(e.action) + '</td>' +
+        '<td>' + esc(e.resourceType) + '</td><td>' + esc(e.resourceId) + '</td><td>' + esc(e.outcome) + '</td></tr>';
+    }).join('');
+    document.getElementById('auditList').innerHTML = '<table><tr><th>Time</th><th>Actor</th><th>Action</th><th>Resource Type</th><th>Resource</th><th>Outcome</th></tr>' +
+      (rows || '<tr><td colspan="6" class="note">No audit entries</td></tr>') + '</table>';
+  }
+
+  loadOverview();
+</script>
+</body>
+</html>

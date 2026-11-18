@@ -111,9 +111,11 @@ public class EvoModelArtifact {
             float[] data = weightData.get(i);
             EvoDtype dtype = weightDtypes.size() > i ? weightDtypes.get(i) : EvoDtype.F32;
             String checksum = EvoModelContentHash.calculateFloatArrayChecksum(data);
+            long storedElementBytes = (dtype == EvoDtype.INT8) ? dtype.getElementBytes() + 4 : dtype.getElementBytes();
+            long uncompressedSize = data.length * storedElementBytes;
 
             EvoTensorDescriptor desc = new EvoTensorDescriptor(
-                    i, name, dtype, shape, 0, 0, data.length * 4, data.length * 4, 1, checksum
+                    i, name, dtype, shape, 0, 0, uncompressedSize, uncompressedSize, 1, checksum
             );
             manifest.add(desc);
         }
@@ -238,6 +240,17 @@ public class EvoModelArtifact {
 
     public void saveToFile(Path path) throws IOException {
         recalculateManifestAndHash();
+
+        // Persist sampling configuration inside the artifact metadata so it
+        // survives .evo export/reload (the directory form already stores it in
+        // config.json; this keeps the binary form self-contained).
+        metadata.put("inference_temperature", String.valueOf(temperature));
+        metadata.put("inference_top_p", String.valueOf(topP));
+        metadata.put("inference_top_k", String.valueOf(topK));
+        metadata.put("inference_repeat_penalty", String.valueOf(repeatPenalty));
+        metadata.put("inference_frequency_penalty", String.valueOf(frequencyPenalty));
+        metadata.put("inference_presence_penalty", String.valueOf(presencePenalty));
+
         EvoModelWriter writer = new EvoModelWriter();
         writer.writeModel(
                 path,
@@ -273,6 +286,9 @@ public class EvoModelArtifact {
         EvoModelReader reader = new EvoModelReader();
         reader.read(path);
 
+        // Integrity gate: refuse to load corrupted models instead of running on them.
+        reader.verifyIntegrity();
+
         EvoModelArtifact artifact = new EvoModelArtifact();
         artifact.modelName = reader.getModelName();
         artifact.createdAt = reader.getCreatedAt();
@@ -282,6 +298,8 @@ public class EvoModelArtifact {
         artifact.tokenizerDescriptor = reader.getTokenizer();
 
         artifact.metadata.putAll(reader.getMetadata());
+        // Restore sampling configuration persisted in the binary form's metadata.
+        restoreSamplingConfig(artifact, reader.getMetadata());
 
         artifact.manifest = new ArrayList<>(reader.getManifest());
         artifact.weightData = new ArrayList<>(reader.getTensorDataPayloads());
@@ -297,6 +315,31 @@ public class EvoModelArtifact {
         }
 
         return artifact;
+    }
+
+    private static void restoreSamplingConfig(EvoModelArtifact artifact, Map<String, String> meta) {
+        try {
+            if (meta.containsKey("inference_temperature")) {
+                artifact.temperature = Float.parseFloat(meta.get("inference_temperature"));
+            }
+            if (meta.containsKey("inference_top_p")) {
+                artifact.topP = Float.parseFloat(meta.get("inference_top_p"));
+            }
+            if (meta.containsKey("inference_top_k")) {
+                artifact.topK = Integer.parseInt(meta.get("inference_top_k"));
+            }
+            if (meta.containsKey("inference_repeat_penalty")) {
+                artifact.repeatPenalty = Float.parseFloat(meta.get("inference_repeat_penalty"));
+            }
+            if (meta.containsKey("inference_frequency_penalty")) {
+                artifact.frequencyPenalty = Float.parseFloat(meta.get("inference_frequency_penalty"));
+            }
+            if (meta.containsKey("inference_presence_penalty")) {
+                artifact.presencePenalty = Float.parseFloat(meta.get("inference_presence_penalty"));
+            }
+        } catch (NumberFormatException ignored) {
+            // Unparseable sampling metadata is ignored; defaults remain.
+        }
     }
 
     private static EvoModelArtifact loadFromDirectory(Path dir) throws IOException {
@@ -375,6 +418,19 @@ public class EvoModelArtifact {
             try {
                 String jsonStr = Files.readString(tokenizerPath);
                 tokenToId = parseVocabFromJson(jsonStr);
+            } catch (Exception ignored) {}
+        }
+
+        // Restore sampling/inference configuration from config.json (written by saveToDirectory)
+        if (Files.exists(configPath)) {
+            try {
+                JSONObject cfg = new JSONObject(Files.readString(configPath));
+                artifact.temperature = (float) cfg.optDouble("temperature", artifact.temperature);
+                artifact.topP = (float) cfg.optDouble("top_p", cfg.optDouble("topP", artifact.topP));
+                artifact.topK = cfg.optInt("top_k", cfg.optInt("topK", artifact.topK));
+                artifact.repeatPenalty = (float) cfg.optDouble("repeat_penalty", artifact.repeatPenalty);
+                artifact.frequencyPenalty = (float) cfg.optDouble("frequency_penalty", artifact.frequencyPenalty);
+                artifact.presencePenalty = (float) cfg.optDouble("presence_penalty", artifact.presencePenalty);
             } catch (Exception ignored) {}
         }
 
@@ -581,4 +637,5 @@ public class EvoModelArtifact {
     public List<float[]> getWeightData() { return weightData; }
     public List<long[]> getWeightShapes() { return weightShapes; }
     public List<String> getWeightNames() { return weightNames; }
+    public List<EvoDtype> getWeightDtypes() { return weightDtypes; }
 }

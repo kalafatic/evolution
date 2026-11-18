@@ -6,16 +6,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Execution result DTO for TEIP 1.0.
+ * Execution result DTO for TEIP 1.1.
  */
 public class TeipExecutionResult {
     private String protocol = "TEIP";
-    private String version = "1.0";
+    private String version = "1.1";
     private String executionId;
     private String correlationId;
     private TeipExecutionStatus status = TeipExecutionStatus.COMPLETED;
     private String summary = "";
     private String completedAt;
+    private String patch = "";
+    private List<String> modifiedFiles = new ArrayList<>();
     private List<Map<String, Object>> artifacts = new ArrayList<>();
     private Map<String, Object> metrics = new HashMap<>();
 
@@ -49,6 +51,12 @@ public class TeipExecutionResult {
 
     public String getCompletedAt() { return completedAt; }
     public void setCompletedAt(String completedAt) { this.completedAt = completedAt; }
+
+    public String getPatch() { return patch; }
+    public void setPatch(String patch) { this.patch = patch != null ? patch : ""; }
+
+    public List<String> getModifiedFiles() { return modifiedFiles; }
+    public void setModifiedFiles(List<String> modifiedFiles) { this.modifiedFiles = modifiedFiles != null ? modifiedFiles : new ArrayList<>(); }
 
     public List<Map<String, Object>> getArtifacts() { return artifacts; }
     public void setArtifacts(List<Map<String, Object>> artifacts) { this.artifacts = artifacts != null ? artifacts : new ArrayList<>(); }

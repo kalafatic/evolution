@@ -31,7 +31,10 @@ public enum PortRegistry {
     EVO_SUPERVISOR_CONTROL("SUPERVISOR_CONTROL", "EVO Supervisor Control TCP Server", 8580, 28580, PortProtocol.TCP, "127.0.0.1", true),
 
     /** Reserved Auxiliary Server (formerly 8680). */
-    EVO_AUXILIARY("AUXILIARY", "EVO Auxiliary Network Service", 8680, 28680, PortProtocol.HTTP, "127.0.0.1", false);
+    EVO_AUXILIARY("AUXILIARY", "EVO Auxiliary Network Service", 8680, 28680, PortProtocol.HTTP, "127.0.0.1", false),
+
+    /** ENR — Evolution Neural Runtime HTTP API (Phase 6 family inference engine). */
+    EVO_ENR("ENR", "ENR Neural Runtime HTTP API", 8780, 28780, PortProtocol.HTTP, "127.0.0.1", false);
 
     public static final int BASE_OFFSET = 20000;
     public static final int PORT_INCREMENT = 100;
