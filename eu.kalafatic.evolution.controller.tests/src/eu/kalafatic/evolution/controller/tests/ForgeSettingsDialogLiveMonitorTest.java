@@ -2,9 +2,11 @@ package eu.kalafatic.evolution.controller.tests;
 
 import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.MetricSample;
 import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.TrainingTelemetry;
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent;
 import eu.kalafatic.evolution.view.dialogs.ForgeSettingsDialog;
 import eu.kalafatic.evolution.view.dialogs.ForgeTelemetrySnapshot;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -22,6 +24,11 @@ import static org.junit.Assert.assertTrue;
  * - the monitoring tab set renders all required graph tabs.
  */
 public class ForgeSettingsDialogLiveMonitorTest {
+
+    @Before
+    public void isolateMeasurements() {
+        ForgeTrainingEstimationAgent.getInstance().resetMeasurementsForTesting();
+    }
 
     private ForgeTelemetrySnapshot buildSnapshot(boolean withHistory) {
         TrainingTelemetry t = new TrainingTelemetry("dlg-session");

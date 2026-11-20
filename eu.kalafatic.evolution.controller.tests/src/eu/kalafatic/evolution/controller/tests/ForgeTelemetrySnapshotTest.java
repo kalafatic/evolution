@@ -2,10 +2,12 @@ package eu.kalafatic.evolution.controller.tests;
 
 import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.MetricSample;
 import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.TrainingTelemetry;
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.ForgeTrainingEstimationAgent;
 import eu.kalafatic.evolution.view.dialogs.ForgeTelemetrySnapshot;
 import eu.kalafatic.evolution.view.dialogs.ForgeTelemetrySnapshot.BudgetState;
 import eu.kalafatic.evolution.view.dialogs.ForgeTelemetrySnapshot.ThroughputBasis;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -18,6 +20,12 @@ import static org.junit.Assert.assertTrue;
  * must be N/A (-1), never invented.
  */
 public class ForgeTelemetrySnapshotTest {
+
+    @Before
+    public void isolateMeasurements() {
+        // Isolate from measurement history recorded by other tests/runs.
+        ForgeTrainingEstimationAgent.getInstance().resetMeasurementsForTesting();
+    }
 
     private static ForgeTelemetrySnapshot buildSnapshot(boolean active, boolean withHistory) {
         TrainingTelemetry t = new TrainingTelemetry("snap-session");

@@ -1217,14 +1217,10 @@ public class ForgeSettingsDialog extends Dialog {
 
     private ForgeTelemetrySnapshot captureSnapshot() {
         ForgeSessionManager mgr = ForgeSessionManager.getInstance();
-        try {
-            ForgeTrainingEstimationAgent.getInstance().configureMeasurementsStore(
-                    java.nio.file.Paths.get(
-                            ProjectModelManager.getWorkspacePath() != null && !ProjectModelManager.getWorkspacePath().isEmpty()
-                                    ? ProjectModelManager.getWorkspacePath()
-                                    : System.getProperty("java.io.tmpdir"),
-                            "forge-state"));
-        } catch (Exception ignored) {}
+        // The measurement store uses its default location (user.home/.evo-forge),
+        // outside the project tree, so recording/persisting measurements never
+        // affects the training corpus fingerprint.
+        ForgeTrainingEstimationAgent.getInstance().loadDefaultMeasurements();
         return ForgeTelemetrySnapshot.capture(mgr, resolveForgeSessionId(), lossHistory, calculateTotalDatasetBytes());
     }
 

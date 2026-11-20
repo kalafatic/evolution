@@ -69,11 +69,11 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
         job.setRunDirectory(runFolder);
         Path logFile = runFolder.resolve("forging.log");
 
-        // Shared throughput-measurement store: the same location the Forge
-        // Settings dialog resolves via the central workspace, so measured
-        // training speeds feed subsequent ETA calculations.
-        ForgeTrainingEstimationAgent.getInstance().configureMeasurementsStore(
-                projectPath.resolve("workspace").resolve("forge-state"));
+        // NOTE: the throughput-measurement store intentionally lives OUTSIDE the
+        // project tree (default: ~/.evo-forge). Writing measurements into the
+        // project would pollute the dataset corpus scan and change the dataset
+        // fingerprint on every run, silently breaking checkpoint resume.
+        ForgeTrainingEstimationAgent.getInstance().loadDefaultMeasurements();
 
         try {
             logToFile(logFile, "=======================================================");

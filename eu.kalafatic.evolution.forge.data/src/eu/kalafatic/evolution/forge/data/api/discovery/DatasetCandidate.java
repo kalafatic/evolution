@@ -55,7 +55,7 @@ public class DatasetCandidate {
     }
 
     public static String createStableId(String provider, String repository, String revision) {
-        String prov = provider != null ? provider.toLowerCase().trim() : "huggingface";
+        String prov = provider != null ? provider.toLowerCase().trim().replaceAll("\\s+", "") : "huggingface";
         String repo = repository != null ? repository.trim() : "";
         String rev = revision != null && !revision.trim().isEmpty() ? revision.trim() : "main";
         return prov + ":" + repo + ":" + rev;

@@ -149,13 +149,20 @@ public class ForgeTrainingEstimationAgent {
 
     /**
      * Configures the directory used for the persisted throughput measurement
-     * store. Called by the orchestrator (project workspace) and by the Forge
-     * Settings dialog (central workspace); both resolve to the same
-     * &lt;codebase&gt;/workspace/forge-state directory.
+     * store. Called by tests with temp dirs; production code relies on the
+     * default store (user.home/.evo-forge), which is deliberately outside the
+     * project tree so measurements never pollute the training corpus scan.
      */
     public synchronized void configureMeasurementsStore(Path storeDir) {
         this.measurementsStoreDir = storeDir;
         this.measurementsLoaded = false;
+        loadMeasurements();
+    }
+
+    /**
+     * Ensures the default measurement store is loaded. Idempotent.
+     */
+    public synchronized void loadDefaultMeasurements() {
         loadMeasurements();
     }
 
