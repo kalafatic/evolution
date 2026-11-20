@@ -396,6 +396,7 @@ public class EvoLlmTrainer {
                 ? resumeCheckpoint.getProcessedTokens()
                 : (long) startEpoch * epochTokenCount;
         long totalProcessedTokens = resumedTokens;
+        lastProcessedTokens = totalProcessedTokens;
         long lastMeasurementTime = System.currentTimeMillis();
         long windowStartTokens = totalProcessedTokens;
         int windowStartStep = completedStepsPrior;
