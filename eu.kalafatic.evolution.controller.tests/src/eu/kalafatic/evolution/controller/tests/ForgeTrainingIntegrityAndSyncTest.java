@@ -179,7 +179,10 @@ public class ForgeTrainingIntegrityAndSyncTest {
 
         assertEquals(TrainingTerminationStatus.TRAINING_STOPPED, result.getTerminationStatus());
         assertEquals(TerminationReason.TIME_BUDGET_REACHED, result.getTerminationReason());
-        assertEquals(1, result.getCompletedEpochs());
+        // The budget is also evaluated at accumulation-window boundaries (not
+        // only at epoch boundaries), so a 0-hour budget stops inside the first
+        // epoch. A partial epoch is never counted as completed.
+        assertEquals(0, result.getCompletedEpochs());
     }
 
     // ----------------------------------------------------- real optimization
