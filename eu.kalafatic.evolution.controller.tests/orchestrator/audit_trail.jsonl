@@ -97,3 +97,14 @@
   "reason" : "Goal: Sensitive action (Final progress: 0.0%, InfoGain: 0.00)",
   "correlationId" : "ScenarioM_Authority_Session"
 }
+{
+  "timestamp" : 1795214222264,
+  "iterationId" : "COGNITIVE_EPISODE",
+  "branchId" : "DEFAULT_BASELINE_STRATEGY",
+  "authorityAction" : "EPISODE_COMPLETED",
+  "previousState" : "RUNNING",
+  "newState" : "FAILED",
+  "actor" : "CognitiveLoopEngine",
+  "reason" : "Goal: Sensitive action (Final progress: 0.0%, InfoGain: 0.00)",
+  "correlationId" : "ScenarioM_Authority_Session"
+}

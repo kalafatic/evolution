@@ -104,6 +104,13 @@
                             <span id="displayWorkflow" class="value status">GENERAL</span>
                         </div>
                     </div>
+
+                    <div class="forge-sessions-block">
+                        <h4>Forge Sessions</h4>
+                        <div id="forge-sessions-list">
+                            <span style="color:#888; font-size:11px;">Loading…</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="margin-top: 20px; font-size: 11px; color: #666; text-align: center;">
@@ -115,6 +122,267 @@
         </div>
     </div>
     <script src="/js/auth.js"></script>
+    <style>
+        /* Forge session rows + Darwin contextual action menu (Family UX Standard v1.0) */
+        .forge-sessions-block h4 {
+            margin: 14px 0 6px 0;
+            font-size: 11px;
+            color: var(--evo-primary, #1d5296);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--evo-border, #b8c0c8);
+            padding-bottom: 2px;
+        }
+        .session-row {
+            padding: 5px 7px;
+            margin-bottom: 4px;
+            border: 1px solid var(--evo-border, #b8c0c8);
+            border-radius: 4px;
+            background: var(--evo-surface-alt, #f1f3f6);
+            font-size: 11px;
+            cursor: context-menu;
+            user-select: none;
+        }
+        .session-row:hover { background: var(--evo-primary-light, #e8f0fe); }
+        .session-row .status-chip {
+            float: right;
+            font-size: 10px;
+            color: var(--evo-text-secondary, #4a5568);
+        }
+        #evo-ctx-menu {
+            position: fixed;
+            z-index: 10000;
+            min-width: 200px;
+            background: #ffffff;
+            border: 1px solid #8a9bb5;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.25);
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-size: 12px;
+            padding: 3px 0;
+        }
+        .ctx-menu-item {
+            padding: 6px 22px 6px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ctx-menu-item:hover, .ctx-menu-item.active {
+            background: #316ac5;
+            color: #ffffff;
+        }
+        .ctx-menu-item.disabled { color: #999999; cursor: default; }
+        .ctx-menu-item.disabled:hover, .ctx-menu-item.disabled.active {
+            background: transparent;
+            color: #999999;
+        }
+        .ctx-menu-sep {
+            border-top: 1px solid #d7dce5;
+            margin: 4px 0;
+        }
+        .ctx-menu-item.dangerous { color: #b91c1c; }
+        .ctx-menu-item.dangerous:hover, .ctx-menu-item.dangerous.active {
+            background: #b91c1c;
+            color: #ffffff;
+        }
+    </style>
+    <script>
+        (function() {
+            function authHeaders() {
+                var headers = { 'x-evo-runtime': 'SWT' };
+                var sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+                if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
+                    headers['Authorization'] = 'Bearer ' + sessionId;
+                }
+                return headers;
+            }
+
+            // ---------------------------------------------------------------
+            // Forge session rows (ctx-targets for the contextual action menu)
+            // ---------------------------------------------------------------
+            async function loadForgeSessions() {
+                var container = document.getElementById('forge-sessions-list');
+                if (!container) return;
+                try {
+                    var res = await fetch('/forge/sessions?runtime=SWT', { headers: authHeaders(), credentials: 'include' });
+                    if (!res.ok) {
+                        container.innerHTML = '<span style="color:#888; font-size:11px;">Session list unavailable (' + res.status + ')</span>';
+                        return;
+                    }
+                    var sessions = await res.json();
+                    if (!Array.isArray(sessions) || sessions.length === 0) {
+                        container.innerHTML = '<span style="color:#888; font-size:11px;">No forge sessions.</span>';
+                        return;
+                    }
+                    container.innerHTML = '';
+                    sessions.forEach(function(s) {
+                        var row = document.createElement('div');
+                        row.className = 'ctx-target session-row';
+                        row.setAttribute('data-ctx-type', 'session');
+                        row.setAttribute('data-ctx-id', s.id || '');
+                        row.setAttribute('data-ctx-label', s.name || s.id || 'Forge session');
+                        var label = document.createElement('span');
+                        label.textContent = (s.name || s.id || 'Forge session');
+                        var status = document.createElement('span');
+                        status.className = 'status-chip';
+                        status.textContent = '[' + (s.status || 'IDLE') + ']';
+                        row.appendChild(label);
+                        row.appendChild(status);
+                        row.title = 'Right-click for actions';
+                        container.appendChild(row);
+                    });
+                } catch (e) {
+                    container.innerHTML = '<span style="color:#888; font-size:11px;">Session list unavailable.</span>';
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // Darwin contextual action menu (Family UX Standard v1.0)
+            // Right-click .ctx-target[data-ctx-type] -> GET /api/contextual/actions
+            // -> positioned menu (Esc / click-outside close, ArrowUp/Down + Enter)
+            // -> POST /api/contextual/execute
+            // ---------------------------------------------------------------
+            var menuEl = null;
+            var menuActions = [];
+            var menuSelection = null;
+            var activeIndex = -1;
+
+            function closeMenu() {
+                if (menuEl) {
+                    menuEl.remove();
+                    menuEl = null;
+                }
+                menuActions = [];
+                menuSelection = null;
+                activeIndex = -1;
+                document.removeEventListener('keydown', onMenuKeyDown, true);
+            }
+
+            function showMenu(x, y, actions, selection) {
+                closeMenu();
+                menuActions = actions;
+                menuSelection = selection;
+                menuEl = document.createElement('div');
+                menuEl.id = 'evo-ctx-menu';
+                var lastGroup = null;
+                actions.forEach(function(action) {
+                    if (lastGroup !== null && action.group !== lastGroup) {
+                        menuEl.appendChild(document.createElement('div')).className = 'ctx-menu-sep';
+                    }
+                    lastGroup = action.group;
+                    var item = document.createElement('div');
+                    item.className = 'ctx-menu-item'
+                        + (action.enabled ? '' : ' disabled')
+                        + (action.dangerous ? ' dangerous' : '');
+                    item.textContent = action.label;
+                    item.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!action.enabled) return;
+                        executeAction(action, selection);
+                    });
+                    menuEl.appendChild(item);
+                });
+                document.body.appendChild(menuEl);
+                var rect = menuEl.getBoundingClientRect();
+                if (x + rect.width > window.innerWidth - 4) x = window.innerWidth - rect.width - 4;
+                if (y + rect.height > window.innerHeight - 4) y = window.innerHeight - rect.height - 4;
+                menuEl.style.left = Math.max(4, x) + 'px';
+                menuEl.style.top = Math.max(4, y) + 'px';
+                document.addEventListener('keydown', onMenuKeyDown, true);
+                if (actions.length > 0) selectItem(0);
+            }
+
+            function menuItems() {
+                return menuEl ? Array.prototype.slice.call(menuEl.querySelectorAll('.ctx-menu-item')) : [];
+            }
+
+            function selectItem(index) {
+                var items = menuItems();
+                if (!items.length) return;
+                activeIndex = -1;
+                // Find the nearest enabled item (guards against all-disabled lists)
+                for (var i = 0; i < items.length; i++) {
+                    var idx = ((index + i) % items.length + items.length) % items.length;
+                    if (!items[idx].classList.contains('disabled')) {
+                        activeIndex = idx;
+                        break;
+                    }
+                }
+                items.forEach(function(item, i) {
+                    item.classList.toggle('active', i === activeIndex);
+                });
+            }
+
+            function onMenuKeyDown(e) {
+                if (!menuEl) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeMenu();
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectItem(activeIndex + 1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectItem(activeIndex - 1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    var items = menuItems();
+                    if (activeIndex >= 0 && activeIndex < items.length && !items[activeIndex].classList.contains('disabled')) {
+                        executeAction(menuActions[activeIndex], menuSelection);
+                    }
+                }
+            }
+
+            function executeAction(action, selection) {
+                closeMenu();
+                fetch('/api/contextual/execute', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        actionId: action.actionId,
+                        objectType: selection.type,
+                        objectId: selection.id,
+                        objectLabel: selection.label
+                    })
+                }).then(function(res) { return res.json(); })
+                  .then(function(result) {
+                      window.alert(result.message || (result.ok ? 'Done.' : 'Action failed.'));
+                      if (result.ok) loadForgeSessions();
+                  })
+                  .catch(function() { window.alert('Contextual action failed (network error).'); });
+            }
+
+            document.addEventListener('contextmenu', function(e) {
+                var target = e.target && e.target.closest ? e.target.closest('.ctx-target[data-ctx-type]') : null;
+                if (!target) return;
+                e.preventDefault();
+                var selection = {
+                    type: target.getAttribute('data-ctx-type') || '',
+                    id: target.getAttribute('data-ctx-id') || '',
+                    label: target.getAttribute('data-ctx-label') || ''
+                };
+                var url = '/api/contextual/actions?type=' + encodeURIComponent(selection.type)
+                        + '&id=' + encodeURIComponent(selection.id)
+                        + '&label=' + encodeURIComponent(selection.label);
+                fetch(url, { headers: authHeaders(), credentials: 'include' })
+                    .then(function(res) { return res.ok ? res.json() : null; })
+                    .then(function(data) {
+                        var actions = (data && Array.isArray(data.actions)) ? data.actions : [];
+                        if (!actions.length) return; // nothing to show for this target
+                        showMenu(e.clientX, e.clientY, actions, selection);
+                    })
+                    .catch(function() {});
+            });
+
+            document.addEventListener('mousedown', function(e) {
+                if (menuEl && !menuEl.contains(e.target)) {
+                    closeMenu();
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', loadForgeSessions);
+        })();
+    </script>
     <script>
         (function() {
             function setupSash(sashId, targetEl, isLeft, containerId) {

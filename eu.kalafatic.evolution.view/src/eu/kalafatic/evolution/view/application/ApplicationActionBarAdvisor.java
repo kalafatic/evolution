@@ -256,6 +256,29 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		menuManager.add(new GroupMarker("languageMarker"));
 		menuManager.add(new GroupMarker("toolsMarker"));
 
+		// Family UX Standard v1.0: terminal + web interface entry points
+		IAction openTerminalAction = new org.eclipse.jface.action.Action("Open &Terminal") {
+			@Override
+			public void run() {
+				eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher.openTerminal();
+			}
+		};
+		openTerminalAction.setId("eu.kalafatic.evolution.view.openTerminal");
+		register(openTerminalAction);
+		menuManager.add(openTerminalAction);
+
+		IAction openWebAction = new org.eclipse.jface.action.Action("Open &Web Interface") {
+			@Override
+			public void run() {
+				eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher.openWebInterface();
+			}
+		};
+		openWebAction.setId("eu.kalafatic.evolution.view.openWebInterface");
+		register(openWebAction);
+		menuManager.add(openWebAction);
+
+		menuManager.add(new Separator());
+
 		menuManager.add(new org.eclipse.jface.action.Action("Start Background Discovery (Git / Workspace)") {
 			@Override
 			public void run() {
@@ -316,6 +339,23 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		MenuManager menu = new MenuManager("&Help", IWorkbenchActionConstants.M_HELP);
 		menu.add(new GroupMarker(IWorkbenchActionConstants.HELP_START));
 
+		// Family UX Standard v1.0: EVO help page sections served by the primary
+		// EvolutionServer (http://127.0.0.1:<port>/help.html#<anchor>).
+		menu.add(helpAction("&Help Contents",
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.TOPIC_TOP));
+		menu.add(helpAction("&Getting Started",
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.TOPIC_GETTING_STARTED));
+		menu.add(helpAction("Context &Help",
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.TOPIC_CONTEXT));
+		menu.add(helpAction("&Keyboard Shortcuts",
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.TOPIC_SHORTCUTS));
+		menu.add(helpAction("&CLI Commands",
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.TOPIC_CLI));
+		menu.add(helpAction("&Diagnostics",
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.TOPIC_DIAGNOSTICS));
+
+		menu.add(new Separator());
+
 		// Check for Updates / Install New Software... are contributed by the
 		// standard Eclipse p2 UI (org.eclipse.equinox.p2.ui.sdk) into the
 		// additions group below.
@@ -345,6 +385,25 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		menu.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
 		menu.add(new GroupMarker(IWorkbenchActionConstants.HELP_END));
 		return menu;
+	}
+
+	/**
+	 * Creates a help menu action that opens the EVO help page at the given
+	 * anchor via the shared {@code HelpLauncher}.
+	 * @param label the action label
+	 * @param anchor the help page anchor (without '#')
+	 * @return the registered action
+	 */
+	private IAction helpAction(String label, final String anchor) {
+		IAction action = new org.eclipse.jface.action.Action(label) {
+			@Override
+			public void run() {
+				eu.kalafatic.evolution.view.workbench.HelpLauncher.openHelpTopic(anchor);
+			}
+		};
+		action.setId("eu.kalafatic.evolution.view.help." + anchor);
+		register(action);
+		return action;
 	}
 
 	/**

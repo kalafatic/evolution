@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVO Help</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --surface-color: #ffffff;
+            --border-color: #cbd5e1;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --primary: #0284c7;
+            --primary-light: #e0f2fe;
+            --mono: 'Consolas', 'Fira Code', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.55;
+        }
+        header {
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 28px;
+        }
+        header h1 { font-size: 1.25em; }
+        header p { color: var(--text-muted); font-size: 0.85em; }
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 28px 60px 28px;
+        }
+        section {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin-bottom: 22px;
+            scroll-margin-top: 16px;
+        }
+        h2 {
+            font-size: 1.1em;
+            color: var(--primary);
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+        h3 { font-size: 0.95em; margin: 12px 0 6px 0; }
+        p, li { font-size: 0.9em; }
+        ul { padding-left: 22px; margin: 6px 0; }
+        code {
+            font-family: var(--mono);
+            background-color: var(--primary-light);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        pre {
+            font-family: var(--mono);
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 0.82em;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+        table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.88em; }
+        th, td { border: 1px solid var(--border-color); padding: 6px 10px; text-align: left; }
+        th { background-color: var(--primary-light); }
+        .toc { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+        .toc a { color: var(--primary); text-decoration: none; font-size: 0.9em; }
+        .note {
+            background-color: #fef3c7;
+            border: 1px solid #facc15;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.85em;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🧬 EVO — Help</h1>
+    <p>AI Evolution platform help (Family UX Standard v1.0) — served by the primary EVO HTTP server.</p>
+</header>
+<main>
+
+    <section id="top">
+        <h2>Overview</h2>
+        <p>EVO is the Darwin platform: an Eclipse RCP workbench for autonomous, iterative AI-driven
+        software evolution, with a web portal (Intelligence Portal), forge training lab, REST/HTTP
+        services and a headless CLI. This page is opened from the Help menu, the F1 context-help key
+        or directly at <code>http://127.0.0.1:28080/help.html</code>.</p>
+        <h3>Contents</h3>
+        <div class="toc">
+            <a href="#getting-started">Getting Started</a>
+            <a href="#shortcuts">Keyboard Shortcuts</a>
+            <a href="#context">Context Help</a>
+            <a href="#cli">CLI Commands</a>
+            <a href="#diagnostics">Diagnostics</a>
+        </div>
+    </section>
+
+    <section id="getting-started">
+        <h2>Getting Started</h2>
+        <h3>Workspace setup</h3>
+        <ul>
+            <li>Launch <code>evo</code> and choose (or auto-select) an Eclipse workspace. Project and
+            configuration data is stored in the workspace; runtime state (logs, self-dev runs) lives
+            under <code>~/.evo</code> and the repository folder.</li>
+            <li>Use <b>Evolution &gt; Setup LLM / Setup Ollama</b> to connect a local or remote model
+            provider before running orchestration tasks.</li>
+            <li>Create a new AI session with <code>Ctrl+N</code> (M1+N) or <b>Evolution &gt; New AI
+            Session</b>.</li>
+        </ul>
+        <h3>Servers</h3>
+        <p>The workbench auto-starts the platform servers on startup. Default ports (configurable via
+        the port allocation manager):</p>
+        <table>
+            <tr><th>Service</th><th>Port</th><th>Purpose</th></tr>
+            <tr><td>Primary HTTP / REST</td><td>28080</td><td>Main web portal, REST API, help</td></tr>
+            <tr><td>Secondary HTTP / Portal</td><td>28180</td><td>Intelligence Portal (dashboard)</td></tr>
+            <tr><td>MCP Server</td><td>28280</td><td>Model Context Protocol</td></tr>
+            <tr><td>Develop Agent</td><td>28380</td><td>Autonomous coding agent</td></tr>
+            <tr><td>Supervisor REST API</td><td>28480</td><td>Supervisor HTTP API</td></tr>
+            <tr><td>Supervisor Control (TCP)</td><td>28580</td><td>Supervisor control channel (not a web surface)</td></tr>
+        </table>
+        <p><b>Tools &gt; Open Web Interface</b> opens the portal in your system browser on the
+        actual bound port.</p>
+    </section>
+
+    <section id="shortcuts">
+        <h2>Keyboard Shortcuts</h2>
+        <h3>EVO bindings</h3>
+        <table>
+            <tr><th>Key</th><th>Action</th></tr>
+            <tr><td><code>M1+N</code> (<code>Ctrl+N</code> / <code>Cmd+N</code>)</td><td>New AI Session</td></tr>
+            <tr><td><code>F1</code></td><td>Context help — opens this page at the section matching the active view/editor</td></tr>
+        </table>
+        <h3>Standard Eclipse editing shortcuts</h3>
+        <table>
+            <tr><th>Key</th><th>Action</th></tr>
+            <tr><td><code>Ctrl+Z</code> / <code>Ctrl+Y</code></td><td>Undo / Redo</td></tr>
+            <tr><td><code>Ctrl+C</code> / <code>Ctrl+X</code> / <code>Ctrl+V</code></td><td>Copy / Cut / Paste</td></tr>
+            <tr><td><code>Ctrl+A</code></td><td>Select All</td></tr>
+            <tr><td><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code></td><td>Save / Save All</td></tr>
+            <tr><td><code>Ctrl+F</code></td><td>Find / Replace</td></tr>
+        </table>
+    </section>
+
+    <section id="context">
+        <h2>Context Help</h2>
+
+        <h3 id="navigator">Navigator / Project Explorer</h3>
+        <p>The EVO Navigator shows the workspace projects, orchestrations, models and resources.
+        Right-click a file or folder for the EVO platform context menu — including
+        <b>Copy Path</b> and <b>Open Terminal</b> for filesystem selections, plus forge session
+        actions, AI assistance and quick navigation.</p>
+
+        <h3 id="editor">Editor (Multi-page) — Tools page</h3>
+        <p>The multi-page editor hosts the AI Chat, Task Stack, Architecture, Development, Properties,
+        Tests, Peer Review and Tools pages. The Tools page provides an embedded terminal group driven
+        by the <code>ShellTool</code> engine. For safety the shell tool only permits a fixed command
+        whitelist:</p>
+        <pre>mvn mvn.cmd git ls pwd cd mkdir echo ollama gcc g++ make cmake java javac curl sh bash</pre>
+        <p class="note">Note: the embedded terminal is command-whitelisted; for an unrestricted
+        system shell use <b>Tools &gt; Open Terminal</b> (or the context-menu <b>Open Terminal</b>),
+        which opens a real terminal emulator in the workspace/project directory.</p>
+
+        <h3 id="properties">Properties</h3>
+        <p>The Properties view shows the selection's model/project properties (EMF-based). Memory and
+        orchestration context are shown in the Memory/Context page of the multi-page editor and in
+        <b>Evolution &gt; Memory Context</b>.</p>
+
+        <h3>Memory / Context</h3>
+        <p>EVO keeps the active orchestration context and conversation state per session. The Memory
+        Context view/page exposes the current context snapshot; sessions are reconciled on restart.</p>
+    </section>
+
+    <section id="cli">
+        <h2>CLI Commands (Headless)</h2>
+        <p>The headless product (<code>eu.kalafatic.evolution.controller.application.HeadlessApplication</code>,
+        product "Evolution Headless") provides a small interactive CLI. Slash is optional, commands are
+        lowercase. Example: <code>evo -application eu.kalafatic.evolution.controller.application.HeadlessApplication /status</code>.
+        With a TTY and no command arguments it starts an <code>evo&gt;</code> REPL (exit with
+        <code>/exit</code> or Ctrl+D).</p>
+        <table>
+            <tr><th>Command</th><th>Description</th></tr>
+            <tr><td><code>/help [topic]</code></td><td>Show command help (optionally per topic)</td></tr>
+            <tr><td><code>/status</code></td><td>Server status via <code>GET /server/status</code> (ServerManager state fallback)</td></tr>
+            <tr><td><code>/web</code></td><td>Print the web interface URL</td></tr>
+            <tr><td><code>/terminal</code></td><td>Open a system terminal in the workspace directory</td></tr>
+            <tr><td><code>/logs show</code></td><td>Tail the EVO log file (evo.log)</td></tr>
+            <tr><td><code>/sessions</code></td><td>List forge sessions (<code>GET /forge/sessions</code>)</td></tr>
+            <tr><td><code>/config</code></td><td>Show the authoritative EVO port/service configuration</td></tr>
+            <tr><td><code>/stop</code></td><td>Gracefully stop all EVO servers</td></tr>
+            <tr><td><code>/start</code></td><td>Start the primary EVO HTTP server</td></tr>
+            <tr><td><code>/restart</code></td><td>Restart the primary EVO HTTP server</td></tr>
+            <tr><td><code>/exit</code></td><td>Exit the interactive CLI (REPL only)</td></tr>
+        </table>
+        <p class="note">Note: <code>/models</code>, <code>/providers</code> and <code>/agents</code>
+        are intentionally not provided — EVO currently exposes no corresponding HTTP list endpoints.</p>
+    </section>
+
+    <section id="diagnostics">
+        <h2>Diagnostics</h2>
+        <ul>
+            <li><b>Server status:</b> <code>GET http://127.0.0.1:28080/server/status</code> — live
+            server state (also available in the portal under <b>System Analytics</b>).</li>
+            <li><b>Contextual actions:</b> <code>GET /api/contextual/actions?type=&amp;id=</code> and
+            <code>POST /api/contextual/execute</code> — the Darwin family contextual action contract.</li>
+            <li><b>Supervisor UI:</b> supervisor REST API on <code>28480</code>, supervisor control
+            TCP on <code>28580</code> (open from the Development page "Open Control Hub" button).</li>
+            <li><b>Logs:</b> EVO writes <code>evo.log</code> in the Eclipse state location logs
+            directory — inspect with <code>/logs show</code> in the headless CLI.</li>
+            <li><b>OSGi state:</b> <code>GET /server/osgi</code> — bundle/service overview.</li>
+        </ul>
+        <p class="note">Ports shown are the platform defaults (+20000 series); the actual bound ports
+        may differ when re-allocated. Use <code>/config</code> or the Server page for the live values.</p>
+    </section>
+
+</main>
+</body>
+</html>

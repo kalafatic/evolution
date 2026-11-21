@@ -205,11 +205,51 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		// Install Global EVO Context Menu Listener across all controls
 		eu.kalafatic.evolution.view.menu.EvoGlobalContextMenuManager.getInstance().install();
 
+		// Family UX Standard v1.0: F1 context help mapped from the active part
+		installF1ContextHelpFilter();
+
 		// Automatic Web Server & Application Startup on standard RCP launch
 		autoStartEvoServers();
 
 		// Post-Startup Process & Memory Monitoring Report
 		logPostStartupReport();
+	}
+
+	/**
+	 * Installs a display filter opening the EVO help page at a context anchor
+	 * when plain F1 (no modifiers) is pressed: evonavigator/projectexplorer
+	 * parts map to #navigator, the multi-page editor/tools to #editor,
+	 * properties to #properties, unknown parts to #context.
+	 */
+	private void installF1ContextHelpFilter() {
+		try {
+			final IWorkbenchWindow fWindow = getWindowConfigurer().getWindow();
+			Display display = fWindow.getShell().getDisplay();
+			display.addFilter(SWT.KeyDown, new Listener() {
+				@Override
+				public void handleEvent(Event event) {
+					if (event.keyCode != SWT.F1) {
+						return;
+					}
+					// Plain F1 only (ignore Ctrl/Shift/Alt/Command combinations)
+					if ((event.stateMask & (SWT.MOD1 | SWT.MOD2 | SWT.MOD3 | SWT.MOD4)) != 0) {
+						return;
+					}
+					String partId = null;
+					try {
+						IWorkbenchPage page = fWindow.getActivePage();
+						if (page != null && page.getActivePart() != null) {
+							partId = page.getActivePart().getSite().getId();
+						}
+					} catch (Throwable t) {
+						partId = null;
+					}
+					eu.kalafatic.evolution.view.workbench.HelpLauncher.contextHelpFor(partId);
+				}
+			});
+		} catch (Throwable t) {
+			Log.log("[F1_HELP] Could not install F1 context help filter: " + t.getMessage());
+		}
 	}
 
 	private void autoStartEvoServers() {

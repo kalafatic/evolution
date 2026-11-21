@@ -33,6 +33,7 @@ import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher;
 
 /**
  * Global EVO Context Menu Manager.
@@ -222,6 +223,9 @@ public class EvoGlobalContextMenuManager {
         headerAction.setEnabled(false);
         manager.add(headerAction);
 
+        // Family UX Standard v1.0: file/folder selections — Copy Path + Open Terminal
+        addFileSelectionActions(manager, control);
+
         manager.add(new Separator("PROCESS"));
         addProcessAndSessionActions(manager, control);
 
@@ -243,6 +247,9 @@ public class EvoGlobalContextMenuManager {
 
         // 2. Default Context Actions (Text editing, table/tree selection actions)
         addDefaultEditingActions(manager, control);
+
+        // 2.1 Family UX Standard v1.0: file/folder selections — Copy Path + Open Terminal
+        addFileSelectionActions(manager, control);
 
         manager.add(new Separator("PROCESS"));
 
@@ -478,6 +485,69 @@ public class EvoGlobalContextMenuManager {
             };
             manager.add(refreshAction);
         }
+    }
+
+    /**
+     * Family UX Standard v1.0: adds a small file/folder selection section
+     * ("Copy Path", "Open Terminal") when the targeted tree/table widget
+     * selection contains a resource (IFile/IFolder/IResource) or a
+     * Project/File object with a real filesystem path. The section is skipped
+     * entirely when no path can be derived.
+     */
+    private void addFileSelectionActions(IMenuManager manager, Control control) {
+        if (manager.find("EVO_FILE_SECTION") != null) {
+            return;
+        }
+        if (!(control instanceof Tree) && !(control instanceof Table)) {
+            return;
+        }
+
+        String path = null;
+        String directory = null;
+        if (control instanceof Tree) {
+            for (TreeItem item : ((Tree) control).getSelection()) {
+                path = EvoDesktopLauncher.pathFor(item.getData());
+                directory = EvoDesktopLauncher.directoryFor(item.getData());
+                if (path != null) {
+                    break;
+                }
+            }
+        } else {
+            for (TableItem item : ((Table) control).getSelection()) {
+                path = EvoDesktopLauncher.pathFor(item.getData());
+                directory = EvoDesktopLauncher.directoryFor(item.getData());
+                if (path != null) {
+                    break;
+                }
+            }
+        }
+
+        if (path == null) {
+            // Only add the section when a real filesystem path can be derived
+            return;
+        }
+        final String finalPath = path;
+        final String finalDirectory = (directory != null) ? directory : path;
+
+        manager.add(new Separator("EVO_FILE_SECTION"));
+
+        Action copyPathAction = new Action("Copy Path") {
+            @Override
+            public void run() {
+                org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(control.getDisplay());
+                cb.setContents(new Object[]{finalPath}, new org.eclipse.swt.dnd.Transfer[]{org.eclipse.swt.dnd.TextTransfer.getInstance()});
+                cb.dispose();
+            }
+        };
+        manager.add(copyPathAction);
+
+        Action openTerminalAction = new Action("Open Terminal") {
+            @Override
+            public void run() {
+                EvoDesktopLauncher.openTerminalIn(finalDirectory);
+            }
+        };
+        manager.add(openTerminalAction);
     }
 
     private void addProcessAndSessionActions(IMenuManager manager, Control control) {

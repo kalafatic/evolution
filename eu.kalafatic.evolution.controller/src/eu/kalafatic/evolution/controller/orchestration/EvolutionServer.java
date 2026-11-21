@@ -256,6 +256,11 @@ public class EvolutionServer extends NanoHTTPD {
             return serveExternalResource(uri);
         }
 
+        // 4.0 Help page (Family UX Standard v1.0) — controller bundle resource
+        if (Method.GET.equals(method) && "/help.html".equals(uri)) {
+            return handleGetResource("help.html", "text/html");
+        }
+
         // 4.1 TEIP 1.0 API Endpoints
         if (uri.startsWith("/teip/v1")) {
             return teipApiController.handle(session);
