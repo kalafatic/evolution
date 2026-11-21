@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isAuthenticate <em>Authenticate</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getPortalPort <em>Portal Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getPortalUrl <em>Portal Url</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isEnabled <em>Enabled</em>}</li>
  * </ul>
  *
  * @generated
@@ -192,6 +193,26 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected String portalUrl = PORTAL_URL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isEnabled() <em>Enabled</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isEnabled()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean ENABLED_EDEFAULT = true;
+
+	/**
+	 * The cached value of the '{@link #isEnabled() <em>Enabled</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isEnabled()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean enabled = ENABLED_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -402,6 +423,29 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 */
 	@Override
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setEnabled(boolean newEnabled) {
+		boolean oldEnabled = enabled;
+		enabled = newEnabled;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__ENABLED, oldEnabled, enabled));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.SERVER_SETTINGS__PORT:
@@ -420,6 +464,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return getPortalPort();
 			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
 				return getPortalUrl();
+			case OrchestrationPackage.SERVER_SETTINGS__ENABLED:
+				return isEnabled();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -455,6 +501,9 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return;
 			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
 				setPortalUrl((String)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__ENABLED:
+				setEnabled((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -492,6 +541,9 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
 				setPortalUrl(PORTAL_URL_EDEFAULT);
 				return;
+			case OrchestrationPackage.SERVER_SETTINGS__ENABLED:
+				setEnabled(ENABLED_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -520,6 +572,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return portalPort != PORTAL_PORT_EDEFAULT;
 			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
 				return PORTAL_URL_EDEFAULT == null ? portalUrl != null : !PORTAL_URL_EDEFAULT.equals(portalUrl);
+			case OrchestrationPackage.SERVER_SETTINGS__ENABLED:
+				return enabled != ENABLED_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -550,6 +604,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 		result.append(portalPort);
 		result.append(", portalUrl: ");
 		result.append(portalUrl);
+		result.append(", enabled: ");
+		result.append(enabled);
 		result.append(')');
 		return result.toString();
 	}

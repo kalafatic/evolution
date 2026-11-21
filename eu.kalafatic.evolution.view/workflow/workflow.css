@@ -1,16 +1,16 @@
 /* Workflow Visualization Styles - Workstation Theme */
 :root {
-    --evo-bg: #f8fafc;
+    --evo-bg: var(--evo-bg);
     --evo-surface: #ffffff;
     --evo-surface-alt: #f1f5f9;
-    --evo-border: #cbd5e1;
+    --evo-border: var(--evo-border);
     --evo-border-dark: #94a3b8;
     --evo-text: #0f172a;
-    --evo-text-secondary: #64748b;
-    --evo-primary: #2563eb;
-    --evo-success: #16a34a;
+    --evo-text-secondary: var(--evo-text-muted);
+    --evo-primary: var(--evo-primary);
+    --evo-success: var(--evo-success);
     --evo-warning: #d97706;
-    --evo-danger: #dc2626;
+    --evo-danger: var(--evo-danger);
     --evo-radius: 6px;
     --evo-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
     --evo-shadow-md: 0 4px 12px rgba(0,0,0,0.12);
@@ -306,10 +306,10 @@ body {
 }
 
 .status-idle, .status-pending { background: #f1f5f9; color: #475569; }
-.status-running { background: #dbeafe; color: #1d4ed8; }
-.status-waiting, .status-waiting_user { background: #fef3c7; color: #b45309; }
+.status-running { background: #dbeafe; color: var(--evo-primary-hover); }
+.status-waiting, .status-waiting_user { background: var(--evo-warning-light); color: var(--evo-warning); }
 .status-done, .status-ready { background: #dcfce7; color: #15803d; }
-.status-failed { background: #fee2e2; color: #b91c1c; }
+.status-failed { background: var(--evo-danger-light); color: var(--evo-danger); }
 
 .node-notes {
     margin-top: 12px;

@@ -253,6 +253,22 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	}
 
 	private void autoStartEvoServers() {
+		// Honor the persistent configuration: webServer.enabled=false keeps every
+		// web surface disabled, webServer.autoStart=false skips the automatic
+		// startup (the Web Interface menu or the settings page can start them).
+		eu.kalafatic.evolution.controller.orchestration.ServerManager sm =
+				eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance();
+		if (!sm.isWebServerEnabled()) {
+			sm.applyWebServerDisabledState();
+			Log.log("[AUTO_SERVER_STARTUP] Web server disabled (webServer.enabled=false); "
+					+ "skipping automatic startup.");
+			return;
+		}
+		if (!sm.isWebServerAutoStart()) {
+			Log.log("[AUTO_SERVER_STARTUP] Web server auto-start disabled "
+					+ "(webServer.autoStart=false); skipping automatic startup.");
+			return;
+		}
 		Job serverStartupJob = new Job("EVO Automatic Server Startup") {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {

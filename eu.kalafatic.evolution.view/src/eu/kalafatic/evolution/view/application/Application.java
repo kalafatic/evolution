@@ -43,19 +43,17 @@ public class Application implements IApplication {
 		final int finalPort = port;
 		if (serverOnly) {
 			System.out.println("Starting Evolution in SERVER-ONLY mode on port " + finalPort + "...");
-			ServerManager.getInstance().start(finalPort);
+			startPrimaryIfConfigured(finalPort);
 			System.out.println("Server is running. Press Ctrl+C to stop.");
 			while (true) {
 				Thread.sleep(1000);
 			}
 		}
 
-		// Start server in background for UI mode
+		// Start server in background for UI mode (honoring webServer.enabled / autoStart)
 		new Thread(() -> {
 			try {
-				System.out.println("Starting Evolution background server on port " + finalPort + "...");
-				ServerManager.getInstance().start(finalPort);
-				System.out.println("Evolution background server started on port " + finalPort);
+				startPrimaryIfConfigured(finalPort);
 				eu.kalafatic.evolution.controller.orchestration.EvolutionServer.logOsgiStatusDiagnostics();
 			} catch (Exception e) {
 				System.err.println("Failed to start background server on port " + finalPort + ": " + e.getMessage());
@@ -164,5 +162,27 @@ public class Application implements IApplication {
 			if (!display.isDisposed())
 				workbench.close();
 		});
+	}
+
+	/**
+	 * Starts the primary web server when the persistent configuration allows it:
+	 * webServer.enabled=false keeps it disabled, webServer.autoStart=false skips
+	 * the automatic start (the RCP Web Interface menu or the CLI can start it).
+	 */
+	private static void startPrimaryIfConfigured(int port) throws Exception {
+		if (!ServerManager.getInstance().isWebServerEnabled()) {
+			ServerManager.getInstance().applyWebServerDisabledState();
+			System.out.println("Evolution: web server disabled (webServer.enabled=false). "
+					+ "Backend services run without a web interface.");
+			return;
+		}
+		if (!ServerManager.getInstance().isWebServerAutoStart()) {
+			System.out.println("Evolution: web server auto-start disabled "
+					+ "(webServer.autoStart=false). Start it from the Web Interface menu.");
+			return;
+		}
+		System.out.println("Starting Evolution background server on port " + port + "...");
+		ServerManager.getInstance().start(port);
+		System.out.println("Evolution background server started on port " + port);
 	}
 }

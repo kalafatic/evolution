@@ -127,34 +127,34 @@
         .forge-sessions-block h4 {
             margin: 14px 0 6px 0;
             font-size: 11px;
-            color: var(--evo-primary, #1d5296);
+            color: var(--evo-primary, var(--evo-primary));
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--evo-border, #b8c0c8);
+            border-bottom: 1px solid var(--evo-border, var(--evo-border));
             padding-bottom: 2px;
         }
         .session-row {
             padding: 5px 7px;
             margin-bottom: 4px;
-            border: 1px solid var(--evo-border, #b8c0c8);
+            border: 1px solid var(--evo-border, var(--evo-border));
             border-radius: 4px;
-            background: var(--evo-surface-alt, #f1f3f6);
+            background: var(--evo-surface-alt, var(--evo-surface-alt));
             font-size: 11px;
             cursor: context-menu;
             user-select: none;
         }
-        .session-row:hover { background: var(--evo-primary-light, #e8f0fe); }
+        .session-row:hover { background: var(--evo-primary-light, var(--evo-primary-light)); }
         .session-row .status-chip {
             float: right;
             font-size: 10px;
-            color: var(--evo-text-secondary, #4a5568);
+            color: var(--evo-text-secondary, var(--evo-text-secondary));
         }
         #evo-ctx-menu {
             position: fixed;
             z-index: 10000;
             min-width: 200px;
             background: #ffffff;
-            border: 1px solid #8a9bb5;
+            border: 1px solid var(--evo-text-muted);
             box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.25);
             font-family: 'Segoe UI', Tahoma, sans-serif;
             font-size: 12px;
@@ -166,21 +166,21 @@
             white-space: nowrap;
         }
         .ctx-menu-item:hover, .ctx-menu-item.active {
-            background: #316ac5;
+            background: var(--evo-primary);
             color: #ffffff;
         }
-        .ctx-menu-item.disabled { color: #999999; cursor: default; }
+        .ctx-menu-item.disabled { color: var(--evo-text-muted); cursor: default; }
         .ctx-menu-item.disabled:hover, .ctx-menu-item.disabled.active {
             background: transparent;
-            color: #999999;
+            color: var(--evo-text-muted);
         }
         .ctx-menu-sep {
-            border-top: 1px solid #d7dce5;
+            border-top: 1px solid var(--evo-border);
             margin: 4px 0;
         }
-        .ctx-menu-item.dangerous { color: #b91c1c; }
+        .ctx-menu-item.dangerous { color: var(--evo-danger); }
         .ctx-menu-item.dangerous:hover, .ctx-menu-item.dangerous.active {
-            background: #b91c1c;
+            background: var(--evo-danger);
             color: #ffffff;
         }
     </style>

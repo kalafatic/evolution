@@ -9,35 +9,35 @@
     <link rel="stylesheet" href="/creatic.css">
     <style>
         :root {
-            --evo-bg: #e8ecef;
+            --evo-bg: var(--evo-bg);
             --evo-surface: #ffffff;
-            --evo-surface-alt: #f1f3f6;
-            --evo-surface-hover: #e2e7ec;
-            --evo-surface-selected: #dbe4f0;
-            --evo-border: #b8c0c8;
-            --evo-border-dark: #98a2ac;
-            --evo-border-focus: #1d5296;
-            --evo-text: #1a202c;
-            --evo-text-secondary: #4a5568;
-            --evo-text-muted: #718096;
+            --evo-surface-alt: var(--evo-surface-alt);
+            --evo-surface-hover: var(--evo-surface-hover);
+            --evo-surface-selected: var(--evo-surface-selected);
+            --evo-border: var(--evo-border);
+            --evo-border-dark: var(--evo-border-dark);
+            --evo-border-focus: var(--evo-primary);
+            --evo-text: var(--evo-text);
+            --evo-text-secondary: var(--evo-text-secondary);
+            --evo-text-muted: var(--evo-text-muted);
             --evo-text-inverse: #ffffff;
             --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
             --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
-            --evo-primary: #1d5296;
-            --evo-primary-hover: #153e70;
-            --evo-primary-light: #e8f0fe;
-            --evo-primary-border: #153e70;
-            --evo-success: #1e7e34;
-            --evo-success-hover: #145827;
-            --evo-success-light: #e6f4ea;
-            --evo-warning: #b45309;
-            --evo-warning-hover: #853704;
-            --evo-warning-light: #fef3c7;
-            --evo-danger: #b91c1c;
-            --evo-danger-hover: #881313;
-            --evo-danger-light: #fee2e2;
-            --evo-info: #0284c7;
-            --evo-info-light: #e0f2fe;
+            --evo-primary: var(--evo-primary);
+            --evo-primary-hover: var(--evo-primary-hover);
+            --evo-primary-light: var(--evo-primary-light);
+            --evo-primary-border: var(--evo-primary-hover);
+            --evo-success: var(--evo-success);
+            --evo-success-hover: var(--evo-success-hover);
+            --evo-success-light: var(--evo-success-light);
+            --evo-warning: var(--evo-warning);
+            --evo-warning-hover: var(--evo-warning-hover);
+            --evo-warning-light: var(--evo-warning-light);
+            --evo-danger: var(--evo-danger);
+            --evo-danger-hover: var(--evo-danger-hover);
+            --evo-danger-light: var(--evo-danger-light);
+            --evo-info: var(--evo-info);
+            --evo-info-light: var(--evo-info-light);
             --evo-radius: 4px;
             --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
             --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
@@ -92,7 +92,7 @@
         }
         .session-item:hover { background-color: #e0e0e0; }
         .session-item.active {
-            background-color: #e8f0fe;
+            background-color: var(--evo-primary-light);
             border-left: 3px solid var(--accent);
         }
         .session-name { display: block; font-weight: bold; margin-bottom: 4px; }
@@ -429,7 +429,7 @@
             left: -6px; top: 15px;
         }
         .timeline-item:hover { background: #f0f0f0; }
-        .timeline-item.active { background: #e8f0fe; font-weight: bold; }
+        .timeline-item.active { background: var(--evo-primary-light); font-weight: bold; }
 
         .diff-added { color: var(--success); }
         .diff-removed { color: var(--error); }
@@ -468,7 +468,7 @@
             cursor: pointer;
         }
         .evo-stage-card:hover { border-color: var(--accent); background: #f0f7ff; }
-        .evo-stage-card.active { border-color: var(--accent); background: #e8f0fe; box-shadow: 0 0 15px rgba(0,122,204,0.4); transform: scale(1.1); z-index: 10; }
+        .evo-stage-card.active { border-color: var(--accent); background: var(--evo-primary-light); box-shadow: 0 0 15px rgba(0,122,204,0.4); transform: scale(1.1); z-index: 10; }
         .evo-stage-card.completed { border-color: var(--success); background: #f6fff6; }
         .evo-stage-card.completed div { color: var(--success) !important; }
         .evo-stage-arrow { align-self: center; color: #ccc; font-weight: bold; }
@@ -623,7 +623,7 @@
             background: #f9f9f9;
         }
         .data-table tr:hover {
-            background: #e8f0fe;
+            background: var(--evo-primary-light);
         }
         .table-toolbar {
             display: flex;

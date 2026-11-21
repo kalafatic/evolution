@@ -16,7 +16,7 @@ body {
 
 .chat-search-container {
     padding: 8px 16px;
-    background: #f8fafc;
+    background: var(--evo-bg);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -31,13 +31,13 @@ body {
     flex: 1;
     padding: 6px 10px 6px 28px;
     border-radius: 20px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--evo-surface-hover);
     background: white;
     font-size: 12px;
 }
 
 #chat-search-input:focus {
-    border-color: #3b82f6;
+    border-color: var(--evo-primary);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
@@ -50,7 +50,7 @@ body {
 
 .search-counter {
     font-size: 11px;
-    color: #64748b;
+    color: var(--evo-text-muted);
     font-weight: 600;
     min-width: 40px;
     text-align: right;
@@ -65,8 +65,8 @@ body {
     border-radius: 50%;
 }
 #chat-search-clear:hover {
-    background: #e2e8f0;
-    color: #64748b;
+    background: var(--evo-surface-hover);
+    color: var(--evo-text-muted);
 }
 
 mark.search-match {
@@ -78,7 +78,7 @@ mark.search-match {
 }
 
 .message.active-match .bubble {
-    border-color: #3b82f6 !important;
+    border-color: var(--evo-primary) !important;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     transform: scale(1.01);
 }
@@ -111,18 +111,18 @@ mark.search-match {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: all 0.2s;
     font-size: 18px;
-    color: #64748b;
+    color: var(--evo-text-muted);
 }
 
 .nav-btn:hover {
     background: white;
-    color: #3b82f6;
-    border-color: #3b82f6;
+    color: var(--evo-primary);
+    border-color: var(--evo-primary);
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--evo-border); border-radius: 3px; }
 
 /* Feedback Level Visibility Rules */
 

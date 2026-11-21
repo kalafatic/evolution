@@ -14,11 +14,20 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.harness.ConnectedApplicationDescriptor;
+import eu.kalafatic.evolution.controller.harness.ConnectedApplicationRegistry;
 import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
+import eu.kalafatic.evolution.controller.manager.OllamaModel;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager;
 import eu.kalafatic.evolution.controller.orchestration.ServerEntry;
 import eu.kalafatic.evolution.controller.orchestration.ServerManager;
+import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.controller.resource.PortAllocationManager;
 import eu.kalafatic.evolution.controller.resource.PortConfiguration;
 
@@ -111,6 +120,33 @@ public class HeadlessCli {
                             + "  Lists the forge sessions from GET /forge/sessions; when the server\n"
                             + "  is unreachable, falls back to the in-process ForgeSessionManager.",
                     HeadlessCli::cmdSessions),
+            new Command("models", "/models",
+                    "List EVO models (local Ollama models + provider defaults)",
+                    "models\n"
+                            + "  Usage: /models\n\n"
+                            + "  Lists the local Ollama models reported by GET /server/status\n"
+                            + "  (name, size) and the default models of the configured LLM\n"
+                            + "  providers (AiProviders). When the server is unreachable,\n"
+                            + "  queries the local Ollama service directly.",
+                    HeadlessCli::cmdModels),
+            new Command("providers", "/providers",
+                    "List LLM providers and connected coding harness providers",
+                    "providers\n"
+                            + "  Usage: /providers\n\n"
+                            + "  Lists the configured LLM providers (AiProviders: name, url,\n"
+                            + "  local, default model — API keys are never printed) and the\n"
+                            + "  connected coding-harness applications of the\n"
+                            + "  ConnectedApplicationRegistry.",
+                    HeadlessCli::cmdProviders),
+            new Command("agents", "/agents",
+                    "List connected coding agents (harness adapters)",
+                    "agents\n"
+                            + "  Usage: /agents\n\n"
+                            + "  Lists the connected coding-harness agents of the\n"
+                            + "  ConnectedApplicationRegistry (name, type, enabled, status,\n"
+                            + "  capabilities, selected). These are the family coding agents\n"
+                            + "  available to Darwin sessions.",
+                    HeadlessCli::cmdAgents),
             new Command("config", "/config",
                     "Show the authoritative EVO port/service configuration",
                     "config\n"
@@ -375,6 +411,105 @@ public class HeadlessCli {
         for (eu.kalafatic.evolution.model.orchestration.ForgeSession session : sessions) {
             out.println(String.format("  %-24s %-12s %s", session.getName(),
                     session.getSessionId(), session.getStatus()));
+        }
+    }
+
+    private void cmdModels(String[] tokens, PrintStream out) {
+        String body = httpGet("/server/status");
+        if (body != null) {
+            try {
+                JSONObject status = new JSONObject(body);
+                JSONObject ollama = status.optJSONObject("ollama");
+                out.println("Local Ollama models (from GET /server/status):");
+                if (ollama == null) {
+                    out.println("  (no Ollama section in the server status)");
+                } else {
+                    out.println("  online: " + ollama.optBoolean("online"));
+                    JSONArray models = ollama.optJSONArray("models");
+                    if (models == null || models.length() == 0) {
+                        out.println("  (no models reported)");
+                    }
+                    if (models != null) {
+                        for (int i = 0; i < models.length(); i++) {
+                            JSONObject model = models.getJSONObject(i);
+                            out.println("  - " + model.optString("name")
+                                    + "  (" + model.optLong("size") + " bytes)");
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                out.println("Could not parse /server/status: " + e.getMessage());
+            }
+        } else {
+            out.println("Server unreachable — querying local Ollama "
+                    + "(http://localhost:11434):");
+            OllamaService service = OllamaManager.getInstance()
+                    .getService("http://localhost:11434");
+            try {
+                if (!service.ping()) {
+                    out.println("  (Ollama not reachable)");
+                }
+                List<OllamaModel> models = service.loadModels();
+                if (models.isEmpty()) {
+                    out.println("  (no local models)");
+                }
+                for (OllamaModel model : models) {
+                    out.println("  - " + model.getName() + "  ("
+                            + model.getSize() + " bytes)");
+                }
+            } catch (Exception e) {
+                out.println("  Failed to query local models: " + e.getMessage());
+            }
+        }
+        out.println();
+        out.println("Provider default models (AiProviders):");
+        for (ProviderConfig cfg : AiProviders.PROVIDERS.values()) {
+            out.println("  " + cfg.getName() + " -> "
+                    + (cfg.getDefaultModel() == null ? "(none)" : cfg.getDefaultModel()));
+        }
+    }
+
+    private void cmdProviders(String[] tokens, PrintStream out) {
+        out.println("Configured LLM providers (AiProviders):");
+        for (ProviderConfig cfg : AiProviders.PROVIDERS.values()) {
+            out.println(String.format("  %-12s url=%-52s local=%-5s default=%s",
+                    cfg.getName(), cfg.getUrl(), cfg.isLocal(),
+                    cfg.getDefaultModel() == null ? "(none)" : cfg.getDefaultModel()));
+        }
+        out.println();
+        ConnectedApplicationRegistry registry = ConnectedApplicationRegistry.getInstance();
+        List<ConnectedApplicationDescriptor> apps = registry.listApplications();
+        out.println("Connected coding-harness providers (ConnectedApplicationRegistry):");
+        if (apps.isEmpty()) {
+            out.println("  (none connected)");
+            return;
+        }
+        String selected = registry.getSelectedApplicationId().orElse("");
+        for (ConnectedApplicationDescriptor app : apps) {
+            out.println(String.format(
+                    "  %-24s %-12s enabled=%-5s status=%-12s%s",
+                    app.getName(), app.getApplicationType(), app.isEnabled(),
+                    app.getStatus(),
+                    app.getId().equals(selected) ? "  [selected]" : ""));
+        }
+    }
+
+    private void cmdAgents(String[] tokens, PrintStream out) {
+        ConnectedApplicationRegistry registry = ConnectedApplicationRegistry.getInstance();
+        List<ConnectedApplicationDescriptor> apps = registry.listApplications();
+        if (apps.isEmpty()) {
+            out.println("No connected coding agents "
+                    + "(ConnectedApplicationRegistry is empty).");
+            return;
+        }
+        String selected = registry.getSelectedApplicationId().orElse("");
+        out.println("Connected coding agents:");
+        for (ConnectedApplicationDescriptor app : apps) {
+            out.println(String.format(
+                    "  %-24s %-12s enabled=%-5s status=%-12s capabilities=%s%s",
+                    app.getName(), app.getApplicationType(), app.isEnabled(),
+                    app.getStatus(), app.getCapabilities(),
+                    app.getId().equals(selected) ? "  [selected]" : ""));
         }
     }
 

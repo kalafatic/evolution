@@ -1470,6 +1470,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getServerSettings_Enabled() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getServerSession() {
 		return serverSessionEClass;
 	}
@@ -4230,6 +4240,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTHENTICATE);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORTAL_PORT);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORTAL_URL);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__ENABLED);
 
 		serverSessionEClass = createEClass(SERVER_SESSION);
 		createEAttribute(serverSessionEClass, SERVER_SESSION__ID);
@@ -4667,6 +4678,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getServerSettings_Authenticate(), ecorePackage.getEBoolean(), "authenticate", "false", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_PortalPort(), ecorePackage.getEInt(), "portalPort", "28180", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_PortalUrl(), ecorePackage.getEString(), "portalUrl", "http://localhost:28180/dashboard.html", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_Enabled(), ecorePackage.getEBoolean(), "enabled", "true", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSessionEClass, ServerSession.class, "ServerSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

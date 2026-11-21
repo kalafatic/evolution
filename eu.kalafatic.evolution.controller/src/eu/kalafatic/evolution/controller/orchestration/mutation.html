@@ -8,35 +8,35 @@
     <link rel="stylesheet" href="/evo-style.css">
     <style>
         :root {
-            --evo-bg: #e8ecef;
+            --evo-bg: var(--evo-bg);
             --evo-surface: #ffffff;
-            --evo-surface-alt: #f1f3f6;
-            --evo-surface-hover: #e2e7ec;
-            --evo-surface-selected: #dbe4f0;
-            --evo-border: #b8c0c8;
-            --evo-border-dark: #98a2ac;
-            --evo-border-focus: #1d5296;
-            --evo-text: #1a202c;
-            --evo-text-secondary: #4a5568;
-            --evo-text-muted: #718096;
+            --evo-surface-alt: var(--evo-surface-alt);
+            --evo-surface-hover: var(--evo-surface-hover);
+            --evo-surface-selected: var(--evo-surface-selected);
+            --evo-border: var(--evo-border);
+            --evo-border-dark: var(--evo-border-dark);
+            --evo-border-focus: var(--evo-primary);
+            --evo-text: var(--evo-text);
+            --evo-text-secondary: var(--evo-text-secondary);
+            --evo-text-muted: var(--evo-text-muted);
             --evo-text-inverse: #ffffff;
             --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
             --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
-            --evo-primary: #1d5296;
-            --evo-primary-hover: #153e70;
-            --evo-primary-light: #e8f0fe;
-            --evo-primary-border: #153e70;
-            --evo-success: #1e7e34;
-            --evo-success-hover: #145827;
-            --evo-success-light: #e6f4ea;
-            --evo-warning: #b45309;
-            --evo-warning-hover: #853704;
-            --evo-warning-light: #fef3c7;
-            --evo-danger: #b91c1c;
-            --evo-danger-hover: #881313;
-            --evo-danger-light: #fee2e2;
-            --evo-info: #0284c7;
-            --evo-info-light: #e0f2fe;
+            --evo-primary: var(--evo-primary);
+            --evo-primary-hover: var(--evo-primary-hover);
+            --evo-primary-light: var(--evo-primary-light);
+            --evo-primary-border: var(--evo-primary-hover);
+            --evo-success: var(--evo-success);
+            --evo-success-hover: var(--evo-success-hover);
+            --evo-success-light: var(--evo-success-light);
+            --evo-warning: var(--evo-warning);
+            --evo-warning-hover: var(--evo-warning-hover);
+            --evo-warning-light: var(--evo-warning-light);
+            --evo-danger: var(--evo-danger);
+            --evo-danger-hover: var(--evo-danger-hover);
+            --evo-danger-light: var(--evo-danger-light);
+            --evo-info: var(--evo-info);
+            --evo-info-light: var(--evo-info-light);
             --evo-radius: 4px;
             --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
             --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
@@ -67,7 +67,7 @@
         }
 
         #app-container {
-            display: flex; flex-direction: column; height: 100%;
+            display: flex; flex-direction: column; height: calc(100% - 38px);
         }
 
         /* TOP HEADER */
@@ -109,7 +109,7 @@
             font-size: 0.75em; padding: 4px 8px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;
         }
         .status-pill.online { background: #dcfce7; color: #166534; }
-        .status-pill.busy { background: #fef3c7; color: #b45309; }
+        .status-pill.busy { background: var(--evo-warning-light); color: var(--evo-warning); }
 
         /* MAIN SPLIT VIEW */
         #main-split {
@@ -195,24 +195,26 @@
     <script src="/auth-integration.js"></script>
 </head>
 <body>
-    <div id="evo-global-nav" style="background: var(--evo-surface-alt, #f1f3f6); border-bottom: 1px solid var(--evo-border, #b8c0c8); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; flex-shrink: 0; font-family: 'Segoe UI', sans-serif;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 16px;">🧬</span>
-            <a href="/index.html" style="color: var(--evo-primary, #1d5296); text-decoration: none; font-weight: 700;">EVOLUTION AI PLATFORM</a>
-            <span style="color: #98a2ac;">|</span>
-            <a href="/experimental/chat" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">💬 Chat</a>
-            <a href="/experimental/architecture" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">📐 Architecture</a>
-            <a href="/experimental/forge" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🛠️ Forge Lab</a>
-            <a href="/mcp" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🔌 MCP Tools</a>
-            <a href="/develop" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🤖 Develop Agent</a>
-            <a href="/mutation" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px; background: rgba(29,82,150,0.15);">🧬 Mutation Agent</a>
-            <a href="/admin" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">⚙️ Admin</a>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
-            <span id="global-session-badge" style="background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 12px; font-family: monospace;">Session: Active</span>
-            <a href="/server/status" style="color: var(--evo-text-secondary, #4a5568); text-decoration: none;">Analytics</a>
-        </div>
-    </div>
+        <header id="evo-global-nav" class="topbar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <span class="brand-name">EVOLUTION AI PLATFORM</span>
+        <span class="brand-sub">mutation</span>
+      </div>
+      <nav class="views" id="nav">
+        <a class="view-btn" href="/experimental/chat">Chat</a>
+        <a class="view-btn" href="/experimental/architecture">Architecture</a>
+        <a class="view-btn" href="/experimental/forge">Forge Lab</a>
+        <a class="view-btn" href="/mcp">MCP Tools</a>
+        <a class="view-btn" href="/develop">Develop</a>
+        <a class="view-btn active" href="/mutation">Mutation</a>
+        <a class="view-btn" href="/admin">Admin</a>
+      </nav>
+      <div class="top-actions">
+        <span class="tag" id="global-session-badge">Session: Active</span>
+        <a class="btn" href="/server/status">Analytics</a>
+      </div>
+    </header>
 
     <div id="app-container">
         <!-- TOP HEADER -->

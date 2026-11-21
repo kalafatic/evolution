@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalPort <em>Portal Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalUrl <em>Portal Url</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isEnabled <em>Enabled</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings()
@@ -211,5 +212,28 @@ public interface ServerSettings extends EObject {
 	 * @generated
 	 */
 	void setPortalUrl(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Enabled</b></em>' attribute.
+	 * The default value is <code>"true"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Enabled</em>' attribute.
+	 * @see #setEnabled(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_Enabled()
+	 * @model default="true"
+	 * @generated
+	 */
+	boolean isEnabled();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isEnabled <em>Enabled</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Enabled</em>' attribute.
+	 * @see #isEnabled()
+	 * @generated
+	 */
+	void setEnabled(boolean value);
 
 } // ServerSettings

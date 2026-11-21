@@ -972,13 +972,22 @@ public interface OrchestrationPackage extends EPackage {
 	int SERVER_SETTINGS__PORTAL_URL = 7;
 
 	/**
+	 * The feature id for the '<em><b>Enabled</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__ENABLED = 8;
+
+	/**
 	 * The number of structural features of the '<em>Server Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SERVER_SETTINGS_FEATURE_COUNT = 8;
+	int SERVER_SETTINGS_FEATURE_COUNT = 9;
 
 	/**
 	 * The number of operations of the '<em>Server Settings</em>' class.
@@ -5193,6 +5202,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getServerSettings_PortalUrl();
 
 	/**
+	 * Returns the meta object for the attribute '<em><b>Enabled</b></em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Enabled</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#isEnabled()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_Enabled();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSession <em>Server Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8820,6 +8840,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SERVER_SETTINGS__PORTAL_URL = eINSTANCE.getServerSettings_PortalUrl();
+
+		/**
+		 * The meta object literal for the '<em><b>Enabled</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__ENABLED = eINSTANCE.getServerSettings_Enabled();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSessionImpl <em>Server Session</em>}' class.

@@ -60,9 +60,10 @@ import eu.kalafatic.utils.factories.GUIFactory;
  * Primary interactive Forge properties and monitoring interface:
  * - left:  configuration (model, training, termination, checkpoint/export, hardware)
  * - center: live training monitor (authoritative telemetry, loss trajectory,
- *           capacity budget, progress & resource monitor)
+ *           capacity budget, progress & resource monitor) with the tabbed
+ *           monitoring graphs (Loss | LR | Throughput | Hardware | Memory |
+ *           Timeline) docked at its bottom and a live zoom control
  * - right: datasets & input limits
- * - bottom: tabbed monitoring graphs (Loss | LR | Throughput | Hardware | Memory | Timeline)
  *
  * Honesty policy: every displayed metric originates from the authoritative
  * ForgeSessionManager telemetry or from the configured session state. Missing
@@ -271,6 +272,13 @@ public class ForgeSettingsDialog extends Dialog {
     private Label liveMetricsLabel;
     private Label liveEtaLabel;
 
+    // Live monitor zoom (applied to both the center graphs and the monitoring tabs)
+    private Label zoomLevelLabel;
+    private double liveMonitorZoom = 1.0;
+    private static final double ZOOM_STEP = 0.1;
+    private static final double ZOOM_MIN = 0.6;
+    private static final double ZOOM_MAX = 2.5;
+
     private Button startTrainingBtn;
     private Button pauseBtn;
     private Button resumeBtn;
@@ -464,11 +472,24 @@ public class ForgeSettingsDialog extends Dialog {
         centerWrap.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         buildLiveMonitorCards(centerWrap);
+        buildZoomBar(centerWrap);
 
-        graphBrowser = new Browser(centerWrap, SWT.NONE);
-        GridData browserData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        browserData.minimumHeight = 260;
-        graphBrowser.setLayoutData(browserData);
+        SashForm monitorSplit = new SashForm(centerWrap, SWT.VERTICAL | SWT.SMOOTH);
+        monitorSplit.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        graphBrowser = new Browser(monitorSplit, SWT.NONE);
+
+        Group monitorGroup = new Group(monitorSplit, SWT.NONE);
+        monitorGroup.setText("Monitoring Graphs (Loss | Learning Rate | Throughput | Hardware | Memory | Timeline)");
+        monitorGroup.setLayout(new GridLayout(1, true));
+
+        monitorBrowser = new Browser(monitorGroup, SWT.NONE);
+        monitorBrowser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        installZoomGestures(graphBrowser);
+        installZoomGestures(monitorBrowser);
+
+        monitorSplit.setWeights(new int[] { 60, 40 });
 
         // Panel 3 (Right): Datasets & Input Limits
         Composite rightContainer = createPanelContainer(sashForm, "Datasets & Input Limits");
@@ -489,18 +510,7 @@ public class ForgeSettingsDialog extends Dialog {
 
         buildDatasetsGroup(rightPanel);
 
-        sashForm.setWeights(new int[] { 30, 44, 26 });
-
-        // Bottom: tabbed monitoring graphs
-        Group monitorGroup = new Group(container, SWT.NONE);
-        monitorGroup.setText("Monitoring Graphs (Loss | Learning Rate | Throughput | Hardware | Memory | Timeline)");
-        monitorGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        monitorGroup.setLayout(new GridLayout(1, true));
-
-        monitorBrowser = new Browser(monitorGroup, SWT.NONE);
-        GridData monitorData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        monitorData.heightHint = 300;
-        monitorBrowser.setLayoutData(monitorData);
+        sashForm.setWeights(new int[] { 28, 48, 24 });
 
         // Initial HTML render
         renderAll();
@@ -602,11 +612,123 @@ public class ForgeSettingsDialog extends Dialog {
 
         liveMetricsLabel = new Label(cards, SWT.WRAP);
         liveMetricsLabel.setText("No training session data yet. Start training or press Refresh Now.");
-        liveMetricsLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+        liveMetricsLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1));
 
         liveEtaLabel = new Label(cards, SWT.WRAP);
         liveEtaLabel.setText("ETA: N/A");
-        liveEtaLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        liveEtaLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1));
+    }
+
+    private void buildZoomBar(Composite parent) {
+        Composite bar = new Composite(parent, SWT.NONE);
+        bar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        GridLayout layout = new GridLayout(6, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.verticalSpacing = 0;
+        bar.setLayout(layout);
+
+        Label caption = new Label(bar, SWT.NONE);
+        caption.setText("Monitor Zoom:");
+
+        Button zoomOutBtn = new Button(bar, SWT.PUSH);
+        zoomOutBtn.setText("\u2212");
+        zoomOutBtn.setToolTipText("Zoom out the live training monitor (Ctrl + Mouse Wheel also works).");
+        GridData outData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        outData.widthHint = 32;
+        outData.heightHint = 22;
+        zoomOutBtn.setLayoutData(outData);
+        zoomOutBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                adjustZoom(-ZOOM_STEP);
+            }
+        });
+
+        zoomLevelLabel = new Label(bar, SWT.CENTER);
+        zoomLevelLabel.setText("100%");
+        zoomLevelLabel.setToolTipText("Current live training monitor zoom.");
+        GridData levelData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        levelData.widthHint = 48;
+        zoomLevelLabel.setLayoutData(levelData);
+
+        Button zoomInBtn = new Button(bar, SWT.PUSH);
+        zoomInBtn.setText("+");
+        zoomInBtn.setToolTipText("Zoom in the live training monitor (Ctrl + Mouse Wheel also works).");
+        GridData inData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        inData.widthHint = 32;
+        inData.heightHint = 22;
+        zoomInBtn.setLayoutData(inData);
+        zoomInBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                adjustZoom(ZOOM_STEP);
+            }
+        });
+
+        Button zoomResetBtn = new Button(bar, SWT.PUSH);
+        zoomResetBtn.setText("Reset");
+        zoomResetBtn.setToolTipText("Reset the live training monitor zoom to 100%.");
+        GridData resetData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        resetData.heightHint = 22;
+        zoomResetBtn.setLayoutData(resetData);
+        zoomResetBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                resetZoom();
+            }
+        });
+
+        Label hint = new Label(bar, SWT.NONE);
+        hint.setText("Ctrl + Mouse Wheel zooms too");
+        hint.setEnabled(false);
+        hint.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+    }
+
+    private void installZoomGestures(Browser browser) {
+        browser.addMouseWheelListener(e -> {
+            if ((e.stateMask & SWT.CTRL) != 0) {
+                adjustZoom(e.count > 0 ? ZOOM_STEP : -ZOOM_STEP);
+            }
+        });
+    }
+
+    private void adjustZoom(double delta) {
+        double next = Math.round((liveMonitorZoom + delta) * 100.0) / 100.0;
+        next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
+        if (Math.abs(next - liveMonitorZoom) < 0.0001) return;
+        liveMonitorZoom = next;
+        applyZoomToBrowsers();
+    }
+
+    private void resetZoom() {
+        if (Math.abs(liveMonitorZoom - 1.0) < 0.0001) return;
+        liveMonitorZoom = 1.0;
+        applyZoomToBrowsers();
+    }
+
+    private void applyZoomToBrowsers() {
+        applyBrowserZoom(graphBrowser);
+        applyBrowserZoom(monitorBrowser);
+        if (zoomLevelLabel != null && !zoomLevelLabel.isDisposed()) {
+            zoomLevelLabel.setText(String.format("%.0f%%", liveMonitorZoom * 100.0));
+        }
+    }
+
+    private void applyBrowserZoom(Browser browser) {
+        if (browser == null || browser.isDisposed()) return;
+        try {
+            browser.execute("document.documentElement.style.overflow='auto';"
+                    + "document.body.style.overflow='auto';"
+                    + "document.body.style.zoom='" + String.format(java.util.Locale.ROOT, "%.2f", liveMonitorZoom) + "';");
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String withInitialZoom(String html) {
+        String zoom = String.format(java.util.Locale.ROOT, "%.2f", liveMonitorZoom);
+        String script = "<script>document.body.style.zoom='" + zoom + "';</script>\n";
+        return html.replace("</body>", script + "</body>");
     }
 
     // =====================================================================
@@ -1396,11 +1518,13 @@ public class ForgeSettingsDialog extends Dialog {
         if (graphBrowser != null && !graphBrowser.isDisposed() && !centerHtml.equals(lastCenterHtml)) {
             lastCenterHtml = centerHtml;
             graphBrowser.setText(centerHtml);
+            applyBrowserZoom(graphBrowser);
         }
         String monitorHtml = generateMonitoringGraphsHtml(snap);
         if (monitorBrowser != null && !monitorBrowser.isDisposed() && !monitorHtml.equals(lastMonitorHtml)) {
             lastMonitorHtml = monitorHtml;
             monitorBrowser.setText(monitorHtml);
+            applyBrowserZoom(monitorBrowser);
         }
     }
 
@@ -1653,7 +1777,7 @@ public class ForgeSettingsDialog extends Dialog {
         } catch (Exception ignored) {}
     }
 
-    /** Live center-panel HTML: summary + cards + GRAPH 1/2/3. */
+    /** Live center-panel HTML: summary + cards + GRAPH 1/2/3 + monitoring loss graph. */
     public String generateGraphHtml(ForgeTelemetrySnapshot snap) {
         if (snap == null) {
             snap = ForgeTelemetrySnapshot.configOnly(selectedModelSize, selectedEpochs, selectedDesiredLoss,
@@ -1703,11 +1827,28 @@ public class ForgeSettingsDialog extends Dialog {
         String badgeClass2 = budgetBadge(snap);
         String statusSub2 = budgetSubtitle(snap);
 
-        String statusTitle3 = "Resource Monitor (real telemetry; N/A when unavailable)";
+        String statusTitle3 = "Progress & Resource Monitor (measured telemetry; N/A when unavailable)";
+        String statusSub3 = resourceSubtitle(snap);
         String badgeClass3 = "badge-neutral";
 
-        return buildCenterDocument(configSummaryHtml, statusTitle1, statusSub1, badgeClass1, svg1,
-                statusTitle2, statusSub2, badgeClass2, svg2, statusTitle3, badgeClass3, svg3);
+        return withInitialZoom(buildCenterDocument(configSummaryHtml, statusTitle1, statusSub1, badgeClass1, svg1,
+                statusTitle2, statusSub2, badgeClass2, svg2, statusTitle3, statusSub3, badgeClass3, svg3));
+    }
+
+    private static String resourceSubtitle(ForgeTelemetrySnapshot snap) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Progress: ");
+        if (snap.overallProgress >= 0) {
+            sb.append(String.format("%.1f%%", snap.overallProgress * 100.0));
+        } else {
+            sb.append("N/A");
+        }
+        sb.append(" | Step ").append(snap.currentStep).append(" / ").append(snap.totalSteps);
+        sb.append(" | Elapsed: ").append(formatDuration(snap.elapsedSeconds));
+        if (snap.estimatedRemainingSeconds >= 0) {
+            sb.append(" | ETA: ").append(formatDuration(snap.estimatedRemainingSeconds));
+        }
+        return sb.toString();
     }
 
     private long calculateTotalDatasetBytesSafe() {
@@ -2223,7 +2364,7 @@ public class ForgeSettingsDialog extends Dialog {
 
     private static String buildCenterDocument(String summary, String t1, String s1, String b1, String svg1,
                                               String t2, String s2, String b2, String svg2,
-                                              String t3, String b3, String svg3) {
+                                              String t3, String s3, String b3, String svg3) {
         return "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n" + graphCss() + "\n</head>\n<body>\n"
             + summary + "\n"
             + cardHtml("GRAPH 1: LOSS TRAJECTORY", t1, s1, b1, svg1,
@@ -2238,7 +2379,7 @@ public class ForgeSettingsDialog extends Dialog {
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#c084fc;\"></div>Remaining</div>" +
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#f87171;\"></div>Estimated Total</div>")
             + "\n"
-            + cardHtml("GRAPH 3: PROGRESS & RESOURCE MONITOR", t3, t3, b3, svg3,
+            + cardHtml("GRAPH 3: PROGRESS & RESOURCE MONITOR", t3, s3, b3, svg3,
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#1d5296;\"></div>Time Progress</div>" +
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#10b981;\"></div>RAM Memory</div>" +
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#8b5cf6;\"></div>Tokens/sec</div>" +
@@ -2301,7 +2442,7 @@ public class ForgeSettingsDialog extends Dialog {
             + "<div class=\"tab-content\" id=\"tabTime\" style=\"display:none\">" + "<div class=\"tab-head\">Training Phase Timeline (from real session events)</div>"
             + svgWrap(timelineSvg) + "</div>\n"
             + tabScript() + "\n</body>\n</html>";
-        return html;
+        return withInitialZoom(html);
     }
 
     private static String tabButton(String id, String label, boolean active) {
@@ -2507,34 +2648,35 @@ public class ForgeSettingsDialog extends Dialog {
         return "<style>\n"
             + "  :root { --bg:#0b1220; --surface:#111c30; --border:#26354f; --text:#e2e8f0; --muted:#8ea3c0; }\n"
             + "  * { box-sizing: border-box; margin: 0; padding: 0; }\n"
+            + "  html, body { min-height:100%; }\n"
             + "  body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;\n"
-            + "         background: var(--bg); color: var(--text); padding: 10px; user-select: none; overflow-y: auto; }\n"
-            + "  .summary-bar { display:flex; flex-wrap:wrap; gap:12px; background:var(--surface); border:1px solid var(--border);\n"
-            + "         border-radius:8px; padding:10px 14px; margin-bottom:10px; }\n"
-            + "  .summary-item { font-size:11px; display:flex; align-items:center; gap:4px; }\n"
+            + "         background: var(--bg); color: var(--text); padding: 12px; user-select: none; overflow: auto; }\n"
+            + "  .summary-bar { display:flex; flex-wrap:wrap; gap:14px 20px; background:var(--surface); border:1px solid var(--border);\n"
+            + "         border-radius:8px; padding:12px 16px; margin-bottom:12px; }\n"
+            + "  .summary-item { font-size:12px; display:flex; align-items:center; gap:5px; }\n"
             + "  .summary-label { color:var(--muted); font-weight:500; }\n"
             + "  .summary-value { color:#f1f5f9; font-weight:700; }\n"
             + "  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px;\n"
-            + "         padding:12px; margin-bottom:10px; display:flex; flex-direction:column; }\n"
-            + "  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;\n"
-            + "         padding-bottom:6px; border-bottom:1px solid var(--border); }\n"
-            + "  .title-group { display:flex; flex-direction:column; }\n"
-            + "  .title { font-size:13px; font-weight:700; color:#f1f5f9; }\n"
-            + "  .subtitle { font-size:11px; color:var(--muted); margin-top:1px; }\n"
-            + "  .badge { padding:3px 8px; border-radius:12px; font-size:10px; font-weight:600;\n"
+            + "         padding:14px; margin-bottom:12px; display:flex; flex-direction:column; }\n"
+            + "  .header { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px;\n"
+            + "         padding-bottom:8px; border-bottom:1px solid var(--border); }\n"
+            + "  .title-group { display:flex; flex-direction:column; min-width:0; }\n"
+            + "  .title { font-size:14px; font-weight:700; color:#f1f5f9; line-height:1.35; }\n"
+            + "  .subtitle { font-size:12px; color:var(--muted); margin-top:2px; line-height:1.4; }\n"
+            + "  .badge { padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap;\n"
             + "         text-transform:uppercase; letter-spacing:0.5px; }\n"
             + "  .badge-primary { background:#0c2a52; color:#7ab7ff; border:1px solid #1d5296; }\n"
             + "  .badge-success { background:#0c2e24; color:#34d399; border:1px solid #1a6b4a; }\n"
             + "  .badge-danger { background:#3a1215; color:#fca5a5; border:1px solid #7f1d1d; }\n"
             + "  .badge-neutral { background:#1e293b; color:#94a3b8; border:1px solid #33415c; }\n"
             + "  .graph-container { position:relative; width:100%; display:flex; justify-content:center; align-items:center; }\n"
-            + "  svg { width:100%; height:280px; overflow:visible; }\n"
+            + "  svg { display:block; width:100%; height:auto; max-height:420px; overflow:visible; }\n"
             + "  .dot { cursor:pointer; }\n"
             + "  .dot:hover { opacity:0.75; }\n"
             + "  .tooltip { position:absolute; background:rgba(2,6,23,0.96); color:#fff; padding:5px 9px;\n"
             + "         border-radius:4px; font-size:11px; pointer-events:none; opacity:0; transition:opacity 0.15s ease;\n"
             + "         white-space:nowrap; z-index:100; border:1px solid #33415c; }\n"
-            + "  .legend { display:flex; gap:14px; justify-content:center; margin-top:6px; font-size:10px; color:#c3d0e5; flex-wrap:wrap; }\n"
+            + "  .legend { display:flex; gap:16px; justify-content:center; margin-top:8px; font-size:11px; color:#c3d0e5; flex-wrap:wrap; }\n"
             + "  .legend-item { display:flex; align-items:center; gap:5px; }\n"
             + "  .legend-line { width:16px; height:3px; border-radius:2px; }\n"
             + "</style>\n";
@@ -2542,13 +2684,13 @@ public class ForgeSettingsDialog extends Dialog {
 
     private static String tabsCss() {
         return "<style>\n"
-            + "  .tab-bar { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }\n"
+            + "  .tab-bar { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }\n"
             + "  .tab-btn { background:#111c30; color:#8ea3c0; border:1px solid #26354f; border-radius:6px 6px 0 0;\n"
-            + "         padding:6px 14px; font-size:11px; cursor:pointer; }\n"
+            + "         padding:7px 16px; font-size:12px; cursor:pointer; }\n"
             + "  .tab-btn.active { background:#1d5296; color:#ffffff; border-color:#1d5296; }\n"
-            + "  .tab-head { font-size:11px; color:#c3d0e5; margin-bottom:4px; font-weight:600; }\n"
+            + "  .tab-head { font-size:12px; color:#c3d0e5; margin-bottom:6px; font-weight:600; }\n"
             + "  .tab-svg-wrap { width:100%; }\n"
-            + "  .tab-svg-wrap svg { width:100%; height:250px; overflow:visible; }\n"
+            + "  .tab-svg-wrap svg { display:block; width:100%; height:auto; max-height:340px; overflow:visible; }\n"
             + "</style>\n";
     }
 

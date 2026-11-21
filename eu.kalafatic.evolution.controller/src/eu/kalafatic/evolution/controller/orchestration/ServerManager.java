@@ -24,6 +24,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.SupervisorRuntime
 import eu.kalafatic.evolution.controller.resource.PortAllocationManager;
 import eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker;
 import eu.kalafatic.evolution.controller.resource.PortRegistry;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.forge.controller.api.DatasetController;
 import eu.kalafatic.evolution.forge.controller.api.ModelController;
 import eu.kalafatic.evolution.forge.controller.api.SessionController;
@@ -167,6 +168,58 @@ public class ServerManager {
             }
         }
         return null;
+    }
+
+    /**
+     * {@code webServer.enabled} — persistent EVO setting (EMF ServerSettings.enabled,
+     * default true). When false, the web servers (primary, portal, MCP, develop) stay
+     * unavailable: they report state DISABLED and manual start is refused.
+     */
+    public boolean isWebServerEnabled() {
+        try {
+            Orchestrator orch = eu.kalafatic.evolution.controller.resource.ResourceManager
+                    .getInstance().getOrchestrator();
+            if (orch != null && orch.getServerSettings() != null) {
+                return orch.getServerSettings().isEnabled();
+            }
+        } catch (Throwable t) {
+            Log.log("[ServerManager] Could not read webServer.enabled: " + t.getMessage());
+        }
+        return true;
+    }
+
+    /**
+     * {@code webServer.autoStart} — persistent EVO setting (EMF ServerSettings.autoStart,
+     * default true). When false, the web servers are not started automatically in
+     * headless or RCP mode; they can be started manually (menu / CLI).
+     */
+    public boolean isWebServerAutoStart() {
+        try {
+            Orchestrator orch = eu.kalafatic.evolution.controller.resource.ResourceManager
+                    .getInstance().getOrchestrator();
+            if (orch != null && orch.getServerSettings() != null) {
+                return orch.getServerSettings().isAutoStart();
+            }
+        } catch (Throwable t) {
+            Log.log("[ServerManager] Could not read webServer.autoStart: " + t.getMessage());
+        }
+        return true;
+    }
+
+    /**
+     * Marks the primary/secondary/MCP/develop entries DISABLED when
+     * {@code webServer.enabled=false} so every surface (RCP menu, settings,
+     * admin pages) reflects the real state.
+     */
+    public void applyWebServerDisabledState() {
+        updateState(getPortForService(PortRegistry.EVO_HTTP_PRIMARY), ServerState.DISABLED,
+                "webServer.enabled=false");
+        updateState(getPortForService(PortRegistry.EVO_HTTP_SECONDARY), ServerState.DISABLED,
+                "webServer.enabled=false");
+        updateState(getPortForService(PortRegistry.EVO_MCP), ServerState.DISABLED,
+                "webServer.enabled=false");
+        updateState(getPortForService(PortRegistry.EVO_DEVELOP), ServerState.DISABLED,
+                "webServer.enabled=false");
     }
 
     public void addListener(ServerLifecycleListener listener) {
@@ -324,6 +377,14 @@ public class ServerManager {
         boolean isSupervisorControl = (port == controlPort) || (port == PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort()) || (port == 28580) || (port == 8580);
         boolean isSecondary = (port == secondaryPort) || (port == PortRegistry.EVO_HTTP_SECONDARY.getDefaultPort()) || (port == 58080);
         boolean isDevelop = (port == developPort) || (port == PortRegistry.EVO_DEVELOP.getDefaultPort()) || (port == 8380);
+
+        // webServer.enabled=false keeps every web surface unavailable: manual
+        // start is refused with a clear message and the state stays DISABLED.
+        if (!isSupervisorControl && !isSupervisor && !isWebServerEnabled()) {
+            updateState(port, ServerState.DISABLED, "webServer.enabled=false");
+            throw new IOException("Web server disabled (webServer.enabled=false). "
+                    + "Enable it in the EVO server settings and restart.");
+        }
 
         updateState(port, ServerState.STARTING, null);
 

@@ -51,6 +51,7 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
 
     private Text portText;
     private Button autoStartCheck;
+    private Button webServerEnabledCheck;
     private Button authenticateCheck;
     private Runnable onStateChange;
     private TableViewer serverViewer;
@@ -65,6 +66,12 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
     public void addModifyListener(ModifyListener listener) {
         if (portText != null) portText.addModifyListener(listener);
         if (autoStartCheck != null) autoStartCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                listener.modifyText(null);
+            }
+        });
+        if (webServerEnabledCheck != null) webServerEnabledCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 listener.modifyText(null);
@@ -93,6 +100,9 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
 
         autoStartCheck = toolkit.createButton(group, "Auto-start Server on Startup", SWT.CHECK);
         autoStartCheck.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+
+        webServerEnabledCheck = toolkit.createButton(group, "Web Server Enabled (disabled = no web interface)", SWT.CHECK);
+        webServerEnabledCheck.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         authenticateCheck = toolkit.createButton(group, "Enable API Authentication", SWT.CHECK);
         authenticateCheck.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
@@ -346,6 +356,7 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
         if (settings != null) {
             setTextSafe(portText, String.valueOf(settings.getPort()));
             setSelectionSafe(autoStartCheck, settings.isAutoStart());
+            setSelectionSafe(webServerEnabledCheck, settings.isEnabled());
             setSelectionSafe(authenticateCheck, settings.isAuthenticate());
         }
 
@@ -399,6 +410,7 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
             // keep old value
         }
         settings.setAutoStart(autoStartCheck.getSelection());
+        settings.setEnabled(webServerEnabledCheck.getSelection());
         boolean auth = authenticateCheck.getSelection();
         settings.setAuthenticate(auth);
         System.setProperty("evolution.api.authenticate", String.valueOf(auth));

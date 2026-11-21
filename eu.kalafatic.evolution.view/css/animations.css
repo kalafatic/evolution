@@ -28,7 +28,7 @@
 }
 
 .dot {
-    width: 6px; height: 6px; background: #3b82f6; border-radius: 50%;
+    width: 6px; height: 6px; background: var(--evo-primary); border-radius: 50%;
     animation: blink 1.4s infinite ease-in-out;
 }
 .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -43,7 +43,7 @@
 #floating-quote-btn {
     position: absolute;
     display: none;
-    background: #2563eb;
+    background: var(--evo-primary);
     color: white;
     border: none;
     border-radius: 4px;
@@ -55,4 +55,4 @@
     z-index: 1000;
     pointer-events: auto;
 }
-#floating-quote-btn:hover { background: #1d4ed8; }
+#floating-quote-btn:hover { background: var(--evo-primary-hover); }

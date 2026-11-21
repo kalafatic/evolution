@@ -201,9 +201,142 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 			menuManager.add(serverMemoryAction);
 		}
 
+		// Web Interface lifecycle controls: rebuilt on every menu open so the
+		// items always reflect the actual server state. Every control routes
+		// through the single authoritative ServerManager.
+		MenuManager webInterfaceMenu = new MenuManager("&Web Interface", "webInterface");
+		webInterfaceMenu.add(new WebInterfaceContributionItem(window));
+		menuManager.add(webInterfaceMenu);
+
 		menuManager.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
 		menuManager.add(new GroupMarker("serverEnd"));
 		return menuManager;
+	}
+
+	/**
+	 * Dynamic Web Interface menu content (Open / Start / Stop / Restart /
+	 * Status). The state is read from the authoritative {@code ServerManager}
+	 * at menu-open time, so enablement never goes stale.
+	 */
+	private static final class WebInterfaceContributionItem
+			extends org.eclipse.jface.action.ContributionItem {
+
+		private final IWorkbenchWindow window;
+
+		WebInterfaceContributionItem(IWorkbenchWindow window) {
+			super("eu.kalafatic.evolution.view.webInterfaceControls");
+			this.window = window;
+		}
+
+		@Override
+		public boolean isDynamic() {
+			return true;
+		}
+
+		@Override
+		public void fill(org.eclipse.swt.widgets.Menu parent, int index) {
+			eu.kalafatic.evolution.controller.orchestration.ServerManager sm =
+					eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance();
+			eu.kalafatic.evolution.controller.orchestration.ServerEntry entry =
+					sm.getServerEntryByServiceId("EVO_HTTP_PRIMARY");
+			int port = sm.getPort();
+			eu.kalafatic.evolution.controller.orchestration.ServerState state =
+					entry != null ? entry.getState()
+							: eu.kalafatic.evolution.controller.orchestration.ServerState.STOPPED;
+			boolean running = state == eu.kalafatic.evolution.controller.orchestration.ServerState.RUNNING;
+			String url = entry != null ? entry.getEndpointUrl() : null;
+
+			org.eclipse.swt.widgets.MenuItem openItem =
+					new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.PUSH, index++);
+			openItem.setText("Open Web Interface");
+			openItem.setEnabled(running);
+			openItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+				@Override
+				public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+					eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher.openWebInterface();
+				}
+			});
+
+			org.eclipse.swt.widgets.MenuItem openUrlItem =
+					new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.PUSH, index++);
+			openUrlItem.setText("Open Configured Web URL");
+			openUrlItem.setEnabled(running);
+			openUrlItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+				@Override
+				public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+					if (url != null) {
+						eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher.launchBrowser(url);
+					}
+				}
+			});
+
+			new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.SEPARATOR, index++);
+
+			org.eclipse.swt.widgets.MenuItem startItem =
+					new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.PUSH, index++);
+			startItem.setText("Start Web Server");
+			startItem.setEnabled(state.canStart());
+			startItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+				@Override
+				public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+					runServerOperation(window, "start", () -> sm.start(port));
+				}
+			});
+
+			org.eclipse.swt.widgets.MenuItem stopItem =
+					new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.PUSH, index++);
+			stopItem.setText("Stop Web Server");
+			stopItem.setEnabled(state.canStop());
+			stopItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+				@Override
+				public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+					runServerOperation(window, "stop", () -> sm.stop(port));
+				}
+			});
+
+			org.eclipse.swt.widgets.MenuItem restartItem =
+					new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.PUSH, index++);
+			restartItem.setText("Restart Web Server");
+			restartItem.setEnabled(state.canRestart());
+			restartItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+				@Override
+				public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+					runServerOperation(window, "restart", () -> sm.restart(port));
+				}
+			});
+
+			new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.SEPARATOR, index++);
+
+			org.eclipse.swt.widgets.MenuItem statusItem =
+					new org.eclipse.swt.widgets.MenuItem(parent, org.eclipse.swt.SWT.PUSH, index++);
+			statusItem.setText("Check Status");
+			statusItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+				@Override
+				public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+					String message = "State: " + state + (state.isRunning() ? "\nURL: " + url : "");
+					if (entry != null && entry.getLastError() != null
+							&& !entry.getLastError().isEmpty()) {
+						message += "\nLast error: " + entry.getLastError();
+					}
+					org.eclipse.jface.dialogs.MessageDialog.openInformation(window.getShell(),
+							"Web Server Status", message);
+				}
+			});
+		}
+
+		private void runServerOperation(IWorkbenchWindow window, String operation,
+				ServerOperationBody body) {
+			try {
+				body.run();
+			} catch (Exception e) {
+				org.eclipse.jface.dialogs.MessageDialog.openError(window.getShell(),
+						"Web Server " + operation + " failed", e.getMessage());
+			}
+		}
+
+		private interface ServerOperationBody {
+			void run() throws Exception;
+		}
 	}
 
 	// ---------------------------------------------------------------

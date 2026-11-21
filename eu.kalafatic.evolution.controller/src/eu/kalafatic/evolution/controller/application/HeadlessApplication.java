@@ -45,8 +45,23 @@ public class HeadlessApplication implements IApplication {
         System.out.println("Evolution Headless Server starting on port " + port + "...");
         // Register the local update repository (<install>/updates) when present.
         eu.kalafatic.utils.eclipse.P2Utils.registerLocalUpdateRepository();
-        ServerManager.getInstance().start(port);
-        System.out.println("Evolution Headless Server started on port " + port + ".");
+        // Web server startup follows the persistent configuration:
+        //   webServer.enabled=false  -> backend runs without any web server (DISABLED)
+        //   webServer.autoStart=false -> backend runs, server startable via /start or the RCP menu
+        // Defaults keep the historical behavior: the server starts automatically.
+        boolean enabled = ServerManager.getInstance().isWebServerEnabled();
+        boolean autoStart = ServerManager.getInstance().isWebServerAutoStart();
+        if (!enabled) {
+            ServerManager.getInstance().applyWebServerDisabledState();
+            System.out.println("Evolution Headless: web server disabled (webServer.enabled=false). "
+                    + "Backend services run without a web interface.");
+        } else if (!autoStart) {
+            System.out.println("Evolution Headless: web server auto-start disabled "
+                    + "(webServer.autoStart=false). Start it with /start.");
+        } else {
+            ServerManager.getInstance().start(port);
+            System.out.println("Evolution Headless Server started on port " + port + ".");
+        }
 
         // 1. One-shot command dispatch (non-interactive): /help, /status, ...
         List<String> commandArgs = new ArrayList<>();

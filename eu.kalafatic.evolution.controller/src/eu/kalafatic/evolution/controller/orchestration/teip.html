@@ -9,19 +9,19 @@
         :root {
             --bg-color: var(--evo-bg, #f4f6f9);
             --surface-color: var(--evo-surface, #ffffff);
-            --surface-alt: var(--evo-surface-alt, #f8fafc);
-            --border-color: var(--evo-border, #cbd5e1);
+            --surface-alt: var(--evo-surface-alt, var(--evo-bg));
+            --border-color: var(--evo-border, var(--evo-border));
             --text-color: var(--evo-text, #0f172a);
-            --text-muted: var(--evo-text-muted, #64748b);
-            --primary: var(--evo-primary, #0284c7);
+            --text-muted: var(--evo-text-muted, var(--evo-text-muted));
+            --primary: var(--evo-primary, var(--evo-info));
             --primary-hover: var(--evo-primary-hover, #0369a1);
-            --primary-light: var(--evo-primary-light, #e0f2fe);
-            --success: var(--evo-success, #16a34a);
+            --primary-light: var(--evo-primary-light, var(--evo-info-light));
+            --success: var(--evo-success, var(--evo-success));
             --success-light: var(--evo-success-light, #dcfce7);
             --warning: var(--evo-warning, #d97706);
-            --warning-light: var(--evo-warning-light, #fef3c7);
-            --danger: var(--evo-danger, #dc2626);
-            --danger-light: var(--evo-danger-light, #fee2e2);
+            --warning-light: var(--evo-warning-light, var(--evo-warning-light));
+            --danger: var(--evo-danger, var(--evo-danger));
+            --danger-light: var(--evo-danger-light, var(--evo-danger-light));
             --font-family: var(--evo-font-family, 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif);
             --font-mono: var(--evo-font-mono, 'Consolas', 'Fira Code', monospace);
         }
@@ -296,7 +296,7 @@
             border-color: var(--danger);
         }
         .btn-danger:hover {
-            background-color: #b91c1c;
+            background-color: var(--evo-danger);
         }
 
         .btn-sm {
@@ -410,7 +410,7 @@
 
         pre.code-block {
             background-color: #0f172a;
-            color: #f8fafc;
+            color: var(--evo-bg);
             padding: 14px;
             border-radius: 6px;
             font-family: var(--font-mono);

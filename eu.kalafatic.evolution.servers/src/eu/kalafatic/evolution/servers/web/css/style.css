@@ -1,51 +1,101 @@
-/* Evolution Server Dashboard - Professional Workstation Theme */
+/* Evolution Server Dashboard - UPM design standard tokens
+   (UniversalProjectManager/web/app.css) */
 :root {
-    --evo-bg: #e8ecef;
-    --evo-surface: #ffffff;
-    --evo-surface-alt: #f1f3f6;
-    --evo-surface-hover: #e2e7ec;
-    --evo-surface-selected: #dbe4f0;
+    /* UPM canonical tokens (light theme) */
+    --bg: #f4f6f9;
+    --bg2: #eceff4;
+    --panel: #ffffff;
+    --panel2: #f7f9fb;
+    --border: #d7dce4;
+    --border-strong: #c3cad5;
+    --text: #1b2434;
+    --muted: #5c6a7e;
+    --faint: #8b96a8;
+    --accent: #2f6bd8;
+    --accent-soft: #e8effa;
+    --ok: #1f8a4c;
+    --ok-soft: #e7f4ec;
+    --warn: #a86a00;
+    --warn-soft: #fdf3e2;
+    --err: #c23b2e;
+    --err-soft: #fbeceb;
+    --info: #2b7fbe;
+    --info-soft: #e7f1f9;
+    --sel: #e8effa;
+    --mono: "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06);
 
-    --evo-border: #b8c0c8;
-    --evo-border-dark: #98a2ac;
-    --evo-border-focus: #1d5296;
-
-    --evo-text: #1a202c;
-    --evo-text-secondary: #4a5568;
-    --evo-text-muted: #718096;
+    /* EVO compatibility aliases */
+    --evo-bg: var(--bg);
+    --evo-surface: var(--panel);
+    --evo-surface-alt: var(--panel2);
+    --evo-surface-hover: var(--bg2);
+    --evo-surface-selected: var(--sel);
+    --evo-border: var(--border);
+    --evo-border-dark: var(--border-strong);
+    --evo-border-focus: var(--accent);
+    --evo-text: var(--text);
+    --evo-text-secondary: var(--muted);
+    --evo-text-muted: var(--faint);
     --evo-text-inverse: #ffffff;
-    --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-    --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+    --evo-font-family: "Inter", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+    --evo-font-mono: var(--mono);
+    --evo-primary: var(--accent);
+    --evo-primary-hover: #2559ba;
+    --evo-primary-light: var(--accent-soft);
+    --evo-primary-border: var(--accent);
+    --evo-success: var(--ok);
+    --evo-success-hover: #1a7040;
+    --evo-success-light: var(--ok-soft);
+    --evo-warning: var(--warn);
+    --evo-warning-hover: #8a5600;
+    --evo-warning-light: var(--warn-soft);
+    --evo-danger: var(--err);
+    --evo-danger-hover: #a03227;
+    --evo-danger-light: var(--err-soft);
+    --evo-info: var(--info);
+    --evo-info-light: var(--info-soft);
+    --evo-radius: 5px;
+    --evo-shadow-sm: var(--shadow);
+    --evo-shadow-md: 0 4px 12px rgba(16, 24, 40, .10);
+}
 
-    --evo-primary: #1d5296;
-    --evo-primary-hover: #153e70;
-    --evo-primary-light: #e8f0fe;
-    --evo-primary-border: #153e70;
-
-    --evo-success: #1e7e34;
-    --evo-success-hover: #145827;
-    --evo-success-light: #e6f4ea;
-    --evo-warning: #b45309;
-    --evo-warning-hover: #853704;
-    --evo-warning-light: #fef3c7;
-    --evo-danger: #b91c1c;
-    --evo-danger-hover: #881313;
-    --evo-danger-light: #fee2e2;
-    --evo-info: #0284c7;
-    --evo-info-light: #e0f2fe;
-
-    --evo-radius: 4px;
-    --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-    --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
+[data-theme="dark"] {
+    --bg: #12161f;
+    --bg2: #181d29;
+    --panel: #1c2230;
+    --panel2: #232b3c;
+    --border: #2e394c;
+    --border-strong: #3c4a61;
+    --text: #e7ebf3;
+    --muted: #93a0b4;
+    --faint: #6b7789;
+    --accent: #5b8feb;
+    --accent-soft: #24344e;
+    --ok: #46c58a;
+    --ok-soft: #1d3a2c;
+    --warn: #e2ad4e;
+    --warn-soft: #3d3320;
+    --err: #ef7a6f;
+    --err-soft: #432422;
+    --info: #62b6ea;
+    --info-soft: #1f3a4d;
+    --sel: #26334c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    --evo-primary-hover: #4a7fe0;
+    --evo-success-hover: #37b577;
+    --evo-warning-hover: #c99a3f;
+    --evo-danger-hover: #e0655a;
 }
 
 body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-family: var(--evo-font-family);
     background-color: var(--evo-bg);
     color: var(--evo-text);
     margin: 0;
     padding: 0;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .window-frame {
@@ -100,28 +150,36 @@ body {
 
 button, .xp-button {
     background: var(--evo-surface);
-    border: 1px solid var(--evo-border);
-    padding: 4px 12px;
-    font-size: 11px;
-    font-weight: 600;
+    border: 1px solid var(--evo-border-dark);
+    padding: 5px 10px;
+    font-size: 12px;
     border-radius: var(--evo-radius);
     cursor: pointer;
     color: var(--evo-text);
-    transition: background 0.1s;
+    transition: border-color 0.1s, color 0.1s;
+    white-space: nowrap;
 }
 
 button:hover, .xp-button:hover {
-    background: var(--evo-surface-alt);
-    border-color: var(--evo-border-dark);
+    background: var(--evo-surface);
+    border-color: var(--evo-primary);
+    color: var(--evo-primary);
 }
 
+button:disabled { opacity: .45; cursor: not-allowed; }
+
 input[type="text"], input[type="password"], select, textarea {
-    border: 1px solid var(--evo-border);
-    padding: 4px 6px;
-    font-size: 11px;
+    border: 1px solid var(--evo-border-dark);
+    padding: 5px 8px;
+    font-size: 12px;
     background: var(--evo-surface);
     color: var(--evo-text);
-    border-radius: var(--evo-radius);
+    border-radius: 4px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--evo-primary-light);
+    border-color: var(--evo-primary);
 }
 
 .portal-container {

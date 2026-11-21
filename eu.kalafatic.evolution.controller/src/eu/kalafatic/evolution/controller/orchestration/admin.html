@@ -8,8 +8,8 @@
     <style>
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--evo-bg, #e8ecef);
-            color: var(--evo-text, #1a202c);
+            background-color: var(--evo-bg, var(--evo-bg));
+            color: var(--evo-text, var(--evo-text));
             margin: 0;
             padding: 0;
             height: 100vh;
@@ -20,7 +20,7 @@
 
         header.admin-header {
             background-color: var(--evo-surface, #ffffff);
-            border-bottom: 1px solid var(--evo-border, #b8c0c8);
+            border-bottom: 1px solid var(--evo-border, var(--evo-border));
             padding: 12px 20px;
             display: flex;
             align-items: center;
@@ -33,13 +33,13 @@
             gap: 10px;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #1d5296;
+            color: var(--evo-primary);
         }
 
         .nav-tabs {
             display: flex;
-            background-color: var(--evo-surface-alt, #f1f3f6);
-            border-bottom: 1px solid var(--evo-border, #b8c0c8);
+            background-color: var(--evo-surface-alt, var(--evo-surface-alt));
+            border-bottom: 1px solid var(--evo-border, var(--evo-border));
             padding: 0 15px;
             gap: 4px;
             overflow-x: auto;
@@ -51,7 +51,7 @@
             background: none;
             font-size: 0.88rem;
             font-weight: 500;
-            color: #4a5568;
+            color: var(--evo-text-secondary);
             cursor: pointer;
             border-bottom: 3px solid transparent;
             transition: all 0.2s ease;
@@ -59,15 +59,15 @@
         }
 
         .tab-btn:hover {
-            color: #1d5296;
-            background-color: rgba(29, 82, 150, 0.05);
+            color: var(--evo-primary);
+            background-color: var(--evo-primary-light);
         }
 
         .tab-btn.active {
-            color: #1d5296;
-            border-bottom-color: #1d5296;
+            color: var(--evo-primary);
+            border-bottom-color: var(--evo-primary);
             font-weight: 600;
-            background-color: #ffffff;
+            background-color: var(--evo-surface);
         }
 
         .admin-content {
@@ -93,7 +93,7 @@
 
         .kpi-card {
             background-color: var(--evo-surface, #ffffff);
-            border: 1px solid var(--evo-border, #b8c0c8);
+            border: 1px solid var(--evo-border, var(--evo-border));
             border-radius: 6px;
             padding: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -102,7 +102,7 @@
         .kpi-label {
             font-size: 0.8rem;
             text-transform: uppercase;
-            color: #718096;
+            color: var(--evo-text-muted);
             font-weight: 600;
             margin-bottom: 6px;
         }
@@ -115,7 +115,7 @@
 
         .card-panel {
             background-color: var(--evo-surface, #ffffff);
-            border: 1px solid var(--evo-border, #b8c0c8);
+            border: 1px solid var(--evo-border, var(--evo-border));
             border-radius: 6px;
             padding: 20px;
             margin-bottom: 20px;
@@ -145,12 +145,12 @@
         .admin-table th, .admin-table td {
             padding: 10px 12px;
             text-align: left;
-            border-bottom: 1px solid var(--evo-border, #e2e8f0);
+            border-bottom: 1px solid var(--evo-border, var(--evo-surface-hover));
         }
 
         .admin-table th {
             background-color: var(--evo-surface-alt, #f7fafc);
-            color: #4a5568;
+            color: var(--evo-text-secondary);
             font-weight: 600;
         }
 
@@ -165,7 +165,7 @@
 
         .badge-success { background-color: #c6f6d5; color: #22543d; }
         .badge-danger { background-color: #fed7d7; color: #742a2a; }
-        .badge-info { background-color: #e2e8f0; color: #2d3748; }
+        .badge-info { background-color: var(--evo-surface-hover); color: #2d3748; }
         .badge-warning { background-color: #feebc8; color: #744210; }
 
         .form-grid {
@@ -184,7 +184,7 @@
         .form-group label {
             font-size: 0.8rem;
             font-weight: 600;
-            color: #4a5568;
+            color: var(--evo-text-secondary);
         }
 
         .form-group input, .form-group select, .form-group textarea {
@@ -204,13 +204,13 @@
             transition: background 0.2s;
         }
 
-        .btn-primary { background-color: #1d5296; color: #ffffff; }
+        .btn-primary { background-color: var(--evo-primary); color: #ffffff; }
         .btn-primary:hover { background-color: #153e72; }
 
         .btn-danger { background-color: #e53e3e; color: #ffffff; }
         .btn-danger:hover { background-color: #c53030; }
 
-        .btn-secondary { background-color: #e2e8f0; color: #2d3748; }
+        .btn-secondary { background-color: var(--evo-surface-hover); color: #2d3748; }
         .btn-secondary:hover { background-color: #cbd5e0; }
 
         .action-btns {
@@ -222,23 +222,26 @@
 </head>
 <body>
 
-    <div id="evo-global-nav" style="width: 100%; background: var(--evo-surface-alt, #f1f3f6); border-bottom: 1px solid var(--evo-border, #b8c0c8); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; box-sizing: border-box; font-family: 'Segoe UI', sans-serif;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 16px;">🧬</span>
-            <a href="/index.html" style="color: var(--evo-primary, #1d5296); text-decoration: none; font-weight: 700;">EVOLUTION AI PLATFORM</a>
-            <span style="color: #98a2ac;">|</span>
-            <a href="/experimental/chat" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">💬 Chat</a>
-            <a href="/experimental/architecture" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">📐 Architecture</a>
-            <a href="/experimental/forge" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🛠️ Forge Lab</a>
-            <a href="/mcp" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🔌 MCP Tools</a>
-            <a href="/develop" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px;">🤖 Develop Agent</a>
-            <a href="/admin" style="color: var(--evo-text, #1a202c); text-decoration: none; padding: 2px 8px; border-radius: 4px; background: rgba(29,82,150,0.15);">⚙️ Admin</a>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
-            <span id="global-session-badge" style="background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 12px; font-family: monospace;">Session: Active</span>
-            <a href="/server/status" style="color: var(--evo-text-secondary, #4a5568); text-decoration: none;">Analytics</a>
-        </div>
-    </div>
+        <header id="evo-global-nav" class="topbar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <span class="brand-name">EVOLUTION AI PLATFORM</span>
+        <span class="brand-sub">admin</span>
+      </div>
+      <nav class="views" id="nav">
+        <a class="view-btn" href="/experimental/chat">Chat</a>
+        <a class="view-btn" href="/experimental/architecture">Architecture</a>
+        <a class="view-btn" href="/experimental/forge">Forge Lab</a>
+        <a class="view-btn" href="/mcp">MCP Tools</a>
+        <a class="view-btn" href="/develop">Develop</a>
+        <a class="view-btn" href="/mutation">Mutation</a>
+        <a class="view-btn active" href="/admin">Admin</a>
+      </nav>
+      <div class="top-actions">
+        <span class="tag" id="global-session-badge">Session: Active</span>
+        <a class="btn" href="/server/status">Analytics</a>
+      </div>
+    </header>
 
     <header class="admin-header">
         <div class="header-title">

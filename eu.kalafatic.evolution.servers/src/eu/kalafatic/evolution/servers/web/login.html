@@ -5,61 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log On to Evolution</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* UPM-standard login surface (tokens come from /css/style.css) */
+        .login-shell { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--evo-bg); }
+        .login-card { width: 420px; background: var(--evo-surface); border: 1px solid var(--evo-border-dark); border-radius: 7px; box-shadow: 0 8px 30px rgba(16,24,40,.18); overflow: hidden; }
+        .login-head { display: flex; gap: 12px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--evo-border); }
+        .login-mark { width: 9px; height: 9px; border-radius: 2px; background: var(--evo-primary); }
+        .login-title { font-weight: 600; font-size: 14.5px; color: var(--evo-text); }
+        .login-sub { color: var(--evo-text-muted); font-size: 11px; }
+        .login-body { padding: 20px; }
+        .login-body h2 { margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: var(--evo-text); }
+        .login-body p { margin: 0 0 14px 0; font-size: 12px; color: var(--evo-text-secondary); }
+        .field { margin-bottom: 10px; }
+        .field label { display: block; color: var(--evo-text-secondary); font-size: 11px; margin-bottom: 3px; }
+        .field input { width: 100%; }
+        .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        #errorArea { color: var(--evo-danger); margin-bottom: 10px; font-size: 11px; height: 15px; text-align: center; }
+        #loader { display: none; margin-top: 10px; text-align: center; font-size: 11px; color: var(--evo-text-muted); }
+    </style>
 </head>
-<body style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-    <div class="window-frame" style="width: 420px;">
-        <div class="title-bar">
-            <div class="title-text">Log On to Evolution</div>
-            <div class="title-controls">
-                <div class="control-btn">?</div>
-                <div class="control-btn close">X</div>
+<body class="login-shell">
+    <div class="login-card">
+        <div class="login-head">
+            <span class="login-mark"></span>
+            <div>
+                <div class="login-title">Evolution</div>
+                <div class="login-sub">Professional Intelligence Platform</div>
             </div>
         </div>
-        <div style="background: var(--xp-bg); padding: 20px;">
-            <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px;">
-                <div style="font-size: 40px;">🧬</div>
-                <div>
-                    <h2 style="margin: 0; color: #003399;">Evolution</h2>
-                    <p style="margin: 0; font-size: 11px;">Professional Intelligence Platform</p>
-                    <p style="margin: 10px 0 0 0; font-size: 12px; font-weight: bold;">Enter your credentials to access the portal.</p>
-                </div>
-            </div>
+        <div class="login-body">
+            <h2>Log On to Evolution</h2>
+            <p>Enter your credentials to access the portal.</p>
 
-            <div id="errorArea" style="color: #D32F2F; margin-bottom: 10px; font-size: 11px; height: 15px; text-align: center;"></div>
+            <div id="errorArea"></div>
 
             <form id="loginForm">
-                <table style="width: 100%; border-spacing: 0 10px;">
-                    <tr>
-                        <td style="width: 100px; font-size: 12px;">User name:</td>
-                        <td><input type="text" id="username" name="username" style="width: 100%;" required autofocus></td>
-                    </tr>
-                    <tr>
-                        <td style="font-size: 12px;">Password:</td>
-                        <td><input type="password" id="password" name="password" style="width: 100%;" required></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <input type="checkbox" id="rememberMe" name="rememberMe">
-                                <label for="rememberMe" style="font-size: 11px;">Remember my credentials</label>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+                <div class="field">
+                    <label for="username">User name</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe" style="font-size: 11px;">Remember my credentials</label>
+                </div>
 
-                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px;">
+                <div class="actions">
                     <button type="submit" id="loginBtn" style="min-width: 75px;">OK</button>
                     <button type="button" style="min-width: 75px;">Cancel</button>
-                    <button type="button" style="min-width: 75px;">Options >></button>
+                    <button type="button" style="min-width: 75px;">Options &gt;&gt;</button>
                 </div>
             </form>
 
-            <div id="loader" style="display:none; margin-top: 10px; text-align: center; font-size: 11px; color: #666;">
-                Verifying credentials...
-            </div>
+            <div id="loader">Verifying credentials...</div>
         </div>
-        <div style="background: #003399; height: 4px;"></div>
     </div>
     <script src="/js/auth.js"></script>
 </body>

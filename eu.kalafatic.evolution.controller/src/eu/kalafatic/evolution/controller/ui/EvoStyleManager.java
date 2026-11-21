@@ -6,6 +6,11 @@ import eu.kalafatic.evolution.controller.tools.FileTool;
  * Single source of truth for the Unified EVO HTML Style System.
  * Authoritative provider for visual appearance, theme tokens, typography,
  * common UI components, and page-specific CSS extensions across all EVO HTML interfaces.
+ *
+ * The token values and component styling follow the UPM design standard
+ * (UniversalProjectManager/web/app.css) — UPM is the visual benchmark for the
+ * whole EVO family. The legacy {@code --evo-*} variable names are kept as
+ * aliases so existing page CSS keeps working unchanged.
  */
 public class EvoStyleManager implements IEvoStyleManager {
 
@@ -21,51 +26,94 @@ public class EvoStyleManager implements IEvoStyleManager {
     @Override
     public String getThemeCss() {
         return """
-            /* EVO Unified Theme Tokens - Rich Engineering Workstation */
+            /* EVO Unified Theme Tokens - UPM design standard
+               (see docs/architecture/UPM_WEB_UI_STANDARD.md in UniversalProjectManager). */
             :root {
-                /* Working Surface & Canvas */
-                --evo-bg: #e8ecef;
-                --evo-surface: #ffffff;
-                --evo-surface-alt: #f1f3f6;
-                --evo-surface-hover: #e2e7ec;
-                --evo-surface-selected: #dbe4f0;
+                /* UPM canonical tokens (light theme) */
+                --bg: #f4f6f9;
+                --bg2: #eceff4;
+                --panel: #ffffff;
+                --panel2: #f7f9fb;
+                --border: #d7dce4;
+                --border-strong: #c3cad5;
+                --text: #1b2434;
+                --muted: #5c6a7e;
+                --faint: #8b96a8;
+                --accent: #2f6bd8;
+                --accent-soft: #e8effa;
+                --ok: #1f8a4c;
+                --ok-soft: #e7f4ec;
+                --warn: #a86a00;
+                --warn-soft: #fdf3e2;
+                --err: #c23b2e;
+                --err-soft: #fbeceb;
+                --info: #2b7fbe;
+                --info-soft: #e7f1f9;
+                --sel: #e8effa;
+                --mono: "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+                --shadow: 0 1px 2px rgba(16, 24, 40, .06);
 
-                /* Borders & Separators */
-                --evo-border: #b8c0c8;
-                --evo-border-dark: #98a2ac;
-                --evo-border-focus: #1d5296;
-
-                /* Typography & Text */
-                --evo-text: #1a202c;
-                --evo-text-secondary: #4a5568;
-                --evo-text-muted: #718096;
+                /* EVO compatibility aliases (legacy names, now mapped to UPM tokens) */
+                --evo-bg: var(--bg);
+                --evo-surface: var(--panel);
+                --evo-surface-alt: var(--panel2);
+                --evo-surface-hover: var(--bg2);
+                --evo-surface-selected: var(--sel);
+                --evo-border: var(--border);
+                --evo-border-dark: var(--border-strong);
+                --evo-border-focus: var(--accent);
+                --evo-text: var(--text);
+                --evo-text-secondary: var(--muted);
+                --evo-text-muted: var(--faint);
                 --evo-text-inverse: #ffffff;
-                --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-                --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
-
-                /* Accent & Branding */
-                --evo-primary: #1d5296;
-                --evo-primary-hover: #153e70;
-                --evo-primary-light: #e8f0fe;
-                --evo-primary-border: #153e70;
-
-                /* Status & Semantic Colors */
-                --evo-success: #1e7e34;
-                --evo-success-hover: #145827;
-                --evo-success-light: #e6f4ea;
-                --evo-warning: #b45309;
-                --evo-warning-hover: #853704;
-                --evo-warning-light: #fef3c7;
-                --evo-danger: #b91c1c;
-                --evo-danger-hover: #881313;
-                --evo-danger-light: #fee2e2;
-                --evo-info: #0284c7;
-                --evo-info-light: #e0f2fe;
-
-                /* Geometry & Components */
-                --evo-radius: 4px;
-                --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-                --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
+                --evo-font-family: "Inter", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+                --evo-font-mono: var(--mono);
+                --evo-primary: var(--accent);
+                --evo-primary-hover: #2559ba;
+                --evo-primary-light: var(--accent-soft);
+                --evo-primary-border: var(--accent);
+                --evo-success: var(--ok);
+                --evo-success-hover: #1a7040;
+                --evo-success-light: var(--ok-soft);
+                --evo-warning: var(--warn);
+                --evo-warning-hover: #8a5600;
+                --evo-warning-light: var(--warn-soft);
+                --evo-danger: var(--err);
+                --evo-danger-hover: #a03227;
+                --evo-danger-light: var(--err-soft);
+                --evo-info: var(--info);
+                --evo-info-light: var(--info-soft);
+                --evo-radius: 5px;
+                --evo-shadow-sm: var(--shadow);
+                --evo-shadow-md: 0 4px 12px rgba(16, 24, 40, .10);
+            }
+            [data-theme="dark"] {
+                /* UPM canonical tokens (dark theme) */
+                --bg: #12161f;
+                --bg2: #181d29;
+                --panel: #1c2230;
+                --panel2: #232b3c;
+                --border: #2e394c;
+                --border-strong: #3c4a61;
+                --text: #e7ebf3;
+                --muted: #93a0b4;
+                --faint: #6b7789;
+                --accent: #5b8feb;
+                --accent-soft: #24344e;
+                --ok: #46c58a;
+                --ok-soft: #1d3a2c;
+                --warn: #e2ad4e;
+                --warn-soft: #3d3320;
+                --err: #ef7a6f;
+                --err-soft: #432422;
+                --info: #62b6ea;
+                --info-soft: #1f3a4d;
+                --sel: #26334c;
+                --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+                --evo-primary-hover: #4a7fe0;
+                --evo-success-hover: #37b577;
+                --evo-warning-hover: #c99a3f;
+                --evo-danger-hover: #e0655a;
             }
             """;
     }
@@ -73,26 +121,35 @@ public class EvoStyleManager implements IEvoStyleManager {
     @Override
     public String getBaseCss() {
         return """
-            /* Base Workstation Typography & Reset */
+            /* Base Typography & Reset (UPM standard) */
             *, *::before, *::after {
                 box-sizing: border-box;
+                margin: 0;
+                padding: 0;
             }
 
             html, body {
-                margin: 0;
-                padding: 0;
                 height: 100%;
                 width: 100%;
                 background-color: var(--evo-bg);
                 color: var(--evo-text);
                 font-family: var(--evo-font-family);
-                font-size: 12px;
-                line-height: 1.4;
-                overflow: hidden;
+                font-size: 13px;
+                line-height: 1.45;
                 -webkit-font-smoothing: antialiased;
             }
+            body {
+                overflow: hidden;
+            }
 
-            /* Precise Workstation Scrollbars */
+            .hidden { display: none !important; }
+            .muted { color: var(--muted); }
+            .faint { color: var(--faint); }
+            .spacer { flex: 1; }
+            .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+            .mono { font-family: var(--mono); }
+
+            /* Precise Scrollbars */
             ::-webkit-scrollbar {
                 width: 7px;
                 height: 7px;
@@ -126,7 +183,43 @@ public class EvoStyleManager implements IEvoStyleManager {
     @Override
     public String getComponentCss() {
         return """
-            /* Common Workstation UI Components */
+            /* Common UI Components (UPM standard) */
+
+            /* Application header (UPM #topbar) */
+            #evo-global-nav, .topbar {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 7px 16px;
+                background: var(--panel);
+                border-bottom: 1px solid var(--border);
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                flex-shrink: 0;
+            }
+            .brand { display: flex; align-items: baseline; gap: 8px; }
+            .brand-mark {
+                width: 9px; height: 9px; border-radius: 2px;
+                background: var(--accent);
+                align-self: center;
+                flex-shrink: 0;
+            }
+            .brand-name { font-weight: 600; font-size: 14.5px; letter-spacing: -.1px; color: var(--text); white-space: nowrap; }
+            .brand-sub { color: var(--muted); font-size: 11px; font-family: var(--mono); }
+            #evo-global-nav .views, .topbar .views { display: flex; gap: 2px; flex-wrap: wrap; }
+            .view-btn {
+                background: transparent; color: var(--muted);
+                border: 1px solid transparent; padding: 6px 10px; border-radius: 5px;
+                cursor: pointer; font-size: 12.5px; white-space: nowrap;
+            }
+            .view-btn:hover { color: var(--text); background: var(--bg2); text-decoration: none; }
+            .view-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+            .view-btn.active {
+                background: var(--accent-soft); color: var(--accent);
+                font-weight: 600;
+            }
+            .top-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; flex-wrap: wrap; }
 
             /* Buttons */
             .btn {
@@ -134,131 +227,133 @@ public class EvoStyleManager implements IEvoStyleManager {
                 align-items: center;
                 justify-content: center;
                 gap: 5px;
-                background: linear-gradient(to bottom, #ffffff 0%, var(--evo-surface-alt) 100%);
-                color: var(--evo-text);
-                border: 1px solid var(--evo-border);
-                padding: 5px 12px;
-                border-radius: var(--evo-radius);
+                background: var(--panel);
+                color: var(--text);
+                border: 1px solid var(--border-strong);
+                border-radius: 5px;
+                padding: 5px 10px;
                 font-family: var(--evo-font-family);
-                font-size: 11px;
-                font-weight: 600;
+                font-size: 12px;
                 cursor: pointer;
                 user-select: none;
-                transition: all 0.12s ease;
+                white-space: nowrap;
                 text-decoration: none;
-                box-shadow: var(--evo-shadow-sm);
             }
             .btn:hover:not(:disabled) {
-                background: var(--evo-surface-hover);
-                border-color: var(--evo-border-dark);
-                color: var(--evo-primary);
+                border-color: var(--accent);
+                color: var(--accent);
+                text-decoration: none;
             }
-            .btn:active:not(:disabled) {
-                background: var(--evo-border);
-                box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-            }
+            .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
             .btn:disabled {
-                opacity: 0.5;
+                opacity: .45;
                 cursor: not-allowed;
             }
 
             .btn-primary {
-                background: linear-gradient(to bottom, #2563eb 0%, var(--evo-primary) 100%);
-                color: var(--evo-text-inverse);
-                border-color: var(--evo-primary-border);
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
             }
             .btn-primary:hover:not(:disabled) {
-                background: linear-gradient(to bottom, #1d4ed8 0%, var(--evo-primary-hover) 100%);
-                border-color: var(--evo-primary-hover);
-                color: var(--evo-text-inverse);
+                background: #2559ba;
+                border-color: #2559ba;
+                color: #fff;
             }
 
             .btn-secondary {
-                background: linear-gradient(to bottom, #ffffff 0%, var(--evo-surface-alt) 100%);
-                color: var(--evo-text);
-                border-color: var(--evo-border);
+                background: var(--panel);
+                color: var(--text);
+                border-color: var(--border-strong);
             }
 
             .btn-danger {
-                background: linear-gradient(to bottom, #dc2626 0%, var(--evo-danger) 100%);
-                color: var(--evo-text-inverse);
-                border-color: var(--evo-danger);
+                background: var(--panel);
+                border-color: var(--err);
+                color: var(--err);
             }
             .btn-danger:hover:not(:disabled) {
-                background: var(--evo-danger-hover);
+                background: var(--err-soft);
+                color: var(--err);
+                border-color: var(--err);
             }
 
             .btn-success {
-                background: linear-gradient(to bottom, #16a34a 0%, var(--evo-success) 100%);
-                color: var(--evo-text-inverse);
-                border-color: var(--evo-success);
+                background: var(--panel);
+                border-color: var(--ok);
+                color: var(--ok);
             }
             .btn-success:hover:not(:disabled) {
-                background: var(--evo-success-hover);
+                background: var(--ok-soft);
+                color: var(--ok);
+                border-color: var(--ok);
             }
 
             .btn-sm {
-                padding: 3px 8px;
-                font-size: 10px;
+                padding: 2px 8px;
+                font-size: 11px;
             }
 
             /* Inputs & Selects */
             input[type="text"],
             input[type="number"],
             input[type="search"],
+            input[type="password"],
             select,
             textarea {
-                background-color: var(--evo-surface);
-                border: 1px solid var(--evo-border);
-                color: var(--evo-text);
+                background-color: var(--panel);
+                border: 1px solid var(--border-strong);
+                color: var(--text);
                 padding: 5px 8px;
-                border-radius: var(--evo-radius);
+                border-radius: 4px;
                 font-family: var(--evo-font-family);
-                font-size: 11px;
+                font-size: 12px;
                 outline: none;
-                box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
-                transition: border-color 0.15s, box-shadow 0.15s;
+                transition: border-color .15s;
             }
             input[type="text"]:focus,
             input[type="number"]:focus,
             input[type="search"]:focus,
+            input[type="password"]:focus,
             select:focus,
             textarea:focus {
-                border-color: var(--evo-border-focus);
-                box-shadow: 0 0 0 1px var(--evo-border-focus);
+                border-color: var(--accent);
+                outline: 2px solid var(--accent-soft);
             }
+            textarea { font-family: var(--mono); }
             select option {
-                background-color: var(--evo-surface);
-                color: var(--evo-text);
+                background-color: var(--panel);
+                color: var(--text);
             }
+            .field { margin-bottom: 10px; }
+            .field label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 3px; }
 
-            /* Workstation Tool Panels & Cards */
+            /* Panels & Cards */
             .evo-panel, .panel {
-                background-color: var(--evo-surface);
-                border: 1px solid var(--evo-border);
-                border-radius: var(--evo-radius);
+                background-color: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 6px;
                 display: flex;
                 flex-direction: column;
-                box-shadow: var(--evo-shadow-sm);
-                margin-bottom: 8px;
+                box-shadow: var(--shadow);
+                margin-bottom: 12px;
             }
             .evo-panel-header, .panel-header, .panel h3 {
-                padding: 8px 12px;
-                background: var(--evo-surface-alt);
-                border-bottom: 1px solid var(--evo-border);
-                border-left: 3px solid var(--evo-primary);
-                font-weight: 700;
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: var(--evo-primary);
+                padding: 12px 14px 8px;
+                background: transparent;
+                border-bottom: 1px solid var(--border);
+                font-weight: 600;
+                font-size: 13px;
+                color: var(--text);
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
+                gap: 8px;
                 margin: 0;
+                text-transform: none;
+                letter-spacing: normal;
             }
             .evo-panel-body, .panel-body {
-                padding: 12px;
+                padding: 12px 14px;
                 flex: 1;
                 overflow: auto;
             }
@@ -268,75 +363,97 @@ public class EvoStyleManager implements IEvoStyleManager {
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                padding: 6px 12px;
-                background-color: var(--evo-surface-alt);
-                border-bottom: 1px solid var(--evo-border);
+                padding: 8px 12px;
+                background-color: var(--panel);
+                border-bottom: 1px solid var(--border);
+                flex-wrap: wrap;
             }
 
             /* Badges & Status */
-            .evo-badge {
+            .badge, .evo-badge {
                 display: inline-block;
-                padding: 2px 7px;
-                border-radius: var(--evo-radius);
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
-                background-color: var(--evo-surface-alt);
-                color: var(--evo-text-secondary);
-                border: 1px solid var(--evo-border);
+                padding: 1px 7px;
+                border-radius: 4px;
+                font-size: 10.5px;
+                font-weight: 600;
+                border: 1px solid;
+                white-space: nowrap;
+                text-transform: none;
+                letter-spacing: normal;
+                background-color: var(--panel2);
+                color: var(--muted);
+                border-color: var(--border-strong);
             }
-            .evo-status-success {
-                background-color: var(--evo-success-light);
-                color: var(--evo-success);
-                border-color: var(--evo-success);
+            .evo-status-success, .st-READY, .st-SUCCEEDED, .st-OK {
+                background-color: var(--ok-soft);
+                color: var(--ok);
+                border-color: var(--ok);
             }
-            .evo-status-warning {
-                background-color: var(--evo-warning-light);
-                color: var(--evo-warning);
-                border-color: var(--evo-warning);
+            .evo-status-warning, .st-STOPPING, .st-EXTERNAL {
+                background-color: var(--warn-soft);
+                color: var(--warn);
+                border-color: var(--warn);
             }
-            .evo-status-error {
-                background-color: var(--evo-danger-light);
-                color: var(--evo-danger);
-                border-color: var(--evo-danger);
+            .evo-status-error, .st-FAILED {
+                background-color: var(--err-soft);
+                color: var(--err);
+                border-color: var(--err);
+            }
+            .st-RUNNING, .st-STARTING, .st-QUEUED, .st-ACTIVE {
+                background-color: var(--info-soft);
+                color: var(--info);
+                border-color: var(--info);
+            }
+            .tag {
+                display: inline-block;
+                padding: 0 6px;
+                border-radius: 3px;
+                font-size: 10.5px;
+                background: var(--panel2);
+                color: var(--muted);
+                border: 1px solid var(--border);
+                margin-right: 4px;
+                white-space: nowrap;
             }
 
             /* Tables */
-            .evo-table, .data-table {
+            .evo-table, .data-table, table.tbl {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 11px;
-                background-color: var(--evo-surface);
+                font-size: 12px;
+                background-color: var(--panel);
             }
-            .evo-table th, .data-table th,
-            .evo-table td, .data-table td {
-                border: 1px solid var(--evo-border);
-                padding: 6px 10px;
+            .evo-table th, .data-table th, .tbl th,
+            .evo-table td, .data-table td, .tbl td {
+                padding: 6px 8px;
                 text-align: left;
                 vertical-align: top;
+                border: none;
             }
-            .evo-table th, .data-table th {
-                background-color: var(--evo-surface-alt);
-                color: var(--evo-primary);
-                font-weight: 700;
+            .evo-table th, .data-table th, .tbl th {
+                background-color: var(--panel2);
+                color: var(--muted);
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .3px;
+                border-bottom: 1px solid var(--border-strong);
                 position: sticky;
                 top: 0;
                 z-index: 1;
             }
-            .evo-table tr:nth-child(even) {
-                background-color: var(--evo-surface-alt);
+            .evo-table td, .data-table td, .tbl td {
+                border-bottom: 1px solid var(--border);
             }
-            .evo-table tr:hover, .data-table tr:hover {
-                background-color: var(--evo-surface-selected);
+            .evo-table tr:hover, .data-table tr:hover, .tbl tr:hover {
+                background-color: var(--sel);
             }
 
             /* Empty & Loading States */
-            .evo-empty {
+            .evo-empty, .empty {
                 text-align: center;
-                color: var(--evo-text-muted);
-                padding: 20px;
-                font-style: italic;
+                color: var(--muted);
+                padding: 14px 0;
             }
             .evo-loading {
                 display: flex;
@@ -344,12 +461,59 @@ public class EvoStyleManager implements IEvoStyleManager {
                 justify-content: center;
                 gap: 8px;
                 padding: 15px;
-                color: var(--evo-text-secondary);
+                color: var(--muted);
             }
 
-            /* Workstation Draggable Sashes / Splitters */
+            /* Progress */
+            .progress { height: 7px; background: var(--bg2); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+            .progress .fill { height: 100%; background: var(--accent); transition: width .4s ease; }
+
+            /* Logs / code */
+            .log-view {
+                background: #fbfcfe; border: 1px solid var(--border); border-radius: 5px;
+                font-family: var(--mono); font-size: 11px; line-height: 1.5;
+                padding: 8px; overflow: auto; white-space: pre-wrap;
+                word-break: break-all; color: #22304a;
+            }
+            [data-theme="dark"] .log-view { background: #10151f; color: #c8d3e8; }
+
+            /* Tabs */
+            .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border-strong); margin-bottom: 10px; flex-wrap: wrap; }
+            .tabs .tab {
+                background: transparent; border: none; color: var(--muted);
+                padding: 7px 12px; cursor: pointer; border-bottom: 2px solid transparent;
+                font-size: 12.5px;
+            }
+            .tabs .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+            /* Modals */
+            .modal-backdrop {
+                position: fixed; inset: 0; background: rgba(16, 24, 40, .35); z-index: 300;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .modal {
+                background: var(--panel); border: 1px solid var(--border-strong); border-radius: 7px;
+                width: min(860px, 92vw); max-height: 88vh; display: flex; flex-direction: column;
+                box-shadow: 0 8px 30px rgba(16, 24, 40, .18);
+            }
+            .modal-title { padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--border); }
+            .modal-body { padding: 14px 16px; overflow: auto; }
+            .modal-actions { padding: 10px 16px; border-top: 1px solid var(--border); text-align: right; display: flex; gap: 8px; justify-content: flex-end; }
+
+            /* Toasts */
+            .toast {
+                background: var(--panel); border: 1px solid var(--border-strong);
+                border-left: 3px solid var(--info); border-radius: 5px;
+                padding: 9px 12px; font-size: 12px;
+                box-shadow: var(--shadow);
+            }
+            .toast.success { border-left-color: var(--ok); }
+            .toast.warning { border-left-color: var(--warn); }
+            .toast.error { border-left-color: var(--err); }
+
+            /* Draggable Sashes / Splitters */
             .evo-sash {
-                background-color: var(--evo-border);
+                background-color: var(--border);
                 position: relative;
                 z-index: 10;
                 user-select: none;
@@ -358,7 +522,7 @@ public class EvoStyleManager implements IEvoStyleManager {
                 flex-shrink: 0;
             }
             .evo-sash:hover, .evo-sash.active {
-                background-color: var(--evo-primary);
+                background-color: var(--accent);
             }
             .evo-sash-v {
                 width: 6px;
@@ -372,8 +536,8 @@ public class EvoStyleManager implements IEvoStyleManager {
                 transform: translateY(-50%);
                 width: 2px;
                 height: 16px;
-                border-left: 1px solid var(--evo-border-dark);
-                border-right: 1px solid var(--evo-border-dark);
+                border-left: 1px solid var(--border-strong);
+                border-right: 1px solid var(--border-strong);
             }
             .evo-sash-v:hover::after, .evo-sash-v.active::after {
                 border-color: var(--evo-text-inverse);
@@ -390,8 +554,8 @@ public class EvoStyleManager implements IEvoStyleManager {
                 transform: translateX(-50%);
                 height: 2px;
                 width: 16px;
-                border-top: 1px solid var(--evo-border-dark);
-                border-bottom: 1px solid var(--evo-border-dark);
+                border-top: 1px solid var(--border-strong);
+                border-bottom: 1px solid var(--border-strong);
             }
             .evo-sash-h:hover::after, .evo-sash-h.active::after {
                 border-color: var(--evo-text-inverse);

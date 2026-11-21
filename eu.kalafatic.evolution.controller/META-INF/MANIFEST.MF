@@ -103,5 +103,6 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.teip.mcp,
  eu.kalafatic.evolution.controller.teip.service,
  eu.kalafatic.evolution.controller.teip.store,
- eu.kalafatic.evolution.controller.harness
+ eu.kalafatic.evolution.controller.harness,
+ eu.kalafatic.evolution.controller.application;x-friends:="eu.kalafatic.evolution.controller.tests"
 Bundle-ClassPath: .

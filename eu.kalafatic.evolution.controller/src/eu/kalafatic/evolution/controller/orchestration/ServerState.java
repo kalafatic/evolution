@@ -4,6 +4,7 @@ package eu.kalafatic.evolution.controller.orchestration;
  * Authoritative runtime states for EVO network servers and web applications.
  */
 public enum ServerState {
+    DISABLED,
     STOPPED,
     STARTING,
     RUNNING,

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>EVO Cognitive Services Administration</title>
 <style>
-  :root { --bg:#1e1e2e; --panel:#2a2a3c; --fg:#e0e0e0; --accent:#4f8cff; --ok:#4caf7d; --warn:#d9a441; --err:#e05555; --border:#3a3a4e; }
+  :root { --bg:#12161f; --panel:#1c2230; --panel2:#232b3c; --fg:#e7ebf3; --accent:#5b8feb; --accent-soft:#24344e; --ok:#46c58a; --warn:#e2ad4e; --err:#ef7a6f; --info:#62b6ea; --border:#2e394c; --muted:#93a0b4; --faint:#6b7789; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--fg); font-size:13px; }
   header { background:var(--panel); padding:10px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
@@ -20,24 +20,24 @@
   .stats { display:flex; gap:12px; flex-wrap:wrap; }
   .stat { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:10px 16px; min-width:120px; }
   .stat .value { font-size:20px; font-weight:700; }
-  .stat .label { color:#9a9ab0; font-size:11px; }
+  .stat .label { color:var(--faint); font-size:11px; }
   table { width:100%; border-collapse:collapse; }
   th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
-  th { color:#9a9ab0; font-weight:600; font-size:11px; text-transform:uppercase; }
-  tr:hover td { background:rgba(79,140,255,0.06); }
+  th { color:var(--faint); font-weight:600; font-size:11px; text-transform:uppercase; }
+  tr:hover td { background:rgba(91,143,235,0.06); }
   button.btn { background:var(--accent); border:none; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; }
-  button.btn.secondary { background:#44445c; }
+  button.btn.secondary { background:var(--panel2); color:var(--fg); }
   button.btn.danger { background:var(--err); }
   input, select, textarea { background:var(--bg); border:1px solid var(--border); color:var(--fg); padding:6px 8px; border-radius:4px; font-size:12px; width:100%; }
   .row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-  .row label { min-width:120px; color:#9a9ab0; font-size:12px; }
+  .row label { min-width:120px; color:var(--faint); font-size:12px; }
   .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; }
-  .badge.ok { background:rgba(76,175,125,0.2); color:var(--ok); }
-  .badge.warn { background:rgba(217,164,65,0.2); color:var(--warn); }
-  .badge.err { background:rgba(224,85,85,0.2); color:var(--err); }
-  .badge.info { background:rgba(79,140,255,0.2); color:var(--accent); }
+  .badge.ok { background:rgba(70,197,138,0.2); color:var(--ok); }
+  .badge.warn { background:rgba(226,173,78,0.2); color:var(--warn); }
+  .badge.err { background:rgba(239,122,111,0.2); color:var(--err); }
+  .badge.info { background:rgba(91,143,235,0.2); color:var(--accent); }
   pre { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:10px; overflow:auto; max-height:400px; font-size:11px; white-space:pre-wrap; }
-  .note { color:#9a9ab0; font-size:11px; }
+  .note { color:var(--faint); font-size:11px; }
   .security-fixed { color:var(--ok); }
 </style>
 </head>
