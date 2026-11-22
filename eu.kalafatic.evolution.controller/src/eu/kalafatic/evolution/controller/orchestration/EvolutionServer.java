@@ -921,6 +921,27 @@ public class EvolutionServer extends NanoHTTPD {
                 }
             }
             if (dataSources.isEmpty()) {
+                // The settings UI stores dataset sources both as EMF dataset
+                // bindings and as uiState "datasets". When the EMF binding is
+                // empty (fresh REST-created sessions), fall back to the uiState
+                // datasets so the REST/headless flow honors the configured
+                // sources instead of silently training on the whole codebase.
+                JSONObject uiState = ForgeSessionManager.getInstance().getUiState(sessionId);
+                Object dsObj = uiState != null ? uiState.opt("datasets") : null;
+                if (dsObj instanceof JSONArray) {
+                    JSONArray arr = (JSONArray) dsObj;
+                    for (int i = 0; i < arr.length(); i++) {
+                        JSONObject dsItem = arr.optJSONObject(i);
+                        if (dsItem != null && dsItem.optBoolean("checked", true)) {
+                            String pStr = dsItem.optString("path", "").trim();
+                            if (!pStr.isEmpty()) {
+                                dataSources.add(pStr);
+                            }
+                        }
+                    }
+                }
+            }
+            if (dataSources.isEmpty()) {
                 String codebase = ProjectModelManager.getCodebasePath();
                 if (codebase != null) {
                     dataSources.add(codebase);
@@ -938,7 +959,9 @@ public class EvolutionServer extends NanoHTTPD {
                 ));
             }
 
-            selfEvoService.startForging(sessionId, resolveForgeProjectPath(), dataSources);
+            JSONObject uiState = ForgeSessionManager.getInstance().getUiState(sessionId);
+            selfEvoService.startForging(sessionId, resolveForgeProjectPath(), dataSources,
+                    uiState != null ? uiState.toString() : null);
 
             if (bus != null) {
                 new Thread(() -> {
@@ -2359,9 +2382,19 @@ public class EvolutionServer extends NanoHTTPD {
                 }
             }
             boolean requested = ForgeSessionManager.getInstance().requestFinish(sessionId);
+            if (!requested) {
+                // No trainer is registered with the session manager (headless
+                // products cannot wire the trainer through the reflective
+                // registration). Fall back to the self-evo service stop, which
+                // interrupts the running trainer thread; the orchestrator then
+                // preserves a resume checkpoint and marks the job FAILED.
+                selfEvoService.stopForging(sessionId);
+            }
             JSONObject res = new JSONObject();
             res.put("status", "FINISHING");
-            res.put("message", "Gracefully finishing current epoch and exporting all model files.");
+            res.put("message", requested
+                    ? "Gracefully finishing current epoch and exporting all model files."
+                    : "No registered trainer; interrupting the active training thread (resume checkpoint preserved).");
             res.put("sessionId", sessionId != null ? sessionId : "active");
             res.put("requested", requested);
             return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());

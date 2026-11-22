@@ -16,7 +16,9 @@ import java.util.Random;
 /**
  * Production Canonical EVO Native Model Core.
  * Represents the single source of truth for model structure, parameters, training state, and lifecycle.
- * Incorporates learned/sinusoidal PositionalEncoding into the representation path.
+ * Positional information is applied either as additive sinusoidal absolute encoding (legacy artifacts,
+ * {@code positionalEncoding=sinusoidal_abs}) or as rotary positional embedding inside attention
+ * (current training standard, {@code positionalEncoding=rope} — required for faithful GGUF/llama.cpp export).
  */
 public class EvoLlmModel {
 
@@ -40,6 +42,7 @@ public class EvoLlmModel {
 
     private final Embedding embedding;
     private final PositionalEncoding positionalEncoding;
+    private final RoPEPositionalEncoding rope;
     private final List<TransformerBlock> blocks;
     private final RMSNorm outputNorm;
     private final Tensor lmHead;
@@ -56,14 +59,26 @@ public class EvoLlmModel {
         this.tieEmbeddings = tieEmbeddings;
 
         this.embedding = new Embedding(architecture.getVocabSize(), architecture.getDModel());
-        this.positionalEncoding = new PositionalEncoding(Math.max(128, architecture.getMaxSeqLen()), architecture.getDModel());
+
+        if (architecture.usesRoPE()) {
+            this.positionalEncoding = null;
+            this.rope = new RoPEPositionalEncoding(
+                    Math.max(128, architecture.getMaxSeqLen()),
+                    architecture.getDModel() / architecture.getNumHeads()
+            );
+        } else {
+            this.positionalEncoding = new PositionalEncoding(Math.max(128, architecture.getMaxSeqLen()), architecture.getDModel());
+            this.rope = null;
+        }
+
         this.blocks = new ArrayList<>();
 
         for (int i = 0; i < architecture.getNumBlocks(); i++) {
             blocks.add(new TransformerBlock(
                     architecture.getDModel(),
                     architecture.getNumHeads(),
-                    architecture.getDff()
+                    architecture.getDff(),
+                    rope
             ));
         }
 
@@ -89,6 +104,10 @@ public class EvoLlmModel {
         this(new EvoLlmArchitecture(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen), false);
     }
 
+    public EvoLlmModel(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen, String positionalEncoding) {
+        this(new EvoLlmArchitecture(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen, positionalEncoding), false);
+    }
+
     private static void initXavier(Tensor tensor, int fanIn, int fanOut) {
         float[] data = tensor.getData();
         if (data == null) return;
@@ -107,7 +126,9 @@ public class EvoLlmModel {
             throw new IllegalArgumentException("Input token IDs cannot be null or empty");
         }
         Tensor x = embedding.forward(inputIds);
-        x = positionalEncoding.forward(x);
+        if (positionalEncoding != null) {
+            x = positionalEncoding.forward(x);
+        }
 
         for (TransformerBlock block : blocks) {
             x = block.forward(x);
@@ -126,7 +147,9 @@ public class EvoLlmModel {
             throw new IllegalArgumentException("Input token IDs cannot be null or empty");
         }
         Tensor x = embedding.forward(inputIds);
-        x = positionalEncoding.forward(x);
+        if (positionalEncoding != null) {
+            x = positionalEncoding.forward(x);
+        }
 
         for (TransformerBlock block : blocks) {
             x = block.forward(x);
@@ -155,7 +178,9 @@ public class EvoLlmModel {
         int positionOffset = (kvCache != null) ? kvCache.getCachedSequenceLength() : 0;
 
         Tensor x = embedding.forward(inputIds);
-        x = positionalEncoding.forwardAtOffset(x, positionOffset);
+        if (positionalEncoding != null) {
+            x = positionalEncoding.forwardAtOffset(x, positionOffset);
+        }
 
         for (int i = 0; i < blocks.size(); i++) {
             KVCache.LayerKVCache layerCache = (kvCache != null) ? kvCache.getLayerCache(i) : null;
@@ -187,7 +212,9 @@ public class EvoLlmModel {
                     + ") must match input length (" + inputIds.length + ")");
         }
         Tensor x = embedding.forward(inputIds);
-        x = positionalEncoding.forward(x);
+        if (positionalEncoding != null) {
+            x = positionalEncoding.forward(x);
+        }
 
         for (TransformerBlock block : blocks) {
             x = block.forward(x, attentionMask);
@@ -253,7 +280,9 @@ public class EvoLlmModel {
             dx = blocks.get(i).backward(dx);
         }
 
-        dx = positionalEncoding.backward(dx);
+        if (positionalEncoding != null) {
+            dx = positionalEncoding.backward(dx);
+        }
         embedding.backward(dx);
     }
 
@@ -363,4 +392,5 @@ public class EvoLlmModel {
     public ModelMetadata getMetadata() { return metadata; }
     public Map<Integer, String> getIdToToken() { return idToToken; }
     public PositionalEncoding getPositionalEncoding() { return positionalEncoding; }
+    public RoPEPositionalEncoding getRoPEPositionalEncoding() { return rope; }
 }

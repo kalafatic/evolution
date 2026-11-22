@@ -11,14 +11,23 @@ public final class EvoLlmArchitecture implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /** Positional encoding kinds understood by {@link EvoLlmModel}. */
+    public static final String POSITIONAL_ROPE = "rope";
+    public static final String POSITIONAL_SINUSOIDAL_ABS = "sinusoidal_abs";
+
     private final int vocabSize;
     private final int dModel;
     private final int numHeads;
     private final int numBlocks;
     private final int dff;
     private final int maxSeqLen;
+    private final String positionalEncoding;
 
     public EvoLlmArchitecture(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
+        this(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen, POSITIONAL_SINUSOIDAL_ABS);
+    }
+
+    public EvoLlmArchitecture(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen, String positionalEncoding) {
         if (vocabSize <= 0) {
             throw new IllegalArgumentException("vocabSize must be positive, got: " + vocabSize);
         }
@@ -50,6 +59,9 @@ public final class EvoLlmArchitecture implements Serializable {
         this.numBlocks = numBlocks;
         this.dff = dff;
         this.maxSeqLen = maxSeqLen;
+        this.positionalEncoding = (positionalEncoding == null || positionalEncoding.isBlank())
+                ? POSITIONAL_SINUSOIDAL_ABS
+                : positionalEncoding;
     }
 
     public static EvoLlmArchitecture of(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
@@ -62,6 +74,12 @@ public final class EvoLlmArchitecture implements Serializable {
     public int getNumBlocks() { return numBlocks; }
     public int getDff() { return dff; }
     public int getMaxSeqLen() { return maxSeqLen; }
+
+    public String getPositionalEncoding() { return positionalEncoding; }
+
+    public boolean usesRoPE() {
+        return POSITIONAL_ROPE.equalsIgnoreCase(positionalEncoding);
+    }
 
     public long getParameterCount() {
         long params = (long) vocabSize * dModel;
@@ -85,17 +103,18 @@ public final class EvoLlmArchitecture implements Serializable {
                 numHeads == that.numHeads &&
                 numBlocks == that.numBlocks &&
                 dff == that.dff &&
-                maxSeqLen == that.maxSeqLen;
+                maxSeqLen == that.maxSeqLen &&
+                Objects.equals(positionalEncoding, that.positionalEncoding);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen);
+        return Objects.hash(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen, positionalEncoding);
     }
 
     @Override
     public String toString() {
-        return String.format("EvoLlmArchitecture[vocabSize=%d, dModel=%d, numHeads=%d, numBlocks=%d, dff=%d, maxSeqLen=%d]",
-                vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen);
+        return String.format("EvoLlmArchitecture[vocabSize=%d, dModel=%d, numHeads=%d, numBlocks=%d, dff=%d, maxSeqLen=%d, positionalEncoding=%s]",
+                vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen, positionalEncoding);
     }
 }

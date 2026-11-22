@@ -89,8 +89,12 @@ public class DatasetBuilder {
                 for (int i = 0; i < seqLen; i++) {
                     inputIds[i] = fullTokens.get(i);
                     labels[i] = (i + 1 < fullTokens.size()) ? fullTokens.get(i + 1) : eosTokenId;
-                    // Mask prompt tokens so loss is computed ONLY on response tokens
-                    lossMask[i] = (i >= promptLen);
+                    // Mask prompt tokens so loss is computed ONLY on response tokens.
+                    // labels are next-token shifted: position (promptLen - 1) — the last
+                    // prompt token — predicts the FIRST response token, so it must be
+                    // included in the loss; otherwise the model is never trained to
+                    // start the response (and collapses to emitting EOS immediately).
+                    lossMask[i] = (i >= promptLen - 1 && i >= 0);
                     attMask[i] = 1.0f;
                 }
                 trainingSamples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));

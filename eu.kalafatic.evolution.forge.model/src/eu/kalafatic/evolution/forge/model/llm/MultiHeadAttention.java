@@ -23,6 +23,9 @@ public class MultiHeadAttention {
     private final int headDim;
     private final float scale;
 
+    /** Optional rotary positional encoding (null = legacy additive sinusoidal PE outside attention). */
+    private final RoPEPositionalEncoding rope;
+
     // Cached activations for backward pass
     private Tensor lastX;
     private Tensor lastQ, lastK, lastV;
@@ -31,6 +34,10 @@ public class MultiHeadAttention {
     private Tensor lastConcatAttn;       // [seqLen, dModel]
 
     public MultiHeadAttention(int dModel, int numHeads) {
+        this(dModel, numHeads, null);
+    }
+
+    public MultiHeadAttention(int dModel, int numHeads, RoPEPositionalEncoding rope) {
         if (dModel <= 0) {
             throw new IllegalArgumentException("dModel must be positive: " + dModel);
         }
@@ -46,6 +53,7 @@ public class MultiHeadAttention {
         this.numHeads = numHeads;
         this.headDim = dModel / numHeads;
         this.scale = 1.0f / (float) Math.sqrt(headDim);
+        this.rope = rope;
 
         // Weight matrices: [dModel, dModel]
         this.WQ = new SimpleTensor(dModel, dModel);
@@ -87,6 +95,11 @@ public class MultiHeadAttention {
         this.lastQ = x.matmul(WQ);
         this.lastK = x.matmul(WK);
         this.lastV = x.matmul(WV);
+
+        if (rope != null) {
+            rope.rotateInPlace(this.lastQ.getData(), dModel, numHeads, seqLen, 0);
+            rope.rotateInPlace(this.lastK.getData(), dModel, numHeads, seqLen, 0);
+        }
 
         float[] qData = lastQ.getData();
         float[] kData = lastK.getData();
@@ -193,6 +206,13 @@ public class MultiHeadAttention {
         Tensor q = x.matmul(WQ);
         Tensor k = x.matmul(WK);
         Tensor v = x.matmul(WV);
+
+        int freshStartPos = (cache.getKeyCache() != null) ? (int) cache.getKeyCache().getShape()[0] : 0;
+        if (rope != null) {
+            int freshLen = (int) q.getShape()[0];
+            rope.rotateInPlace(q.getData(), dModel, numHeads, freshLen, freshStartPos);
+            rope.rotateInPlace(k.getData(), dModel, numHeads, freshLen, freshStartPos);
+        }
 
         Tensor K, V;
         if (cache.getKeyCache() == null) {
@@ -387,6 +407,14 @@ public class MultiHeadAttention {
         }
 
         // 4. Parameter gradients for WQ, WK, WV: lastX^T * dQ, lastX^T * dK, lastX^T * dV
+        // RoPE: the per-head loops produced gradients w.r.t. the ROTATED q/k.
+        // Apply the inverse (transpose) rotation to recover gradients w.r.t. the
+        // pre-rotation q/k that WQ/WK actually consume.
+        if (rope != null) {
+            rope.rotateBackwardInPlace(dQ.getData(), dModel, numHeads, seqLen, 0);
+            rope.rotateBackwardInPlace(dK.getData(), dModel, numHeads, seqLen, 0);
+        }
+
         Tensor dWQ = lastX.transpose().matmul(dQ);
         float[] wqGrad = WQ.getGrad();
         float[] dWQData = dWQ.getData();
@@ -420,6 +448,8 @@ public class MultiHeadAttention {
     public Tensor getWK() { return WK; }
     public Tensor getWV() { return WV; }
     public Tensor getWO() { return WO; }
+
+    public RoPEPositionalEncoding getRope() { return rope; }
 
     public int getDModel() { return dModel; }
     public int getNumHeads() { return numHeads; }

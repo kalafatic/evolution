@@ -80,6 +80,12 @@ public class OllamaExporter implements EvoModelExporter {
 
         System.out.println("[Export] Starting GGUF export (" + quantConfig.getScheme().name() + ") from canonical ModelSnapshot: " + modelName);
         EvoLlmArchitecture arch = snapshot.getArchitecture();
+        if (arch != null && !eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture.POSITIONAL_ROPE.equalsIgnoreCase(arch.getPositionalEncoding())) {
+            System.err.println("[Export][WARN] Model positional encoding is '" + arch.getPositionalEncoding()
+                    + "' but the exported GGUF declares general.architecture=llama, which llama.cpp/Ollama evaluates with RoPE. "
+                    + "Ollama inference for this model will NOT match native inference. "
+                    + "Train with positionalEncoding=rope (the current Forge default) for a faithful GGUF export.");
+        }
 
         // Apply quantization if enabled
         if (quantConfig.isEnabled() && quantConfig.getScheme() != QuantizationConfig.QuantizationScheme.F32) {
@@ -279,11 +285,22 @@ public class OllamaExporter implements EvoModelExporter {
         metadataList.add(new MetadataEntry("llama.attention.value_length", 4, arch.getDModel() / arch.getNumHeads()));
         metadataList.add(new MetadataEntry("llama.rope.dimension_count", 4, arch.getDModel() / arch.getNumHeads()));
         metadataList.add(new MetadataEntry("llama.rope.freq_base", 6, 10000.0f));
+        // The native model applies RoPE to adjacent pairs (2i, 2i+1) inside each
+        // head (GPT-NeoX convention). llama.cpp defaults llama architectures to
+        // the (i, i+half) pairing; pin the exact convention so Ollama reproduces
+        // the native computation.
+        metadataList.add(new MetadataEntry("llama.rope.type", 4, 2)); // LLAMA_ROPE_TYPE_NEOX
 
         metadataList.add(new MetadataEntry("tokenizer.ggml.model", 8, "llama"));
         metadataList.add(new MetadataEntry("tokenizer.ggml.bos_token_id", 4, 1));
         metadataList.add(new MetadataEntry("tokenizer.ggml.eos_token_id", 4, 2));
         metadataList.add(new MetadataEntry("tokenizer.ggml.unknown_token_id", 4, 0));
+        // The EVO trainer feeds sequences WITHOUT a leading BOS token. llama.cpp
+        // prepends BOS for the llama family by default, which would shift every
+        // RoPE position by one and corrupt inference. Pin the behavior explicitly
+        // so Ollama reproduces the native model exactly.
+        metadataList.add(new MetadataEntry("tokenizer.ggml.add_bos_token", 7, false));
+        metadataList.add(new MetadataEntry("tokenizer.ggml.add_eos_token", 7, false));
 
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[effectiveVocabSize];
@@ -413,6 +430,7 @@ public class OllamaExporter implements EvoModelExporter {
     private void serializeMetadataValue(ByteBuffer buf, MetadataEntry me) {
         if (me.type == 4) buf.putInt(((Number) me.value).intValue());
         else if (me.type == 6) buf.putFloat(((Number) me.value).floatValue());
+        else if (me.type == 7) buf.put((byte) (((Boolean) me.value) ? 1 : 0));
         else if (me.type == 8) writeString(buf, (String) me.value);
         else if (me.type == 9) {
             if (me.value instanceof List) {
@@ -454,6 +472,7 @@ public class OllamaExporter implements EvoModelExporter {
 
     private long getMetadataValueSize(MetadataEntry me) {
         if (me.type == 4 || me.type == 6) return 4;
+        if (me.type == 7) return 1;
         if (me.type == 8) return 8 + ((String) me.value).getBytes(StandardCharsets.UTF_8).length;
         if (me.type == 9) {
             long size = 4 + 8;

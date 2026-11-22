@@ -1040,6 +1040,15 @@ public class IterationManager {
 		if (activeTrajectory == null)
 			return;
 
+		// AUTO MODE: The user delegated decisions to the system. A satisfied design
+		// terminates the loop without blocking on interactive input (headless-safe).
+		if (context.isAutoApprove()) {
+			context.log("[KERNEL] Design satisfied. Auto-Approve enabled: terminating Darwin loop autonomously.");
+			context.getOrchestrationState()
+					.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.TERMINAL_SUCCESS));
+			return;
+		}
+
 		context.log(
 				"[KERNEL] Design Satisfaction Review: Objective quality targets met. Pausing for final optimization decision.");
 		transition(SystemState.CLARIFYING, context);

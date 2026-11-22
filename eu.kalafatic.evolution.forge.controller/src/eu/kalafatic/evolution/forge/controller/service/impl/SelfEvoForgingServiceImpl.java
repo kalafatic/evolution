@@ -47,11 +47,30 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
     @Override
     public void startForging(String sessionId, Path projectPath, List<String> dataSources) throws Exception {
+        startForgingInternal(sessionId, projectPath, dataSources, null);
+    }
+
+    @Override
+    public void startForging(String sessionId, Path projectPath, List<String> dataSources,
+                             String uiStateJson) throws Exception {
+        JSONObject uiStateOverride = null;
+        if (uiStateJson != null && !uiStateJson.isBlank()) {
+            try {
+                uiStateOverride = new JSONObject(uiStateJson);
+            } catch (Exception e) {
+                System.err.println("[SELF-EVO] Ignoring malformed uiState override JSON: " + e.getMessage());
+            }
+        }
+        startForgingInternal(sessionId, projectPath, dataSources, uiStateOverride);
+    }
+
+    private void startForgingInternal(String sessionId, Path projectPath, List<String> dataSources,
+                                      org.json.JSONObject uiStateOverride) throws Exception {
         updateStats(sessionId, new ForgingStats("STARTING", 0, 0, 0, 0, 0.0, "0", ""));
 
         java.util.concurrent.Future<?> task = executor.submit(() -> {
             try {
-                JSONObject uiState = getUiStateViaReflection(sessionId);
+                JSONObject uiState = (uiStateOverride != null) ? uiStateOverride : getUiStateViaReflection(sessionId);
 
                 ForgeJob job = new ForgeJob(sessionId);
                 sessionJobs.put(sessionId, job);

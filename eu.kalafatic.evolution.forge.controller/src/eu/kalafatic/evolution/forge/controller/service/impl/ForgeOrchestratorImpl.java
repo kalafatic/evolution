@@ -106,7 +106,12 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             if (job.getSourcePaths() != null) {
                 for (String src : job.getSourcePaths()) {
                     if (src != null && !src.trim().isEmpty()) {
-                        datasetItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, src.trim(), "FILE"));
+                        // Directories must be typed FOLDER so the FolderAdapter
+                        // (recursive discovery) handles them; typing them FILE
+                        // lets the TextAdapter claim them and fail inspection.
+                        boolean isDir = new File(src.trim()).isDirectory();
+                        datasetItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(
+                                true, src.trim(), isDir ? "FOLDER" : "FILE"));
                     }
                 }
             }
@@ -265,7 +270,8 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                     job.getModelConfig().getHeads(),
                     job.getModelConfig().getLayers(),
                     job.getModelConfig().getDff(),
-                    job.getModelConfig().getMaxSeqLen()
+                    job.getModelConfig().getMaxSeqLen(),
+                    eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture.POSITIONAL_ROPE
             );
 
             EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
@@ -514,6 +520,40 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 job.setJobResultSummary("PAUSED");
                 job.setCurrentStageDescription(String.format("Training paused cleanly at epoch %d/%d. Ready to resume.",
                         trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+                return job;
+            }
+
+            // Interrupted training is NOT a valid completion: the model must not be
+            // exported and the job must not report SUCCESS. Preserve a resume
+            // checkpoint (weights and optimizer state are still consistent) and
+            // mark the job FAILED with an honest reason.
+            if (trainResult.getTerminationStatus() == eu.kalafatic.evolution.forge.trainer.api.TrainingTerminationStatus.TRAINING_INTERRUPTED) {
+                try {
+                    Path chkDir = runFolder.resolve("checkpoints");
+                    Files.createDirectories(chkDir);
+                    String chkBaseName = String.format("checkpoint_%s_%s_epoch_%04d.chk", job.getJobId(), checkpointFpPrefix, trainResult.getCompletedEpochs());
+                    TrainingCheckpoint interruptedChk = trainer.captureCheckpoint(
+                            job.getJobId(),
+                            "checkpoint_" + job.getJobId(),
+                            trainResult.getCompletedEpochs(),
+                            (float) trainResult.getLastLoss(),
+                            (float) trainResult.getValLoss(),
+                            datasetFingerprint,
+                            tokenizer.getVocab()
+                    );
+                    interruptedChk.saveAtomic(chkDir.resolve(chkBaseName));
+                    logToFile(logFile, String.format("[FORGE][RUN=%s] Training interrupted at epoch %d. Resume checkpoint saved: %s",
+                            job.getJobId(), trainResult.getCompletedEpochs(), chkBaseName));
+                } catch (Exception chkEx) {
+                    logToFile(logFile, "[FORGE][RUN=" + job.getJobId() + "] Interrupted training checkpoint save failed: " + chkEx.getMessage());
+                }
+                logToFile(logFile, String.format("[FORGE][RUN=%s] Training interrupted before planned completion (%d/%d epochs). Export skipped.",
+                        job.getJobId(), trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+                job.setState(JobState.FAILED);
+                job.setJobResultSummary("FAILED");
+                job.setFailureReason(String.format("Training interrupted before planned completion (%d/%d epochs). Resume checkpoint preserved; model export blocked.",
+                        trainResult.getCompletedEpochs(), trainResult.getPlannedEpochs()));
+                job.setCurrentStageDescription("Training interrupted. Model export skipped.");
                 return job;
             }
 

@@ -4,10 +4,21 @@ import eu.kalafatic.evolution.forge.tokenizer.api.Tokenizer;
 import java.util.*;
 
 /**
- * A very simplified Byte Pair Encoding (BPE) tokenizer for educational purposes.
- * It merges most frequent character pairs iteratively.
+ * A simplified SentencePiece-style tokenizer.
+ *
+ * <p>The tokenization algorithm mirrors llama.cpp's {@code llm_tokenizer_spm_session}
+ * exactly: the text is split into UTF-8 character symbols, every space is escaped
+ * to the metaspace symbol (U+2581) with a leading metaspace added, and adjacent
+ * symbol pairs whose concatenation exists in the vocabulary are merged greedily
+ * (all token scores equal, ties broken by larger left index). Unknown symbols
+ * fall back to per-byte tokens. This makes native EVO tokenization bit-identical
+ * to llama.cpp / Ollama for {@code tokenizer.ggml.model=llama} GGUFs.</p>
  */
 public class SimpleBPETokenizer implements Tokenizer {
+
+    /** SentencePiece-style metaspace character (replaces ' '). */
+    public static final String METASPACE = "\u2581";
+
     private Map<String, Integer> vocab = new LinkedHashMap<>();
     private Map<Integer, String> invVocab = new HashMap<>();
 
@@ -16,7 +27,7 @@ public class SimpleBPETokenizer implements Tokenizer {
         vocab.put("<unk>", 0);
         vocab.put("<s>", 1);
         vocab.put("</s>", 2);
-        vocab.put(" ", 3);
+        vocab.put(METASPACE, 3);
 
         int id = 4;
         if (targetVocabSize >= 260) {
@@ -27,23 +38,30 @@ public class SimpleBPETokenizer implements Tokenizer {
         }
 
         if (corpus != null && !corpus.isEmpty()) {
-            // 1. Initial characters from corpus
-            for (char c : corpus.toCharArray()) {
-                String s = String.valueOf(c);
-                if (!vocab.containsKey(s) && vocab.size() < targetVocabSize) {
-                    vocab.put(s, id++);
+            String escaped = corpus.replace(" ", METASPACE);
+
+            // 1. Initial symbols from corpus (metaspace-prefixed word starts and
+            //    plain characters inside words).
+            for (String w : escaped.split(METASPACE)) {
+                if (w.isEmpty()) continue;
+                for (char c : (METASPACE + w).toCharArray()) {
+                    String s = String.valueOf(c);
+                    if (!vocab.containsKey(s) && vocab.size() < targetVocabSize) {
+                        vocab.put(s, id++);
+                    }
                 }
             }
 
-            // 2. Extract words and count frequencies (sampling to cap memory and time)
-            String[] rawWords = corpus.split("\\s+");
+            // 2. Extract metaspace-prefixed words and count frequencies
+            String[] rawWords = escaped.split(METASPACE);
             Map<String, Integer> wordCounts = new HashMap<>();
             int sampledChars = 0;
             int maxSampledChars = 100_000; // Cap training sample size for fast BPE vocabulary discovery
             for (String w : rawWords) {
                 if (w.isEmpty()) continue;
-                wordCounts.put(w, wordCounts.getOrDefault(w, 0) + 1);
-                sampledChars += w.length();
+                String pw = METASPACE + w;
+                wordCounts.put(pw, wordCounts.getOrDefault(pw, 0) + 1);
+                sampledChars += pw.length();
                 if (sampledChars >= maxSampledChars && wordCounts.size() >= 1000) {
                     break;
                 }
@@ -110,13 +128,14 @@ public class SimpleBPETokenizer implements Tokenizer {
             // 3. Add whole words if target vocabulary capacity remains
             for (String w : rawWords) {
                 if (vocab.size() >= targetVocabSize) break;
-                if (!w.isEmpty() && !vocab.containsKey(w)) {
-                    vocab.put(w, id++);
+                String pw = METASPACE + w;
+                if (!pw.isEmpty() && !vocab.containsKey(pw)) {
+                    vocab.put(pw, id++);
                 }
             }
         }
 
-        // Common fallback words
+        // Common fallback words (metaspace-prefixed, matching llama.cpp SPM semantics)
         String[] commonWords = {"the", "and", "in", "is", "of", "to", "evolution", "ai", "model", "java", "code", "hi", "hello"};
         for (String word : commonWords) {
             if (vocab.size() < targetVocabSize && !vocab.containsKey(word)) {
@@ -146,71 +165,105 @@ public class SimpleBPETokenizer implements Tokenizer {
             return tokens;
         }
 
-        // Group vocabulary keys by their starting character for O(1) starting prefix lookup.
-        // Also keep them sorted by length descending so the first match we find is the longest match.
-        Map<Character, List<String>> prefixMap = new HashMap<>();
-        boolean hasByteTokens = false;
-        for (Map.Entry<String, Integer> entry : vocab.entrySet()) {
-            String key = entry.getKey();
-            if (key == null || key.isEmpty()) continue;
-            if (isByteToken(key)) {
-                hasByteTokens = true;
-                continue;
-            }
-            if (isSpecialToken(key)) continue;
+        // llama.cpp SPM tokenize(): add_space_prefix=true — a metaspace is
+        // prepended, and every ' ' is escaped to the metaspace symbol.
+        String escaped = METASPACE + text.replace(" ", METASPACE);
 
-            char firstChar = key.charAt(0);
-            prefixMap.computeIfAbsent(firstChar, k -> new ArrayList<>()).add(key);
-        }
-
-        // Sort each list by length descending to ensure longest match is checked first
-        for (List<String> list : prefixMap.values()) {
-            list.sort((s1, s2) -> Integer.compare(s2.length(), s1.length()));
-        }
-
+        // Split into UTF-8 character symbols
+        List<String> symbols = new ArrayList<>();
         int i = 0;
-        int len = text.length();
-        while (i < len) {
-            char currentChar = text.charAt(i);
-            List<String> candidates = prefixMap.get(currentChar);
-            String match = null;
-            int matchLen = 0;
+        while (i < escaped.length()) {
+            int cp = escaped.codePointAt(i);
+            int charCount = Character.charCount(cp);
+            symbols.add(escaped.substring(i, i + charCount));
+            i += charCount;
+        }
+        int n = symbols.size();
 
-            if (candidates != null) {
-                for (String v : candidates) {
-                    if (text.startsWith(v, i)) {
-                        match = v;
-                        matchLen = v.length();
-                        break; // Sorted by length descending, so first match is the longest!
-                    }
+        int[] prev = new int[n];
+        int[] next = new int[n];
+        for (int k = 0; k < n; k++) {
+            prev[k] = k - 1;
+            next[k] = (k < n - 1) ? k + 1 : -1;
+        }
+
+        boolean[] mergedAway = new boolean[n];
+        Map<String, int[]> revMerge = new HashMap<>();
+
+        // Priority queue ordered by score desc, then left index ASC — identical
+        // tie-breaking to llama.cpp's llm_bigram_spm comparator with all scores 0
+        // (its operator() returns true when the left candidate is "less", i.e.
+        // higher score wins and, on ties, the SMALLER left index is popped first).
+        PriorityQueue<int[]> workQueue = new PriorityQueue<>((a, b) -> {
+            if (a[0] != b[0]) return Integer.compare(b[0], a[0]); // higher score first (always 0 here)
+            return Integer.compare(a[1], b[1]); // smaller left index first
+        });
+
+        java.util.function.BiConsumer<Integer, Integer> tryAdd = (left, right) -> {
+            if (left == -1 || right == -1) return;
+            String pair = symbols.get(left) + symbols.get(right);
+            Integer tokenId = vocab.get(pair);
+            if (tokenId == null) return;
+            revMerge.put(pair, new int[]{left, right});
+            workQueue.add(new int[]{0, left, right, pair.length()});
+        };
+
+        for (int k = 1; k < n; k++) {
+            tryAdd.accept(k - 1, k);
+        }
+
+        while (!workQueue.isEmpty()) {
+            int[] bigram = workQueue.poll();
+            int left = bigram[1];
+            int right = bigram[2];
+            int size = bigram[3];
+
+            if (mergedAway[left] || mergedAway[right]) continue;
+            if (symbols.get(left).length() + symbols.get(right).length() != size) continue;
+
+            // merge the right sym into the left one
+            symbols.set(left, symbols.get(left) + symbols.get(right));
+            symbols.set(right, "");
+            mergedAway[right] = true;
+
+            int leftNext = (next[left] != right) ? next[left] : next[right];
+            next[left] = leftNext;
+            if (leftNext != -1) prev[leftNext] = left;
+
+            tryAdd.accept(prev[left], left);
+            tryAdd.accept(left, leftNext);
+        }
+
+        java.util.function.Consumer<String> resegment = new java.util.function.Consumer<String>() {
+            @Override
+            public void accept(String symText) {
+                Integer tokenId = vocab.get(symText);
+                if (tokenId != null) {
+                    tokens.add(tokenId);
+                    return;
+                }
+                int[] pair = revMerge.get(symText);
+                if (pair != null) {
+                    accept(symbols.get(pair[0]));
+                    accept(symbols.get(pair[1]));
+                    return;
+                }
+                // Output symbols that did not form tokens as UTF-8 bytes.
+                byte[] bytes = symText.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                for (byte b : bytes) {
+                    String byteTok = String.format("<0x%02X>", b & 0xFF);
+                    Integer byteId = vocab.get(byteTok);
+                    tokens.add(byteId != null ? byteId : getUnkTokenId());
                 }
             }
+        };
 
-            if (match != null) {
-                tokens.add(vocab.get(match));
-                i += matchLen;
-            } else {
-                // Character/subword not found in vocabulary.
-                int codePoint = text.codePointAt(i);
-                int charCount = Character.charCount(codePoint);
-
-                if (hasByteTokens) {
-                    String cpStr = text.substring(i, i + charCount);
-                    byte[] cpBytes = cpStr.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                    for (byte b : cpBytes) {
-                        String byteTok = String.format("<0x%02X>", b & 0xFF);
-                        Integer byteId = vocab.get(byteTok);
-                        if (byteId != null) {
-                            tokens.add(byteId);
-                        } else {
-                            tokens.add(getUnkTokenId());
-                        }
-                    }
-                } else {
-                    tokens.add(getUnkTokenId());
-                }
-                i += charCount;
+        int k = 0;
+        while (k != -1) {
+            if (!mergedAway[k]) {
+                resegment.accept(symbols.get(k));
             }
+            k = next[k];
         }
         return tokens;
     }
@@ -250,8 +303,9 @@ public class SimpleBPETokenizer implements Tokenizer {
                 // Flush any pending accumulated bytes first.
                 String flushedBytes = decodePendingBytes(true);
                 cumulativeText.append(flushedBytes);
-                cumulativeText.append(tokStr);
-                return flushedBytes + tokStr;
+                String piece = tokStr.replace(METASPACE, " ");
+                cumulativeText.append(piece);
+                return flushedBytes + piece;
             }
         }
 

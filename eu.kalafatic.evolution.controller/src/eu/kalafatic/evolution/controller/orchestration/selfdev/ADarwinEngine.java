@@ -1351,9 +1351,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		// [DARWIN IMPROVEMENT] Preservation of all branches:
 		// We filter out only those that are technically UNVIABLE before evaluation,
 		// but we keep those that are semantically divergent for historical record.
+		// Variants without a tree node (e.g. synthetic fallbacks) MUST still be
+		// objectively evaluated; they are not semantically rejected.
 		List<BranchVariant> evaluationCandidates = rawVariants.stream().filter(v -> {
 			EvolutionNode node = context.getKernelContext().getMemoryService().getEvolutionTree().getNode(v.getId());
-			return node != null && !"REJECTED_SEMANTIC".equals(node.getStatus());
+			return node == null || !"REJECTED_SEMANTIC".equals(node.getStatus());
 		}).collect(Collectors.toList());
 
 		if (profile.useImplementation()) {
@@ -1532,9 +1534,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				.publish(new RuntimeEvent(RuntimeEventType.VARIANT_EVALUATED, context.getSessionId(), finalWinnerId,
 						iterId, "DarwinEngine", winnerScore, System.currentTimeMillis()));
 
-		if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE
-				&& selectedVariant.getScore() < 0.3)) {
-			context.log("[DARWIN] Darwin Evolution: No viable winner selected or winner score too low.");
+		if (selectedVariant == null || selectedVariant.getScore() < 0.3
+				|| (selectedVariant.getErrorMessage() != null && !selectedVariant.getErrorMessage().isEmpty())) {
+			context.log("[DARWIN] Darwin Evolution: No viable winner selected. score="
+					+ (selectedVariant != null ? selectedVariant.getScore() : -1) + ", error="
+					+ (selectedVariant != null ? selectedVariant.getErrorMessage() : "null"));
 			return manager.failedResult();
 		}
 
@@ -1683,10 +1687,13 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				String completedPhase = context.getOrchestrationState().getCurrentPhase();
 
 				// SAVE LINEAGE: Persist ACTIVE winner and any KEPT survivors (Milestone
-				// Requirement)
+				// Requirement). The winner is identified by ID because its activation
+				// state is advanced to VERIFIED/SCORING during re-evaluation before
+				// this persistence block runs.
 				for (BranchVariant v : variants) {
 					if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE
-							|| v.getActivationState() == BranchVariant.ActivationState.KEPT) {
+							|| v.getActivationState() == BranchVariant.ActivationState.KEPT
+							|| v.getId().equals(selectedVariant.getId())) {
 						IterationRecord record = new IterationRecord();
 						record.setIteration(context.getOrchestrationState().getIterationCount());
 						record.setGoal(goal.getPrimaryAction());
@@ -1697,6 +1704,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 						record.setInheritedContext(v.getInheritedContext());
 						record.setRejectedSiblings(v.getRejectedSiblings());
 						record.setBranchId(v.getId());
+						record.setScore(v.getScore());
 
 						if (v.getId().equals(selectedVariant.getId())) {
 							record.setResult(result.isSuccess() ? "SUCCESS" : "SUCCESS_WITH_BUILD_ERROR");
@@ -1726,8 +1734,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 						EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
 						EvolutionNode node = tree.getNode(v.getId());
 						if (node != null) {
-							node.setStatus(v.getActivationState().name());
-							if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE) {
+							node.setStatus(v.getId().equals(selectedVariant.getId())
+									? BranchVariant.ActivationState.ACTIVE.name()
+									: v.getActivationState().name());
+							if (v.getId().equals(selectedVariant.getId())) {
+								node.setFitnessScore(v.getScore());
 								tree.setCurrentWinnerId(v.getId());
 								node.setWinner(true); // Frozen Snapshot Mark (Requirement 3)
 								getSessionContainer().getEventBus()

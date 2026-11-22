@@ -266,6 +266,17 @@ public class Evaluator implements ICapability, IEvaluationContract {
                     result.setDecision(SelfDevDecision.CONTINUE);
                 }
             } else {
+                // Build failed: if the failure was caused by failing tests (rather than
+                // compilation), preserve the measured pass rate as objective evaluation
+                // evidence so scoring reflects the actual test result.
+                if (output != null && output.contains("Tests run:")) {
+                    double passRate = parsePassRate(output);
+                    result.setTestPassRate(passRate);
+                    snapshot.tests.total = parseTotalTests(output);
+                    snapshot.tests.passed = (int) (snapshot.tests.total * passRate);
+                    snapshot.tests.failed = snapshot.tests.total - snapshot.tests.passed;
+                    snapshot.tests.failingTests = parseFailingTestNames(output);
+                }
                 // WP8 (D-51): build failure is TERMINAL by default.
                 result.setDecision(resolveFailureDecision());
                 result.getErrors().add("Build failed.");

@@ -74,6 +74,7 @@ public class EvoModelArtifact {
                 model.getDff(),
                 model.getMaxSeqLen()
         );
+        this.architectureDescriptor.setPositionalEncoding(model.getArchitecture().getPositionalEncoding());
 
         this.tokenizerDescriptor = new EvoTokenizerDescriptor(
                 model.getVocabSize(),
@@ -531,7 +532,8 @@ public class EvoModelArtifact {
                 getNumHeads(),
                 getNumBlocks(),
                 getDff(),
-                getMaxSeqLen()
+                getMaxSeqLen(),
+                getArchitectureDescriptor() != null ? getArchitectureDescriptor().getPositionalEncoding() : null
         );
 
         List<Tensor> modelParams = model.parameters();
@@ -575,7 +577,8 @@ public class EvoModelArtifact {
     public int getMaxSeqLen() { return architectureDescriptor != null ? architectureDescriptor.getMaxSeqLen() : 0; }
 
     public EvoLlmArchitecture getArchitectureConfig() {
-        return new EvoLlmArchitecture(getVocabSize(), getDModel(), getNumHeads(), getNumBlocks(), getDff(), getMaxSeqLen());
+        return new EvoLlmArchitecture(getVocabSize(), getDModel(), getNumHeads(), getNumBlocks(), getDff(), getMaxSeqLen(),
+                getArchitectureDescriptor() != null ? getArchitectureDescriptor().getPositionalEncoding() : null);
     }
 
     public EvoArchitectureDescriptor getArchitectureDescriptor() { return architectureDescriptor; }

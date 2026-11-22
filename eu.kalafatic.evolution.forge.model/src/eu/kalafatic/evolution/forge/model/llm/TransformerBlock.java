@@ -14,7 +14,11 @@ public class TransformerBlock {
     private Tensor ffnOutput;   // Cached for backward
     
     public TransformerBlock(int dModel, int numHeads, int dff) {
-        this.attention = new MultiHeadAttention(dModel, numHeads);
+        this(dModel, numHeads, dff, null);
+    }
+
+    public TransformerBlock(int dModel, int numHeads, int dff, RoPEPositionalEncoding rope) {
+        this.attention = new MultiHeadAttention(dModel, numHeads, rope);
         this.ffn = new FeedForward(dModel, dff);
         this.attnNorm = new RMSNorm(dModel);
         this.ffnNorm = new RMSNorm(dModel);

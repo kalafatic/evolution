@@ -105,8 +105,12 @@ public class EvoDatasetArtifact {
                     name != null ? name : artifactFile.getName(), this.tokenizerType, tokenizerType));
         }
         if (this.tokenizerVocabSize > 0 && vocabSize != this.tokenizerVocabSize) {
-            throw new IllegalStateException(String.format(
-                    "Tokenizer vocabulary mismatch: dataset '%s' declares vocab size %d but training uses %d.",
+            // The dataset stores raw text samples; the vocab size is stamped
+            // into the metadata by the previous consumer run. A different
+            // documented vocab size for the same content is legitimate: the
+            // orchestrator retrains the BPE tokenizer on the identical corpus.
+            System.err.println(String.format(
+                    "[EVODATA][WARN] Dataset '%s' was consumed with vocab size %d; current run uses %d. Content is tokenizer-agnostic; continuing.",
                     name != null ? name : artifactFile.getName(), this.tokenizerVocabSize, vocabSize));
         }
     }

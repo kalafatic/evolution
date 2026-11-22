@@ -129,6 +129,11 @@ public class ForgeModelSourceFactory {
         }
 
         @Override
+        public EvoLlmModel createOrRestoreModel(int vocabSize, int hiddenSize, int heads, int layers, int dff, int maxSeqLen, String positionalEncoding) {
+            return new EvoLlmModel(vocabSize, hiddenSize, heads, layers, dff, maxSeqLen, positionalEncoding);
+        }
+
+        @Override
         public SimpleBPETokenizer getTokenizer(String newCorpus, int targetVocabSize) {
             SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
             tokenizer.train(newCorpus, targetVocabSize);

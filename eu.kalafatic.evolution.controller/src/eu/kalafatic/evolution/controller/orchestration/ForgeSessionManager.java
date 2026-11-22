@@ -508,7 +508,21 @@ public class ForgeSessionManager {
 
     private Orchestrator getOrchestratorModel() {
         if (orchestrator != null) return orchestrator;
-        return OrchestratorServiceImpl.getInstance().getOrchestrator();
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch == null) {
+            // Headless products have no Eclipse workspace project that binds the
+            // EMF Orchestrator model into OrchestratorServiceImpl. Fall back to the
+            // authoritative ResourceManager, which lazily loads or creates the model
+            // through ProjectModelManager (documented headless-safe path).
+            try {
+                orch = eu.kalafatic.evolution.controller.resource.ResourceManager
+                        .getInstance().getOrchestrator();
+            } catch (Exception e) {
+                System.err.println("[ForgeSessionManager] Could not load orchestrator model via ResourceManager: " + e.getMessage());
+                return null;
+            }
+        }
+        return orch;
     }
 
     private void seedDefaultSessions() {

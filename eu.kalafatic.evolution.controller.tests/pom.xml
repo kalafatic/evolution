@@ -21,6 +21,8 @@
 				<configuration>
 					<useUIHarness>false</useUIHarness>
 					<useUIThread>false</useUIThread>
+					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+					<argLine>-Devolution.test.headless=true</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
