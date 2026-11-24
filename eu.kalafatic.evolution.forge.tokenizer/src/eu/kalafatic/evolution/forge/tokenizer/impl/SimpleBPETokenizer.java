@@ -22,6 +22,23 @@ public class SimpleBPETokenizer implements Tokenizer {
     private Map<String, Integer> vocab = new LinkedHashMap<>();
     private Map<Integer, String> invVocab = new HashMap<>();
 
+    /**
+     * Maximum number of corpus characters used for BPE frequency statistics during
+     * {@link #train}. A value of {@link Integer#MAX_VALUE} uses the whole corpus.
+     * The previous hard-coded value (100_000) sampled only a tiny leading slice of
+     * large corpora, which starved the vocabulary of rare subword merges.
+     */
+    private int maxSamplingChars = 1_000_000;
+
+    /** Sets the corpus sampling budget used by {@link #train}. */
+    public void setMaxSamplingChars(int maxSamplingChars) {
+        this.maxSamplingChars = maxSamplingChars > 0 ? maxSamplingChars : Integer.MAX_VALUE;
+    }
+
+    public int getMaxSamplingChars() {
+        return maxSamplingChars;
+    }
+
     public void train(String corpus, int targetVocabSize) {
         vocab.clear();
         vocab.put("<unk>", 0);
@@ -56,7 +73,7 @@ public class SimpleBPETokenizer implements Tokenizer {
             String[] rawWords = escaped.split(METASPACE);
             Map<String, Integer> wordCounts = new HashMap<>();
             int sampledChars = 0;
-            int maxSampledChars = 100_000; // Cap training sample size for fast BPE vocabulary discovery
+            int maxSampledChars = maxSamplingChars; // Sampling budget for BPE frequency statistics
             for (String w : rawWords) {
                 if (w.isEmpty()) continue;
                 String pw = METASPACE + w;
@@ -275,6 +292,10 @@ public class SimpleBPETokenizer implements Tokenizer {
         private final java.nio.charset.CharsetDecoder utf8Decoder = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
                 .onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPLACE);
+        // SentencePiece add_space_prefix inserts a leading metaspace at the start of
+        // an encoded sequence. Its space equivalent must be stripped exactly once so
+        // decode(encode(text)) round-trips, without dropping real internal spaces.
+        private boolean leadingSpaceHandled = false;
 
         public IncrementalDecoder(Map<Integer, String> invVocab) {
             this.invVocab = invVocab != null ? invVocab : Collections.emptyMap();
@@ -304,6 +325,12 @@ public class SimpleBPETokenizer implements Tokenizer {
                 String flushedBytes = decodePendingBytes(true);
                 cumulativeText.append(flushedBytes);
                 String piece = tokStr.replace(METASPACE, " ");
+                if (!leadingSpaceHandled) {
+                    leadingSpaceHandled = true;
+                    if (piece.startsWith(" ")) {
+                        piece = piece.substring(1);
+                    }
+                }
                 cumulativeText.append(piece);
                 return flushedBytes + piece;
             }
@@ -391,9 +418,17 @@ public class SimpleBPETokenizer implements Tokenizer {
 
     public static boolean isSpecialToken(String tokStr) {
         if (tokStr == null || tokStr.isEmpty()) return false;
-        return tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")
+        if (tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")
                 || tokStr.equals("<pad>") || tokStr.equals("<eos>") || tokStr.equals("<bos>")
-                || tokStr.equals("<|im_end|>") || tokStr.equals("<|im_start|>") || tokStr.equals("<|endoftext|>");
+                || tokStr.equals("<|im_end|>") || tokStr.equals("<|im_start|>") || tokStr.equals("<|endoftext|>")) {
+            return true;
+        }
+        // Synthetic vocabulary-padding placeholders (<pad_N>) are never valid language
+        // output and must be treated as reserved/special rather than emitted as text.
+        if (tokStr.startsWith("<pad_") && tokStr.endsWith(">")) {
+            return true;
+        }
+        return false;
     }
 
     public int getBosTokenId() {
@@ -482,6 +517,33 @@ public class SimpleBPETokenizer implements Tokenizer {
     @Override
     public int getVocabSize() {
         return vocab.size();
+    }
+
+    /**
+     * Returns the number of real (non-placeholder) vocabulary entries, i.e. the
+     * total vocabulary size minus any synthetic {@code <pad_N>} padding tokens.
+     * This is the vocabulary utilization metric used to detect an under-trained
+     * tokenizer that filled most of its capacity with placeholders.
+     */
+    public int getRealVocabSize() {
+        int real = 0;
+        for (String token : vocab.keySet()) {
+            if (!token.startsWith("<pad_")) {
+                real++;
+            }
+        }
+        return real;
+    }
+
+    /** Returns the number of synthetic {@code <pad_N>} placeholder tokens. */
+    public int getPaddingTokenCount() {
+        int pad = 0;
+        for (String token : vocab.keySet()) {
+            if (token.startsWith("<pad_")) {
+                pad++;
+            }
+        }
+        return pad;
     }
 
     public Map<String, Integer> getVocab() {

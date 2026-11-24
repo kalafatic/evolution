@@ -159,13 +159,20 @@ public class DatasetPreparationService {
                 int count = converted != null ? converted.size() : 0;
                 totalRecordsRead += count;
 
-                context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d status=READ (dedup/rejection applied in merge stage)",
-                        item.getPath(), count));
-
-                if (converted != null) {
+                if (count == 0) {
+                    // A source that yields zero normalized records was not successfully
+                    // processed; it is treated as a failed source so callers never treat an
+                    // empty dataset as usable training data.
+                    context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=0 status=EMPTY (source produced no usable records)",
+                            item.getPath()));
+                    result.getFailedSources().add(item.getPath());
+                    result.getErrors().add("Source produced no records: " + item.getPath());
+                } else {
+                    context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d status=READ (dedup/rejection applied in merge stage)",
+                            item.getPath(), count));
                     allRawSamples.addAll(converted);
+                    result.getSuccessfulSources().add(item.getPath());
                 }
-                result.getSuccessfulSources().add(item.getPath());
             } catch (Exception ex) {
                 context.log(String.format("[FORGE-ADAPTER] source=%s adapter=%s status=FAILED error=%s", item.getPath(), adapterName, ex.getMessage()));
                 result.getFailedSources().add(item.getPath());

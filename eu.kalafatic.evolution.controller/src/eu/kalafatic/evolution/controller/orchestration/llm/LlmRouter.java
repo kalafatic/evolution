@@ -123,15 +123,50 @@ public class LlmRouter {
         return nativeEvoProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
+    /**
+     * System property selecting the default local LLM provider (family convention,
+     * consistent with {@code evo.enr.port}, {@code evo.ollama.url}, …). Supported
+     * values: {@code ollama} (current default), {@code enr}, {@code native}, or
+     * {@code auto}. ENR becomes the default only after explicit configuration and
+     * functional validation; Ollama remains fully supported and selectable.
+     */
+    public static final String SYS_DEFAULT_LOCAL_PROVIDER = "evo.llm.defaultLocalProvider";
+
+    /** Resolves the configured default local provider; {@code auto} when unset. */
+    public static String resolveDefaultLocalProvider() {
+        String value = System.getProperty(SYS_DEFAULT_LOCAL_PROVIDER);
+        return value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
+    }
+
     public String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        if (enrProvider != null && isEnrRequested(orchestrator, context)) {
-            return sendEnrRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        String configured = resolveDefaultLocalProvider();
+        switch (configured) {
+            case "enr" -> {
+                if (enrProvider == null) {
+                    throw new IllegalStateException("ENR is selected as the default local provider ("
+                            + SYS_DEFAULT_LOCAL_PROVIDER + "=enr) but the ENR provider is not registered");
+                }
+                return sendEnrRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
+            case "native" -> {
+                return sendNativeEvoRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
+            case "ollama" -> {
+                return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
+            default -> {
+                // "auto" (default): infer from the request/model — ENR when explicitly
+                // requested, native for .evo models, otherwise Ollama.
+                if (enrProvider != null && isEnrRequested(orchestrator, context)) {
+                    return sendEnrRequest(orchestrator, prompt, temperature, proxyUrl, context);
+                }
+                String model = resolveModelName(orchestrator, context);
+                if (isNativeEvoModel(model)) {
+                    return sendNativeEvoRequest(orchestrator, prompt, temperature, proxyUrl, context);
+                }
+                return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
         }
-        String model = resolveModelName(orchestrator, context);
-        if (isNativeEvoModel(model)) {
-            return sendNativeEvoRequest(orchestrator, prompt, temperature, proxyUrl, context);
-        }
-        return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
     /**

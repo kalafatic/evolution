@@ -483,36 +483,49 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				? new File(prepResult.getOutputPath()).getName() : defaultTimestampName;
 		context.log("[FORGE-TRAINING] input=" + evodataFileName);
 
+		// A failed or cancelled dataset preparation must terminate FORGE before any
+		// candidate generation. Fabricating a fallback corpus is forbidden: no valid data
+		// means no training. INSUFFICIENT_DATA (usable data present but below the requested
+		// target size) is a warning, not a hard failure.
+		if (prepResult == null
+				|| prepResult.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.FAILED
+				|| prepResult.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.CANCELLED) {
+			String statusName = prepResult != null ? prepResult.getStatus().name() : "NULL";
+			String reason = (prepResult != null && prepResult.getErrors() != null && !prepResult.getErrors().isEmpty())
+					? String.join("; ", prepResult.getErrors())
+					: "dataset preparation did not produce usable training data";
+			context.log("[FORGE] Dataset preparation failed (status=" + statusName + "): " + reason);
+			context.log("[FORGE] Aborting FORGE execution: no valid training data is available.");
+			iterationManager.transition(SystemState.FAILED, context);
+			OrchestratorResponse failResponse = new OrchestratorResponse();
+			failResponse.setResultType(ResultType.CHAT);
+			failResponse.setSummary("FORGE failed: no valid training data");
+			failResponse.setContent("FORGE aborted before training: " + reason
+					+ ". No model was trained, exported, or registered in Ollama.");
+			return failResponse;
+		}
+		if (prepResult.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.INSUFFICIENT_DATA) {
+			context.log("[FORGE] Dataset preparation produced usable data but below the requested target size; continuing with available data.");
+		}
+
 		// The compiled .evodata is the ONLY input required by the EVO LLM training process
 		StringBuilder corpusBuilder = new StringBuilder();
 		List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> normSamples = (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null)
 				? prepResult.getArtifact().getSamples() : Collections.emptyList();
 
-		if (!normSamples.isEmpty()) {
-			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : normSamples) {
-				appendBounded(corpusBuilder, sample.toFullText(), maxCorpusChars);
-			}
+		if (normSamples.isEmpty()) {
+			// Defensive guard: preparation reported success but yielded no samples.
+			context.log("[FORGE] Prepared dataset contains no normalized samples. Aborting.");
+			iterationManager.transition(SystemState.FAILED, context);
+			OrchestratorResponse failResponse = new OrchestratorResponse();
+			failResponse.setResultType(ResultType.CHAT);
+			failResponse.setSummary("FORGE failed: no training samples");
+			failResponse.setContent("FORGE aborted before training: the prepared dataset contained no normalized samples.");
+			return failResponse;
 		}
 
-		if (corpusBuilder.length() == 0) {
-			context.log("[FORGE] Prepared dataset produced empty text. Falling back to target folder scan...");
-			File fallbackDocs = new File(targetPath);
-			if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
-				try (Stream<Path> walk = Files.walk(fallbackDocs.toPath())) {
-					List<Path> files = walk.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".md") || p.toString().endsWith(".txt"))
-							.sorted().limit(maxCorpusFiles).collect(Collectors.toList());
-					for (Path f : files) {
-						appendBounded(corpusBuilder, Files.readString(f), maxCorpusChars);
-					}
-				}
-			}
-			if (corpusBuilder.length() == 0) {
-				appendBounded(corpusBuilder,
-						"This is a simple EVO LLM training document.\nEvolution genome data management is personal, economical, and political.\n"
-								+ "personal: the joy of frontier creation and personal relevance.\neconomical: building priceless user and developer know-how.\n"
-								+ "political: independence and local control from centralized AI authorities.\n",
-						maxCorpusChars);
-			}
+		for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : normSamples) {
+			appendBounded(corpusBuilder, sample.toFullText(), maxCorpusChars);
 		}
 
 		String corpus = corpusBuilder.toString();
@@ -913,6 +926,14 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			CandidateResult genWinner = results.get(0);
 
+			// A candidate that did not successfully execute training must never be treated
+			// as a valid winner. If every candidate in this generation failed, the generation
+			// has no winner and the overall winner is NOT updated from it.
+			if (genWinner.failed) {
+				context.log("[FORGE] Generation " + gen + " produced no successfully trained candidate "
+						+ "(all " + results.size() + " candidate(s) failed).");
+			}
+
 			String selectedId = null;
 			List<eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant> variants = new ArrayList<>();
 			char bCharVar = 'A';
@@ -993,8 +1014,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			genReports.add(genReport);
 
 			// Correct overall winner logic across ALL generations (not just replacing with
-			// the final generation's winner)
-			if (overallWinner == null || compareCandidates(genWinner, overallWinner) < 0) {
+			// the final generation's winner). A failed candidate is never eligible to be the
+			// overall winner.
+			if (!genWinner.failed && (overallWinner == null || compareCandidates(genWinner, overallWinner) < 0)) {
 				overallWinner = new CandidateResult(genWinner.name, genWinner.config, genWinner.loss,
 						genWinner.paramCount, genWinner.durationMs, genWinner.fitness, genWinner.failed,
 						genWinner.failureReason, genWinner.trainedWeights);
@@ -1092,6 +1114,24 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		context.getMetadata().remove("forge_gen_reports");
 		context.getMetadata().remove("forge_candidates");
 		context.getMetadata().remove("forge_current_results");
+
+		// A valid trained winner is required before any export or Ollama registration.
+		// A failed candidate (no executed training, no loss history, no trained weights)
+		// must never be exported or registered.
+		if (overallWinner == null || overallWinner.failed
+				|| overallWinner.trainedWeights == null || overallWinner.trainedWeights.isEmpty()) {
+			String why = (overallWinner == null) ? "no candidate was selected"
+					: (overallWinner.failed ? "the winning candidate did not successfully train"
+							: "the winning candidate has no trained weights");
+			context.log("[FORGE] No valid trained winner is available (" + why + "). Aborting before export.");
+			iterationManager.transition(SystemState.FAILED, context);
+			OrchestratorResponse failResponse = new OrchestratorResponse();
+			failResponse.setResultType(ResultType.CHAT);
+			failResponse.setSummary("FORGE failed: no valid trained winner");
+			failResponse.setContent("FORGE aborted before export: " + why
+					+ ". No model was exported or registered in Ollama.");
+			return failResponse;
+		}
 
 		context.log("[FORGE] Evolution complete. Overall Winner across generations: " + overallWinner.config);
 
@@ -1257,6 +1297,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		Map<String, Integer> finalVocab = finalTokenizer.getVocab();
 		// Log vocabulary size for debugging
 		context.log("[FORGE] Final vocabulary size: " + finalVocab.size());
+		context.log("[FORGE] Vocabulary utilization: " + finalTokenizer.getRealVocabSize() + " real entries, "
+				+ finalTokenizer.getPaddingTokenCount() + " synthetic <pad_N> placeholders");
 
 		EvoModelArtifact artifact = new EvoModelArtifact();
 
@@ -1591,6 +1633,16 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					}
 				}
 				cachedCandidateSamples.put(sampleCacheKey, new ArrayList<>(samples));
+			}
+
+			// Explicit training-eligibility check: no usable training samples means no
+			// training can be executed. Fail fast with a clear insufficient-data error
+			// rather than allowing a zero-sample run to reach the trainer.
+			if (samples == null || samples.isEmpty()) {
+				throw new IllegalStateException("Insufficient training data: no training samples could be generated "
+						+ "(normalizedSamples=" + (normSamples != null ? normSamples.size() : 0)
+						+ ", corpusChars=" + (cleanCorpus != null ? cleanCorpus.length() : 0)
+						+ ", seqLen=" + seqLen + ")");
 			}
 
 			long tDataDuration = System.currentTimeMillis() - tDataStart;

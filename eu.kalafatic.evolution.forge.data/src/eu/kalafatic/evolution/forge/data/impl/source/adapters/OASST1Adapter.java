@@ -35,20 +35,27 @@ public class OASST1Adapter implements DatasetSourceAdapter {
     public boolean supports(DatasetItem item) {
         if (item == null || item.getPath() == null) return false;
         String pathLower = item.getPath().trim().toLowerCase();
-        if (pathLower.endsWith(".parquet") || pathLower.endsWith(".csv") || pathLower.endsWith(".evodata")) {
+        if (pathLower.endsWith(".csv") || pathLower.endsWith(".evodata")) {
             return false;
         }
+        File file = new File(item.getPath());
         if ("OASST1".equalsIgnoreCase(item.getType())) {
             return true;
         }
         if (pathLower.contains("oasst") || pathLower.contains("openassistant")) {
-            if (pathLower.endsWith(".jsonl") || pathLower.endsWith(".jsonl.gz") || pathLower.endsWith(".json") || new File(item.getPath()).isDirectory()) {
+            if (file.isDirectory() || pathLower.endsWith(".jsonl") || pathLower.endsWith(".jsonl.gz")
+                    || pathLower.endsWith(".json") || pathLower.endsWith(".parquet")) {
                 return true;
             }
         }
+        // A bare .parquet file is claimed only if it actually carries the OASST1 flat-message
+        // schema (message_id + parent_id + text). Generic Parquet files are left to ParquetAdapter.
+        if (pathLower.endsWith(".parquet")) {
+            return OasstParquetReader.isOasstParquet(file);
+        }
         // Inspect content header if JSONL file
         if (pathLower.endsWith(".jsonl") || pathLower.endsWith(".jsonl.gz") || pathLower.endsWith(".json")) {
-            return isOasstContent(new File(item.getPath()));
+            return isOasstContent(file);
         }
         return false;
     }
@@ -76,9 +83,51 @@ public class OASST1Adapter implements DatasetSourceAdapter {
             return new DatasetInspection(item, "OASST1Adapter", false, 0, "OASST1", false, "Item or path is null");
         }
         File file = new File(item.getPath());
-        boolean exists = file.exists();
-        long size = exists ? (file.isFile() ? file.length() : 0) : 0;
-        return new DatasetInspection(item, "OASST1Adapter", exists, size, "OASST1", exists, exists ? "OASST1 Dataset Source" : "File/Folder does not exist");
+        if (!file.exists()) {
+            return new DatasetInspection(item, "OASST1Adapter", false, 0, "OASST1", false, "File/Folder does not exist");
+        }
+        List<File> dataFiles = collectSourceFiles(file);
+        long size = 0;
+        int parquet = 0;
+        int jsonl = 0;
+        for (File f : dataFiles) {
+            size += f.length();
+            if (f.getName().endsWith(".parquet")) parquet++;
+            else jsonl++;
+        }
+        boolean supported = !dataFiles.isEmpty();
+        String details;
+        if (!supported) {
+            details = "OASST1 source contains no supported data files (expected .parquet / .jsonl / .json)";
+        } else {
+            details = "OASST1 Dataset Source (" + dataFiles.size() + " file(s), " + parquet + " parquet, " + jsonl + " jsonl/json)";
+        }
+        return new DatasetInspection(item, "OASST1Adapter", true, size, "OASST1", supported, details);
+    }
+
+    /**
+     * Collects the OASST1 data files beneath a directory (or the single file itself).
+     */
+    private List<File> collectSourceFiles(File path) {
+        List<File> files = new ArrayList<>();
+        if (path == null || !path.exists()) {
+            return files;
+        }
+        if (path.isDirectory()) {
+            File[] children = path.listFiles((dir, name) -> name.contains("oasst")
+                    || name.endsWith(".jsonl") || name.endsWith(".jsonl.gz")
+                    || name.endsWith(".json") || name.endsWith(".parquet"));
+            if (children != null) {
+                for (File c : children) {
+                    if (c.isFile()) {
+                        files.add(c);
+                    }
+                }
+            }
+        } else if (path.isFile()) {
+            files.add(path);
+        }
+        return files;
     }
 
     @Override
@@ -99,20 +148,15 @@ public class OASST1Adapter implements DatasetSourceAdapter {
         List<JSONObject> rawTrees = new ArrayList<>();
         int linesRead = 0;
         int malformedLines = 0;
+        int parquetRows = 0;
 
-        List<File> filesToProcess = new ArrayList<>();
-        if (file.isDirectory()) {
-            File[] children = file.listFiles((dir, name) -> name.contains("oasst") || name.endsWith(".jsonl") || name.endsWith(".jsonl.gz") || name.endsWith(".json"));
-            if (children != null) {
-                for (File c : children) {
-                    if (c.isFile()) filesToProcess.add(c);
-                }
-            }
-        } else {
-            filesToProcess.add(file);
-        }
+        List<File> filesToProcess = collectSourceFiles(file);
 
         for (File targetFile : filesToProcess) {
+            if (targetFile.getName().endsWith(".parquet")) {
+                parquetRows += readParquetMessages(targetFile, rawFlatMessages, context);
+                continue;
+            }
             InputStream fis = new FileInputStream(targetFile);
             if (targetFile.getName().endsWith(".gz")) {
                 fis = new GZIPInputStream(fis);
@@ -171,11 +215,33 @@ public class OASST1Adapter implements DatasetSourceAdapter {
 
         context.log("[forge.dataset] Trees read: " + treesRead);
         context.log("[forge.dataset] Messages read: " + (totalMessages + treesRead));
+        if (parquetRows > 0) {
+            context.log("[forge.dataset] Parquet rows read: " + parquetRows);
+        }
         context.log("[forge.dataset] Conversations generated: " + samples.size());
         context.log("[forge.dataset] Messages accepted: " + acceptedCount);
         context.log("[forge.dataset] Messages rejected: " + rejectedCount);
 
         return samples;
+    }
+
+    /**
+     * Reads an OASST1 flat-message Parquet shard and appends one {@link JSONObject} per
+     * message to {@code flatMessages}. Returns the number of rows read.
+     */
+    private int readParquetMessages(File targetFile, List<JSONObject> flatMessages,
+                                    DatasetPreparationContext context) {
+        final int[] count = {0};
+        try {
+            OasstParquetReader.forEachMessage(targetFile, obj -> {
+                flatMessages.add(obj);
+                count[0]++;
+            });
+        } catch (Exception ex) {
+            context.log("[forge.dataset] [OASST1Adapter] Parquet read failed for "
+                    + targetFile.getName() + ": " + ex.getMessage());
+        }
+        return count[0];
     }
 
     public static List<NormalizedSample> convertFlatMessages(List<JSONObject> rawMessages, String sourceName, DatasetPreparationContext context) {

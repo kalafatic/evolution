@@ -315,6 +315,7 @@ public class OllamaExporter implements EvoModelExporter {
 
             if (i <= 2) tokenTypes[i] = 3;
             else if (token.startsWith("<0x") && token.endsWith(">") && token.length() == 6) tokenTypes[i] = 6;
+            else if (token.startsWith("<pad_") && token.endsWith(">")) tokenTypes[i] = 5; // UNUSED: never generated
             else tokenTypes[i] = 1;
             scores[i] = 0.0f;
         }

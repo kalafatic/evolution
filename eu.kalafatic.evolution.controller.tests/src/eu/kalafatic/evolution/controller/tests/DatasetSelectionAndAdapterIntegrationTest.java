@@ -114,17 +114,26 @@ public class DatasetSelectionAndAdapterIntegrationTest {
     public void testParquetAdapterSelectionForOpenAssistantPath() throws Exception {
         SourceAdapterRegistry registry = SourceAdapterRegistry.createDefaultRegistry();
 
+        // An OASST1 Parquet shard (path contains "oasst") must resolve to the specialized
+        // OASST1Adapter so conversation trees are reconstructed, not the generic ParquetAdapter.
         File oasstParquetFile = tempFolder.newFile("OpenAssistant_oasst1_train-00000-of-00001.parquet");
         DatasetItem parquetItem = new DatasetItem(true, oasstParquetFile.getAbsolutePath(), "FILE");
 
         DatasetSourceAdapter adapter = registry.findAdapter(parquetItem);
         assertNotNull(adapter);
-        assertTrue("Parquet file with 'oasst' in path must resolve to ParquetAdapter, got: " + adapter.getClass().getSimpleName(),
-                adapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter);
+        assertTrue("OASST1 parquet shard must resolve to OASST1Adapter, got: " + adapter.getClass().getSimpleName(),
+                adapter instanceof OASST1Adapter);
 
         OASST1Adapter oasstAdapter = new OASST1Adapter();
-        boolean oasstSupports = oasstAdapter.supports(parquetItem);
-        assertTrue("OASST1Adapter must NOT support .parquet files", !oasstSupports);
+        assertTrue("OASST1Adapter must support OASST1 Parquet files", oasstAdapter.supports(parquetItem));
+
+        // A generic .parquet file (no OASST1 content) must still resolve to ParquetAdapter.
+        File genericParquetFile = tempFolder.newFile("wikitext_train-00000-of-00001.parquet");
+        DatasetItem genericItem = new DatasetItem(true, genericParquetFile.getAbsolutePath(), "FILE");
+        DatasetSourceAdapter genericAdapter = registry.findAdapter(genericItem);
+        assertNotNull(genericAdapter);
+        assertTrue("Generic parquet file must resolve to ParquetAdapter, got: " + genericAdapter.getClass().getSimpleName(),
+                genericAdapter instanceof eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter);
     }
 
     @Test

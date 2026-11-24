@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -117,7 +118,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         return generateWithListener(model, request, tokenizer, null);
     }
 
-    private int sampleNextTokenWithVocabulary(Tensor logits, List<Integer> tokenHistory, InferenceRequest request, Random rng, Map<Integer, String> idToToken) {
+    private int sampleNextTokenWithVocabulary(Tensor logits, List<Integer> tokenHistory, InferenceRequest request, Random rng, Map<Integer, String> idToToken, Set<Integer> forbiddenTokenIds) {
         float[] data = logits.getData();
         int seqLen = (int) logits.getShape()[0];
         int vocabSize = (int) logits.getShape()[1];
@@ -126,7 +127,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         float[] rawLogits = new float[vocabSize];
         System.arraycopy(data, offset, rawLogits, 0, vocabSize);
 
-        return sampleNextTokenFromLogits(rawLogits, vocabSize, tokenHistory, request, rng);
+        return sampleNextTokenFromLogits(rawLogits, vocabSize, tokenHistory, request, rng, forbiddenTokenIds);
     }
 
     @Override
@@ -225,6 +226,19 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             incrementalDecoder = ((eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) tokenizer).createIncrementalDecoder();
         }
 
+        // Sampling restrictions, computed once per generation:
+        //  - synthetic <pad_N> placeholder tokens (vocabulary padding artifacts) are
+        //    never trained and must never be sampled;
+        //  - BOS markers (<s>/<bos>/<|im_start|>) are only valid for prompt
+        //    initialization and must not be emitted during decoding.
+        // Both are excluded before softmax so the probability mass is renormalized
+        // over the real vocabulary only.
+        Set<Integer> forbiddenTokenIds = collectForbiddenTokenIds(model.getIdToToken(), tokenizer);
+        if (forbiddenTokenIds.size() >= model.getVocabSize()) {
+            throw new IllegalStateException("EVO sampling vocabulary exhausted: all "
+                    + model.getVocabSize() + " token IDs are forbidden for generation");
+        }
+
         for (int step = 0; step < maxTokensToGenerate; step++) {
             if (request.isCancellationRequested() || Thread.currentThread().isInterrupted()) {
                 terminationReason = InferenceResult.TerminationReason.CANCELLED;
@@ -237,7 +251,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 lastLogits = model.forwardWithCache(new int[]{lastToken}, kvCache);
             }
 
-            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken());
+            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken(), forbiddenTokenIds);
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
@@ -257,9 +271,12 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                         nextToken, piece.replace("\n", "\\n"), decodedChunk.replace("\n", "\\n"), cumulativeDecoded.replace("\n", "\\n"), step + 1, maxTokensToGenerate, tokPerSec);
             }
 
+            // Termination is a distinct concept from token classification. Only the
+            // EOS token (and any explicitly requested stop tokens) may terminate
+            // generation; <unk>, <bos> and other special tokens must NOT stop
+            // generation (a model emitting <unk> must keep decoding, not halt early).
             boolean isEos = (eosTokenId != -1 && nextToken == eosTokenId)
-                    || (stopTokens != null && stopTokens.contains(nextToken))
-                    || eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer.isSpecialToken(piece);
+                    || (stopTokens != null && stopTokens.contains(nextToken));
 
             if (isEos) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
@@ -295,19 +312,19 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         );
     }
 
-    private int sampleNextToken(Tensor logits, List<Integer> tokenHistory, InferenceRequest request, Random rng) {
-        float[] data = logits.getData();
-        int seqLen = (int) logits.getShape()[0];
-        int vocabSize = (int) logits.getShape()[1];
-        int offset = (seqLen - 1) * vocabSize;
+    private int sampleNextTokenFromLogits(float[] rawLogits, int vocabSize, List<Integer> tokenHistory, InferenceRequest request, Random rng, Set<Integer> forbiddenTokenIds) {
+        // Exclude forbidden token IDs (synthetic <pad_N> placeholders and BOS markers)
+        // from the sampling distribution BEFORE any temperature/softmax normalization.
+        // Setting their logits to -Infinity makes their post-softmax probability exactly
+        // zero, so they can never be selected by greedy, temperature, top-k or top-p.
+        if (forbiddenTokenIds != null) {
+            for (int forbiddenId : forbiddenTokenIds) {
+                if (forbiddenId >= 0 && forbiddenId < vocabSize) {
+                    rawLogits[forbiddenId] = Float.NEGATIVE_INFINITY;
+                }
+            }
+        }
 
-        float[] rawLogits = new float[vocabSize];
-        System.arraycopy(data, offset, rawLogits, 0, vocabSize);
-
-        return sampleNextTokenFromLogits(rawLogits, vocabSize, tokenHistory, request, rng);
-    }
-
-    private int sampleNextTokenFromLogits(float[] rawLogits, int vocabSize, List<Integer> tokenHistory, InferenceRequest request, Random rng) {
         float repeatPenalty = request.getRepeatPenalty();
         float freqPenalty = request.getFrequencyPenalty();
         float presPenalty = request.getPresencePenalty();
@@ -420,5 +437,59 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         }
 
         return vocabSize - 1;
+    }
+
+    /**
+     * Returns true when {@code token} is a synthetic {@code <pad_N>} placeholder token
+     * introduced by {@code SimpleBPETokenizer.train} to pad the vocabulary to its
+     * requested target size. Such tokens never occur in training data.
+     */
+    private static boolean isPadPlaceholderToken(String token) {
+        if (token == null || token.length() < 7 || !token.startsWith("<pad_") || !token.endsWith(">")) {
+            return false;
+        }
+        for (int i = 5; i < token.length() - 1; i++) {
+            char c = token.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true when {@code token} is a BOS (beginning-of-sequence) marker. BOS is
+     * valid only for prompt initialization and must not be emitted during decoding.
+     */
+    private static boolean isBosToken(String token) {
+        return "<s>".equals(token) || "<bos>".equals(token) || "<|im_start|>".equals(token);
+    }
+
+    /**
+     * Collects the token IDs that must be excluded from sampling: synthetic
+     * {@code <pad_N>} placeholders (never trained) and BOS markers (not valid during
+     * decoding). Reads from the model's id-to-token map and, when available, the
+     * tokenizer's vocabulary, so the mask is correct even when only one is populated.
+     */
+    private static Set<Integer> collectForbiddenTokenIds(Map<Integer, String> idToToken, Tokenizer tokenizer) {
+        Set<Integer> forbidden = new HashSet<>();
+        if (idToToken != null) {
+            for (Map.Entry<Integer, String> entry : idToToken.entrySet()) {
+                if (isPadPlaceholderToken(entry.getValue()) || isBosToken(entry.getValue())) {
+                    forbidden.add(entry.getKey());
+                }
+            }
+        }
+        if (tokenizer instanceof eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) {
+            Map<String, Integer> vocab = ((eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) tokenizer).getVocab();
+            if (vocab != null) {
+                for (Map.Entry<String, Integer> entry : vocab.entrySet()) {
+                    if (isPadPlaceholderToken(entry.getKey()) || isBosToken(entry.getKey())) {
+                        forbidden.add(entry.getValue());
+                    }
+                }
+            }
+        }
+        return forbidden;
     }
 }

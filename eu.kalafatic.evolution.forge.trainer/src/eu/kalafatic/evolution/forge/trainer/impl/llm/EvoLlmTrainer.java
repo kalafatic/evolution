@@ -93,6 +93,13 @@ public class EvoLlmTrainer {
     private EmbeddedAdamW activeOptimizer = null;
     private int lastCompletedEpochs = 0;
 
+    // Best-validation checkpoint tracking: retains a snapshot of the model weights
+    // at the epoch with the lowest validation loss so the caller can select the
+    // best-generalizing model instead of the final (potentially overfit) one.
+    private double bestValLoss = Double.POSITIVE_INFINITY;
+    private int bestEpoch = -1;
+    private List<float[]> bestCheckpointWeights = null;
+
     public EvoLlmTrainer(EvoLlmModel model, TrainingProfile profile) {
         if (model == null) throw new IllegalArgumentException("EvoLlmModel cannot be null");
         this.model = model;
@@ -173,6 +180,39 @@ public class EvoLlmTrainer {
 
     public TrainingResult getLastTrainingResult() { return lastResult; }
     public EvoLlmModel getModel() { return model; }
+
+    /**
+     * Epoch (1-based) with the lowest validation loss observed during the most recent
+     * {@link #train} run, or {@code -1} when no validation split was configured.
+     */
+    public int getBestEpoch() { return bestEpoch; }
+
+    /** Lowest validation loss observed during the most recent {@link #train} run. */
+    public double getBestValLoss() { return bestValLoss; }
+
+    /** True when a best-validation weight snapshot is available to restore. */
+    public boolean hasBestCheckpoint() { return bestCheckpointWeights != null; }
+
+    /**
+     * Restores the model weights to the best-validation checkpoint captured during the
+     * most recent {@link #train} run. A no-op returning {@code false} when no validation
+     * split was configured (so no best checkpoint was recorded). This lets callers select
+     * the best-generalizing model instead of the final, potentially overfit one.
+     */
+    public boolean restoreBestCheckpoint() {
+        if (bestCheckpointWeights == null) {
+            return false;
+        }
+        List<Tensor> params = model.parameters();
+        if (params.size() != bestCheckpointWeights.size()) {
+            return false;
+        }
+        for (int i = 0; i < params.size(); i++) {
+            System.arraycopy(bestCheckpointWeights.get(i), 0, params.get(i).getData(), 0,
+                    Math.min(bestCheckpointWeights.get(i).length, params.get(i).getData().length));
+        }
+        return true;
+    }
 
     public static String formatDuration(long ms) {
         if (ms < 0) return "0 ms";
@@ -411,6 +451,11 @@ public class EvoLlmTrainer {
                 ? configuredWarmupSteps
                 : Math.max(1, (int) (totalOptimizationSteps * 0.03f));
 
+        // Each train() invocation tracks its own best-validation checkpoint.
+        bestValLoss = Double.POSITIVE_INFINITY;
+        bestEpoch = -1;
+        bestCheckpointWeights = null;
+
         try {
             for (int epoch = startEpoch; epoch < epochs; epoch++) {
                 if (Thread.currentThread().isInterrupted()) {
@@ -613,6 +658,25 @@ public class EvoLlmTrainer {
                 result.setCompletedSteps(optStep);
                 result.setLastLoss(avgTrainLoss);
                 result.setValLoss(avgValLoss);
+
+                // Track the best-validation checkpoint so the caller can restore the
+                // best-generalizing model rather than the final (possibly overfit) one.
+                if (!valSamples.isEmpty() && !Double.isNaN(avgValLoss) && avgValLoss < bestValLoss) {
+                    bestValLoss = avgValLoss;
+                    bestEpoch = epoch + 1;
+                    List<Tensor> params = model.parameters();
+                    if (bestCheckpointWeights == null) {
+                        bestCheckpointWeights = new ArrayList<>(params.size());
+                        for (Tensor p : params) {
+                            bestCheckpointWeights.add(p.getData().clone());
+                        }
+                    } else {
+                        for (int i = 0; i < params.size(); i++) {
+                            System.arraycopy(params.get(i).getData(), 0,
+                                    bestCheckpointWeights.get(i), 0, params.get(i).getData().length);
+                        }
+                    }
+                }
 
                 System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %s%n",
                         epoch + 1, epochs, avgTrainLoss, avgValLoss, formatDuration(epochDuration));

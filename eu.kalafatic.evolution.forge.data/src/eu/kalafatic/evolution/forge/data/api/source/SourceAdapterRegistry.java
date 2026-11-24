@@ -27,11 +27,14 @@ public class SourceAdapterRegistry {
     public static SourceAdapterRegistry createDefaultRegistry() {
         SourceAdapterRegistry registry = new SourceAdapterRegistry();
         registry.registerAdapter(new EVODataAdapter());
+        // OASST1Adapter is consulted before the generic Parquet/JSONL/JSON adapters so that
+        // OASST1 Parquet shards and JSONL/JSON trees are handled by the specialized
+        // tree-reconstruction logic. Its supports() only claims genuine OASST1 inputs.
+        registry.registerAdapter(new OASST1Adapter());
         registry.registerAdapter(new ParquetAdapter());
         registry.registerAdapter(new CSVAdapter());
         registry.registerAdapter(new JSONLAdapter());
         registry.registerAdapter(new JSONAdapter());
-        registry.registerAdapter(new OASST1Adapter());
         registry.registerAdapter(new HuggingFaceAdapter());
         registry.registerAdapter(new GitAdapter(registry));
         registry.registerAdapter(new TextAdapter());
