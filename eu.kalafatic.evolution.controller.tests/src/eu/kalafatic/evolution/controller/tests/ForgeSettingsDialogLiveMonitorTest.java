@@ -236,4 +236,111 @@ public class ForgeSettingsDialogLiveMonitorTest {
         assertFalse("Projection must not be fabricated from <3 measured points",
                 html.contains("Projected (linear fit of last"));
     }
+
+    @Test
+    public void testCompletedSessionHasNoMisleadingRemainingTime() {
+        // A COMPLETED session must never retain a projected remaining duration or a
+        // stale "estimated total" (the historical bug that showed "24 days" for a
+        // completed run). It reports its actual elapsed duration instead.
+        TrainingTelemetry t = new TrainingTelemetry("completed-session");
+        t.status = "COMPLETED";
+        t.startTimeMs = System.currentTimeMillis() - (96 * 60_000L); // 1h36m ago
+        t.currentEpoch = 8;
+        t.totalEpochs = 8;
+        t.currentStep = 400;
+        t.totalSteps = 400;
+        t.processedTokens = 20_000;
+        t.totalTokens = 40_000;   // > processed: would have produced a stale positive ETA
+        t.tokensPerSec = 128.0;
+        t.currentLoss = 1.2;
+
+        ForgeTelemetrySnapshot.Builder b = new ForgeTelemetrySnapshot.Builder();
+        b.sessionId = "completed-session";
+        b.status = t.status;
+        b.startTimeMs = t.startTimeMs;
+        b.currentEpoch = t.currentEpoch;
+        b.totalEpochs = t.totalEpochs;
+        b.currentStep = t.currentStep;
+        b.totalSteps = t.totalSteps;
+        b.processedTokens = t.processedTokens;
+        b.totalTokens = t.totalTokens;
+        b.tokensPerSec = t.tokensPerSec;
+        b.currentLoss = t.currentLoss;
+        b.configuredModelSize = "SMALL";
+        b.configuredEpochs = 8;
+        b.configuredDesiredLoss = 1.0;
+        b.configuredTimeBudgetHours = 12.0;
+        b.totalDatasetBytes = 8 * 1024 * 1024L;
+        ForgeTelemetrySnapshot snap = b.build();
+
+        assertTrue("Completed session must not report a remaining duration (got "
+                + snap.estimatedRemainingSeconds + ")", snap.estimatedRemainingSeconds < 0.0);
+        assertTrue("Completed total duration must equal actual elapsed time (got "
+                + snap.estimatedTotalSeconds + " vs elapsed " + snap.elapsedSeconds + ")",
+                Math.abs(snap.estimatedTotalSeconds - snap.elapsedSeconds) < 0.5);
+        assertTrue("Budget state must be COMPLETED",
+                snap.budgetState == ForgeTelemetrySnapshot.BudgetState.COMPLETED);
+
+        ForgeSettingsDialog dialog = new ForgeSettingsDialog(null, "SMALL", 8, "Stage 2", 1.0, null, null);
+        String html = dialog.generateGraphHtml(snap);
+        assertFalse("Completed session must not show 'Remaining:'", html.contains("Remaining:"));
+        assertTrue("Completed session must show 'Completed in'", html.contains("Completed in"));
+    }
+
+    @Test
+    public void testAllTerminalStatesHaveNoRemainingTime() {
+        for (String status : new String[] { "COMPLETED", "STOPPED", "FAILED", "CANCELLED" }) {
+            ForgeTelemetrySnapshot.Builder b = new ForgeTelemetrySnapshot.Builder();
+            b.sessionId = "terminal-" + status.toLowerCase();
+            b.status = status;
+            b.startTimeMs = System.currentTimeMillis() - (96 * 60_000L);
+            b.currentEpoch = 8;
+            b.totalEpochs = 8;
+            b.currentStep = 400;
+            b.totalSteps = 400;
+            b.processedTokens = 20_000;
+            b.totalTokens = 40_000; // > processed: would produce a stale ETA in the buggy path
+            b.tokensPerSec = 128.0;
+            b.currentLoss = 1.2;
+            b.configuredModelSize = "SMALL";
+            b.configuredEpochs = 8;
+            b.configuredDesiredLoss = 1.0;
+            b.configuredTimeBudgetHours = 12.0;
+            b.totalDatasetBytes = 8 * 1024 * 1024L;
+            ForgeTelemetrySnapshot snap = b.build();
+
+            assertTrue("Terminal state " + status + " must not report remaining time (got "
+                    + snap.estimatedRemainingSeconds + ")", snap.estimatedRemainingSeconds < 0.0);
+            assertTrue("Terminal state " + status + " total must equal elapsed (got "
+                    + snap.estimatedTotalSeconds + " vs elapsed " + snap.elapsedSeconds + ")",
+                    Math.abs(snap.estimatedTotalSeconds - snap.elapsedSeconds) < 0.5);
+        }
+    }
+
+    @Test
+    public void testRunningSessionStillProjectsRemainingTime() {
+        // A RUNNING session with remaining work must still project a remaining duration
+        // (the terminal fix must not suppress legitimate live ETA).
+        ForgeTelemetrySnapshot.Builder b = new ForgeTelemetrySnapshot.Builder();
+        b.sessionId = "running-session";
+        b.status = "RUNNING";
+        b.startTimeMs = System.currentTimeMillis() - 60_000L;
+        b.currentEpoch = 2;
+        b.totalEpochs = 8;
+        b.currentStep = 100;
+        b.totalSteps = 400;
+        b.processedTokens = 10_000;
+        b.totalTokens = 40_000;
+        b.tokensPerSec = 128.0;
+        b.currentLoss = 2.5;
+        b.configuredModelSize = "SMALL";
+        b.configuredEpochs = 8;
+        b.configuredDesiredLoss = 1.0;
+        b.configuredTimeBudgetHours = 12.0;
+        b.totalDatasetBytes = 8 * 1024 * 1024L;
+        ForgeTelemetrySnapshot snap = b.build();
+
+        assertTrue("Running session should still project remaining time (got "
+                + snap.estimatedRemainingSeconds + ")", snap.estimatedRemainingSeconds >= 0.0);
+    }
 }

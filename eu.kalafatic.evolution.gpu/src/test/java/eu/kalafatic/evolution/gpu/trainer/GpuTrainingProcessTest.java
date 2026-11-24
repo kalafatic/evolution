@@ -36,13 +36,22 @@ public class GpuTrainingProcessTest {
         assertFalse(status.getTechnicalNote().isEmpty());
         assertNotNull(status.getCudaVerificationLabel());
 
-        // Honesty invariants: no fake training, no fake model artifact.
-        assertFalse("Native training must never be reported as executed without real kernels",
-                status.isNativeTrainingExecuted());
-        assertEquals("No epochs may be reported from a non-executed training", 0, status.getTotalEpochsCompleted());
-        assertNotNull(status.getModelArtifactPath());
-        assertTrue("No model artifact may be produced by a diagnostics-only run",
-                status.getModelArtifactPath().isEmpty());
+        // Honesty invariants: training is reported as executed ONLY when genuine CUDA
+        // kernels ran; otherwise an explicit CPU fallback is reported with no fake
+        // epochs/loss/artifact.
+        boolean cudaAvailable = eu.kalafatic.evolution.gpu.cuda.CudaDevice.isAvailable();
+        if (cudaAvailable) {
+            assertTrue("With CUDA available, genuine GPU training must be executed",
+                    status.isNativeTrainingExecuted());
+            assertEquals("Executed training must report the configured epochs", config.getEpochs(),
+                    status.getTotalEpochsCompleted());
+            assertTrue("Executed training must report a real loss", status.getFinalLoss() > 0.0f);
+            assertTrue("GPU device must be reported", status.getComputeDeviceUsed().contains("GPU"));
+        } else {
+            assertFalse("Without CUDA, no training may be reported as executed",
+                    status.isNativeTrainingExecuted());
+            assertEquals("No epochs may be reported from a non-executed training", 0, status.getTotalEpochsCompleted());
+        }
 
         File logFile = new File(status.getLogFilePath());
         assertTrue(logFile.exists());

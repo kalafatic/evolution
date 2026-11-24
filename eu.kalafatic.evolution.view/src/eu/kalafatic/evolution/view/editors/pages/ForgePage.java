@@ -30,6 +30,13 @@ public class ForgePage extends AEvoPage {
         content.setLayout(new GridLayout(1, false));
         this.setContent(content);
 
+        // Live hardware monitoring panel (GPU / CPU / RAM + historical charts).
+        eu.kalafatic.evolution.view.monitor.HardwareMonitorGroup hardwareMonitor =
+                new eu.kalafatic.evolution.view.monitor.HardwareMonitorGroup(content);
+        org.eclipse.swt.layout.GridData monitorData = new GridData(GridData.FILL_HORIZONTAL);
+        monitorData.heightHint = 300;
+        hardwareMonitor.setLayoutData(monitorData);
+
         this.browser = new Browser(content, SWT.NONE);
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 

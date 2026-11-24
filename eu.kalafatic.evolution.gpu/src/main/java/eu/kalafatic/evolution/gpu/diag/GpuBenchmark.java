@@ -41,47 +41,77 @@ public class GpuBenchmark {
         BenchmarkResult res = new BenchmarkResult();
         res.setMatrixSize(matrixSize);
 
-        float[][] a = createRandomMatrix(matrixSize);
-        float[][] b = createRandomMatrix(matrixSize);
+        float[] a = createRandomMatrix(matrixSize);
+        float[] b = createRandomMatrix(matrixSize);
 
+        // CPU matmul (single-threaded naive, as a baseline).
         long startCpu = System.nanoTime();
-        float[][] cCpu = multiplyCpu(a, b, matrixSize);
+        float[] cCpu = multiplyCpu(a, b, matrixSize);
         long endCpu = System.nanoTime();
         res.setCpuDurationMs((endCpu - startCpu) / 1_000_000);
 
-        if (gpuComputeCapable) {
-            res.setGpuDurationMs(-1);
-            res.setExecutionMode("GPU_CUDA_KERNEL_REQUIRED");
-            res.setSpeedupRatio(1.0);
-            res.setNote("CUDA driver libraries detected, but actual GPU tensor acceleration requires compiled CUDA PTX/cuBLAS native kernel binaries.");
-            res.setTechnicalBlocker("Java 21 bytecode cannot execute on NVIDIA GPU execution units directly. GPU kernel dispatch requires compiling C++/CUDA (.cu -> .ptx/.so) kernels and binding them via FFM/JNI.");
-        } else {
+        if (!gpuComputeCapable) {
             res.setGpuDurationMs(-1);
             res.setExecutionMode("CPU_FALLBACK");
             res.setSpeedupRatio(1.0);
             res.setNote("GPU compute hardware / CUDA runtime unavailable; benchmark ran strictly on CPU.");
+            return res;
+        }
+
+        // Real GPU matmul via the CUDA driver API + NVRTC (genuine GPU execution).
+        try {
+            eu.kalafatic.evolution.gpu.cuda.CudaDevice dev = eu.kalafatic.evolution.gpu.cuda.CudaDevice.tryCreate();
+            if (dev == null) throw new IllegalStateException("CUDA device not initialised");
+            String src = "extern \"C\" __global__ void g(const float* A, const float* B, float* C, int n){"
+                    + " int i=blockIdx.x*blockDim.x+threadIdx.x; if(i>=n*n)return; int r=i/n,c=i%n;"
+                    + " float s=0; for(int k=0;k<n;k++)s+=A[r*n+k]*B[k*n+c]; C[i]=s; }";
+            var mod = dev.compile("bench_gemm", src);
+            long dA = dev.alloc(a.length * 4L), dB = dev.alloc(b.length * 4L), dC = dev.alloc(cCpu.length * 4L);
+            dev.memcpyHtoD(dA, a);
+            dev.memcpyHtoD(dB, b);
+            int reps = 10;
+            long startGpu = System.nanoTime();
+            for (int i = 0; i < reps; i++) {
+                mod.function("g").launch(matrixSize * matrixSize,
+                        java.util.List.of(dA, dB, dC, matrixSize));
+            }
+            dev.synchronize();
+            long endGpu = System.nanoTime();
+            long gpuTotalMs = (endGpu - startGpu) / 1_000_000;
+            res.setGpuDurationMs(gpuTotalMs);
+            res.setExecutionMode("GPU_CUDA_KERNEL");
+            res.setSpeedupRatio(((double) res.getCpuDurationMs() * reps) / Math.max(1, gpuTotalMs));
+            res.setNote("Genuine CUDA kernel matmul (" + reps + " iterations) vs single-threaded CPU matmul.");
+            res.setTechnicalBlocker(null);
+        } catch (Throwable t) {
+            res.setGpuDurationMs(-1);
+            res.setExecutionMode("GPU_KERNEL_FAILED");
+            res.setSpeedupRatio(1.0);
+            res.setNote("GPU matmul failed: " + t);
+            res.setTechnicalBlocker(t.toString());
         }
 
         return res;
     }
 
-    private float[][] createRandomMatrix(int n) {
-        float[][] m = new float[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                m[i][j] = (float) Math.random();
-            }
+    private float[] createRandomMatrix(int n) {
+        float[] m = new float[n * n];
+        for (int i = 0; i < m.length; i++) {
+            m[i] = (float) Math.random();
         }
         return m;
     }
 
-    private float[][] multiplyCpu(float[][] a, float[][] b, int n) {
-        float[][] c = new float[n][n];
+    private float[] multiplyCpu(float[] a, float[] b, int n) {
+        float[] c = new float[n * n];
         for (int i = 0; i < n; i++) {
+            int io = i * n;
             for (int k = 0; k < n; k++) {
-                float aVal = a[i][k];
+                float aVal = a[i * n + k];
+                if (aVal == 0.0f) continue;
+                int ko = k * n;
                 for (int j = 0; j < n; j++) {
-                    c[i][j] += aVal * b[k][j];
+                    c[io + j] += aVal * b[ko + j];
                 }
             }
         }

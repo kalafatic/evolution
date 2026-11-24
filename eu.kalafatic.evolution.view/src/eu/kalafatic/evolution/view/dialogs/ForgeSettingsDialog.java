@@ -622,7 +622,7 @@ public class ForgeSettingsDialog extends Dialog {
     private void buildZoomBar(Composite parent) {
         Composite bar = new Composite(parent, SWT.NONE);
         bar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        GridLayout layout = new GridLayout(6, false);
+        GridLayout layout = new GridLayout(7, false);
         layout.marginWidth = 0;
         layout.marginHeight = 0;
         layout.verticalSpacing = 0;
@@ -676,6 +676,19 @@ public class ForgeSettingsDialog extends Dialog {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 resetZoom();
+            }
+        });
+
+        Button openBrowserBtn = new Button(bar, SWT.PUSH);
+        openBrowserBtn.setText("Open in Browser");
+        openBrowserBtn.setToolTipText("Open the current training monitor diagram in your default web browser (interactive, self-contained HTML).");
+        GridData openData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        openData.heightHint = 22;
+        openBrowserBtn.setLayoutData(openData);
+        openBrowserBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                openDiagramInBrowser();
             }
         });
 
@@ -2139,16 +2152,30 @@ public class ForgeSettingsDialog extends Dialog {
         double budgetSec = snap.configuredTimeBudgetHours > 0 ? snap.configuredTimeBudgetHours * 3600.0 : -1;
         double elapsed = snap.elapsedSeconds;
         double remaining = snap.estimatedRemainingSeconds;
-        double estTotal = remaining >= 0 ? elapsed + remaining : (snap.initialEstimateSeconds > 0 ? snap.initialEstimateSeconds : -1);
+        // Terminal-aware total: completed/cancelled/failed runs use their actual elapsed
+        // duration; active runs use elapsed + remaining; otherwise fall back to the
+        // historical preliminary estimate (clearly not a live projection).
+        double estTotal = snap.estimatedTotalSeconds > 0 ? snap.estimatedTotalSeconds
+                : (snap.initialEstimateSeconds > 0 ? snap.initialEstimateSeconds : -1);
+        boolean terminal = "COMPLETED".equalsIgnoreCase(snap.status) || "STOPPED".equalsIgnoreCase(snap.status)
+                || "FAILED".equalsIgnoreCase(snap.status) || "ABORTED".equalsIgnoreCase(snap.status)
+                || "CANCELLED".equalsIgnoreCase(snap.status) || "INTERRUPTED".equalsIgnoreCase(snap.status);
         StringBuilder sb = new StringBuilder();
-        sb.append("Elapsed: ").append(formatDuration(elapsed));
-        if (remaining >= 0) sb.append(" | Remaining: ").append(formatDuration(remaining));
-        if (estTotal > 0) sb.append(" | Est. total: ").append(formatDuration(estTotal));
+        if (terminal) {
+            sb.append("Completed in: ").append(formatDuration(elapsed));
+            if (snap.initialEstimateSeconds > 0 && snap.initialEstimateSeconds > elapsed) {
+                sb.append(" | Original estimate: ").append(formatDuration(snap.initialEstimateSeconds));
+            }
+        } else {
+            sb.append("Elapsed: ").append(formatDuration(elapsed));
+            if (remaining >= 0) sb.append(" | Remaining: ").append(formatDuration(remaining));
+            if (estTotal > 0) sb.append(" | Est. total: ").append(formatDuration(estTotal));
+            if (snap.isTrainingActive && snap.etaConfidence <= 0.0) {
+                sb.append(" | ETA: ANALYTICAL PRELIMINARY");
+            }
+        }
         if (budgetSec > 0) sb.append(" | Budget: ").append(formatDuration(budgetSec));
         if (snap.budgetConsumption > 0) sb.append(" | Consumption: ").append(String.format("%.0f%%", snap.budgetConsumption * 100.0));
-        if (snap.isTrainingActive && snap.etaConfidence <= 0.0) {
-            sb.append(" | ETA: ANALYTICAL PRELIMINARY");
-        }
         return sb.toString();
     }
 
@@ -2165,7 +2192,9 @@ public class ForgeSettingsDialog extends Dialog {
         double budgetSec = budgetHours > 0 ? budgetHours * 3600.0 : -1;
         double elapsed = snap.elapsedSeconds;
         double remaining = snap.estimatedRemainingSeconds;
-        double estTotal = remaining >= 0 ? elapsed + remaining : estSec;
+        // Terminal-aware total (same logic as ForgeTelemetrySnapshot.estimateTotalSeconds):
+        // a completed/cancelled/failed run has no projected total beyond its elapsed time.
+        double estTotal = snap.estimatedTotalSeconds > 0 ? snap.estimatedTotalSeconds : estSec;
 
         double xMax = Math.max(1.0, Math.max(budgetSec > 0 ? budgetSec : 0, estTotal > 0 ? estTotal : 0) * 1.2);
 
@@ -2384,7 +2413,7 @@ public class ForgeSettingsDialog extends Dialog {
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#10b981;\"></div>RAM Memory</div>" +
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#8b5cf6;\"></div>Tokens/sec</div>" +
                 "<div class=\"legend-item\"><div class=\"legend-line\" style=\"background:#22c55e;\"></div>CPU</div>")
-            + "\n" + tooltipScript() + "</body>\n</html>";
+            + "\n" + tooltipScript() + interactionScript() + "</body>\n</html>";
     }
 
     private static String cardHtml(String badge, String title, String subtitle, String badgeClass, String svg, String legend) {
@@ -2441,7 +2470,7 @@ public class ForgeSettingsDialog extends Dialog {
             + svgWrap(memSvg) + "</div>\n"
             + "<div class=\"tab-content\" id=\"tabTime\" style=\"display:none\">" + "<div class=\"tab-head\">Training Phase Timeline (from real session events)</div>"
             + svgWrap(timelineSvg) + "</div>\n"
-            + tabScript() + "\n</body>\n</html>";
+            + tabScript() + interactionScript() + "\n</body>\n</html>";
         return withInitialZoom(html);
     }
 
@@ -2679,6 +2708,7 @@ public class ForgeSettingsDialog extends Dialog {
             + "  .legend { display:flex; gap:16px; justify-content:center; margin-top:8px; font-size:11px; color:#c3d0e5; flex-wrap:wrap; }\n"
             + "  .legend-item { display:flex; align-items:center; gap:5px; }\n"
             + "  .legend-line { width:16px; height:3px; border-radius:2px; }\n"
+            + interactionCss()
             + "</style>\n";
     }
 
@@ -2691,7 +2721,24 @@ public class ForgeSettingsDialog extends Dialog {
             + "  .tab-head { font-size:12px; color:#c3d0e5; margin-bottom:6px; font-weight:600; }\n"
             + "  .tab-svg-wrap { width:100%; }\n"
             + "  .tab-svg-wrap svg { display:block; width:100%; height:auto; max-height:340px; overflow:visible; }\n"
+            + interactionCss()
             + "</style>\n";
+    }
+
+    /** Shared CSS for the reusable interactive zoom/pan toolbar (embedded + external browser). */
+    private static String interactionCss() {
+        return "  .viz-pane { position:relative; overflow:hidden; cursor:grab; touch-action:none; user-select:none; }\n"
+            + "  .viz-pane svg { transition: none; }\n"
+            + "  .viz-toolbar { position:absolute; top:6px; right:6px; display:flex; align-items:center; gap:3px;\n"
+            + "         background:rgba(2,6,23,0.82); border:1px solid #33415c; border-radius:6px; padding:2px 4px; z-index:50; }\n"
+            + "  .viz-toolbar button { background:#1e293b; color:#cbd5e1; border:1px solid #33415c; border-radius:4px;\n"
+            + "         min-width:24px; height:20px; font-size:12px; line-height:1; cursor:pointer; padding:0 5px; }\n"
+            + "  .viz-toolbar button:hover { background:#2a3b58; color:#fff; }\n"
+            + "  .viz-zoom-level { font-size:11px; color:#8ea3c0; min-width:40px; text-align:center; }\n"
+            + "  .external-header { background:var(--surface); border:1px solid var(--border); border-radius:8px;\n"
+            + "         padding:10px 16px; margin-bottom:12px; }\n"
+            + "  .external-header-title { font-size:15px; font-weight:700; color:#f1f5f9; }\n"
+            + "  .external-header-meta { font-size:11px; color:var(--muted); margin-top:3px; }\n";
     }
 
     private static String tabScript() {
@@ -2724,6 +2771,93 @@ public class ForgeSettingsDialog extends Dialog {
             + "    });\n"
             + "  }\n"
             + "  setupTooltips();\n"
+            + "</script>\n";
+    }
+
+    /**
+     * Reusable interactive zoom/pan/fit/reset for every SVG diagram pane. Self-contained
+     * (no external library), feature-detects pointer vs mouse events and wheel support, and
+     * runs identically in the embedded SWT Browser and an external browser.
+     */
+    private static String interactionScript() {
+        return "<script>\n"
+            + "  (function() {\n"
+            + "    var MIN = 0.2, MAX = 8.0;\n"
+            + "    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }\n"
+            + "    function initPane(pane) {\n"
+            + "      var svg = pane.querySelector('svg');\n"
+            + "      if (!svg) return;\n"
+            + "      pane.classList.add('viz-pane');\n"
+            + "      var st = { s: 1, tx: 0, ty: 0 };\n"
+            + "      svg.style.transformOrigin = '0 0';\n"
+            + "      svg.style.willChange = 'transform';\n"
+            + "      function apply() {\n"
+            + "        svg.style.transform = 'translate(' + st.tx + 'px,' + st.ty + 'px) scale(' + st.s + ')';\n"
+            + "        var l = pane.querySelector('.viz-zoom-level');\n"
+            + "        if (l) l.textContent = Math.round(st.s * 100) + '%';\n"
+            + "      }\n"
+            + "      var bar = document.createElement('div');\n"
+            + "      bar.className = 'viz-toolbar';\n"
+            + "      bar.innerHTML = '<button data-a=\"in\" title=\"Zoom in\">+</button>'"
+            + " + '<button data-a=\"out\" title=\"Zoom out\">\\u2212</button>'"
+            + " + '<button data-a=\"fit\" title=\"Fit to view\">Fit</button>'"
+            + " + '<button data-a=\"reset\" title=\"Reset\">Reset</button>'"
+            + " + '<span class=\"viz-zoom-level\">100%</span>';\n"
+            + "      pane.insertBefore(bar, pane.firstChild);\n"
+            + "      bar.addEventListener('click', function(e) {\n"
+            + "        var a = e.target.getAttribute && e.target.getAttribute('data-a');\n"
+            + "        if (a === 'in') zoom(1.25);\n"
+            + "        else if (a === 'out') zoom(0.8);\n"
+            + "        else if (a === 'fit' || a === 'reset') { st.s = 1; st.tx = 0; st.ty = 0; apply(); }\n"
+            + "      });\n"
+            + "      function zoom(factor, cx, cy) {\n"
+            + "        var r = pane.getBoundingClientRect();\n"
+            + "        if (cx == null) cx = r.width / 2;\n"
+            + "        if (cy == null) cy = r.height / 2;\n"
+            + "        var ns = clamp(st.s * factor, MIN, MAX);\n"
+            + "        var k = ns / st.s;\n"
+            + "        st.tx = cx - (cx - st.tx) * k;\n"
+            + "        st.ty = cy - (cy - st.ty) * k;\n"
+            + "        st.s = ns;\n"
+            + "        apply();\n"
+            + "      }\n"
+            + "      if (typeof window.addEventListener === 'function') {\n"
+            + "        pane.addEventListener('wheel', function(e) {\n"
+            + "          e.preventDefault();\n"
+            + "          var r = pane.getBoundingClientRect();\n"
+            + "          zoom(e.deltaY < 0 ? 1.15 : 0.87, e.clientX - r.left, e.clientY - r.top);\n"
+            + "        }, { passive: false });\n"
+            + "      }\n"
+            + "      var dragging = false, sx = 0, sy = 0, otx = 0, oty = 0;\n"
+            + "      function down(x, y, id) {\n"
+            + "        dragging = true; sx = x; sy = y; otx = st.tx; oty = st.ty;\n"
+            + "        pane.style.cursor = 'grabbing';\n"
+            + "        if (id != null && pane.setPointerCapture) { try { pane.setPointerCapture(id); } catch (e) {} }\n"
+            + "      }\n"
+            + "      function move(x, y) { if (!dragging) return; st.tx = otx + (x - sx); st.ty = oty + (y - sy); apply(); }\n"
+            + "      function up() { dragging = false; pane.style.cursor = 'grab'; }\n"
+            + "      var hasPointer = ('PointerEvent' in window);\n"
+            + "      if (hasPointer) {\n"
+            + "        pane.addEventListener('pointerdown', function(e) { down(e.clientX, e.clientY, e.pointerId); });\n"
+            + "        pane.addEventListener('pointermove', function(e) { move(e.clientX, e.clientY); });\n"
+            + "        pane.addEventListener('pointerup', up);\n"
+            + "        pane.addEventListener('pointercancel', up);\n"
+            + "      } else {\n"
+            + "        pane.addEventListener('mousedown', function(e) { down(e.clientX, e.clientY, null); });\n"
+            + "        pane.addEventListener('mousemove', function(e) { move(e.clientX, e.clientY); });\n"
+            + "        pane.addEventListener('mouseup', up);\n"
+            + "        pane.addEventListener('mouseleave', up);\n"
+            + "      }\n"
+            + "      pane.style.cursor = 'grab';\n"
+            + "      pane.style.overflow = 'hidden';\n"
+            + "      pane.style.userSelect = 'none';\n"
+            + "      apply();\n"
+            + "    }\n"
+            + "    function init() {\n"
+            + "      document.querySelectorAll('.graph-container, .tab-svg-wrap').forEach(initPane);\n"
+            + "    }\n"
+            + "    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();\n"
+            + "  })();\n"
             + "</script>\n";
     }
 
@@ -2928,6 +3062,70 @@ public class ForgeSettingsDialog extends Dialog {
                 "No active training run detected in progress.\n" +
                 "When training is running, clicking this button gracefully finishes the current epoch and exports all files.");
         }
+    }
+
+    /**
+     * Writes the current FORGE training-monitor diagrams (center cards + tabbed graphs) to
+     * a reusable HTML artifact on disk and opens it in the system default browser. The
+     * generated HTML is fully self-contained (inline CSS + JS), so interactivity (zoom,
+     * pan, fit, reset, tooltips) is preserved independently of the SWT Browser instance.
+     */
+    private void openDiagramInBrowser() {
+        ForgeTelemetrySnapshot snap = captureSnapshot();
+        if (snap == null) {
+            snap = ForgeTelemetrySnapshot.configOnly(selectedModelSize, selectedEpochs, selectedDesiredLoss,
+                    selectedTargetHours, selectedEarlyStoppingEnabled, lossHistory, calculateTotalDatasetBytes());
+        }
+        String sessionId = (snap.sessionId != null && !snap.sessionId.trim().isEmpty())
+                ? snap.sessionId : "preview";
+        String sessionName = (snap.sessionName != null && !snap.sessionName.trim().isEmpty())
+                ? snap.sessionName : "FORGE Training Monitor";
+
+        File dir = new File(ForgeSessionManager.getForgeStateDirectory().toFile(), "html-diagrams");
+        try {
+            if (!dir.exists() && !dir.mkdirs()) {
+                dir = new File(System.getProperty("java.io.tmpdir"), "evo-forge-diagrams");
+                dir.mkdirs();
+            }
+            String title = "FORGE " + sessionName + " — Training Monitor";
+            String centerHtml = withDocumentHeader(generateGraphHtml(snap), title, sessionId, snap.status);
+            String graphsHtml = withDocumentHeader(generateMonitoringGraphsHtml(snap),
+                    title + " (Detail Graphs)", sessionId, snap.status);
+
+            File centerFile = new File(dir, sanitizeFileName("forge-" + sessionId + "-monitor.html"));
+            File graphsFile = new File(dir, sanitizeFileName("forge-" + sessionId + "-graphs.html"));
+            java.nio.file.Files.writeString(centerFile.toPath(), centerHtml, java.nio.charset.StandardCharsets.UTF_8);
+            java.nio.file.Files.writeString(graphsFile.toPath(), graphsHtml, java.nio.charset.StandardCharsets.UTF_8);
+
+            boolean ok = Program.launch(centerFile.getAbsolutePath());
+            if (!ok) {
+                MessageDialog.openError(getShell(), "Open in Browser",
+                        "Could not launch the default web browser for:\n" + centerFile.getAbsolutePath()
+                        + "\n\nThe HTML artifact was written successfully; you can open it manually.");
+            }
+        } catch (Exception ex) {
+            MessageDialog.openError(getShell(), "Open in Browser",
+                    "Failed to write or open the diagram HTML artifact: " + ex.getMessage());
+        }
+    }
+
+    private static String sanitizeFileName(String name) {
+        return name.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+    private static String withDocumentHeader(String html, String title, String sessionId, String status) {
+        String withTitle = html.contains("<title>") ? html
+                : html.replace("</head>", "<title>" + escapeHtml(title) + "</title>\n</head>");
+        String header = "<div class=\"external-header\">"
+                + "<div class=\"external-header-title\">" + escapeHtml(title) + "</div>"
+                + "<div class=\"external-header-meta\">Session: " + escapeHtml(sessionId)
+                + " &middot; Status: " + escapeHtml(status != null ? status : "UNKNOWN") + "</div></div>";
+        return withTitle.replace("<body>", "<body>\n" + header + "\n");
+    }
+
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     private void handleOpenTrainingReport() {

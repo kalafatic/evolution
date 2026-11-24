@@ -129,10 +129,11 @@ public final class ForgeTelemetrySnapshot {
     public final double elapsedSeconds;
     public final double effectiveTokensPerSec; // resolved throughput, or -1
     public final ThroughputBasis throughputBasis;
-    public final double estimatedRemainingSeconds; // resolved ETA, or -1
+    public final double estimatedRemainingSeconds; // resolved ETA, or -1 (always -1 for terminal)
     public final double etaConfidence;          // 0..1
     public final String etaBasis;               // human-readable ETA basis
     public final double initialEstimateSeconds; // preliminary total estimate, or -1
+    public final double estimatedTotalSeconds;  // terminal-aware total: elapsed for terminal, else elapsed+remaining
     public final double budgetConsumption;      // estTotal/budget, or -1
     public final BudgetState budgetState;
     public final boolean isTrainingActive;
@@ -241,18 +242,24 @@ public final class ForgeTelemetrySnapshot {
             confidence = 0.0;
             etaBasis = "no-measurements";
         }
-        this.estimatedRemainingSeconds = resolvedEta;
+        this.estimatedRemainingSeconds = isTerminal(b.status) ? -1.0 : resolvedEta;
         this.etaConfidence = confidence;
         this.etaBasis = etaBasis;
 
         // --- Initial (preliminary) total estimate ---
         this.initialEstimateSeconds = computeInitialEstimateSeconds(b);
 
+        // --- Terminal-aware total duration: a completed/cancelled/failed run has no
+        // remaining time and its total is its actual elapsed duration, never a stale
+        // projected estimate. ---
+        this.estimatedTotalSeconds = estimateTotalSeconds(this.elapsedSeconds, this.estimatedRemainingSeconds,
+                this.initialEstimateSeconds, b.status);
+
         // --- Budget consumption ---
         double consumption = -1.0;
         BudgetState budgetState = BudgetState.UNKNOWN;
         double budgetSec = b.configuredTimeBudgetHours > 0 ? b.configuredTimeBudgetHours * 3600.0 : -1.0;
-        double estTotal = estimateTotalSeconds(this.elapsedSeconds, this.estimatedRemainingSeconds, this.initialEstimateSeconds, b.status);
+        double estTotal = this.estimatedTotalSeconds;
         if (budgetSec > 0.0 && estTotal > 0.0) {
             consumption = estTotal / budgetSec;
             if (isTerminal(b.status)) {
