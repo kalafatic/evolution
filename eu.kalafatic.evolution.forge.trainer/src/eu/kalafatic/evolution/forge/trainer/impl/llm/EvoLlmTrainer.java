@@ -41,6 +41,20 @@ public class EvoLlmTrainer {
                     tokensPerSec, stepsPerSec, estimatedRemainingSeconds, currentLoss);
         }
 
+        /**
+         * Extended progress callback carrying the actual sample position (per-epoch
+         * sample index / total samples) so consumers can render the true position within
+         * the current epoch, not only the optimization-step / token counters.
+         */
+        default void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                       long processedTokens, long totalTokens,
+                                       double tokensPerSec, double stepsPerSec,
+                                       double estimatedRemainingSeconds, double currentLoss,
+                                       double learningRate, int sampleIndex, int totalSamplesCount) {
+            onProgressMetrics(epoch, totalEpochs, currentStep, totalSteps, processedTokens, totalTokens,
+                    tokensPerSec, stepsPerSec, estimatedRemainingSeconds, currentLoss, learningRate);
+        }
+
         default void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss) {}
 
         default void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
@@ -670,11 +684,12 @@ public class EvoLlmTrainer {
 
                     if (!progressListeners.isEmpty()) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
+                        int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
                         for (ProgressListener listener : progressListeners) {
                             listener.onProgressMetrics(epoch, epochs, optStep, totalOptimizationSteps,
                                     totalProcessedTokens, totalTokensToTrain,
                                     movingAvgTokPerSec, movingAvgStepsPerSec,
-                                    remainingSec, currentLoss, currentLr);
+                                    remainingSec, currentLoss, currentLr, sampleIndex, trainSamples.size());
                         }
                     } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
                         double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;

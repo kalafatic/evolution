@@ -198,7 +198,7 @@ public final class CudaDevice implements AutoCloseable {
             if (rc != 0) return "CUDA error " + code;
             MemorySegment strSeg = pStr.get(ADDR, 0);
             if (strSeg.address() == 0) return "CUDA error " + code;
-            return strSeg.reinterpret(4096).getUtf8String(0);
+            return strSeg.reinterpret(4096).getString(0);
         } catch (Throwable t) {
             return "CUDA error " + code;
         }
@@ -269,16 +269,16 @@ public final class CudaDevice implements AutoCloseable {
      */
     public Module compile(String name, String cudaSource) {
         // Compile to PTX.
-        MemorySegment src = arena.allocateUtf8String(cudaSource);
+        MemorySegment src = arena.allocateFrom(cudaSource);
         MemorySegment prog = arena.allocate(8);
-        MemorySegment progName = arena.allocateUtf8String(name);
+        MemorySegment progName = arena.allocateFrom(name);
         check((int) invoke(nvrtcCreateProgram, prog, src, progName, 0, MemorySegment.NULL, MemorySegment.NULL), "nvrtcCreateProgram");
         MemorySegment progH = prog.get(ADDR, 0);
 
         String arch = computeCapabilityMajor >= 12 ? "sm_" + computeCapabilityMajor + computeCapabilityMinor
                 : (computeCapabilityMajor >= 9 ? "sm_" + computeCapabilityMajor + computeCapabilityMinor : "compute_" + computeCapabilityMajor + computeCapabilityMinor);
         // NVRTC accepts either sm_XX (cubin) or compute_XX (PTX, JIT'd). Prefer sm for the exact device.
-        MemorySegment opt = arena.allocateUtf8String("--gpu-architecture=" + arch);
+        MemorySegment opt = arena.allocateFrom("--gpu-architecture=" + arch);
         MemorySegment optPtr = arena.allocate(8);
         optPtr.set(ADDR, 0, opt);
         int rc = (int) invoke(nvrtcCompileProgram, progH, 1, optPtr);
@@ -372,7 +372,7 @@ public final class CudaDevice implements AutoCloseable {
         public Kernel function(String name) {
             device.ensureContext();
             MemorySegment fn = device.arena.allocate(8);
-            MemorySegment fnName = device.arena.allocateUtf8String(name);
+            MemorySegment fnName = device.arena.allocateFrom(name);
             device.check((int) device.invoke(device.cuModuleGetFunction, fn, module, fnName), "cuModuleGetFunction");
             return new Kernel(device, fn.get(ADDR, 0), name);
         }

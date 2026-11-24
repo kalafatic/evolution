@@ -84,6 +84,8 @@ public final class ForgeTelemetrySnapshot {
     public final int totalEpochs;
     public final int currentStep;
     public final int totalSteps;
+    public final int currentSample;
+    public final int totalSamples;
     public final long processedTokens;
     public final long totalTokens;
 
@@ -150,6 +152,8 @@ public final class ForgeTelemetrySnapshot {
         this.totalEpochs = b.totalEpochs;
         this.currentStep = b.currentStep;
         this.totalSteps = b.totalSteps;
+        this.currentSample = b.currentSample;
+        this.totalSamples = b.totalSamples;
         this.processedTokens = b.processedTokens;
         this.totalTokens = b.totalTokens;
         this.currentLoss = b.currentLoss;
@@ -356,6 +360,8 @@ public final class ForgeTelemetrySnapshot {
         public int totalEpochs = 0;
         public int currentStep = 0;
         public int totalSteps = 0;
+        public int currentSample = 0;
+        public int totalSamples = 0;
         public long processedTokens = 0;
         public long totalTokens = 0;
         public double currentLoss = 0.0;
@@ -427,6 +433,8 @@ public final class ForgeTelemetrySnapshot {
                     b.totalEpochs = t.totalEpochs;
                     b.currentStep = t.currentStep;
                     b.totalSteps = t.totalSteps;
+                    b.currentSample = t.currentSample;
+                    b.totalSamples = t.totalSamples;
                     b.processedTokens = t.processedTokens;
                     b.totalTokens = t.totalTokens;
                     b.currentLoss = t.currentLoss;

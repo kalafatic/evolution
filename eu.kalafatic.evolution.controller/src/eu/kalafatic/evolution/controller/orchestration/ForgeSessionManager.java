@@ -97,6 +97,8 @@ public class ForgeSessionManager {
         public volatile int totalEpochs = 0;
         public volatile int currentStep = 0;
         public volatile int totalSteps = 0;
+        public volatile int currentSample = 0;
+        public volatile int totalSamples = 0;
         public volatile long processedTokens = 0;
         public volatile long totalTokens = 0;
         public volatile double currentLoss = 0.0;
@@ -233,6 +235,8 @@ public class ForgeSessionManager {
             json.put("totalEpochs", totalEpochs);
             json.put("currentStep", currentStep);
             json.put("totalSteps", totalSteps);
+            json.put("currentSample", currentSample);
+            json.put("totalSamples", totalSamples);
             json.put("processedTokens", processedTokens);
             json.put("totalTokens", totalTokens);
             json.put("currentLoss", Math.round(currentLoss * 10000.0) / 10000.0);
@@ -924,6 +928,19 @@ public class ForgeSessionManager {
                                            double estimatedRemainingSeconds, double currentLoss) {
                 onProgressMetrics(epoch, totalEpochs, currentStep, totalSteps, processedTokens, totalTokens,
                         tokensPerSec, stepsPerSec, estimatedRemainingSeconds, currentLoss, -1.0);
+            }
+
+            @Override
+            public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+                                           long processedTokens, long totalTokens,
+                                           double tokensPerSec, double stepsPerSec,
+                                           double estimatedRemainingSeconds, double currentLoss,
+                                           double learningRate, int sampleIndex, int totalSamplesCount) {
+                // Record the actual per-epoch sample position before delegating.
+                telemetry.currentSample = sampleIndex;
+                telemetry.totalSamples = totalSamplesCount;
+                onProgressMetrics(epoch, totalEpochs, currentStep, totalSteps, processedTokens, totalTokens,
+                        tokensPerSec, stepsPerSec, estimatedRemainingSeconds, currentLoss, learningRate);
             }
 
             @Override

@@ -115,6 +115,22 @@ public class ForgeTelemetrySnapshotTest {
     }
 
     @Test
+    public void testSamplePositionIsCaptured() {
+        ForgeTelemetrySnapshot.Builder b = new ForgeTelemetrySnapshot.Builder();
+        b.sessionId = "sample-pos";
+        b.status = "RUNNING";
+        b.currentStep = 250;
+        b.totalSteps = 400;
+        b.currentSample = 120;
+        b.totalSamples = 200;
+        b.configuredModelSize = "SMALL";
+        b.configuredEpochs = 8;
+        ForgeTelemetrySnapshot snap = b.build();
+        assertEquals("Sample position must flow through the snapshot", 120, snap.currentSample);
+        assertEquals("Total samples must flow through the snapshot", 200, snap.totalSamples);
+    }
+
+    @Test
     public void testMeasuredEtaPreferredOverPreliminary() {
         ForgeTelemetrySnapshot snap = buildSnapshot(true, true);
         // Live telemetry throughput > 0 => MEASURED_LIVE basis.

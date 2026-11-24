@@ -9,7 +9,7 @@
    <launcherArgs>
       <programArgs>-nosplash
       </programArgs>
-      <vmArgs>-Xms512m -Xmx4g -Dfile.encoding=UTF-8
+      <vmArgs>-Xms512m -Xmx4g -Dfile.encoding=UTF-8 --enable-native-access=ALL-UNNAMED
       </vmArgs>
       <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts
       </vmArgsMac>

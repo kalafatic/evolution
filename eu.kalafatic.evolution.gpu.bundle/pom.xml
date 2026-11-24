@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>eu.kalafatic.evolution</groupId>
+		<artifactId>eu.kalafatic.evolution.aggregator</artifactId>
+		<version>2.6.11-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<artifactId>eu.kalafatic.evolution.gpu</artifactId>
+	<packaging>eclipse-plugin</packaging>
+	<name>EVO GPU Bundle Wrapper</name>
+	<description>
+		Thin OSGi wrapper that embeds the standalone eu.kalafatic.evolution.gpu jar
+		(compiled against stable Java 22 FFM) via Bundle-ClassPath: lib/gpu.jar. Keeps
+		the same Bundle-SymbolicName (eu.kalafatic.evolution.gpu) so existing feature and
+		product references remain valid.
+	</description>
+</project>

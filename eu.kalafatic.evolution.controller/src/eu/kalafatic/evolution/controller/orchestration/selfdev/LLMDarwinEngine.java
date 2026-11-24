@@ -56,6 +56,9 @@ import eu.kalafatic.evolution.forge.model.source.ForgeModelSourceFactory;
 import eu.kalafatic.evolution.forge.model.target.ForgeTarget;
 import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
+import eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter;
+import eu.kalafatic.evolution.forge.trainer.device.ForgeDeviceSelector;
+import eu.kalafatic.evolution.forge.trainer.device.TrainingDevice;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 
@@ -1164,7 +1167,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		// Reconstruct/retrain the winning candidate for final export
 		context.log("[FORGE] Reconstructing selected global winner for final export.");
-		SimpleBPETokenizer finalTokenizer = modelSource.getTokenizer(cleanCorpus, overallWinner.config.vocabSize);
+		// Reuse the tokenizer already prepared during candidate screening when corpus and
+		// vocabulary configuration match (avoid retraining the BPE vocabulary a second time).
+		SimpleBPETokenizer finalTokenizer = getOrCreateCachedTokenizer(cleanCorpus, overallWinner.config.vocabSize, modelSource);
 		DatasetBuilder finalDatasetBuilder = new DatasetBuilder();
 
 		// CPU execution safeguards: prevent multi-day stalls on large Parquet files (e.g. 5,630 samples * 1,024 seqLen)
@@ -1245,28 +1250,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			}
 		}
 
-		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
-		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
-		try {
-			// NOTE: the trainer only invokes onProgressMetrics (per optimizer
-			// step); the legacy onProgress callback is a bridge that is never
-			// fired by the training loop, so progress must be consumed here.
-			trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+		TrainingDevice refineDevice = selectTrainingDevice();
+		List<Double> lossHist;
+		if (refineDevice == TrainingDevice.CUDA) {
+			// EVO-CUDA backend: train the winner on GPU; weights are restored into
+			// winningModel in place, so the subsequent *.evo export preserves them.
+			GpuTrainingAdapter gpu = new GpuTrainingAdapter(winningModel);
+			gpu.setProgressListener(new EvoLlmTrainer.ProgressListener() {
 				@Override
 				public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
-
-				@Override
-				public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
-						long processedTokens, long totalTokens, double tokensPerSec, double stepsPerSec,
-						double estimatedRemainingSeconds, double currentLoss) {
-					int logInterval = Math.max(1, Math.max(1, totalSteps / 10));
-					if (currentStep % logInterval == 0 || currentStep == totalSteps) {
-						double pct = totalSteps > 0 ? (double) currentStep / totalSteps * 100.0 : 0.0;
-						context.log(String.format(
-								"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f | %.1f tok/s",
-								epoch + 1, totalEpochs, currentStep, totalSteps, pct, currentLoss, tokensPerSec));
-					}
-				}
 
 				@Override
 				public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
@@ -1275,12 +1267,53 @@ public class LLMDarwinEngine extends ADarwinEngine {
 							epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
 				}
 			});
-			trainer.train(samples, finalEpochs);
-		} finally {
-			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
+			gpu.train(samples, finalEpochs);
+			context.log(String.format(
+					"[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s | params=%d | forward=%.1fms backward=%.1fms optimizer=%.1fms (steps=%d)",
+					refineDevice.label(), gpu.getActualDevice().label(), gpu.getBackendName(), gpu.getParameterCount(),
+					gpu.getForwardNanos() / 1e6, gpu.getBackwardNanos() / 1e6, gpu.getOptimizerNanos() / 1e6,
+					gpu.getOptimizerStepsExecuted()));
+			lossHist = gpu.getLossHistory();
+		} else {
+			EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
+			try {
+				// NOTE: the trainer only invokes onProgressMetrics (per optimizer
+				// step); the legacy onProgress callback is a bridge that is never
+				// fired by the training loop, so progress must be consumed here.
+				trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+					@Override
+					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
+
+					@Override
+					public void onProgressMetrics(int epoch, int totalEpochs, int currentStep, int totalSteps,
+							long processedTokens, long totalTokens, double tokensPerSec, double stepsPerSec,
+							double estimatedRemainingSeconds, double currentLoss) {
+						int logInterval = Math.max(1, Math.max(1, totalSteps / 10));
+						if (currentStep % logInterval == 0 || currentStep == totalSteps) {
+							double pct = totalSteps > 0 ? (double) currentStep / totalSteps * 100.0 : 0.0;
+							context.log(String.format(
+									"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f | %.1f tok/s",
+									epoch + 1, totalEpochs, currentStep, totalSteps, pct, currentLoss, tokensPerSec));
+						}
+					}
+
+					@Override
+					public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+						context.log(String.format(
+								"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+								epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
+					}
+				});
+				trainer.train(samples, finalEpochs);
+			} finally {
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
+			}
+			context.log(String.format("[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s",
+					refineDevice.label(), trainer.getActualDevice(), trainer.getBackendName()));
+			lossHist = trainer.getLossHistory();
 		}
 
-		List<Double> lossHist = trainer.getLossHistory();
 		if (lossHist != null && !lossHist.isEmpty()) {
 			org.json.JSONArray lossArr = new org.json.JSONArray();
 			for (Double l : lossHist) {
@@ -1561,6 +1594,21 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 	}
 
+	/**
+	 * Resolves the training device (AUTO/CPU/CUDA via {@code evo.forge.device}), logs
+	 * the selection truthfully, and returns the selected device. The backend reports
+	 * the actual execution device separately once a training session is established.
+	 */
+	private TrainingDevice selectTrainingDevice() {
+		ForgeDeviceSelector.Policy policy = ForgeDeviceSelector.resolvePolicy();
+		ForgeDeviceSelector.Selection sel = ForgeDeviceSelector.select(policy);
+		context.log(String.format(
+				"[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s cudaAvailable=%b%s",
+				sel.selected.label(), sel.selected.label(), sel.selected.backendName(), sel.cudaAvailable,
+				sel.note != null ? " | note=" + sel.note : ""));
+		return sel.selected;
+	}
+
 	private SimpleBPETokenizer trainTokenizerWithFullVocab(String corpus, int vocabSize) {
 		SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
 		tokenizer.train(corpus, vocabSize);
@@ -1686,21 +1734,18 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			context.log(String.format("[FORGE-CANDIDATE-METRICS] VocabSize: %d | Params: %d | Samples (Train/Val/Total): %d/%d/%d | Tokens (Train/Val): %d/%d | TokPrep: %d ms | DataPrep: %d ms",
 					actualVocabSize, paramCount, trainSamples.size(), valSamples.size(), totalCount, totalTrainTokens, totalValTokens, tTokDuration, tDataDuration));
 
-			trainer = new EvoLlmTrainer(model);
-			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
+			TrainingDevice device = selectTrainingDevice();
 			double trainLoss = Double.NaN;
-			try {
-				trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+			double valLoss = Double.NaN;
+			List<Double> candLossHist;
+			if (device == TrainingDevice.CUDA) {
+				// EVO-CUDA backend: train on GPU; the adapter restores updated weights
+				// into the model in place so the candidate snapshot and export below
+				// operate on the GPU-trained parameters.
+				GpuTrainingAdapter gpu = new GpuTrainingAdapter(model);
+				gpu.setProgressListener(new EvoLlmTrainer.ProgressListener() {
 					@Override
-					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {
-						int logInterval = Math.max(1, totalSamples / 10);
-						if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-							double pct = (double) sampleIndex / totalSamples * 100.0;
-							context.log(String.format(
-									"[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-									epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
-						}
-					}
+					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
 
 					@Override
 					public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
@@ -1710,19 +1755,60 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					}
 				});
 				if (!trainSamples.isEmpty()) {
-					trainer.train(trainSamples, screeningEpochs);
+					gpu.train(trainSamples, screeningEpochs);
 				}
-			} finally {
-				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
-			}
-			// Honest failure handling: no measured loss without actual training; the
-			// caller assigns the documented safe-penalty score on exception.
-			if (trainer.getLossHistory().isEmpty()) {
-				throw new IllegalStateException("Candidate training produced no loss history (no training executed)");
-			}
-			trainLoss = trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+				context.log(String.format(
+						"[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s | params=%d | forward=%.1fms backward=%.1fms optimizer=%.1fms (steps=%d)",
+						device.label(), gpu.getActualDevice().label(), gpu.getBackendName(), gpu.getParameterCount(),
+						gpu.getForwardNanos() / 1e6, gpu.getBackwardNanos() / 1e6, gpu.getOptimizerNanos() / 1e6,
+						gpu.getOptimizerStepsExecuted()));
+				candLossHist = gpu.getLossHistory();
+				if (candLossHist.isEmpty()) {
+					throw new IllegalStateException("Candidate GPU training produced no loss history (no training executed)");
+				}
+				trainLoss = candLossHist.get(candLossHist.size() - 1);
+				valLoss = !valSamples.isEmpty() ? gpu.evaluateValidation(valSamples) : Double.NaN;
+			} else {
+				trainer = new EvoLlmTrainer(model);
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
+				try {
+					trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+						@Override
+						public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {
+							int logInterval = Math.max(1, totalSamples / 10);
+							if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+								double pct = (double) sampleIndex / totalSamples * 100.0;
+								context.log(String.format(
+										"[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+										epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+							}
+						}
 
-			List<Double> candLossHist = trainer.getLossHistory();
+						@Override
+						public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+							context.log(String.format(
+									"[FORGE-EPOCH] Candidate Evaluation - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+									epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
+						}
+					});
+					if (!trainSamples.isEmpty()) {
+						trainer.train(trainSamples, screeningEpochs);
+					}
+				} finally {
+					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().unregisterActiveTrainer(context.getSessionId());
+				}
+				context.log(String.format("[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s",
+						device.label(), trainer.getActualDevice(), trainer.getBackendName()));
+				// Honest failure handling: no measured loss without actual training; the
+				// caller assigns the documented safe-penalty score on exception.
+				if (trainer.getLossHistory().isEmpty()) {
+					throw new IllegalStateException("Candidate training produced no loss history (no training executed)");
+				}
+				trainLoss = trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+				candLossHist = trainer.getLossHistory();
+				valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : Double.NaN;
+			}
+
 			if (candLossHist != null && !candLossHist.isEmpty()) {
 				org.json.JSONArray lossArr = new org.json.JSONArray();
 				for (Double l : candLossHist) {
@@ -1734,9 +1820,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			if (Double.isNaN(trainLoss) || Double.isInfinite(trainLoss)) {
 				throw new IllegalStateException("Non-finite training loss for candidate (no penalty fabrication)");
 			}
-
-			// Validation loss: only measured when a validation split exists; NaN otherwise.
-			double valLoss = !valSamples.isEmpty() ? trainer.evaluateValidation(valSamples) : Double.NaN;
 			if (Double.isNaN(valLoss) || Double.isInfinite(valLoss)) {
 				if (!valSamples.isEmpty()) {
 					throw new IllegalStateException("Non-finite validation loss for candidate");

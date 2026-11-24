@@ -9,6 +9,8 @@
    <launcherArgs>
       <programArgs>-nosplash
       </programArgs>
+      <vmArgs>--enable-native-access=ALL-UNNAMED
+      </vmArgs>
    </launcherArgs>
 
    <launcher>

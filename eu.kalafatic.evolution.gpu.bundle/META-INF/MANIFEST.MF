@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: EVO GPU Module (native library wrapper)
+Bundle-SymbolicName: eu.kalafatic.evolution.gpu
+Bundle-Version: 2.6.11.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-ClassPath: ., lib/gpu.jar
+Export-Package: eu.kalafatic.evolution.gpu.cuda,
+ eu.kalafatic.evolution.gpu.diag,
+ eu.kalafatic.evolution.gpu.trainer
+Import-Package: com.fasterxml.jackson.databind;version="2.17.0"
+Automatic-Module-Name: eu.kalafatic.evolution.gpu

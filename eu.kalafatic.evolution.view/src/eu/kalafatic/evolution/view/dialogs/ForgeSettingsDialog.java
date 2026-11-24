@@ -1464,7 +1464,10 @@ public class ForgeSettingsDialog extends Dialog {
             if (snap.totalSteps > 0) {
                 sb.append("  ·  Step ").append(snap.currentStep).append(" / ").append(snap.totalSteps);
             }
-            sb.append("  ·  Batch/samples: N/A (not exposed by trainer telemetry)");
+            if (snap.totalSamples > 0) {
+                sb.append("  ·  Samples ").append(Math.min(snap.currentSample, snap.totalSamples))
+                        .append(" / ").append(snap.totalSamples);
+            }
             if (snap.currentLoss > 0) sb.append("  ·  Loss ").append(String.format("%.4f", snap.currentLoss));
             if (snap.valLoss > 0) sb.append("  ·  Val ").append(String.format("%.4f", snap.valLoss));
             if (snap.bestValLoss > 0) sb.append("  ·  Best Val ").append(String.format("%.4f", snap.bestValLoss));

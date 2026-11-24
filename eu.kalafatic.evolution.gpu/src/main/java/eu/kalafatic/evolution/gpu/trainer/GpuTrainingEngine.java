@@ -68,6 +68,11 @@ public final class GpuTrainingEngine {
                 atomicAdd(&dW[tokens[t] * D + d], dx[i]);
             }
 
+            extern "C" __global__ void posenc_fwd(float* x, const float* pe, int n) {
+                int i = blockIdx.x * blockDim.x + threadIdx.x;
+                if (i < n) x[i] += pe[i];
+            }
+
             extern "C" __global__ void rmsnorm_fwd(const float* x, const float* w, float* y,
                                                    int rows, int dim, float eps) {
                 int r = blockIdx.x * blockDim.x + threadIdx.x;
@@ -285,8 +290,8 @@ public final class GpuTrainingEngine {
             }
 
             extern "C" __global__ void adamw(float* data, const float* grad, float* m, float* v,
-                                             float lr, float beta1, float beta2, float eps, float wd,
-                                             float clipScale, float bias1, float bias2, int decay, int n) {
+                                             const int* decayMask, float lr, float beta1, float beta2, float eps, float wd,
+                                             float clipScale, float bias1, float bias2, int n) {
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
                 if (i >= n) return;
                 float g = grad[i] * clipScale;
@@ -296,7 +301,7 @@ public final class GpuTrainingEngine {
                 float mHat = mVal / bias1;
                 float vHat = vVal / bias2;
                 float update = mHat / (sqrtf(vHat) + eps);
-                if (decay) data[i] -= lr * (update + wd * data[i]);
+                if (decayMask[i]) data[i] -= lr * (update + wd * data[i]);
                 else data[i] -= lr * update;
             }
             """;
@@ -319,6 +324,16 @@ public final class GpuTrainingEngine {
         public float maxGradNorm = 1.0f;
         public int epochs = 3;
         public long seed = 42L;
+
+        /**
+         * Positional-encoding mode. {@code true} uses rotary embeddings (RoPE) applied
+         * to Q/K inside attention; {@code false} uses the additive sinusoidal absolute
+         * encoding that the canonical {@code EvoLlmModel} default constructor applies
+         * to the embeddings (matching {@code PositionalEncoding}). The canonical Forge
+         * training path constructs the model with the 6-argument constructor, i.e.
+         * sinusoidal; the adapter must therefore set this to {@code false} to match.
+         */
+        public boolean useRoPE = true;
     }
 
     public static final class Sample {
@@ -369,6 +384,17 @@ public final class GpuTrainingEngine {
     }
 
     public int getTotalParams() { return totalParams; }
+
+    /**
+     * Opens a fine-grained training session over this engine's kernels. The session
+     * holds a CUDA context, device weight/gradient/moment buffers and the positional
+     * encoding tables; it exposes {@link Session#accumulate} (forward+backward) and
+     * {@link Session#optimizerStep} (AdamW) so a caller can replicate the canonical
+     * {@code EvoLlmTrainer} micro-batch / gradient-accumulation semantics exactly.
+     */
+    public Session openSession(Config cfg) {
+        return new Session(cfg);
+    }
 
     public float[] initWeights(Config cfg) {
         float[] w = new float[totalParams];
@@ -676,8 +702,15 @@ public final class GpuTrainingEngine {
         float clipScale = (cfg.maxGradNorm > 0 && globalNorm > cfg.maxGradNorm) ? (cfg.maxGradNorm / globalNorm) : 1.0f;
         float bias1 = 1.0f - (float) Math.pow(cfg.beta1, step);
         float bias2 = 1.0f - (float) Math.pow(cfg.beta2, step);
-        mod.function("adamw").launch(totalParams, List.of(dW, dGrad, dM, dV,
-                cfg.learningRate, cfg.beta1, cfg.beta2, cfg.eps, cfg.weightDecay, clipScale, bias1, bias2, 1, totalParams));
+        // Legacy path: apply weight decay uniformly (all-ones mask) to preserve the
+        // historical standalone-trainer behaviour.
+        long dDecayMask = dev.alloc(totalParams * 4L);
+        int[] decayMask = new int[totalParams];
+        java.util.Arrays.fill(decayMask, 1);
+        dev.memcpyHtoD(dDecayMask, decayMask);
+        mod.function("adamw").launch(totalParams, List.of(dW, dGrad, dM, dV, dDecayMask,
+                cfg.learningRate, cfg.beta1, cfg.beta2, cfg.eps, cfg.weightDecay, clipScale, bias1, bias2, totalParams));
+        dev.free(dDecayMask);
         zero(dev, mod, dGrad, totalParams);
         freeScratch(dev);
     }
@@ -716,4 +749,281 @@ public final class GpuTrainingEngine {
     private int offW2(int b) { return offW3(b) + w1Size; }
     private int offOutNorm() { return embSize + L * (normSize + 4 * qkvSize + normSize + 2 * w1Size + w2Size); }
     private int offLmHead() { return offOutNorm() + normSize; }
+
+    // =====================================================================
+    // Sinusoidal positional encoding (matches PositionalEncoding.calculateEncodings)
+    // =====================================================================
+    static float[] buildPositionalEncoding(int maxSeqLen, int dModel) {
+        float[] pe = new float[maxSeqLen * dModel];
+        for (int pos = 0; pos < maxSeqLen; pos++) {
+            for (int i = 0; i < dModel; i += 2) {
+                double divTerm = Math.pow(10000.0, (double) i / dModel);
+                pe[pos * dModel + i] = (float) Math.sin(pos / divTerm);
+                if (i + 1 < dModel) pe[pos * dModel + i + 1] = (float) Math.cos(pos / divTerm);
+            }
+        }
+        return pe;
+    }
+
+    /**
+     * Per-parameter weight-decay mask matching {@code EvoLlmTrainer.ModelParameterGroups}:
+     * rank-1 parameters (the RMSNorm weights) are excluded from weight decay; all other
+     * parameters (embedding, Q/K/V/O, gate/up/down, output head) are decayed.
+     */
+    int[] buildDecayMask() {
+        int[] mask = new int[totalParams];
+        int off = 0;
+        java.util.Arrays.fill(mask, off, off + embSize, 1); off += embSize;
+        for (int b = 0; b < L; b++) {
+            off += normSize;                                   // attn_norm (no decay)
+            java.util.Arrays.fill(mask, off, off + 4 * qkvSize, 1); off += 4 * qkvSize; // WQ,WK,WV,WO
+            off += normSize;                                   // ffn_norm (no decay)
+            java.util.Arrays.fill(mask, off, off + 2 * w1Size + w2Size, 1); off += 2 * w1Size + w2Size; // W1,W3,W2
+        }
+        off += normSize;                                       // output_norm (no decay)
+        java.util.Arrays.fill(mask, off, off + headSize, 1); off += headSize; // lm_head
+        return mask;
+    }
+
+    // =====================================================================
+    // Session — fine-grained GPU training backend.
+    // Exposes forward+backward (accumulate) and AdamW (optimizerStep) at the
+    // single-sequence granularity so an adapter can replicate EvoLlmTrainer's
+    // micro-batch / gradient-accumulation / MEAN_PER_TOKEN semantics exactly.
+    // Handles both RoPE and additive sinusoidal positional encoding.
+    // =====================================================================
+    public final class Session implements AutoCloseable {
+        private final CudaDevice dev;
+        private final Module mod;
+        private final Config cfg;
+        private final long dW, dGrad, dM, dV;
+        private final long dCos, dSin, dPosEnc, dDecayMask;
+        private final boolean useRoPE;
+        private int stepCount = 0;
+        private boolean closed = false;
+        private float currentLr;
+
+        public Session(Config cfg) {
+            this.cfg = cfg;
+            this.useRoPE = cfg.useRoPE;
+            this.currentLr = cfg.learningRate;
+            this.dev = CudaDevice.tryCreate();
+            if (dev == null) throw new IllegalStateException("No CUDA device available");
+            this.mod = dev.compile("evo_transformer", CUDA_SOURCE);
+            this.dW = dev.alloc(totalParams * 4L);
+            this.dGrad = dev.alloc(totalParams * 4L);
+            this.dM = dev.alloc(totalParams * 4L);
+            this.dV = dev.alloc(totalParams * 4L);
+            zero(dev, mod, dGrad, totalParams);
+            zero(dev, mod, dM, totalParams);
+            zero(dev, mod, dV, totalParams);
+
+            int[] decayMask = buildDecayMask();
+            this.dDecayMask = dev.alloc(decayMask.length * 4L);
+            dev.memcpyHtoD(dDecayMask, decayMask);
+
+            if (useRoPE) {
+                int pairs = headDim / 2;
+                float[] cosT = new float[cfg.maxSeqLen * pairs];
+                float[] sinT = new float[cfg.maxSeqLen * pairs];
+                for (int p = 0; p < cfg.maxSeqLen; p++)
+                    for (int i = 0; i < pairs; i++) {
+                        double theta = p / Math.pow(10000.0, (2.0 * i) / headDim);
+                        cosT[p * pairs + i] = (float) Math.cos(theta);
+                        sinT[p * pairs + i] = (float) Math.sin(theta);
+                    }
+                this.dCos = dev.alloc(cosT.length * 4L);
+                this.dSin = dev.alloc(sinT.length * 4L);
+                dev.memcpyHtoD(dCos, cosT);
+                dev.memcpyHtoD(dSin, sinT);
+                this.dPosEnc = 0;
+            } else {
+                this.dCos = 0;
+                this.dSin = 0;
+                float[] pe = buildPositionalEncoding(cfg.maxSeqLen, D);
+                this.dPosEnc = dev.alloc(pe.length * 4L);
+                dev.memcpyHtoD(dPosEnc, pe);
+            }
+        }
+
+        public String deviceName() { return dev.getDeviceName(); }
+        public long totalMemBytes() { return dev.getTotalMemBytes(); }
+        public long freeMemBytes() { return dev.memGetInfo()[0]; }
+        public int getStepCount() { return stepCount; }
+        public boolean usesRoPE() { return useRoPE; }
+
+        /** Override the learning rate used by subsequent {@link #optimizerStep()} calls. */
+        public void setLearningRate(float lr) { this.currentLr = lr; }
+
+        /** Copy host flat weights (in EVO layout) into device memory. */
+        public void loadWeights(float[] flat) {
+            if (flat.length != totalParams)
+                throw new IllegalArgumentException("Expected " + totalParams + " floats, got " + flat.length);
+            dev.memcpyHtoD(dW, flat);
+        }
+
+        /** Copy device weights back to a host flat buffer (in EVO layout). */
+        public void downloadWeights(float[] out) {
+            if (out.length != totalParams)
+                throw new IllegalArgumentException("Expected " + totalParams + " floats, got " + out.length);
+            dev.synchronize();
+            dev.memcpyDtoH(out, dW);
+        }
+
+        /** Forward + loss + backward for one sequence; accumulates grads into dGrad. Returns raw loss sum. */
+        public float accumulate(int[] tokens, int[] labels, float[] mask, int t, float normFactor) {
+            List<Long> sc = new ArrayList<>();
+            java.util.function.IntFunction<Long> s = n -> { long p = dev.alloc(n * 4L); sc.add(p); return p; };
+
+            final float scale = 1.0f / (float) Math.sqrt(headDim);
+            long dTokens = s.apply(t), dLabels = s.apply(t), dMask = s.apply(t);
+            dev.memcpyHtoD(dTokens, tokens);
+            dev.memcpyHtoD(dLabels, labels);
+            dev.memcpyHtoD(dMask, mask);
+
+            long[] fX = new long[L + 1];
+            long[] fN1 = new long[L], fQ = new long[L], fK = new long[L], fV = new long[L], fAttnOut = new long[L];
+            long[] fAttnProj = new long[L], fAfterAttn = new long[L], fN2 = new long[L];
+            long[] fGate = new long[L], fUp = new long[L], fH = new long[L], fFfnOut = new long[L];
+            for (int b = 0; b < L; b++) {
+                fN1[b] = s.apply(t * D); fQ[b] = s.apply(t * D); fK[b] = s.apply(t * D); fV[b] = s.apply(t * D);
+                fAttnOut[b] = s.apply(t * D); fAttnProj[b] = s.apply(t * D); fAfterAttn[b] = s.apply(t * D);
+                fN2[b] = s.apply(t * D);
+                fGate[b] = s.apply(t * F); fUp[b] = s.apply(t * F); fH[b] = s.apply(t * F); fFfnOut[b] = s.apply(t * D);
+                fX[b + 1] = s.apply(t * D);
+            }
+            fX[0] = s.apply(t * D);
+            long dFinal = s.apply(t * D), dLogits = s.apply(t * V), dDLogits = s.apply(t * V);
+            long dLoss = s.apply(1);
+
+            // ---- Forward ----
+            mod.function("embed_fwd").launch(t * D, List.of(dW, dTokens, fX[0], t, D));
+            if (!useRoPE) mod.function("posenc_fwd").launch(t * D, List.of(fX[0], dPosEnc, t * D));
+            for (int b = 0; b < L; b++) {
+                rmsFwd(dev, mod, fX[b], dW + offAttnNorm(b) * 4L, fN1[b], t, D);
+                gemm(dev, mod, fN1[b], dW + offWQ(b) * 4L, fQ[b], t, D, D, 0, 0);
+                gemm(dev, mod, fN1[b], dW + offWK(b) * 4L, fK[b], t, D, D, 0, 0);
+                gemm(dev, mod, fN1[b], dW + offWV(b) * 4L, fV[b], t, D, D, 0, 0);
+                if (useRoPE) {
+                    mod.function("rope_fwd").launch(t * H, List.of(fQ[b], dCos, dSin, D, H, t, 0));
+                    mod.function("rope_fwd").launch(t * H, List.of(fK[b], dCos, dSin, D, H, t, 0));
+                }
+                mod.function("attn_fwd").launch(t * H, List.of(fQ[b], fK[b], fV[b], fAttnOut[b], t, D, H, scale));
+                gemm(dev, mod, fAttnOut[b], dW + offWO(b) * 4L, fAttnProj[b], t, D, D, 0, 0);
+                mod.function("addv").launch(t * D, List.of(fX[b], fAttnProj[b], fAfterAttn[b], t * D));
+                rmsFwd(dev, mod, fAfterAttn[b], dW + offFfnNorm(b) * 4L, fN2[b], t, D);
+                gemm(dev, mod, fN2[b], dW + offW1(b) * 4L, fGate[b], t, F, D, 0, 0);
+                gemm(dev, mod, fN2[b], dW + offW3(b) * 4L, fUp[b], t, F, D, 0, 0);
+                mod.function("swiglu_fwd").launch(t * F, List.of(fGate[b], fUp[b], fH[b], t * F));
+                gemm(dev, mod, fH[b], dW + offW2(b) * 4L, fFfnOut[b], t, D, F, 0, 0);
+                mod.function("addv").launch(t * D, List.of(fAfterAttn[b], fFfnOut[b], fX[b + 1], t * D));
+            }
+            rmsFwd(dev, mod, fX[L], dW + offOutNorm() * 4L, dFinal, t, D);
+            gemm(dev, mod, dFinal, dW + offLmHead() * 4L, dLogits, t, V, D, 0, 0);
+
+            // ---- Loss + dLogits ----
+            float[] zeroOne = {0.0f};
+            dev.memcpyHtoD(dLoss, zeroOne);
+            mod.function("softmax_ce").launch(t, List.of(dLogits, dLabels, dMask, dDLogits, dLoss, t, V, normFactor));
+
+            // ---- Backward ----
+            gemm(dev, mod, dFinal, dDLogits, dGrad + offLmHead() * 4L, D, V, t, 1, 0);   // dLmHead
+            long dDFinal = s.apply(t * D);
+            gemm(dev, mod, dDLogits, dW + offLmHead() * 4L, dDFinal, t, D, V, 0, 1);      // dFinal
+            long dDX = s.apply(t * D);
+            rmsBwd(dev, mod, dFinal, dW + offOutNorm() * 4L, dGrad + offOutNorm() * 4L, dDFinal, dDX, t, D);
+
+            long dOut = dDX;
+            for (int b = L - 1; b >= 0; b--) {
+                long dDh = s.apply(t * F);
+                gemm(dev, mod, dOut, dW + offW2(b) * 4L, dDh, t, F, D, 0, 1);             // dh = dOut @ W2^T
+                gemm(dev, mod, fH[b], dOut, dGrad + offW2(b) * 4L, F, D, t, 1, 0);        // dW2
+                long dDGate = s.apply(t * F), dDUp = s.apply(t * F);
+                mod.function("swiglu_bwd").launch(t * F, List.of(fGate[b], fUp[b], dDh, dDGate, dDUp, t * F));
+                long dN2b = s.apply(t * D);
+                rmsFwd(dev, mod, fAfterAttn[b], dW + offFfnNorm(b) * 4L, dN2b, t, D);
+                gemm(dev, mod, dN2b, dDGate, dGrad + offW1(b) * 4L, D, F, t, 1, 0);        // dW1
+                gemm(dev, mod, dN2b, dDUp, dGrad + offW3(b) * 4L, D, F, t, 1, 0);         // dW3
+                long dN2grad = s.apply(t * D);
+                gemm(dev, mod, dDGate, dW + offW1(b) * 4L, dN2grad, t, D, F, 0, 1);
+                long dN2grad2 = s.apply(t * D);
+                gemm(dev, mod, dDUp, dW + offW3(b) * 4L, dN2grad2, t, D, F, 0, 1);
+                mod.function("addv").launch(t * D, List.of(dN2grad, dN2grad2, dN2grad, t * D));
+                long dAfterAttnB = s.apply(t * D);
+                rmsBwd(dev, mod, fAfterAttn[b], dW + offFfnNorm(b) * 4L, dGrad + offFfnNorm(b) * 4L, dN2grad, dAfterAttnB, t, D);
+                mod.function("add_into").launch(t * D, List.of(dAfterAttnB, dOut, t * D));
+
+                gemm(dev, mod, fAttnOut[b], dAfterAttnB, dGrad + offWO(b) * 4L, D, D, t, 1, 0);  // dWO
+                long dConcat = s.apply(t * D);
+                gemm(dev, mod, dAfterAttnB, dW + offWO(b) * 4L, dConcat, t, D, D, 0, 1);          // dConcat
+                long dDQ = s.apply(t * D), dDK = s.apply(t * D), dDV = s.apply(t * D);
+                zero(dev, mod, dDQ, t * D); zero(dev, mod, dDK, t * D); zero(dev, mod, dDV, t * D);
+                mod.function("attn_bwd_dv").launch(H * t * headDim, List.of(fQ[b], fK[b], dConcat, dDV, t, D, H, scale));
+                mod.function("attn_bwd_dqdk").launch(t * H, List.of(fQ[b], fK[b], fV[b], dConcat, dDQ, dDK, t, D, H, scale));
+                if (useRoPE) {
+                    mod.function("rope_bwd").launch(t * H, List.of(dDQ, dCos, dSin, D, H, t, 0));
+                    mod.function("rope_bwd").launch(t * H, List.of(dDK, dCos, dSin, D, H, t, 0));
+                }
+                long dN1b = s.apply(t * D);
+                rmsFwd(dev, mod, fX[b], dW + offAttnNorm(b) * 4L, dN1b, t, D);
+                gemm(dev, mod, dN1b, dDQ, dGrad + offWQ(b) * 4L, D, D, t, 1, 0);   // dWQ
+                gemm(dev, mod, dN1b, dDK, dGrad + offWK(b) * 4L, D, D, t, 1, 0);   // dWK
+                gemm(dev, mod, dN1b, dDV, dGrad + offWV(b) * 4L, D, D, t, 1, 0);   // dWV
+                long dN1grad = s.apply(t * D);
+                gemm(dev, mod, dDQ, dW + offWQ(b) * 4L, dN1grad, t, D, D, 0, 1);
+                long tmp = s.apply(t * D);
+                gemm(dev, mod, dDK, dW + offWK(b) * 4L, tmp, t, D, D, 0, 1);
+                mod.function("add_into").launch(t * D, List.of(dN1grad, tmp, t * D));
+                gemm(dev, mod, dDV, dW + offWV(b) * 4L, tmp, t, D, D, 0, 1);
+                mod.function("add_into").launch(t * D, List.of(dN1grad, tmp, t * D));
+                long dXAttn = s.apply(t * D);
+                rmsBwd(dev, mod, fX[b], dW + offAttnNorm(b) * 4L, dGrad + offAttnNorm(b) * 4L, dN1grad, dXAttn, t, D);
+                long dBlockIn = s.apply(t * D);
+                mod.function("addv").launch(t * D, List.of(dAfterAttnB, dXAttn, dBlockIn, t * D));
+                dOut = dBlockIn;
+            }
+            mod.function("embed_bwd").launch(t * D, List.of(dTokens, dOut, dGrad, t, D));
+
+            dev.synchronize();
+            float[] lossBuf = new float[1];
+            dev.memcpyDtoH(lossBuf, dLoss);
+            float rawLoss = lossBuf[0];
+            for (long p : sc) dev.free(p);
+            return rawLoss;
+        }
+
+        /** AdamW step: grad-norm clip + update + zero grads (respecting the decay mask). */
+        public void optimizerStep() {
+            stepCount++;
+            long dNorm = dev.alloc(4L);
+            float[] z = {0.0f};
+            dev.memcpyHtoD(dNorm, z);
+            mod.function("grad_norm_sq").launch(totalParams, List.of(dGrad, dNorm, totalParams));
+            dev.synchronize();
+            float[] nb = new float[1];
+            dev.memcpyDtoH(nb, dNorm);
+            float globalNorm = (float) Math.sqrt(nb[0]);
+            float clipScale = (cfg.maxGradNorm > 0 && globalNorm > cfg.maxGradNorm) ? (cfg.maxGradNorm / globalNorm) : 1.0f;
+            float bias1 = 1.0f - (float) Math.pow(cfg.beta1, stepCount);
+            float bias2 = 1.0f - (float) Math.pow(cfg.beta2, stepCount);
+            mod.function("adamw").launch(totalParams, List.of(dW, dGrad, dM, dV, dDecayMask,
+                    currentLr, cfg.beta1, cfg.beta2, cfg.eps, cfg.weightDecay, clipScale, bias1, bias2, totalParams));
+            zero(dev, mod, dGrad, totalParams);
+            dev.free(dNorm);
+        }
+
+        @Override
+        public void close() {
+            if (closed) return;
+            closed = true;
+            dev.free(dW);
+            dev.free(dGrad);
+            dev.free(dM);
+            dev.free(dV);
+            dev.free(dDecayMask);
+            if (dCos != 0) dev.free(dCos);
+            if (dSin != 0) dev.free(dSin);
+            if (dPosEnc != 0) dev.free(dPosEnc);
+        }
+    }
 }
