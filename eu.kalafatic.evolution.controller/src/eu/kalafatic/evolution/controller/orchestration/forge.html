@@ -8,38 +8,41 @@
     <link rel="stylesheet" href="creatic.css">
     <style>
         :root {
-            --evo-bg: var(--evo-bg);
+            /* Light theme tokens (self-contained fallback, matching EvoStyleManager).
+               Concrete values — not self-referential — so the page remains correctly
+               styled even when the external evo-style.css is unavailable. */
+            --evo-bg: #f4f6f9;
             --evo-surface: #ffffff;
-            --evo-surface-alt: var(--evo-surface-alt);
-            --evo-surface-hover: var(--evo-surface-hover);
-            --evo-surface-selected: var(--evo-surface-selected);
-            --evo-border: var(--evo-border);
-            --evo-border-dark: var(--evo-border-dark);
-            --evo-border-focus: var(--evo-primary);
-            --evo-text: var(--evo-text);
-            --evo-text-secondary: var(--evo-text-secondary);
-            --evo-text-muted: var(--evo-text-muted);
+            --evo-surface-alt: #f7f9fb;
+            --evo-surface-hover: #eceff4;
+            --evo-surface-selected: #e8effa;
+            --evo-border: #d7dce4;
+            --evo-border-dark: #c3cad5;
+            --evo-border-focus: #2f6bd8;
+            --evo-text: #1b2434;
+            --evo-text-secondary: #5c6a7e;
+            --evo-text-muted: #8b96a8;
             --evo-text-inverse: #ffffff;
-            --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-            --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
-            --evo-primary: var(--evo-primary);
-            --evo-primary-hover: var(--evo-primary-hover);
-            --evo-primary-light: var(--evo-primary-light);
-            --evo-primary-border: var(--evo-primary-hover);
-            --evo-success: var(--evo-success);
-            --evo-success-hover: var(--evo-success-hover);
-            --evo-success-light: var(--evo-success-light);
-            --evo-warning: var(--evo-warning);
-            --evo-warning-hover: var(--evo-warning-hover);
-            --evo-warning-light: var(--evo-warning-light);
-            --evo-danger: var(--evo-danger);
-            --evo-danger-hover: var(--evo-danger-hover);
-            --evo-danger-light: var(--evo-danger-light);
-            --evo-info: var(--evo-info);
-            --evo-info-light: var(--evo-info-light);
-            --evo-radius: 4px;
-            --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-            --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
+            --evo-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            --evo-font-mono: 'JetBrains Mono', 'Consolas', 'Fira Code', 'Courier New', monospace;
+            --evo-primary: #2f6bd8;
+            --evo-primary-hover: #2559ba;
+            --evo-primary-light: #e8effa;
+            --evo-primary-border: #2f6bd8;
+            --evo-success: #1f8a4c;
+            --evo-success-hover: #1a7040;
+            --evo-success-light: #e7f4ec;
+            --evo-warning: #a86a00;
+            --evo-warning-hover: #8a5600;
+            --evo-warning-light: #fdf3e2;
+            --evo-danger: #c23b2e;
+            --evo-danger-hover: #a03227;
+            --evo-danger-light: #fbeceb;
+            --evo-info: #2b7fbe;
+            --evo-info-light: #e7f1f9;
+            --evo-radius: 5px;
+            --evo-shadow-sm: 0 1px 2px rgba(16,24,40,0.06);
+            --evo-shadow-md: 0 4px 12px rgba(16,24,40,0.10);
 
             --bg-primary: var(--evo-surface);
             --bg-secondary: var(--evo-surface-alt);
@@ -50,6 +53,35 @@
             --accent-hover: var(--evo-primary-hover);
             --error: var(--evo-danger);
             --success: var(--evo-success);
+        }
+
+        [data-theme="dark"] {
+            --evo-bg: #12161f;
+            --evo-surface: #1c2230;
+            --evo-surface-alt: #232b3c;
+            --evo-surface-hover: #181d29;
+            --evo-surface-selected: #26334c;
+            --evo-border: #2e394c;
+            --evo-border-dark: #3c4a61;
+            --evo-border-focus: #5b8feb;
+            --evo-text: #e7ebf3;
+            --evo-text-secondary: #93a0b4;
+            --evo-text-muted: #6b7789;
+            --evo-primary: #5b8feb;
+            --evo-primary-hover: #4a7fe0;
+            --evo-primary-light: #24344e;
+            --evo-primary-border: #5b8feb;
+            --evo-success: #46c58a;
+            --evo-success-hover: #37b577;
+            --evo-success-light: #1d3a2c;
+            --evo-warning: #e2ad4e;
+            --evo-warning-hover: #c99a3f;
+            --evo-warning-light: #3d3320;
+            --evo-danger: #ef7a6f;
+            --evo-danger-hover: #e0655a;
+            --evo-danger-light: #432422;
+            --evo-info: #62b6ea;
+            --evo-info-light: #1f3a4d;
         }
 
         body, html {
@@ -695,8 +727,19 @@
             border: 1px solid #333;
         }
 
+        /* Shared interactive zoom/pan (EvoViz, see forge-viz/viz-interact.js). */
+        .viz-pane { position: relative; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
+        .viz-pane svg, .viz-pane canvas { transition: none; display: block; }
+        .viz-toolbar { position: absolute; top: 6px; right: 6px; display: flex; align-items: center; gap: 3px;
+            background: rgba(2,6,23,0.82); border: 1px solid #33415c; border-radius: 6px; padding: 2px 4px; z-index: 50; }
+        .viz-toolbar button { background: #1e293b; color: #cbd5e1; border: 1px solid #33415c; border-radius: 4px;
+            min-width: 24px; height: 20px; font-size: 12px; line-height: 1; cursor: pointer; padding: 0 5px; }
+        .viz-toolbar button:hover { background: #2a3b58; color: #fff; }
+        .viz-zoom-level { font-size: 11px; color: #8ea3c0; min-width: 40px; text-align: center; }
+
     </style>
     <script src="auth-integration.js"></script>
+    <script src="forge-viz/viz-interact.js"></script>
     <script src="forge-viz/viz-self-evo.js"></script>
 </head>
 <body>
@@ -1299,10 +1342,19 @@
         }
 
         function getBaseUrl() {
+            let base = '';
             if (window.location.protocol === 'file:' || window.location.protocol.startsWith('bundle')) {
-                return `http://localhost:${serverPort}`;
+                base = `http://localhost:${serverPort}`;
             }
-            return '';
+            // Validate/normalize before any request: reject backslash-escaped schemes
+            // (e.g. "http\://…" from a Properties-style serialization) instead of letting
+            // fetch fail with an opaque error.
+            base = String(base || '').replace(/\\/g, '');
+            if (!/^https?:\/\/[^\s]+$/.test(base)) {
+                console.error('[FORGE] Invalid Forge API base URL: ' + base);
+                return '';
+            }
+            return base;
         }
 
         let isAutoCreating = false;

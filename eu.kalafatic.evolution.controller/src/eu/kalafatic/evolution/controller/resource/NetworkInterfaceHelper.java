@@ -207,9 +207,30 @@ public final class NetworkInterfaceHelper {
             if (trimmed.endsWith("/")) {
                 trimmed = trimmed.substring(0, trimmed.length() - 1);
             }
-            return trimmed;
+            return normalizeUrl(trimmed);
         }
         return null;
+    }
+
+    /**
+     * Normalizes a URL that was loaded from a persisted/external configuration source.
+     *
+     * <p>A URL serialized through a {@code Properties}-style layer escapes the scheme
+     * colon as {@code \:} (e.g. {@code http\://localhost:28080}). Such a value is invalid
+     * as an actual URL and fails downstream request construction. This normalization
+     * removes exactly that escaping artifact at the configuration-loading boundary and
+     * rejects values that still do not look like an http(s) URL, so an invalid
+     * configuration is surfaced as a diagnostic instead of a malformed fetch.</p>
+     */
+    public static String normalizeUrl(String url) {
+        if (url == null) return null;
+        String normalized = url;
+        if (normalized.indexOf('\\') >= 0) {
+            String cleaned = normalized.replace("\\", "");
+            Log.log("[NetworkInterfaceHelper] Normalized backslash-escaped URL: '" + normalized + "' -> '" + cleaned + "'");
+            normalized = cleaned;
+        }
+        return normalized;
     }
 
     /**

@@ -1,0 +1,12 @@
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544264967] [INTENT] Conversational greeting detected ('hi'). Direct CHAT classification.
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544264967] [INTENT] Conversational greeting detected ('hello'). Direct CHAT classification.
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544264967] [INTENT] Conversational greeting detected ('hey'). Direct CHAT classification.
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544264967] [INTENT] Conversational greeting detected ('good morning'). Direct CHAT classification.
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544264967] [INTENT] Conversational greeting detected ('thanks'). Direct CHAT classification.
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544264967] [INTENT] Conversational greeting detected ('ok'). Direct CHAT classification.

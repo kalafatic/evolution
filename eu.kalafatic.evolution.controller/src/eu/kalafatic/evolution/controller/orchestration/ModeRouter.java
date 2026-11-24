@@ -320,23 +320,56 @@ public class ModeRouter {
 		}
 	}
 
-	private PlatformMode createDreamMode() {
+	/**
+	 * Builds the authoritative {@link PlatformMode} (including its constraints such as
+	 * autonomy level and allowed paths) for a given {@link PlatformType}. Single source of
+	 * truth used to keep {@code TaskContext.platformMode} in sync with the engine actually
+	 * selected by {@code KernelFactory}/{@code KernelFacade}.
+	 */
+	public static PlatformMode createMode(PlatformType type) {
+		if (type == null) return createSimpleChatMode();
+		switch (type) {
+			case DREAM_MODE:
+				return createDreamMode();
+			case ASSISTED_CODING:
+				return createAssistedCodingMode();
+			case DARWIN_MODE:
+				return createDarwinMode();
+			case SELF_DEV_MODE:
+				return createSelfDevMode();
+			case HYBRID_MANUAL_EXPORT:
+				return createHybridManualExportMode();
+			case INTENT_RECONSTRUCTION:
+				return createIntentReconstructionMode();
+			case DEVELOPER:
+				return createDeveloperMode();
+			case FORGE:
+				return createForgeMode();
+			case MUTATION:
+				return new PlatformMode(PlatformType.MUTATION, AutonomyLevel.MEDIUM, 3, false);
+			case SIMPLE_CHAT:
+			default:
+				return createSimpleChatMode();
+		}
+	}
+
+	private static PlatformMode createDreamMode() {
 		return new PlatformMode(PlatformType.DREAM_MODE, AutonomyLevel.MEDIUM, 3, false);
 	}
 
-	private PlatformMode createSimpleChatMode() {
+	private static PlatformMode createSimpleChatMode() {
 		return new PlatformMode(PlatformType.SIMPLE_CHAT, AutonomyLevel.LOW, 1, false);
 	}
 
-	private PlatformMode createAssistedCodingMode() {
+	private static PlatformMode createAssistedCodingMode() {
 		return new PlatformMode(PlatformType.ASSISTED_CODING, AutonomyLevel.LOW, 2, false);
 	}
 
-	private PlatformMode createDarwinMode() {
+	private static PlatformMode createDarwinMode() {
 		return new PlatformMode(PlatformType.DARWIN_MODE, AutonomyLevel.MEDIUM, 3, false);
 	}
 
-	private PlatformMode createSelfDevMode() {
+	private static PlatformMode createSelfDevMode() {
 		PlatformMode mode = new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 5, true);
 		mode.getAllowedPaths().add("eu.kalafatic.evolution.controller/src");
 		mode.getAllowedPaths().add("eu.kalafatic.evolution.view/src");
@@ -344,19 +377,19 @@ public class ModeRouter {
 		return mode;
 	}
 
-	private PlatformMode createHybridManualExportMode() {
+	private static PlatformMode createHybridManualExportMode() {
 		return new PlatformMode(PlatformType.HYBRID_MANUAL_EXPORT, AutonomyLevel.LOW, 1, false);
 	}
 
-	private PlatformMode createIntentReconstructionMode() {
+	private static PlatformMode createIntentReconstructionMode() {
 		return new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, AutonomyLevel.MEDIUM, 3, false);
 	}
 
-	private PlatformMode createDeveloperMode() {
+	private static PlatformMode createDeveloperMode() {
 		return new PlatformMode(PlatformType.DEVELOPER, AutonomyLevel.HIGH, 5, true);
 	}
 
-	private PlatformMode createForgeMode() {
+	private static PlatformMode createForgeMode() {
 		return new PlatformMode(PlatformType.FORGE, AutonomyLevel.MEDIUM, 3, false);
 	}
 

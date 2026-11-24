@@ -88,6 +88,21 @@ public class EvoLlmTrainer {
     private volatile boolean abortRequested = false;
     private TrainingResult lastResult;
 
+    // ------------------------------------------------------------------
+    // Device / backend diagnostics (truthful execution instrumentation).
+    // This trainer is a pure-JVM implementation: parameters, activations,
+    // gradients and optimizer state all live in Java float[] on the host CPU.
+    // These fields make the actual execution device and per-phase cost
+    // explicit so it is never mistaken for GPU acceleration.
+    // ------------------------------------------------------------------
+    private final String backendName = "JVM Java CPU (EvoLlmTrainer)";
+    private final String actualDevice = "CPU";
+    private final int hostCores = Runtime.getRuntime().availableProcessors();
+    private long forwardNanosTotal = 0L;
+    private long backwardNanosTotal = 0L;
+    private long optimizerNanosTotal = 0L;
+    private long optimizerStepsExecuted = 0L;
+
     // Resumption state
     private TrainingCheckpoint resumeCheckpoint = null;
     private EmbeddedAdamW activeOptimizer = null;
@@ -180,6 +195,39 @@ public class EvoLlmTrainer {
 
     public TrainingResult getLastTrainingResult() { return lastResult; }
     public EvoLlmModel getModel() { return model; }
+
+    // ------------------------------------------------------------------
+    // Device / backend diagnostics accessors
+    // ------------------------------------------------------------------
+    /** Backend implementation name (always the JVM Java CPU trainer). */
+    public String getBackendName() { return backendName; }
+
+    /** Actual execution device for parameters/activations/gradients/optimizer. */
+    public String getActualDevice() { return actualDevice; }
+
+    /** Host CPU core count observed by the training JVM. */
+    public int getHostCores() { return hostCores; }
+
+    /** Cumulative forward-pass wall time in nanoseconds for the last train() run. */
+    public long getForwardNanos() { return forwardNanosTotal; }
+
+    /** Cumulative backward-pass wall time in nanoseconds for the last train() run. */
+    public long getBackwardNanos() { return backwardNanosTotal; }
+
+    /** Cumulative optimizer-step wall time in nanoseconds for the last train() run. */
+    public long getOptimizerNanos() { return optimizerNanosTotal; }
+
+    /** Number of optimizer steps executed in the last train() run. */
+    public long getOptimizerStepsExecuted() { return optimizerStepsExecuted; }
+
+    /** Mean forward/backward/optimizer durations (ms) for the last train() run, or zeros. */
+    public double[] getPhaseDurationsMs() {
+        return new double[]{
+                forwardNanosTotal / 1_000_000.0,
+                backwardNanosTotal / 1_000_000.0,
+                optimizerNanosTotal / 1_000_000.0
+        };
+    }
 
     /**
      * Epoch (1-based) with the lowest validation loss observed during the most recent
@@ -395,6 +443,17 @@ public class EvoLlmTrainer {
         System.out.printf("[EVO Trainer] Mode: %s | Pretrained Weights: %b | Parameters: %d | Base Seed: %d%n",
                 result.getMetadata().get("trainingMode"), (resumeCheckpoint != null), paramCount, baseSeed);
 
+        // Reset per-run phase timers and record the truthful execution device/backend.
+        forwardNanosTotal = 0L;
+        backwardNanosTotal = 0L;
+        optimizerNanosTotal = 0L;
+        optimizerStepsExecuted = 0L;
+        result.getMetadata().put("executionDevice", actualDevice);
+        result.getMetadata().put("backend", backendName);
+        result.getMetadata().put("hostCores", hostCores);
+        System.out.printf("[EVO Trainer] Device: selected=%s actual=%s backend=%s | Host CPU cores=%d%n",
+                actualDevice, actualDevice, backendName, hostCores);
+
         // Check if requested epochs already satisfied. Considers both the resume
         // checkpoint AND epochs already completed by a previous train() invocation
         // on this trainer instance (a re-submission of <= completed epochs is a
@@ -577,7 +636,10 @@ public class EvoLlmTrainer {
                     epochTotalLoss += windowLoss;
                     epochValidTokens += windowValidTokens;
 
+                    long optStart = System.nanoTime();
                     optimizer.step(paramGroups, maxGradNorm);
+                    optimizerNanosTotal += (System.nanoTime() - optStart);
+                    optimizerStepsExecuted++;
 
                     totalProcessedTokens += windowValidTokens;
                     lastProcessedTokens = totalProcessedTokens;
@@ -721,6 +783,14 @@ public class EvoLlmTrainer {
         result.getMetadata().put("totalTokensTrained", totalProcessedTokens);
         result.getMetadata().put("tokensPerSecond", movingAvgTokPerSec);
         result.getMetadata().put("stepsPerSecond", movingAvgStepsPerSec);
+        result.getMetadata().put("forwardMs", forwardNanosTotal / 1_000_000.0);
+        result.getMetadata().put("backwardMs", backwardNanosTotal / 1_000_000.0);
+        result.getMetadata().put("optimizerMs", optimizerNanosTotal / 1_000_000.0);
+        result.getMetadata().put("optimizerSteps", optimizerStepsExecuted);
+        System.out.printf("[EVO Trainer] Device=%s backend=%s | forward=%.1f ms backward=%.1f ms optimizer=%.1f ms (steps=%d) | %.1f tok/s%n",
+                actualDevice, backendName,
+                forwardNanosTotal / 1_000_000.0, backwardNanosTotal / 1_000_000.0,
+                optimizerNanosTotal / 1_000_000.0, optimizerStepsExecuted, movingAvgTokPerSec);
         if (result.getTerminationStatus() == TrainingTerminationStatus.TRAINING_COMPLETED) {
             this.lastCompletedEpochs = Math.max(this.lastCompletedEpochs, result.getCompletedEpochs());
         }
@@ -747,7 +817,9 @@ public class EvoLlmTrainer {
             float[] attMask = batch.attentionMask[i];
             int seqLen = inputIds.length;
 
+            long fwdStart = System.nanoTime();
             Tensor logits = model.forward(inputIds, attMask);
+            long fwdEnd = System.nanoTime();
             float[] logitsData = logits.getData();
             int vocabSize = (int) logits.getShape()[1];
 
@@ -786,7 +858,11 @@ public class EvoLlmTrainer {
                 }
             }
 
+            long bwdStart = System.nanoTime();
             model.backward(dLogits);
+            long bwdEnd = System.nanoTime();
+            forwardNanosTotal += (fwdEnd - fwdStart);
+            backwardNanosTotal += (bwdEnd - bwdStart);
         }
         return microBatchRawLoss;
     }

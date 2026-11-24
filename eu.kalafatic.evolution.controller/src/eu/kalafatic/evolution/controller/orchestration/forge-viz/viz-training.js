@@ -188,7 +188,7 @@ window.renderTrainingViz = function(data, events) {
                         <span style="color:var(--evo-info); font-weight:bold;">― Validation Loss</span>
                     </div>
                 </div>
-                <div style="height:140px; width:100%; background:#111827; border-radius:4px; overflow:hidden; position:relative;">
+                <div class="viz-pane" style="height:140px; width:100%; background:#111827; border-radius:4px; overflow:hidden; position:relative;">
                     ${lossSvgPath ? `
                         <svg width="100%" height="100%" viewBox="0 0 600 140" preserveAspectRatio="none">
                             <path d="${lossSvgPath}" fill="none" stroke="#3b82f6" stroke-width="2" />

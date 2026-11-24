@@ -198,6 +198,10 @@ public class KernelFacade implements IOrchestrator {
 		}
 		
 		kernel.setDarwinEngine(darwinEngine);
+		// Keep the cached platform mode in sync with the engine actually selected, so
+		// downstream consumers (FinalResponseAssembler, BehaviorPolicyRegistry, etc.)
+		// observe the current mode instead of a stale one from a previous turn.
+		context.setPlatformMode(ModeRouter.createMode(platformType));
 		if (darwinEngine instanceof ADarwinEngine) {
 			DarwinEngineRegistry.register(context.getSessionId(), (ADarwinEngine) darwinEngine);
 		}

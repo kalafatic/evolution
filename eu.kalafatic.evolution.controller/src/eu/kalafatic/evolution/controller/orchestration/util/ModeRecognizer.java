@@ -129,8 +129,7 @@ public class ModeRecognizer {
 	}
 
 	public static boolean isDreamMode(TaskContext context) {
-		return (context.getOrchestrator() != null && AiMode.DREAM.equals(context.getOrchestrator().getAiMode()))
-				|| (context.getPlatformMode() != null && PlatformType.DREAM_MODE.equals(context.getPlatformMode().getType()));
+		return (context.getOrchestrator() != null && AiMode.DREAM.equals(context.getOrchestrator().getAiMode()));
 	}
 
 	public static boolean isMutationMode(TaskContext context) {
@@ -144,14 +143,12 @@ public class ModeRecognizer {
 
 	public static boolean isForgeMode(TaskContext context) {
 		if (context == null) return false;
-		return (context.getOrchestrator() != null && AiMode.FORGE.equals(context.getOrchestrator().getAiMode()))
-				|| (context.getPlatformMode() != null && PlatformType.FORGE.equals(context.getPlatformMode().getType()));
+		return (context.getOrchestrator() != null && AiMode.FORGE.equals(context.getOrchestrator().getAiMode()));
 	}
 
 	public static boolean isDeveloperMode(TaskContext context) {
 		if (context == null) return false;
-		return (context.getOrchestrator() != null && AiMode.DEVELOPER.equals(context.getOrchestrator().getAiMode()))
-				|| (context.getPlatformMode() != null && PlatformType.DEVELOPER.equals(context.getPlatformMode().getType()));
+		return (context.getOrchestrator() != null && AiMode.DEVELOPER.equals(context.getOrchestrator().getAiMode()));
 	}
 
 	public static boolean isSelfDevMode(TaskContext context) {
@@ -159,32 +156,35 @@ public class ModeRecognizer {
 		return (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null
 				&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
 				&& context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode())
-				|| (context.getPlatformMode() != null && PlatformType.SELF_DEV_MODE.equals(context.getPlatformMode().getType()))
 				|| (context.getBehaviorProfile() != null && context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV));
 	}
 
 	public static boolean isMediatedMode(TaskContext context) {
 		if (context == null) return false;
 		return (context.getOrchestrator() != null && AiMode.MEDIATED.equals(context.getOrchestrator().getAiMode()))
-				|| (context.getPlatformMode() != null && PlatformType.HYBRID_MANUAL_EXPORT.equals(context.getPlatformMode().getType()))
 				|| (context.getBehaviorProfile() != null && context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY));
 	}
 
 	public static boolean isIntentMode(TaskContext context) {
 		if (context == null) return false;
-		return (context.getOrchestrator() != null && AiMode.INTENT.equals(context.getOrchestrator().getAiMode()))
-				|| (context.getPlatformMode() != null && PlatformType.INTENT_RECONSTRUCTION.equals(context.getPlatformMode().getType()));
+		return (context.getOrchestrator() != null && AiMode.INTENT.equals(context.getOrchestrator().getAiMode()));
 	}
 
 	public static boolean isDarwinMode(TaskContext context) {
 		if (context == null) return false;
-		return (context.getOrchestrator() != null && context.getOrchestrator().isDarwinMode())
-				|| (context.getPlatformMode() != null && PlatformType.DARWIN_MODE.equals(context.getPlatformMode().getType()));
+		return (context.getOrchestrator() != null && context.getOrchestrator().isDarwinMode());
 	}
 
+	/**
+	 * A "forced technical mode" is an EXPLICIT user/workflow override, never the derived
+	 * {@link TaskContext#getPlatformMode()} cache. The cached platform mode reflects the
+	 * currently-selected (possibly auto-detected) mode and must not lock the session into
+	 * that mode — otherwise dynamic per-iteration mode selection breaks (e.g. an
+	 * auto-detected ASSISTED_CODING would make every subsequent greeting stick to coding).
+	 */
 	public static boolean isForcedTechnicalMode(TaskContext context) {
 		if (context == null) return false;
-		return isDreamMode(context) || isForgeMode(context) || isDeveloperMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isDarwinMode(context) || isCoding(context);
+		return isDreamMode(context) || isForgeMode(context) || isDeveloperMode(context) || isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context) || isMutationMode(context) || isDarwinMode(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {

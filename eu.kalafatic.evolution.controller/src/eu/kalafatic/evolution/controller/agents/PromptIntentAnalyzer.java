@@ -90,8 +90,12 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
             return new IntentResult(IntentCategory.CHAT, 1.0, "Conversational greeting", null, null);
         }
 
-        // Early exit: Respect authoritative explicit execution mode and forced technical modes
-        if (context != null && (ModeRecognizer.isForcedTechnicalMode(context) || context.getPlatformMode() != null)) {
+        // Early exit: Respect authoritative EXPLICIT execution mode only. A non-null
+        // PlatformMode is a derived routing cache (set on the first request and kept in
+        // sync with the selected mode), NOT an authoritative override — treating it as
+        // such would permanently disable LLM intent classification for the rest of a
+        // persistent session and force every non-greeting request to ASSISTED_CODING.
+        if (context != null && ModeRecognizer.isForcedTechnicalMode(context)) {
             PlatformType forcedType = ModeRecognizer.determineType(context);
             context.log("[INTENT] Authoritative mode pre-established: " + forcedType + ". Bypassing LLM intent analysis.");
             return new IntentResult(IntentCategory.TASK, 1.0, "Authoritative execution mode: " + forcedType, forcedType.name(), null);

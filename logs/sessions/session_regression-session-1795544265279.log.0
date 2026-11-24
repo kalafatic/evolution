@@ -1,0 +1,25 @@
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] [INTENT] LLM analyzing: Some ambiguous user query 121867686995224
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] [PIPELINE] JSON Repair failed to produce valid JSON: A JSONObject text must begin with '{' at 1 [character 2 line 1]
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] [RECOVERY] Attempting recovery for structured response errors: Malformed JSON: A JSONObject text must begin with '{' at 1 [character 2 line 1]
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] [PIPELINE] Retrying with repair prompt (attempt 1)...
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] Stage: LLM
+Provider: dynamic
+Model: local
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] LlmRouter: Routing request via dynamic policies.
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279] Ollama Error Diagnostics [Model: evo]:
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279]   > Exception: java.lang.Exception: Ollama is not configured
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279]   > Detected Cause: An exception occurred inside the Ollama provider pipeline. Error details: Ollama is not configured
+Nov 24, 2026 7:17:45 PM eu.kalafatic.evolution.controller.log.SessionLogger log
+INFO: [Log] [regression-session-1795544265279]   > Suggestions:
+1. Verify Ollama API status.
+2. Ensure the model has been trained and exported correctly with GGUF format.
+3. Consult the application and Ollama console output for underlying stacktraces.

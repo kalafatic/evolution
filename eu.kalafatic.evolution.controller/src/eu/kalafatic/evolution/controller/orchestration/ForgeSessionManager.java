@@ -735,14 +735,22 @@ public class ForgeSessionManager {
         }
 
         if (fallback == null) {
-            String name = (requestedId != null && !requestedId.trim().isEmpty()) ? requestedId : "Active Forge Session";
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found and no sessions exist. Creating '" + name + "'.");
-            fallback = createSession(name, "SELF_EVO");
+            // No sessions exist at all. A lookup must NOT create a session as a side
+            // effect: session creation is an explicit operation (createSession / the
+            // /forge/session POST endpoint / seedDefaultSessions during initialization).
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session '" + requestedId
+                    + "' not found and no Forge sessions exist. No session created (explicit creation required).");
+            return null;
         } else if (requestedId != null && !requestedId.trim().isEmpty()) {
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session '" + requestedId + "' not found in Forge sessions. Creating dedicated session.");
-            fallback = createSession(requestedId, "SELF_EVO");
+            // A requested session ID was not found (e.g. a stale or mismatched ID from a
+            // different session namespace). Do NOT create a "dedicated" session; fall back
+            // to the existing default so a single lookup failure cannot proliferate sessions.
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session '" + requestedId
+                    + "' not found; using default session '" + fallback.getName() + "' ("
+                    + fallback.getSessionId() + ") instead of creating a new session.");
         } else {
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID '" + requestedId + "' not found. Falling back to default session '" + fallback.getName() + "' (" + fallback.getSessionId() + ").");
+            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID is empty; using default session '"
+                    + fallback.getName() + "' (" + fallback.getSessionId() + ").");
         }
 
         if (fallback != null) {
