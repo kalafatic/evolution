@@ -61,6 +61,19 @@ public final class CudaDevice implements AutoCloseable {
     private String lastError = "";
     private final ThreadLocal<Boolean> contextCurrent = ThreadLocal.withInitial(() -> false);
 
+    // Execution-instrumentation counters (process-wide). These make real CUDA
+    // activity independently observable: a diagnostic can read the deltas before
+    // and after a training run and prove that kernels actually executed on the
+    // device, instead of inferring GPU usage from device detection or config.
+    private final java.util.concurrent.atomic.AtomicLong kernelLaunchCount =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong memcpyCount =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong memAllocCount =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong memFreeCount =
+            new java.util.concurrent.atomic.AtomicLong();
+
     private static volatile CudaDevice instance;
 
     /** Returns the process-wide device, or {@code null} when CUDA is unavailable. */
@@ -214,6 +227,18 @@ public final class CudaDevice implements AutoCloseable {
     public int getComputeCapabilityMinor() { return computeCapabilityMinor; }
     public String getLastError() { return lastError; }
 
+    /** Total number of CUDA kernel launches performed through this device. */
+    public long getKernelLaunchCount() { return kernelLaunchCount.get(); }
+
+    /** Total number of host↔device memory copies (cuMemcpyHtoD / cuMemcpyDtoH). */
+    public long getMemcpyCount() { return memcpyCount.get(); }
+
+    /** Total number of device memory allocations (cuMemAlloc). */
+    public long getMemAllocCount() { return memAllocCount.get(); }
+
+    /** Total number of device memory releases (cuMemFree). */
+    public long getMemFreeCount() { return memFreeCount.get(); }
+
     /** Free + total device memory in bytes. */
     public long[] memGetInfo() {
         ensureContext();
@@ -228,6 +253,7 @@ public final class CudaDevice implements AutoCloseable {
         ensureContext();
         MemorySegment ptr = arena.allocate(8);
         check((int) invoke(cuMemAlloc, ptr, bytes), "cuMemAlloc");
+        memAllocCount.incrementAndGet();
         return ptr.get(I64, 0);
     }
 
@@ -235,6 +261,7 @@ public final class CudaDevice implements AutoCloseable {
         if (devPtr == 0) return;
         ensureContext();
         invoke(cuMemFree, devPtr);
+        memFreeCount.incrementAndGet();
     }
 
     public void memcpyHtoD(long devPtr, float[] host) {
@@ -242,6 +269,7 @@ public final class CudaDevice implements AutoCloseable {
         MemorySegment h = arena.allocate((long) host.length * 4);
         h.copyFrom(MemorySegment.ofArray(host));
         check((int) invoke(cuMemcpyHtoD, devPtr, h, (long) host.length * 4), "cuMemcpyHtoD");
+        memcpyCount.incrementAndGet();
     }
 
     public void memcpyHtoD(long devPtr, int[] host) {
@@ -249,6 +277,7 @@ public final class CudaDevice implements AutoCloseable {
         MemorySegment h = arena.allocate((long) host.length * 4);
         h.copyFrom(MemorySegment.ofArray(host));
         check((int) invoke(cuMemcpyHtoD, devPtr, h, (long) host.length * 4), "cuMemcpyHtoD");
+        memcpyCount.incrementAndGet();
     }
 
     public void memcpyDtoH(float[] host, long devPtr) {
@@ -256,6 +285,7 @@ public final class CudaDevice implements AutoCloseable {
         MemorySegment h = arena.allocate((long) host.length * 4);
         check((int) invoke(cuMemcpyDtoH, h, devPtr, (long) host.length * 4), "cuMemcpyDtoH");
         MemorySegment.ofArray(host).copyFrom(h);
+        memcpyCount.incrementAndGet();
     }
 
     public void synchronize() {
@@ -346,6 +376,7 @@ public final class CudaDevice implements AutoCloseable {
         int rc = (int) invoke(cuLaunchKernel, function, gridX, gridY, gridZ, blockX, blockY, blockZ,
                 0, MemorySegment.NULL, kparams, MemorySegment.NULL);
         check(rc, "cuLaunchKernel");
+        kernelLaunchCount.incrementAndGet();
     }
 
     @Override

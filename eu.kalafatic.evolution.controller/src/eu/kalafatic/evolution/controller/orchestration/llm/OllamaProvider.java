@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,6 +25,36 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  * @evo:1:1 reason=delegate-to-managed-ollama-service
  */
 public class OllamaProvider implements ILlmProvider {
+
+    @Override
+    public List<LocalModelDescriptor> discoverModels(Orchestrator orchestrator) throws Exception {
+        String baseUrl = (orchestrator != null && orchestrator.getOllama() != null
+                && orchestrator.getOllama().getUrl() != null
+                && !orchestrator.getOllama().getUrl().isEmpty())
+                        ? orchestrator.getOllama().getUrl()
+                        : "http://localhost:11434";
+        try {
+            OllamaService service = OllamaManager.getInstance().getService(baseUrl);
+            List<OllamaModel> registered = service.loadModels();
+            if (registered.isEmpty() && !service.ping()) {
+                // Distinguish "registry empty" from "server unreachable" so the UI
+                // can surface a real error state instead of a misleading empty list.
+                throw new Exception("Ollama server unreachable at " + baseUrl);
+            }
+            List<LocalModelDescriptor> models = new ArrayList<>();
+            for (OllamaModel m : registered) {
+                models.add(new LocalModelDescriptor(m.getName(), m.getName(),
+                        LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", true));
+            }
+            eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] Ollama provider discovery: "
+                    + models.size() + " models from " + baseUrl);
+            return models;
+        } catch (Exception e) {
+            eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] Ollama provider discovery failed ("
+                    + baseUrl + "): " + e.getMessage());
+            throw new Exception("Ollama model discovery failed: " + e.getMessage(), e);
+        }
+    }
 
     private static class CachedEvoArtifact {
         final long lastModified;

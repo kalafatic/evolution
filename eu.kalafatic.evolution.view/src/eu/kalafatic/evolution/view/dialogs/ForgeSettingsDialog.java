@@ -1329,6 +1329,12 @@ public class ForgeSettingsDialog extends Dialog {
         if (getShell() == null || getShell().isDisposed()) return;
         getShell().getDisplay().timerExec(200, () -> {
             if (disposedTimer || getShell() == null || getShell().isDisposed()) return;
+            // Configuration changed: refresh the derived estimate labels (model
+            // size, epochs, dataset size, estimated duration) alongside the
+            // diagrams. Debounced and user-driven, never on the telemetry
+            // auto-refresh path, so it adds no per-tick directory scans during
+            // active training.
+            updateHardwareAndTimeInfo();
             captureAndRender(true);
         });
     }
@@ -1339,6 +1345,11 @@ public class ForgeSettingsDialog extends Dialog {
      * run on the SWT UI thread; the refresh is safe during active training.
      */
     private void captureAndRender(boolean force) {
+        // Re-read the live working-copy configuration from the UI controls so the
+        // snapshot always reflects what the user is currently editing, regardless
+        // of which refresh path (graph update, manual refresh, auto refresh)
+        // triggered this capture.
+        readEffectiveSettingsFromUiSafe();
         ForgeTelemetrySnapshot snap = captureSnapshot();
         if (snap == null) return;
         lastRefreshMs = System.currentTimeMillis();
@@ -1356,7 +1367,13 @@ public class ForgeSettingsDialog extends Dialog {
         // outside the project tree, so recording/persisting measurements never
         // affects the training corpus fingerprint.
         ForgeTrainingEstimationAgent.getInstance().loadDefaultMeasurements();
-        return ForgeTelemetrySnapshot.capture(mgr, resolveForgeSessionId(), lossHistory, calculateTotalDatasetBytes());
+        // Overlay the dialog's live working-copy configuration onto the
+        // authoritative telemetry snapshot: without this, the diagrams would
+        // render the previous (committed) session configuration instead of the
+        // values currently being edited.
+        return ForgeTelemetrySnapshot.capture(mgr, resolveForgeSessionId(), lossHistory,
+                calculateTotalDatasetBytes(), selectedModelSize, selectedEpochs,
+                selectedDesiredLoss, selectedTargetHours, selectedEarlyStoppingEnabled);
     }
 
     private String resolveForgeSessionId() {
@@ -3100,12 +3117,11 @@ public class ForgeSettingsDialog extends Dialog {
             java.nio.file.Files.writeString(centerFile.toPath(), centerHtml, java.nio.charset.StandardCharsets.UTF_8);
             java.nio.file.Files.writeString(graphsFile.toPath(), graphsHtml, java.nio.charset.StandardCharsets.UTF_8);
 
-            boolean ok = Program.launch(centerFile.getAbsolutePath());
-            if (!ok) {
-                MessageDialog.openError(getShell(), "Open in Browser",
-                        "Could not launch the default web browser for:\n" + centerFile.getAbsolutePath()
-                        + "\n\nThe HTML artifact was written successfully; you can open it manually.");
-            }
+            // Open the generated diagram through the shared external-browser
+            // launcher: validates the target, refuses mail handlers and logs
+            // the outcome. User feedback is handled by the launcher.
+            eu.kalafatic.evolution.view.util.ExternalBrowserLauncher
+                    .launchHtmlFile("ForgeSettingsDialog", centerFile.toPath());
         } catch (Exception ex) {
             MessageDialog.openError(getShell(), "Open in Browser",
                     "Failed to write or open the diagram HTML artifact: " + ex.getMessage());

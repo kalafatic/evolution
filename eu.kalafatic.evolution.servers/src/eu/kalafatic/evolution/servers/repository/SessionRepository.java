@@ -41,6 +41,45 @@ public class SessionRepository {
         }
     }
 
+    /**
+     * Idempotent insert for session synchronization: concurrent requests can race on
+     * the same new session ID (check-then-insert), which previously surfaced as
+     * SQLITE_CONSTRAINT_UNIQUE violations. INSERT OR IGNORE absorbs the race; when the
+     * row already existed the last-access time is refreshed so the caller's sync intent
+     * is preserved. Returns true when a new row was inserted.
+     */
+    public boolean saveIfAbsent(Session session) throws SQLException {
+        String sql = "INSERT OR IGNORE INTO sessions (session_id, user_id, created_at, last_access, client_ip, workflow_type, metadata, status, session_type, ended_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, session.getSessionId());
+            pstmt.setLong(2, session.getUserId());
+            String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            pstmt.setString(3, session.getCreatedAt() != null ? session.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : now);
+            pstmt.setString(4, session.getLastAccess() != null ? session.getLastAccess().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : now);
+            pstmt.setString(5, session.getClientIp());
+            pstmt.setString(6, session.getWorkflowType());
+            pstmt.setString(7, session.getMetadata());
+            pstmt.setString(8, session.getStatus() != null ? session.getStatus() : "ACTIVE");
+            pstmt.setString(9, session.getSessionType() != null ? session.getSessionType() : "SYSTEM");
+            pstmt.setString(10, session.getEndedAt() != null ? session.getEndedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+            int rows = pstmt.executeUpdate();
+            if (rows == 0) {
+                // Row already existed (concurrent sync): refresh access time.
+                updateLastAccess(session.getSessionId(),
+                        session.getLastAccess() != null ? session.getLastAccess() : LocalDateTime.now());
+                return false;
+            }
+
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    session.setId(generatedKeys.getLong(1));
+                }
+            }
+            return true;
+        }
+    }
+
     public Optional<Session> findBySessionId(String sessionId) throws SQLException {
         String sql = "SELECT * FROM sessions WHERE session_id = ?";
         try (Connection conn = dbManager.getConnection();

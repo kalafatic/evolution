@@ -108,8 +108,21 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
         authenticateCheck.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         Composite btnComp = toolkit.createComposite(group);
-        btnComp.setLayout(new GridLayout(4, false));
+        btnComp.setLayout(new GridLayout(5, false));
         btnComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+
+        // "Open in Web": opens the EVO web interface (Intelligence Portal) in
+        // the system's default web browser. The URL is resolved from the live
+        // primary ServerEntry (actual bind host + actually allocated port) by
+        // the shared EvoDesktopLauncher — nothing is hardcoded here. When the
+        // server is not running, the launcher shows a user-facing message.
+        Button openInWebBtn = GUIFactory.INSTANCE.createButton(btnComp, "Open in Web");
+        openInWebBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher.openWebInterface();
+            }
+        });
 
         Button startBtn = GUIFactory.INSTANCE.createButton(btnComp, "Start All Servers");
         startBtn.addSelectionListener(new SelectionAdapter() {

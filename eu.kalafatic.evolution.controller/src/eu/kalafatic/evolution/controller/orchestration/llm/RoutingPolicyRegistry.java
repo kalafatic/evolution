@@ -42,6 +42,22 @@ public class RoutingPolicyRegistry {
         // NATIVE EVO POLICY (Highest priority for .evo or native models)
         policies.add(new IRoutingPolicy() {
             @Override public boolean applies(Orchestrator orchestrator, TaskContext context) {
+                // An explicit provider selection takes precedence over name-based
+                // detection: ENR unifies the local engines and routes native models
+                // itself, and an explicit llama.cpp or Ollama selection must never be
+                // silently redirected to the native provider.
+                if (LlmRouter.isEnrRequested(orchestrator, context)) {
+                    return false;
+                }
+                if (context != null && context.getMetadata() != null) {
+                    Object engineSelection = context.getMetadata().get("inferenceEngine");
+                    if (engineSelection != null) {
+                        String key = LlmRouter.normalizeProviderKey(String.valueOf(engineSelection));
+                        if ("llama-cpp".equals(key) || "ollama".equals(key)) {
+                            return false;
+                        }
+                    }
+                }
                 String model = null;
                 if (context != null && context.getMetadata() != null) {
                     model = (String) context.getMetadata().get("model");

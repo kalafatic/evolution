@@ -8,9 +8,9 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<tycho.version>4.0.5</tycho.version>
+		<tycho.version>5.0.4</tycho.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.release>21</maven.compiler.release>
+		<maven.compiler.release>25</maven.compiler.release>
 	</properties>
 
 	<modules>
@@ -60,7 +60,7 @@
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho.version}</version>
 				<configuration>
-					<executionEnvironment>JavaSE-21</executionEnvironment>
+					<executionEnvironment>JavaSE-25</executionEnvironment>
 					<pomDependencies>ignore</pomDependencies>
 					<environments>
 						<environment>

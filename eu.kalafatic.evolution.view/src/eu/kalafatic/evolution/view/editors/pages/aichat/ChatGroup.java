@@ -489,11 +489,14 @@ public class ChatGroup extends AEvoGroup {
                 public Object function(Object[] args) {
                     if (args.length < 1) return null;
                     try {
+                        inBrowserCallback = true;
                         String action = (String) args[0];
 
                         if ("ready".equals(action)) {
                             isLoaded = true;
                             isJsReady = true;
+                            // refreshBrowser() detects the in-browser-callback state and
+                            // defers the Browser.execute() call itself (see guard there).
                             refreshBrowser();
                             return null;
                         }
@@ -602,6 +605,8 @@ public class ChatGroup extends AEvoGroup {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                    } finally {
+                        inBrowserCallback = false;
                     }
                     return null;
                 }
@@ -979,7 +984,24 @@ public class ChatGroup extends AEvoGroup {
 
     private String lastJson = "";
 
+    /**
+     * True while a JavaHandler BrowserFunction callback is executing on the UI
+     * thread. Browser.execute() must never be called synchronously in that state:
+     * the nested WebKit call cannot complete until the outer callback returns,
+     * which deadlocks on Linux and surfaces as the 10s "SWT call to Webkit timed
+     * out" error for large payloads.
+     */
+    private boolean inBrowserCallback = false;
+
     private void refreshBrowser() {
+        if (inBrowserCallback) {
+            Display.getDefault().asyncExec(() -> {
+                if (!browser.isDisposed()) {
+                    refreshBrowser();
+                }
+            });
+            return;
+        }
         if (browser.isDisposed() || !isLoaded || !isJsReady) return;
 
         refreshGitStatus();

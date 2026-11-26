@@ -33,7 +33,7 @@
         <setEntry value="eu.kalafatic.dstudio.tests"/>
         <setEntry value="eu.kalafatic.dstudio.ui"/>
         <setEntry value="eu.kalafatic.dstudio.ui.inference"/>
-        <setEntry value="eu.kalafatic.evolution.aggregator"/>
+        <setEntry value="eu.kalafatic.evolution.gpu*2.6.11.qualifier"/>
         <setEntry value="eu.kalafatic.evolution.module"/>
         <setEntry value="eu.kalafatic.evolution.repository"/>
         <setEntry value="eu.kalafatic.evolution.supervisor"/>
@@ -50,7 +50,7 @@
     <booleanAttribute key="org.eclipse.debug.core.ATTR_FORCE_SYSTEM_CONSOLE_ENCODING" value="false"/>
     <booleanAttribute key="org.eclipse.jdt.launching.ATTR_ATTR_USE_ARGFILE" value="false"/>
     <booleanAttribute key="org.eclipse.jdt.launching.ATTR_SHOW_CODEDETAILS_IN_EXCEPTION_MESSAGES" value="true"/>
-    <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
+    <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-25"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl ${target.nl} -consoleLog"/>
     <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
     <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xms2g -Xmx8g"/>
@@ -109,7 +109,7 @@
         <setEntry value="org.eclipse.core.databinding@default:default"/>
         <setEntry value="org.eclipse.core.expressions@default:default"/>
         <setEntry value="org.eclipse.core.filebuffers@default:default"/>
-        <setEntry value="org.eclipse.core.filesystem.linux.x86_64@default:default"/>
+        <setEntry value="org.eclipse.core.filesystem.linux.x86_64@default:false"/>
         <setEntry value="org.eclipse.core.filesystem@default:default"/>
         <setEntry value="org.eclipse.core.jobs@default:default"/>
         <setEntry value="org.eclipse.core.net@default:default"/>
@@ -184,7 +184,7 @@
         <setEntry value="org.eclipse.equinox.p2.updatesite@default:default"/>
         <setEntry value="org.eclipse.equinox.preferences@default:default"/>
         <setEntry value="org.eclipse.equinox.registry@default:default"/>
-        <setEntry value="org.eclipse.equinox.security.linux@default:default"/>
+        <setEntry value="org.eclipse.equinox.security.linux@default:false"/>
         <setEntry value="org.eclipse.equinox.security.ui@default:default"/>
         <setEntry value="org.eclipse.equinox.security@default:default"/>
         <setEntry value="org.eclipse.equinox.simpleconfigurator.manipulator@default:default"/>
@@ -216,34 +216,34 @@
         <setEntry value="org.eclipse.jface.notifications@default:default"/>
         <setEntry value="org.eclipse.jface.text@default:default"/>
         <setEntry value="org.eclipse.jface@default:default"/>
-        <setEntry value="org.eclipse.jgit.gpg.bc@default:default"/>
+        <setEntry value="org.eclipse.jgit.gpg.bc@default:false"/>
         <setEntry value="org.eclipse.jgit.http.apache@default:default"/>
-        <setEntry value="org.eclipse.jgit.ssh.apache.agent@default:default"/>
+        <setEntry value="org.eclipse.jgit.ssh.apache.agent@default:false"/>
         <setEntry value="org.eclipse.jgit.ssh.apache@default:default"/>
         <setEntry value="org.eclipse.jgit@default:default"/>
         <setEntry value="org.eclipse.ltk.core.refactoring@default:default"/>
         <setEntry value="org.eclipse.ltk.ui.refactoring@default:default"/>
-        <setEntry value="org.eclipse.m2e.archetype.catalog@default:default"/>
+        <setEntry value="org.eclipse.m2e.archetype.catalog@default:false"/>
         <setEntry value="org.eclipse.m2e.archetype.common@default:default"/>
-        <setEntry value="org.eclipse.m2e.archetype.descriptor@default:default"/>
-        <setEntry value="org.eclipse.m2e.archetype.maven-artifact-transfer@default:default"/>
+        <setEntry value="org.eclipse.m2e.archetype.descriptor@default:false"/>
+        <setEntry value="org.eclipse.m2e.archetype.maven-artifact-transfer@default:false"/>
         <setEntry value="org.eclipse.m2e.core.ui@default:default"/>
         <setEntry value="org.eclipse.m2e.core@default:default"/>
         <setEntry value="org.eclipse.m2e.jdt@default:default"/>
         <setEntry value="org.eclipse.m2e.launching@default:default"/>
-        <setEntry value="org.eclipse.m2e.logback@default:default"/>
+        <setEntry value="org.eclipse.m2e.logback@default:false"/>
         <setEntry value="org.eclipse.m2e.maven.runtime@default:default"/>
         <setEntry value="org.eclipse.m2e.model.edit@default:default"/>
         <setEntry value="org.eclipse.m2e.workspace.cli@default:default"/>
         <setEntry value="org.eclipse.nebula.cwt@default:default"/>
         <setEntry value="org.eclipse.nebula.widgets.cdatetime@default:default"/>
-        <setEntry value="org.eclipse.osgi.compatibility.state@default:default"/>
+        <setEntry value="org.eclipse.osgi.compatibility.state@default:false"/>
         <setEntry value="org.eclipse.osgi.util@default:default"/>
         <setEntry value="org.eclipse.osgi@1:true"/>
         <setEntry value="org.eclipse.search.core@default:default"/>
         <setEntry value="org.eclipse.search@default:default"/>
-        <setEntry value="org.eclipse.swt.gtk.linux.x86_64@default:default"/>
-        <setEntry value="org.eclipse.swt.svg@default:default"/>
+        <setEntry value="org.eclipse.swt.gtk.linux.x86_64@default:false"/>
+        <setEntry value="org.eclipse.swt.svg@default:false"/>
         <setEntry value="org.eclipse.swt@default:default"/>
         <setEntry value="org.eclipse.team.core@default:default"/>
         <setEntry value="org.eclipse.team.ui@default:default"/>
@@ -300,6 +300,7 @@
         <setEntry value="slf4j.api@default:default"/>
     </setAttribute>
     <setAttribute key="selected_workspace_bundles">
+        <setEntry value="eu.kalafatic.dcode.cli@default:default"/>
         <setEntry value="eu.kalafatic.evolution.controller.tests@default:default"/>
         <setEntry value="eu.kalafatic.evolution.controller@default:default"/>
         <setEntry value="eu.kalafatic.evolution.creatic@default:default"/>
@@ -314,6 +315,7 @@
         <setEntry value="eu.kalafatic.evolution.forge.runtime@default:default"/>
         <setEntry value="eu.kalafatic.evolution.forge.tokenizer@default:default"/>
         <setEntry value="eu.kalafatic.evolution.forge.trainer@default:default"/>
+        <setEntry value="eu.kalafatic.evolution.gpu*2.6.11.qualifier@default:default"/>
         <setEntry value="eu.kalafatic.evolution.media@default:default"/>
         <setEntry value="eu.kalafatic.evolution.model.edit@default:default"/>
         <setEntry value="eu.kalafatic.evolution.model.editor@default:default"/>
@@ -326,6 +328,8 @@
         <setEntry value="eu.kalafatic.evolution.tests@default:default"/>
         <setEntry value="eu.kalafatic.evolution.view@default:default"/>
         <setEntry value="eu.kalafatic.utils@default:default"/>
+        <setEntry value="evolution-221126@default:default"/>
+        <setEntry value="org.slf4j.nop@default:false"/>
     </setAttribute>
     <booleanAttribute key="show_selected_only" value="true"/>
     <booleanAttribute key="tracing" value="false"/>

@@ -1,0 +1,190 @@
+/* EVO Hardware Monitor — professional dark engineering dashboard.
+   Consistent with the EVO unified theme tokens (dark variant). */
+
+:root {
+  --bg: #0e1420;
+  --panel: #151d2c;
+  --panel-2: #1a2436;
+  --border: #263349;
+  --text: #dbe4f0;
+  --muted: #8a9bb5;
+  --accent: #4c8dff;
+  --accent-2: #2f6bd8;
+  --success: #2ecc71;
+  --warning: #e6a23c;
+  --danger: #e05c5c;
+  --info: #3aa0d8;
+  --purple: #9b59b6;
+  --mono: "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+  --sans: "Inter", "Segoe UI", "DejaVu Sans", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+}
+
+.hw-app { padding: 14px 16px 24px; max-width: 1480px; margin: 0 auto; }
+
+/* ---------- header ---------- */
+.hw-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 10px;
+}
+.hw-header h1 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--text);
+}
+.hw-sub { margin: 2px 0 0; color: var(--muted); font-size: 11.5px; letter-spacing: 0.03em; }
+.hw-header-actions { display: flex; gap: 8px; }
+.hw-btn {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.hw-btn:hover { border-color: var(--accent); color: var(--accent); }
+.hw-btn-alt { background: transparent; }
+
+/* ---------- status bar ---------- */
+.hw-statusbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.hw-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.hw-chip-time { margin-left: auto; font-family: var(--mono); }
+.hw-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+}
+.hw-dot.on  { background: var(--success); }
+.hw-dot.busy { background: var(--warning); }
+.hw-dot.err { background: var(--danger); }
+
+/* ---------- sections ---------- */
+.hw-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.hw-section-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 7px;
+}
+
+/* ---------- metric cards ---------- */
+.hw-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hw-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+.hw-card-label {
+  color: var(--muted);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.hw-card-value {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+.hw-card-sub { color: var(--muted); font-family: var(--mono); font-size: 10.5px; margin-top: 2px; }
+.hw-card.ok  .hw-card-value { color: var(--success); }
+.hw-card.warn .hw-card-value { color: var(--warning); }
+.hw-card.err .hw-card-value { color: var(--danger); }
+.hw-card.info .hw-card-value { color: var(--info); }
+.hw-card.full { grid-column: 1 / -1; }
+
+/* ---------- charts ---------- */
+.hw-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+}
+.hw-chart-box {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px;
+}
+.hw-chart-head {
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.hw-unit { color: var(--muted); font-family: var(--mono); }
+.hw-chart-box canvas { width: 100%; height: 130px; display: block; }
+
+/* ---------- GPU blocks ---------- */
+.hw-gpu-block { margin-bottom: 14px; }
+.hw-gpu-block:last-child { margin-bottom: 0; }
+.hw-gpu-title {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+.hw-gpu-title .hw-gpu-idx {
+  color: var(--accent);
+  font-family: var(--mono);
+}
+
+/* ---------- footer ---------- */
+.hw-footer {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 6px 2px;
+  border-top: 1px solid var(--border);
+}
+
+.hw-na { color: var(--muted); }

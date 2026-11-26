@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Evolution Servers
 Bundle-SymbolicName: eu.kalafatic.evolution.servers;singleton:=true
 Bundle-Version: 2.6.11.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Automatic-Module-Name: eu.kalafatic.evolution.servers
 Export-Package: eu.kalafatic.evolution.servers.server,
  eu.kalafatic.evolution.servers.model,

@@ -457,10 +457,11 @@ public class ProjectModelManager {
     }
 
     /**
-     * Filters a list of model names by the specified inference engine ("evo native", "llama-cpp", "ollama").
+     * Filters a list of model names by the specified inference engine/provider
+     * ("evo native", "llama-cpp", "ollama", "enr").
      *
      * @param models List of model names to filter.
-     * @param engine Inference engine ("evo native", "llama-cpp", "ollama").
+     * @param engine Inference engine/provider ("evo native", "llama-cpp", "ollama", "enr").
      * @return Filtered list of model names.
      */
     public List<String> filterModelsByEngine(List<String> models, String engine) {
@@ -478,7 +479,16 @@ public class ProjectModelManager {
             if (model == null || model.trim().isEmpty()) continue;
             String lower = model.toLowerCase().trim();
 
-            if (eng.contains("evo native") || eng.contains("evo-native") || eng.contains("evo_native") || eng.equals("native")) {
+            if (eng.contains("enr")) {
+                // Rule 4: ENR — the unified local inference runtime. ENR exposes the
+                // full Ollama-compatible model set plus the additional ENR-specific
+                // evo-native (.evo) and llama.cpp (gguf) models from the ENR catalog.
+                // The legacy "ENR-EVO Native" label also lands here (checked before
+                // the "evo native" rule) so existing sessions keep their models.
+                if (!filtered.contains(model)) {
+                    filtered.add(model);
+                }
+            } else if (eng.contains("evo native") || eng.contains("evo-native") || eng.contains("evo_native") || eng.equals("native")) {
                 // Rule 1: evo native - canonical .evo file artifacts only
                 boolean isEvoFile = lower.endsWith(".evo");
                 if (isEvoFile) {

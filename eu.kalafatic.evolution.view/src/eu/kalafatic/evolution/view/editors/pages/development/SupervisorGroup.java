@@ -17,7 +17,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -462,11 +461,8 @@ public class SupervisorGroup extends AEvoGroup {
     private void handleOpenWebHub() {
         int controlPort = parsePort(controlPortText.getText(), eu.kalafatic.evolution.controller.resource.PortRegistry.EVO_SUPERVISOR_CONTROL.getDefaultPort());
         String url = "http://127.0.0.1:" + controlPort;
-        try {
-            Program.launch(url);
-        } catch (Exception e) {
-            MessageDialog.openError(group.getShell(), "Launch Control Hub Failed", "Could not open browser for " + url + ": " + e.getMessage());
-        }
+        eu.kalafatic.evolution.view.util.ExternalBrowserLauncher
+                .launchWebUrl("SupervisorGroup", url);
     }
 
     private void handleViewLogs() {

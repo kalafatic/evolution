@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Forge Controller
 Bundle-SymbolicName: eu.kalafatic.evolution.forge.controller
 Bundle-Version: 2.6.11.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.eclipse.swt,

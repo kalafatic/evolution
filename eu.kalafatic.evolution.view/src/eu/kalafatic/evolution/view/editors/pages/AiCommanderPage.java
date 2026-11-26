@@ -85,6 +85,7 @@ import eu.kalafatic.evolution.view.editors.pages.aichat.ChatGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.ChatMgmtGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.FeedbackGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.ForgeStatusGroup;
+import eu.kalafatic.evolution.view.editors.pages.aichat.GpuDiagnosticsGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.InstructionsGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.SystemStatusGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
@@ -110,6 +111,7 @@ public class AiCommanderPage extends AEvoPage {
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
 	private ForgeStatusGroup forgeStatusGroup;
+	private GpuDiagnosticsGroup gpuDiagnosticsGroup;
 	private FeedbackGroup feedbackGroup;
 	
 	private ConversationOutputController outputController;
@@ -220,6 +222,10 @@ public class AiCommanderPage extends AEvoPage {
 				() -> {
 					if (chatMgmtGroup != null) chatMgmtGroup.openForgeSettingsDialog();
 				});
+
+		// GPU diagnostics (CUDA backend + real Forge GPU training verification),
+		// shared with the Forge page and the Settings Hardware panel services.
+		gpuDiagnosticsGroup = new GpuDiagnosticsGroup(toolkit, content, editor, orchestrator);
 
 		// Main horizontal split sash
 		SashForm horizontalSash = new SashForm(content, SWT.HORIZONTAL | SWT.SMOOTH);
@@ -637,6 +643,7 @@ public class AiCommanderPage extends AEvoPage {
 		taskRequest.getContext().put("sessionId", sessionId);
 		taskRequest.getContext().put("turnId", currentTurnId);
 		taskRequest.getContext().put("userMessageHandled", Boolean.TRUE);
+		applyProviderSelection(taskRequest);
 
 		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
 	}
@@ -1070,8 +1077,23 @@ public class AiCommanderPage extends AEvoPage {
 		taskRequest.getContext().put("sessionId", sessionId);
 		taskRequest.getContext().put("turnId", currentTurnId);
 		taskRequest.getContext().put("userMessageHandled", Boolean.TRUE);
+		applyProviderSelection(taskRequest);
 
 		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
+	}
+
+	/**
+	 * Carries the AI Commander provider selection (Ollama / ENR / LLAMA-CPP /
+	 * EVO Native) into the task request so the orchestration layer routes the
+	 * turn through the provider the user selected.
+	 */
+	private void applyProviderSelection(TaskRequest taskRequest) {
+		if (chatMgmtGroup != null && taskRequest != null && taskRequest.getContext() != null) {
+			String engine = chatMgmtGroup.getInferenceEngine();
+			if (engine != null && !engine.isBlank()) {
+				taskRequest.getContext().put("inferenceEngine", engine);
+			}
+		}
 	}
 
 	public File getProjectRoot() {
@@ -1121,7 +1143,16 @@ public class AiCommanderPage extends AEvoPage {
 
 	public void updateStatusInfo() {
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-		String model = (String) projection.getConfiguration().getOrDefault("localModel", orchestrator != null ? orchestrator.getLocalModel() : "Not Configured");
+		String model;
+		if (chatMgmtGroup != null) {
+			model = chatMgmtGroup.getLocalModel(); // plain name, origin prefix stripped
+		} else {
+			model = eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor
+					.plainName(String.valueOf(projection.getConfiguration().getOrDefault("localModel", "")));
+		}
+		if (model == null || model.isEmpty()) {
+			model = "Not Configured";
+		}
 		String url = (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) ? orchestrator.getOllama().getUrl() : eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("INFERENCE").getUrl();
 
 		ollamaService = OllamaManager.getInstance().getService(url);

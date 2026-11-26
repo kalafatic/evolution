@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVO Hardware Monitor</title>
+<link rel="stylesheet" href="css/hardware-dashboard.css">
+</head>
+<body data-theme="dark">
+<div class="hw-app">
+
+  <header class="hw-header">
+    <div class="hw-header-title">
+      <h1>EVO HARDWARE MONITOR</h1>
+      <p class="hw-sub">System telemetry · CPU · Memory · GPU · CUDA backend</p>
+    </div>
+    <div class="hw-header-actions">
+      <button id="hw-btn-scan" class="hw-btn">Scan Hardware</button>
+      <button id="hw-btn-cuda" class="hw-btn">Test CUDA</button>
+      <button id="hw-btn-refresh" class="hw-btn hw-btn-alt">Refresh Now</button>
+    </div>
+  </header>
+
+  <section class="hw-statusbar">
+    <div class="hw-chip" id="hw-chip-monitoring"><span class="hw-dot"></span><span>Monitoring: —</span></div>
+    <div class="hw-chip" id="hw-chip-scan"><span class="hw-dot"></span><span>Scan: —</span></div>
+    <div class="hw-chip" id="hw-chip-cuda"><span class="hw-dot"></span><span>CUDA: —</span></div>
+    <div class="hw-chip hw-chip-time"><span>Last update: —</span></div>
+  </section>
+
+  <!-- ============ CPU ============ -->
+  <section class="hw-section">
+    <h2 class="hw-section-title">CPU</h2>
+    <div class="hw-cards" id="hw-cpu-cards"></div>
+    <div class="hw-charts" id="hw-cpu-charts">
+      <div class="hw-chart-box"><div class="hw-chart-head">CPU Utilization<span class="hw-unit">%</span></div><canvas id="chart-cpu-util"></canvas></div>
+      <div class="hw-chart-box"><div class="hw-chart-head">CPU Frequency<span class="hw-unit">MHz</span></div><canvas id="chart-cpu-freq"></canvas></div>
+      <div class="hw-chart-box"><div class="hw-chart-head">CPU Temperature<span class="hw-unit">°C</span></div><canvas id="chart-cpu-temp"></canvas></div>
+      <div class="hw-chart-box"><div class="hw-chart-head">Load Average (1 min)<span class="hw-unit"></span></div><canvas id="chart-cpu-load"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ MEMORY ============ -->
+  <section class="hw-section">
+    <h2 class="hw-section-title">Memory</h2>
+    <div class="hw-cards" id="hw-ram-cards"></div>
+    <div class="hw-charts">
+      <div class="hw-chart-box"><div class="hw-chart-head">Physical RAM Utilization<span class="hw-unit">%</span></div><canvas id="chart-ram-util"></canvas></div>
+      <div class="hw-chart-box"><div class="hw-chart-head">Used / Available RAM<span class="hw-unit">GiB</span></div><canvas id="chart-ram-used"></canvas></div>
+      <div class="hw-chart-box"><div class="hw-chart-head">JVM Heap Utilization<span class="hw-unit">%</span></div><canvas id="chart-jvm-util"></canvas></div>
+      <div class="hw-chart-box"><div class="hw-chart-head">JVM Heap Used<span class="hw-unit">GiB</span></div><canvas id="chart-jvm-used"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ GPU ============ -->
+  <section class="hw-section" id="hw-gpu-section">
+    <h2 class="hw-section-title">GPU</h2>
+    <div id="hw-gpu-container"></div>
+  </section>
+
+  <footer class="hw-footer" id="hw-footer">
+    No scan executed yet. Press "Scan Hardware" to run a full hardware inventory.
+  </footer>
+
+</div>
+<script src="js/hardware-dashboard.js"></script>
+</body>
+</html>

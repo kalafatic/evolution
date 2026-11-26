@@ -8,9 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reads CPU metrics from Linux procfs ({@code /proc/stat}, {@code /proc/cpuinfo}).
- * CPU utilisation is derived from the delta of jiffies between two samples, so a
- * {@link CpuMetricsReader} instance retains the previous sample's counters.
+ * Reads CPU metrics from Linux procfs ({@code /proc/stat}, {@code /proc/cpuinfo},
+ * {@code /proc/loadavg}) and sysfs. CPU utilisation is derived from the delta of
+ * jiffies between two samples, so a {@link CpuMetricsReader} instance retains the
+ * previous sample's counters. Static inventory (vendor, cores, frequency limits,
+ * temperature, load average) is read best-effort and reported as {@code -1}/{@code "Unknown"}
+ * when unsupported.
  */
 final class CpuMetricsReader {
 
@@ -20,7 +23,7 @@ final class CpuMetricsReader {
     private long[] prevIdle;
 
     CpuMetricsReader() {
-        this.logicalProcessors = Runtime.getRuntime().availableProcessors();
+        this.logicalProcessors = Math.max(1, Runtime.getRuntime().availableProcessors());
         this.model = readCpuModel();
         this.prevTotal = new long[logicalProcessors];
         this.prevIdle = new long[logicalProcessors];
@@ -81,6 +84,10 @@ final class CpuMetricsReader {
         try { return Long.parseLong(f[i]); } catch (Exception e) { return 0; }
     }
 
+    // ------------------------------------------------------------------
+    // Static inventory (best-effort, -1 / "Unknown" when unsupported)
+    // ------------------------------------------------------------------
+
     private static String readCpuModel() {
         try (BufferedReader r = new BufferedReader(new FileReader("/proc/cpuinfo"))) {
             String line;
@@ -95,6 +102,56 @@ final class CpuMetricsReader {
         return "Unknown";
     }
 
+    static String vendor() {
+        try (BufferedReader r = new BufferedReader(new FileReader("/proc/cpuinfo"))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (line.startsWith("vendor_id")) {
+                    int idx = line.indexOf(':');
+                    return idx >= 0 ? line.substring(idx + 1).trim() : "Unknown";
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "Unknown";
+    }
+
+    static String architecture() {
+        String arch = System.getProperty("os.arch", "");
+        if (arch == null || arch.isEmpty()) return "Unknown";
+        return arch.replace("amd64", "x86_64").replace("aarch64", "arm64");
+    }
+
+    /** Physical cores: cores per socket × socket count from {@code /proc/cpuinfo}. */
+    static int physicalCores() {
+        try (BufferedReader r = new BufferedReader(new FileReader("/proc/cpuinfo"))) {
+            String line;
+            int coresPerSocket = 0;
+            int maxPhysicalId = 0;
+            while ((line = r.readLine()) != null) {
+                if (line.startsWith("cpu cores")) {
+                    coresPerSocket = Math.max(coresPerSocket, intAfterColon(line));
+                } else if (line.startsWith("physical id")) {
+                    maxPhysicalId = Math.max(maxPhysicalId, intAfterColon(line));
+                }
+            }
+            if (coresPerSocket > 0) {
+                return coresPerSocket * (maxPhysicalId + 1);
+            }
+        } catch (Exception ignored) {
+        }
+        return 0;
+    }
+
+    private static int intAfterColon(String line) {
+        try {
+            int idx = line.indexOf(':');
+            return idx >= 0 ? Integer.parseInt(line.substring(idx + 1).trim()) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     /** Best-effort current CPU frequency (MHz) from sysfs. */
     static double currentFrequencyMhz() {
         try {
@@ -106,5 +163,74 @@ final class CpuMetricsReader {
         } catch (Exception ignored) {
         }
         return -1;
+    }
+
+    /** Best-effort maximum CPU frequency (MHz) from sysfs. */
+    static double maxFrequencyMhz() {
+        try {
+            Path p = Path.of("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+            if (Files.exists(p)) {
+                String v = Files.readString(p).trim();
+                return Double.parseDouble(v) / 1000.0;
+            }
+        } catch (Exception ignored) {
+        }
+        return -1;
+    }
+
+    /** Best-effort CPU package temperature (°C) from sysfs thermal zones. */
+    static double temperatureCelsius() {
+        Path thermalRoot = Path.of("/sys/class/thermal");
+        try {
+            if (!Files.exists(thermalRoot)) return -1;
+            double best = -1;
+            try (var stream = Files.list(thermalRoot)) {
+                List<Path> zones = stream
+                        .filter(p -> p.getFileName().toString().startsWith("thermal_zone"))
+                        .sorted()
+                        .toList();
+                // Prefer x86_pkg_temp-type zones (CPU package sensor).
+                for (Path zone : zones) {
+                    Path type = zone.resolve("type");
+                    String t = Files.exists(type) ? Files.readString(type).trim() : "";
+                    if (t.contains("pkg_temp") || t.contains("coretemp") || t.contains("cpu")) {
+                        double v = readZoneTemp(zone);
+                        if (v > 0) return v;
+                    }
+                }
+                for (Path zone : zones) {
+                    double v = readZoneTemp(zone);
+                    if (v > 0) {
+                        best = v;
+                        break;
+                    }
+                }
+            }
+            return best;
+        } catch (Exception ignored) {
+            return -1;
+        }
+    }
+
+    private static double readZoneTemp(Path zone) {
+        try {
+            Path temp = zone.resolve("temp");
+            if (Files.exists(temp)) {
+                return Double.parseDouble(Files.readString(temp).trim()) / 1000.0;
+            }
+        } catch (Exception ignored) {
+        }
+        return -1;
+    }
+
+    /** 1-minute system load average from {@code /proc/loadavg}. */
+    static double loadAverage1m() {
+        try {
+            String s = Files.readString(Path.of("/proc/loadavg"));
+            String[] f = s.trim().split("\\s+");
+            return f.length > 0 ? Double.parseDouble(f[0]) : -1;
+        } catch (Exception ignored) {
+            return -1;
+        }
     }
 }

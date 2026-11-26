@@ -185,7 +185,8 @@ public class JSONLAdapter implements DatasetSourceAdapter {
 
         // 4. Fallback for unknown schema: collect non-empty string fields excluding metadata infrastructure keys
         List<String> textValues = new ArrayList<>();
-        for (String key : json.keySet()) {
+        for (Object keyObj : json.keySet()) {
+            String key = (String) keyObj;
             String lowerKey = key.toLowerCase();
             if (isMetadataKey(lowerKey)) {
                 continue;

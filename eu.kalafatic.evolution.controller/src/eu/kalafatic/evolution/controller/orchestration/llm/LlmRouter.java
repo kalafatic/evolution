@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
+import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -138,6 +140,92 @@ public class LlmRouter {
         return value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
     }
 
+    /**
+     * Whether the given provider/engine selection value refers to the ENR provider.
+     *
+     * <p>Accepts the canonical {@code EVO Native ENR} label, the legacy
+     * {@code ENR-EVO Native} value persisted by earlier AI Commander versions, and the
+     * plain {@code ENR}/{@code enr} identifiers, so existing sessions restore onto the
+     * unified ENR provider selection.</p>
+     */
+    public static boolean isEnrEngine(String value) {
+        if (value == null) {
+            return false;
+        }
+        String v = value.trim().toLowerCase();
+        return v.equals("enr") || v.startsWith("enr") || v.endsWith("enr")
+                || v.contains(" enr ");
+    }
+
+    /**
+     * Normalizes a provider selection value onto the canonical local provider key:
+     * {@code "ollama"}, {@code "llama-cpp"} or {@code "enr"}. Returns an empty string
+     * for unrecognized values.
+     */
+    public static String normalizeProviderKey(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        if (isEnrEngine(value)) {
+            return "enr";
+        }
+        String v = value.trim().toLowerCase();
+        if (v.contains("llama-cpp") || v.contains("llama_cpp") || v.contains("llama.cpp")
+                || v.equals("cpp")) {
+            return "llama-cpp";
+        }
+        if (v.contains("ollama")) {
+            return "ollama";
+        }
+        return "";
+    }
+
+    /**
+     * Discovers the models available through the selected local provider using that
+     * provider's own model-listing mechanism:
+     * <ul>
+     * <li>{@code ollama} — the Ollama registry ({@code /api/tags})</li>
+     * <li>{@code llama-cpp} — the local GGUF artifacts resolvable by the llama.cpp
+     * integration</li>
+     * <li>{@code enr} — the ENR unified model catalog (all registered Ollama models
+     * plus native {@code *.evo} and llama.cpp models, with origins retained)</li>
+     * </ul>
+     *
+     * @param providerSelection The provider selection (display label or key).
+     * @param orchestrator The orchestrator model (may be null); used to resolve the
+     *        provider endpoint where applicable.
+     * @return The discovered models, each carrying its inference identifier and origin.
+     * @throws IllegalStateException When the selected provider is not registered.
+     * @throws IllegalArgumentException For an unrecognized provider selection.
+     * @throws Exception When the provider's discovery operation fails.
+     */
+    public List<LocalModelDescriptor> discoverModels(String providerSelection,
+            Orchestrator orchestrator) throws Exception {
+        String key = normalizeProviderKey(providerSelection);
+        if (key.isEmpty()) {
+            throw new IllegalArgumentException("Unsupported local provider selection: "
+                    + providerSelection);
+        }
+        List<LocalModelDescriptor> models;
+        switch (key) {
+            case "enr" -> {
+                if (enrProvider == null) {
+                    throw new IllegalStateException("ENR provider is not registered (ENR bundle not present)");
+                }
+                models = enrProvider.discoverModels(orchestrator);
+            }
+            case "llama-cpp" -> models = eu.kalafatic.evolution.controller.manager.LlamaService
+                    .discoverLlamaCppModels();
+            default -> models = ollamaProvider.discoverModels(orchestrator);
+        }
+        if (models == null) {
+            models = java.util.List.of();
+        }
+        eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] Provider discovery requested: "
+                + providerSelection + " -> key=" + key + ", models=" + models.size());
+        return models;
+    }
+
     public String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String configured = resolveDefaultLocalProvider();
         switch (configured) {
@@ -156,12 +244,26 @@ public class LlmRouter {
             }
             default -> {
                 // "auto" (default): infer from the request/model — ENR when explicitly
-                // requested, native for .evo models, otherwise Ollama.
-                if (enrProvider != null && isEnrRequested(orchestrator, context)) {
+                // requested, native for .evo models, otherwise Ollama. An explicit
+                // llama.cpp or Ollama provider selection takes precedence over
+                // name-based native detection.
+                if (isEnrRequested(orchestrator, context)) {
+                    if (enrProvider == null) {
+                        throw new IllegalStateException("ENR is selected as the local provider "
+                                + "but the ENR provider is not registered (ENR bundle not present)");
+                    }
                     return sendEnrRequest(orchestrator, prompt, temperature, proxyUrl, context);
                 }
+                String overrideKey = "";
+                if (context != null && context.getMetadata() != null) {
+                    Object engineSelection = context.getMetadata().get("inferenceEngine");
+                    if (engineSelection != null) {
+                        overrideKey = normalizeProviderKey(String.valueOf(engineSelection));
+                    }
+                }
                 String model = resolveModelName(orchestrator, context);
-                if (isNativeEvoModel(model)) {
+                if (isNativeEvoModel(model) && !"llama-cpp".equals(overrideKey)
+                        && !"ollama".equals(overrideKey)) {
                     return sendNativeEvoRequest(orchestrator, prompt, temperature, proxyUrl, context);
                 }
                 return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -180,14 +282,18 @@ public class LlmRouter {
         return enrProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
-    private static boolean isEnrRequested(Orchestrator orchestrator, TaskContext context) {
+    static boolean isEnrRequested(Orchestrator orchestrator, TaskContext context) {
         if (context != null && context.getMetadata() != null) {
             Object provider = context.getMetadata().get("provider");
-            if ("enr".equalsIgnoreCase(String.valueOf(provider))) {
+            if (provider != null && isEnrEngine(String.valueOf(provider))) {
                 return true;
             }
             Object engine = context.getMetadata().get("engine");
-            if ("enr".equalsIgnoreCase(String.valueOf(engine))) {
+            if (engine != null && isEnrEngine(String.valueOf(engine))) {
+                return true;
+            }
+            Object inferenceEngine = context.getMetadata().get("inferenceEngine");
+            if (inferenceEngine != null && isEnrEngine(String.valueOf(inferenceEngine))) {
                 return true;
             }
             String model = resolveModelName(orchestrator, context);

@@ -366,11 +366,40 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             }
         }
 
+        // Propagate the AI Commander provider/engine selection to the session inference
+        // context so the selected provider (Ollama / ENR / LLAMA-CPP / EVO Native) is
+        // actually used by the Darwin LLM router, not only by the UI model-list filter.
+        if (settings.containsKey("inferenceEngine") && session instanceof SessionContext) {
+            Object engineValue = settings.get("inferenceEngine");
+            TaskContext taskContext = ((SessionContext)session).getTaskContext();
+            if (taskContext != null && engineValue != null && !String.valueOf(engineValue).isBlank()) {
+                applyInferenceEngineSelection(taskContext, String.valueOf(engineValue));
+            }
+        }
+
         if (changed && session != null) {
             RuntimeEventBus bus = session.getEventBus();
             if (bus != null) {
                 bus.publish(new RuntimeEvent(RuntimeEventType.CONFIGURATION_UPDATED, sessionId, "OrchestratorService", settings));
             }
+        }
+    }
+
+    /**
+     * Applies the AI Commander provider/engine selection to the session's inference
+     * context. ENR selections additionally mark the request for the Darwin LLM router
+     * ({@code provider=enr}); non-ENR values clear that marker so switching back to
+     * Ollama restores the standard routing path.
+     */
+    private void applyInferenceEngineSelection(TaskContext context, String engine) {
+        if (context == null || engine == null) {
+            return;
+        }
+        context.getMetadata().put("inferenceEngine", engine);
+        if (eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter.isEnrEngine(engine)) {
+            context.getMetadata().put("provider", "enr");
+        } else {
+            context.getMetadata().remove("provider");
         }
     }
 
@@ -493,6 +522,16 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     }
                 } else if (request.getProjectRoot() != null && !request.getProjectRoot().equals(context.getProjectRoot())) {
                     context.setProjectRoot(request.getProjectRoot());
+                }
+
+                // Propagate the AI Commander provider/engine selection carried by this
+                // request so the selected provider is used for this turn even when the
+                // session context was created after the selection was made.
+                if (request.getContext() != null) {
+                    Object engineSelection = request.getContext().get("inferenceEngine");
+                    if (engineSelection != null && !String.valueOf(engineSelection).isBlank()) {
+                        applyInferenceEngineSelection(context, String.valueOf(engineSelection));
+                    }
                 }
                 context.getMetadata().put("sessionContext", session);
 

@@ -428,6 +428,28 @@ public class LlamaService {
             return null;
         }
 
+        // Test isolation seam: when overridden, only the override directories are
+        // consulted (mirrors resolveAllTargetModelDirs), so discovery and execution
+        // always agree on the same artifact set.
+        String overrideProp = System.getProperty("evo.test.modelDirsOverride");
+        if (overrideProp != null && !overrideProp.trim().isEmpty()) {
+            for (String part : overrideProp.split(File.pathSeparator)) {
+                if (part.trim().isEmpty()) {
+                    continue;
+                }
+                File dir = new File(part.trim());
+                File direct = new File(dir, modelName + ".gguf");
+                if (direct.isFile()) {
+                    return direct;
+                }
+                File subGguf = new File(new File(dir, modelName), "evo.gguf");
+                if (subGguf.isFile()) {
+                    return subGguf;
+                }
+            }
+            return null;
+        }
+
         boolean isEvoVariant = modelName.equalsIgnoreCase("evo") || modelName.toLowerCase().contains("evo");
 
         // 1. DEFAULT: Check inside internal controller models and llama-cpp lib folders first
@@ -546,6 +568,90 @@ public class LlamaService {
         }
 
         return null;
+    }
+
+    /**
+     * Discovers the llama.cpp models currently available on disk, using the same
+     * directories the llama.cpp execution path ({@link #resolveEvoModelPath(String)})
+     * resolves, so every discovered model is actually loadable by the llama.cpp
+     * integration. Model identifiers are the base artifact names accepted by
+     * {@link #resolveEvoModelPath(String)}.
+     *
+     * <p>Honors the {@code evo.test.modelDirsOverride} test-isolation seam: when set,
+     * only the override directories are scanned.</p>
+     *
+     * @return The discovered llama.cpp models (empty list when none are present).
+     */
+    public static List<eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor> discoverLlamaCppModels() {
+        boolean override = System.getProperty("evo.test.modelDirsOverride") != null
+                && !System.getProperty("evo.test.modelDirsOverride").trim().isEmpty();
+        java.util.LinkedHashMap<String, java.io.File> found = new java.util.LinkedHashMap<>();
+
+        java.util.List<java.io.File> flatDirs = new ArrayList<>(resolveAllTargetModelDirs());
+        if (!override) {
+            addUniqueDir(flatDirs, resolveControllerModelsDir());
+            addUniqueDir(flatDirs, resolveLlamaCppLibDir());
+            addUniqueDir(flatDirs, new File(System.getProperty("user.home"), ".ollama/models"));
+            String codebasePath = ProjectModelManager.getCodebasePath();
+            if (codebasePath != null && !codebasePath.isEmpty()) {
+                addUniqueDir(flatDirs, new File(codebasePath, "source/models"));
+            }
+        }
+        for (java.io.File dir : flatDirs) {
+            scanFlatGgufModels(dir, found);
+            // Sub-directory artifacts (dist/forge-output/<name>/evo.gguf) are also
+            // resolvable by the execution path.
+            scanSubdirGgufModels(dir, found);
+        }
+
+        java.util.List<eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor> models = new ArrayList<>();
+        for (String name : found.keySet()) {
+            models.add(new eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor(
+                    name, name, eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor.ORIGIN_LLAMA_CPP,
+                    "llama-cpp", true));
+        }
+        eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] llama.cpp provider discovery: "
+                + models.size() + " GGUF artifacts");
+        return models;
+    }
+
+    private static void addUniqueDir(List<java.io.File> dirs, java.io.File dir) {
+        if (dir != null && !dirs.contains(dir)) {
+            dirs.add(dir);
+        }
+    }
+
+    private static void scanFlatGgufModels(java.io.File dir,
+            java.util.LinkedHashMap<String, java.io.File> found) {
+        if (dir == null || !dir.isDirectory()) {
+            return;
+        }
+        java.io.File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".gguf"));
+        if (files == null) {
+            return;
+        }
+        for (java.io.File f : files) {
+            String filename = f.getName();
+            String modelName = filename.substring(0, filename.length() - 5); // strip .gguf
+            found.putIfAbsent(modelName, f);
+        }
+    }
+
+    private static void scanSubdirGgufModels(java.io.File dir,
+            java.util.LinkedHashMap<String, java.io.File> found) {
+        if (dir == null || !dir.isDirectory()) {
+            return;
+        }
+        java.io.File[] subdirs = dir.listFiles(java.io.File::isDirectory);
+        if (subdirs == null) {
+            return;
+        }
+        for (java.io.File subdir : subdirs) {
+            java.io.File gguf = new java.io.File(subdir, "evo.gguf");
+            if (gguf.isFile()) {
+                found.putIfAbsent(subdir.getName(), gguf);
+            }
+        }
     }
 
     // Inner class for messages to match OllamaService

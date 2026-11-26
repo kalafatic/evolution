@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.monitor;
 
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -53,6 +54,10 @@ public final class HardwareMetricsCollector {
         }
     }
 
+    public synchronized boolean isRunning() {
+        return executor != null && !executor.isShutdown();
+    }
+
     private void sample() {
         try {
             HardwareSnapshot s = collect();
@@ -64,30 +69,47 @@ public final class HardwareMetricsCollector {
         }
     }
 
-    HardwareSnapshot collect() {
-        HardwareSnapshot.Gpu gpu = gpuReader.parse();
+    /**
+     * Collects one snapshot synchronously on the calling thread. Serialized so it can
+     * safely run concurrently with the scheduled sampling (used by "Refresh now").
+     */
+    public synchronized HardwareSnapshot collect() {
+        List<HardwareSnapshot.Gpu> gpus = gpuReader.parseAll();
+        HardwareSnapshot.Gpu first = gpus.isEmpty() ? null : gpus.get(0);
+
         double[] perCore = cpuReader.sampleUtilization();
         double cpuUtil = cpuReader.overallUtilization(perCore);
         long[] ram = ramReader.read();
         long heapUsed = usedHeap();
+        long heapMax = Runtime.getRuntime().maxMemory();
+        long nonHeap = ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed();
 
-        boolean gpuAvailable = gpu != null && gpu.available;
-        String gpuName = gpu != null ? gpu.name : "No GPU";
-        int gpuUtil = gpu != null ? gpu.utilizationPercent : -1;
-        long vramUsed = gpu != null ? gpu.vramUsedBytes : 0;
-        long vramTotal = gpu != null ? gpu.vramTotalBytes : 0;
-        int gpuTemp = gpu != null ? gpu.temperatureCelsius : -1;
-        double gpuPower = gpu != null ? gpu.powerWatts : -1;
-        double gpuLimit = gpu != null ? gpu.powerLimitWatts : -1;
-        String gpuState = gpu != null ? gpu.state : "N/A";
+        boolean gpuAvailable = first != null && first.available;
+        String gpuName = first != null ? first.name : "No GPU";
+        int gpuUtil = first != null ? first.utilizationPercent : -1;
+        long vramUsed = first != null ? first.vramUsedBytes : 0;
+        long vramTotal = first != null ? first.vramTotalBytes : 0;
+        int gpuTemp = first != null ? first.temperatureCelsius : -1;
+        double gpuPower = first != null ? first.powerWatts : -1;
+        double gpuLimit = first != null ? first.powerLimitWatts : -1;
+        String gpuState = first != null ? first.state : "N/A";
 
         List<Double> perCoreList = new ArrayList<>();
         for (double u : perCore) perCoreList.add(u);
 
-        return new HardwareSnapshot(gpuAvailable, gpuName, gpuUtil, vramUsed, vramTotal, gpuTemp,
+        long ramTotal = ram.length > 0 ? Math.max(0, ram[0]) : 0;
+        long ramUsed = ram.length > 1 ? Math.max(0, ram[1]) : 0;
+        long ramAvail = ram.length > 2 ? Math.max(0, ram[2]) : 0;
+        long ramFree = ram.length > 3 ? Math.max(0, ram[3]) : 0;
+
+        return new HardwareSnapshot(System.currentTimeMillis(), gpus,
+                gpuAvailable, gpuName, gpuUtil, vramUsed, vramTotal, gpuTemp,
                 gpuPower, gpuLimit, gpuState, cudaStatus(), cpuUtil, cpuReader.model(),
-                cpuReader.logicalProcessors(), CpuMetricsReader.currentFrequencyMhz(), perCoreList,
-                ram[0], ram[1], ram[2], heapUsed);
+                CpuMetricsReader.vendor(), CpuMetricsReader.physicalCores(),
+                cpuReader.logicalProcessors(), CpuMetricsReader.currentFrequencyMhz(),
+                CpuMetricsReader.maxFrequencyMhz(), CpuMetricsReader.temperatureCelsius(),
+                CpuMetricsReader.loadAverage1m(), perCoreList,
+                ramTotal, ramUsed, ramAvail, ramFree, heapUsed, heapMax, nonHeap);
     }
 
     private static long usedHeap() {

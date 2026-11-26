@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
+import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -7,6 +9,24 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  * Interface for LLM providers.
  */
 public interface ILlmProvider {
+    /**
+     * Discovers the models currently available through this provider using its own
+     * model-listing mechanism (Ollama registry, ENR model catalog, llama.cpp
+     * artifacts). The returned descriptors carry the identifiers that must be passed
+     * to inference and the origin of each model.
+     *
+     * <p>The default implementation reports an empty list for providers without a
+     * discovery surface; implementations must never return {@code null}.</p>
+     *
+     * @param orchestrator The orchestrator model (may be null); used to resolve the
+     *        provider endpoint where applicable.
+     * @return The models available through this provider.
+     * @throws Exception If discovery fails (so callers can surface an error state).
+     */
+    default List<LocalModelDescriptor> discoverModels(Orchestrator orchestrator) throws Exception {
+        return List.of();
+    }
+
     /**
      * Sends a request to the LLM and returns normalized LlmResponse containing separated content and internal reasoning.
      *

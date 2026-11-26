@@ -357,7 +357,8 @@ public class EvoDatasetArtifact {
 
                 JSONObject filesObj = metaJson.optJSONObject("files");
                 if (filesObj != null) {
-                    for (String key : filesObj.keySet()) {
+                    for (Object keyObj : filesObj.keySet()) {
+                        String key = (String) keyObj;
                         JSONObject fObj = filesObj.optJSONObject(key);
                         if (fObj != null) {
                             String sha = fObj.optString("sha256", "");

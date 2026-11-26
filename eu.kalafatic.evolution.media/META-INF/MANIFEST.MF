@@ -6,7 +6,7 @@ Bundle-Version: 2.6.11.qualifier
 Require-Bundle: eu.kalafatic.evolution.controller;bundle-version="2.6.11",
  eu.kalafatic.utils;bundle-version="2.6.11",
  org.eclipse.core.runtime
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Automatic-Module-Name: eu.kalafatic.evolution.media
 Export-Package: eu.kalafatic.evolution.media,
  eu.kalafatic.evolution.media.model,

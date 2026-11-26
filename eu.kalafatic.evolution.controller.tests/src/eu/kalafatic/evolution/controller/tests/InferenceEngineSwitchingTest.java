@@ -112,6 +112,16 @@ public class InferenceEngineSwitchingTest {
             // 3. ollama -> all ollama compatible models
             List<String> ollamaModels = pmm.filterModelsByEngine(inputModels, "ollama");
             assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf", "llama3.2:3b", "gemma:2b", "demo/custom.gguf"), ollamaModels);
+
+            // 4. enr -> all models: the full Ollama-compatible set plus the additional
+            //    ENR-specific evo-native/llama.cpp models
+            List<String> enrModels = pmm.filterModelsByEngine(inputModels, "ENR");
+            assertEquals(Arrays.asList("evo-generic-v128", "forging-1724653200", "evo",
+                    "evo.gguf", "evo-model.gguf", "llama3.2:3b", "gemma:2b", "demo/custom.gguf"), enrModels);
+
+            // 5. legacy "ENR-EVO Native" label -> same superset as ENR
+            List<String> legacyEnrModels = pmm.filterModelsByEngine(inputModels, "ENR-EVO Native");
+            assertEquals(enrModels, legacyEnrModels);
         } finally {
             ProjectModelManager.resetArtifactPathResolver();
             tf.delete();

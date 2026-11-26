@@ -15,16 +15,17 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
 import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.controller.orchestration.ServerEntry;
 import eu.kalafatic.evolution.controller.orchestration.ServerManager;
 import eu.kalafatic.evolution.controller.resource.PortAllocationManager;
 import eu.kalafatic.evolution.controller.resource.PortRegistry;
+import eu.kalafatic.evolution.view.util.ExternalBrowserLauncher;
 
 /**
  * Desktop-facing launchers shared by the menu bar, context menus and the F1
@@ -86,20 +87,43 @@ public final class EvoDesktopLauncher {
 
     /**
      * Opens the EVO web interface (Intelligence Portal) in the system browser.
-     * The port is resolved from the live server state; when the primary HTTP
-     * server is not running, a clear message dialog is shown instead.
+     * The URL is resolved from the authoritative server infrastructure: the
+     * live {@link ServerEntry} for the primary HTTP server (actual bind host
+     * and actually allocated port — never hardcoded). When the primary HTTP
+     * server is not running, a clear message dialog is shown instead of
+     * opening an invalid URL.
      */
     public static void openWebInterface() {
-        int port = resolvePrimaryPort();
         ServerManager serverManager = ServerManager.getInstance();
+        ServerEntry entry = serverManager.getServerEntryByServiceId(
+                PortRegistry.EVO_HTTP_PRIMARY.getServiceId());
+        int port = entry != null ? entry.getPort() : resolvePrimaryPort();
         if (!serverManager.isRunning(port)) {
-            showMessage("Open Web Interface",
-                    "The EVO web server is not running on port " + port + ".\n\n"
+            String state = entry != null ? " (state: " + entry.getState() + ")" : "";
+            showMessage("Open in Web",
+                    "The EVO web server is not running on port " + port + state + ".\n\n"
                             + "It starts automatically with the workbench. If it failed to start, "
-                            + "check the log console for server startup errors.");
+                            + "check the Server page or the log console for server startup errors.");
             return;
         }
-        launchBrowser("http://127.0.0.1:" + port + "/dashboard.html");
+        String url = primaryWebUrl(entry, port);
+        launchBrowser(url);
+    }
+
+    /**
+     * Builds the primary web interface URL from the live {@link ServerEntry}
+     * endpoint (configured host + actually allocated port). Falls back to the
+     * resolved primary port when no entry is available. Never hardcoded.
+     */
+    public static String primaryWebUrl(ServerEntry entry, int resolvedPort) {
+        String base = null;
+        if (entry != null && entry.getEndpointUrl() != null && !entry.getEndpointUrl().isBlank()) {
+            base = entry.getEndpointUrl();
+        }
+        if (base == null || base.isBlank()) {
+            base = "http://127.0.0.1:" + resolvedPort + "/";
+        }
+        return base.endsWith("/") ? base + "dashboard.html" : base;
     }
 
     /**
@@ -121,12 +145,7 @@ public final class EvoDesktopLauncher {
 
     /** Opens the given URL in the system browser (shared with HelpLauncher). */
     public static void launchBrowser(String url) {
-        try {
-            Program.launch(url);
-        } catch (Exception e) {
-            Log.log("[EvoDesktopLauncher] Could not open browser for " + url + ": " + e.getMessage());
-            showError("Open Browser", "Could not open browser for " + url + ":\n\n" + e.getMessage());
-        }
+        ExternalBrowserLauncher.launchWebUrl("EvoDesktopLauncher", url);
     }
 
     // ---------------------------------------------------------------

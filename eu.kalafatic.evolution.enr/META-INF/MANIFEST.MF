@@ -4,7 +4,7 @@ Bundle-Name: ENR - Evolution Neural Runtime
 Bundle-SymbolicName: eu.kalafatic.evolution.enr;singleton:=true
 Bundle-Version: 2.6.11.qualifier
 Bundle-ClassPath: .
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Automatic-Module-Name: eu.kalafatic.evolution.enr
 Require-Bundle: eu.kalafatic.evolution.controller;bundle-version="2.6.11",
  eu.kalafatic.evolution.servers;bundle-version="2.6.11",

@@ -4,7 +4,7 @@ Bundle-Name: Creatic Core
 Bundle-SymbolicName: eu.kalafatic.evolution.creatic;singleton:=true
 Bundle-Version: 2.6.11.qualifier
 Bundle-Vendor: Kalafatic
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Export-Package: eu.kalafatic.evolution.creatic.adapter,
  eu.kalafatic.evolution.creatic.api,
  eu.kalafatic.evolution.creatic.engine,

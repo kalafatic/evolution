@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EVO Ecosystem</title>
+<link rel="stylesheet" href="ecosystem.css">
+</head>
+<body>
+<div id="topbar">
+  <div class="brand"><span class="brand-mark"></span><span class="brand-name">Ecosystem</span></div>
+  <div class="toolbar">
+    <input id="search" type="text" placeholder="Search nodes…" autocomplete="off">
+    <select id="filter-product" title="Filter by product"><option value="">All products</option></select>
+    <select id="filter-type" title="Filter by node type"><option value="">All types</option></select>
+    <select id="filter-status" title="Filter by runtime status"><option value="">All states</option></select>
+    <button id="btn-mode" class="tb-btn" title="Switch between graph and overview table">Overview</button>
+    <button id="btn-fit" class="tb-btn" title="Fit graph to screen">Fit</button>
+    <button id="btn-layout" class="tb-btn" title="Toggle automatic / manual layout">Auto layout</button>
+    <button id="btn-refresh" class="tb-btn" title="Refresh now">Refresh</button>
+    <span id="conn" class="conn" title="UPM connection state">connecting…</span>
+  </div>
+</div>
+
+<div id="main">
+  <!-- ============================ GRAPH ============================ -->
+  <div id="graph-wrap" class="pane">
+    <svg id="graph" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"></path>
+        </marker>
+      </defs>
+      <g id="edges"></g>
+      <g id="nodes"></g>
+    </svg>
+    <div id="hint" class="hint">drag background to pan · wheel to zoom · drag node to move · double-click to collapse · right-click for actions</div>
+  </div>
+
+  <!-- ========================== INSPECTOR ========================== -->
+  <div id="inspector" class="pane">
+    <div id="inspector-empty" class="empty">Select a node to inspect.</div>
+    <div id="inspector-body" class="hidden"></div>
+  </div>
+</div>
+
+<!-- ============================ EVENTS ============================ -->
+<div id="events" class="pane">
+  <div class="events-head">
+    <span class="events-title">EVENTS</span>
+    <span class="spacer"></span>
+    <label class="chk"><input type="checkbox" id="ev-follow"> follow selection</label>
+  </div>
+  <div id="event-list"></div>
+</div>
+
+<!-- ============================ OVERVIEW ============================ -->
+<div id="overview-wrap" class="pane hidden">
+  <div class="overview-head">
+    <span class="events-title">OVERVIEW — APPLICATIONS &amp; RUNTIME COMPONENTS</span>
+    <span class="spacer"></span>
+    <span id="profile-info" class="muted"></span>
+  </div>
+  <div id="overview-table"></div>
+  <div class="events-title" style="margin-top:10px">LAUNCH PROFILES</div>
+  <div id="profile-table"></div>
+</div>
+
+<!-- Context menu -->
+<div id="ctx" class="ctx hidden"></div>
+
+<script src="ecosystem.js"></script>
+</body>
+</html>

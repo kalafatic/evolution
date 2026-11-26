@@ -202,4 +202,58 @@ public class ForgeTelemetrySnapshotTest {
         ForgeTelemetrySnapshot b = buildSnapshot(true, false);
         assertFalse("Fingerprint must differ when history differs", a.fingerprint().equals(b.fingerprint()));
     }
+
+    @Test
+    public void testCaptureOverlaysLiveConfiguration() {
+        // When the dialog edits its working copy (before committing to the
+        // session on OK), the snapshot must reflect the live values — not the
+        // session's previously committed configuration.
+        ForgeTelemetrySnapshot snap = ForgeTelemetrySnapshot.capture(
+                null, "s", null, 5 * 1024 * 1024L,
+                "LARGE", 32, 0.5, 24.0, true);
+
+        assertEquals("LARGE", snap.configuredModelSize);
+        assertEquals(32, snap.configuredEpochs);
+        assertEquals(0.5, snap.configuredDesiredLoss, 0.0001);
+        assertEquals(24.0, snap.configuredTimeBudgetHours, 0.0001);
+        assertTrue("Early stopping overlay must be applied", snap.configuredEarlyStopping);
+        // The preliminary estimate must be recomputed from the overlaid
+        // configuration (dataset bytes + epochs + model size), not dropped.
+        assertTrue("Overlay must keep the dataset bytes and recompute the estimate",
+                snap.initialEstimateSeconds > 0.0);
+        assertEquals(5 * 1024 * 1024L, snap.totalDatasetBytes);
+    }
+
+    @Test
+    public void testCaptureWithoutOverlayKeepsSessionDefaults() {
+        // No overlay + no session => honest UNKNOWN defaults, unchanged legacy behavior.
+        ForgeTelemetrySnapshot snap = ForgeTelemetrySnapshot.capture(null, "s", null, 0L);
+        assertEquals("SMALL", snap.configuredModelSize);
+        assertEquals(4, snap.configuredEpochs);
+        assertEquals(1.0, snap.configuredDesiredLoss, 0.0001);
+    }
+
+    @Test
+    public void testBuilderCopyPreservesTelemetryAndRecomputesDerived() {
+        ForgeTelemetrySnapshot base = buildSnapshot(true, true);
+        ForgeTelemetrySnapshot.Builder copy = new ForgeTelemetrySnapshot.Builder(base);
+        copy.configuredEpochs = 64;
+        copy.configuredModelSize = "LARGE";
+        ForgeTelemetrySnapshot overlaid = copy.build();
+
+        // Telemetry must survive the copy unchanged.
+        assertEquals(base.status, overlaid.status);
+        assertEquals(base.currentEpoch, overlaid.currentEpoch);
+        assertEquals(base.totalSteps, overlaid.totalSteps);
+        assertEquals(base.history.size(), overlaid.history.size());
+        assertEquals(base.totalDatasetBytes, overlaid.totalDatasetBytes);
+
+        // Configuration override applied.
+        assertEquals(64, overlaid.configuredEpochs);
+        assertEquals("LARGE", overlaid.configuredModelSize);
+
+        // Derived values recomputed from the overlaid config, not the base.
+        assertFalse("Overlay must change the fingerprint",
+                base.fingerprint().equals(overlaid.fingerprint()));
+    }
 }

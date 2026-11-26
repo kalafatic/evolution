@@ -38,7 +38,6 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -500,12 +499,13 @@ public class BrowserPage extends Composite implements ServerLifecycleListener {
         };
         manager.add(copyUrlAction);
 
-        // 9. Open in External Browser
+        // 9. Open in External Browser (shared validated launcher)
         Action openExternalAction = new Action("Open in External Browser") {
             @Override
             public void run() {
                 if (currentUrl != null && !currentUrl.isEmpty()) {
-                    Program.launch(currentUrl);
+                    eu.kalafatic.evolution.view.util.ExternalBrowserLauncher
+                            .launchExternal("BrowserPage", currentUrl);
                 }
             }
         };

@@ -91,6 +91,11 @@ public class EvolutionServer extends NanoHTTPD {
 
     public EvolutionServer(String hostname, int port) {
         super(hostname, port);
+        if (port == 28580 || port == 8580) {
+            // The supervisor TCP control port must never be bound by the HTTP
+            // server (same invariant as the servers-bundle EvolutionServer).
+            throw new IllegalArgumentException("Cannot assign TCP control port " + port + " to NanoHTTPD EvolutionServer");
+        }
         DatabaseManager dbManager = new DatabaseManager();
         this.userRepository = new UserRepository(dbManager);
         this.sessionRepository = new SessionRepository(dbManager);
@@ -1727,7 +1732,11 @@ public class EvolutionServer extends NanoHTTPD {
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String content = reader.lines().collect(Collectors.joining("\n"));
-                content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
+                // forge.html ships its own self-contained design system (embedded
+                // tokens, components and layout). Injecting the shared style here
+                // would override the Forge-specific design and create a mismatch
+                // with the SWT Browser rendering (file://), which loads the same
+                // self-contained page.
                 return newFixedLengthResponse(Response.Status.OK, "text/html", content);
             }
         } catch (IOException e) {
@@ -1938,7 +1947,10 @@ public class EvolutionServer extends NanoHTTPD {
                 newDbSession.setWorkflowType(inferredWorkflow);
                 newDbSession.setStatus("ACTIVE");
                 newDbSession.setSessionType("HTTPD");
-                sessionRepository.save(newDbSession);
+                // Idempotent insert: concurrent requests for the same new session ID
+                // race on the check-then-insert and previously produced
+                // SQLITE_CONSTRAINT_UNIQUE violations in the log.
+                sessionRepository.saveIfAbsent(newDbSession);
             } else {
                 sessionRepository.updateLastAccess(sessionId, java.time.LocalDateTime.now());
                 if (!"GENERAL".equals(inferredWorkflow) && !inferredWorkflow.equals(dbSession.get().getWorkflowType())) {

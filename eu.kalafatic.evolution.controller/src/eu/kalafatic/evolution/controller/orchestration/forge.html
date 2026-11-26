@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forge Models</title>
-    <link rel="stylesheet" href="evo-style.css">
-    <link rel="stylesheet" href="creatic.css">
     <style>
+        /* =====================================================================
+           FORGE MODELS — PROFESSIONAL DESIGN SYSTEM (self-contained)
+           Rendered inside the SWT Browser (WebKitGTK) via file:// and served
+           over HTTP by the EVO server. No external CSS dependency: the page
+           must render identically in both contexts.
+           ===================================================================== */
         :root {
-            /* Light theme tokens (self-contained fallback, matching EvoStyleManager).
-               Concrete values — not self-referential — so the page remains correctly
-               styled even when the external evo-style.css is unavailable. */
+            /* Light theme tokens (concrete values, matching EvoStyleManager). */
             --evo-bg: #f4f6f9;
             --evo-surface: #ffffff;
             --evo-surface-alt: #f7f9fb;
@@ -23,8 +25,8 @@
             --evo-text-secondary: #5c6a7e;
             --evo-text-muted: #8b96a8;
             --evo-text-inverse: #ffffff;
-            --evo-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-            --evo-font-mono: 'JetBrains Mono', 'Consolas', 'Fira Code', 'Courier New', monospace;
+            --evo-font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', system-ui, Roboto, Helvetica, Arial, sans-serif;
+            --evo-font-mono: 'JetBrains Mono', 'DejaVu Sans Mono', 'Consolas', 'Courier New', monospace;
             --evo-primary: #2f6bd8;
             --evo-primary-hover: #2559ba;
             --evo-primary-light: #e8effa;
@@ -40,10 +42,11 @@
             --evo-danger-light: #fbeceb;
             --evo-info: #2b7fbe;
             --evo-info-light: #e7f1f9;
-            --evo-radius: 5px;
+            --evo-radius: 2px;
             --evo-shadow-sm: 0 1px 2px rgba(16,24,40,0.06);
             --evo-shadow-md: 0 4px 12px rgba(16,24,40,0.10);
 
+            /* Compatibility aliases used by existing page logic. */
             --bg-primary: var(--evo-surface);
             --bg-secondary: var(--evo-surface-alt);
             --border: var(--evo-border);
@@ -53,6 +56,31 @@
             --accent-hover: var(--evo-primary-hover);
             --error: var(--evo-danger);
             --success: var(--evo-success);
+
+            /* Design system metrics (single source of truth for dimensions). */
+            --radius: 2px;
+            --font-base: 13px;
+            --font-sm: 12px;
+            --font-xs: 11px;
+            --font-xxs: 10px;
+            --ctrl-h: 28px;      /* standard control height */
+            --ctrl-h-sm: 24px;   /* compact control height */
+            --ctrl-h-lg: 32px;   /* large control height */
+            --icon: 16px;        /* standard icon container */
+            --header-h: 36px;    /* application header */
+            --toolbar-h: 42px;   /* session toolbar */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --sidebar-w: 264px;
+            --panels-w: 320px;
+            --z-sash: 10;
+            --z-overlay: 1000;
+            --z-viz-expand: 9999;
+            --z-panel-max: 10000;
+            --z-modal: 20000;
+            --z-tooltip: 30000;
         }
 
         [data-theme="dark"] {
@@ -84,112 +112,372 @@
             --evo-info-light: #1f3a4d;
         }
 
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: var(--evo-font-family);
-            background-color: var(--evo-bg);
-            color: var(--evo-text);
+        /* ---------------------------------------------------------------------
+           Reset & base
+           --------------------------------------------------------------------- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
             overflow: hidden;
         }
 
-        #layout { display: flex; height: 100%; }
-
-        /* Session Bar */
-        #sidebar {
-            width: 260px;
-            min-width: 160px;
-            max-width: 500px;
-            background-color: var(--bg-secondary);
-            border-right: none;
+        body {
             display: flex;
             flex-direction: column;
+            font-family: var(--evo-font-family);
+            font-size: var(--font-base);
+            line-height: 1.45;
+            background-color: var(--evo-bg);
+            color: var(--evo-text);
+        }
+
+        a { color: var(--evo-primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--evo-border-dark);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--evo-text-muted); border: 2px solid transparent; background-clip: padding-box; }
+
+        /* ---------------------------------------------------------------------
+           Application header (was missing in the SWT file:// context)
+           --------------------------------------------------------------------- */
+        #evo-global-nav.topbar {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            height: var(--header-h);
+            flex-shrink: 0;
+            padding: 0 var(--space-4);
+            background: var(--evo-surface);
+            border-bottom: 1px solid var(--evo-border);
+        }
+        .brand { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+        .brand-mark {
+            width: 10px; height: 10px; flex-shrink: 0;
+            background: var(--evo-primary);
+            border-radius: 2px;
+        }
+        .brand-name {
+            font-size: 13px; font-weight: 600; letter-spacing: .3px;
+            color: var(--evo-text); white-space: nowrap;
+        }
+        .brand-sub {
+            font-size: 11px; font-family: var(--evo-font-mono);
+            color: var(--evo-text-muted); white-space: nowrap;
+        }
+        .topbar .views { display: flex; gap: 2px; min-width: 0; }
+        .view-btn {
+            display: inline-flex; align-items: center;
+            height: 26px; padding: 0 10px;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--evo-text-secondary);
+            font-size: var(--font-sm);
+            cursor: pointer; white-space: nowrap;
+        }
+        .view-btn:hover { background: var(--evo-surface-hover); color: var(--evo-text); text-decoration: none; }
+        .view-btn.active {
+            background: var(--evo-primary-light);
+            color: var(--evo-primary);
+            font-weight: 600;
+        }
+        .top-actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; flex-shrink: 0; }
+        .tag {
+            display: inline-flex; align-items: center;
+            height: 22px; padding: 0 8px;
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
+            background: var(--evo-surface-alt);
+            color: var(--evo-text-secondary);
+            font-size: var(--font-xxs);
+            white-space: nowrap;
+        }
+
+        /* ---------------------------------------------------------------------
+           Layout scaffolding: header (flex child) + #layout fills the rest.
+           Replaces the fragile `height: calc(100% - 37px)` magic number.
+           --------------------------------------------------------------------- */
+        #layout {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ---------------------------------------------------------------------
+           Left sidebar
+           --------------------------------------------------------------------- */
+        #sidebar {
+            width: var(--sidebar-w);
+            min-width: 170px;
+            max-width: 500px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--evo-surface-alt);
+            border-right: 1px solid var(--evo-border);
         }
         .sidebar-header {
-            padding: 10px;
-            background-color: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-2);
+            padding: 7px 10px;
+            flex-shrink: 0;
+            background-color: var(--evo-surface);
+            border-bottom: 1px solid var(--evo-border);
+        }
+        .sidebar-title {
+            font-size: var(--font-xs);
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--evo-text-secondary);
+        }
+        .sidebar-actions { display: flex; gap: 4px; }
+
+        #session-list {
+            flex: 1 1 auto;
+            min-height: 60px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .session-item {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--evo-border);
+            cursor: pointer;
+        }
+        .session-item:hover { background-color: var(--evo-surface-hover); }
+        .session-item.active {
+            background-color: var(--evo-surface-selected);
+            box-shadow: inset 3px 0 0 var(--evo-primary);
+        }
+        .session-name {
+            display: block;
+            font-weight: 600;
+            font-size: var(--font-sm);
+            margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .session-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-weight: bold;
-            font-size: 0.8em;
-            letter-spacing: 1px;
+            gap: var(--space-2);
+            font-size: var(--font-xs);
+            color: var(--evo-text-secondary);
         }
-
-        #session-list { flex-grow: 1; overflow-y: auto; }
-        .session-item {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            position: relative;
-        }
-        .session-item:hover { background-color: #e0e0e0; }
-        .session-item.active {
-            background-color: var(--evo-primary-light);
-            border-left: 3px solid var(--accent);
-        }
-        .session-name { display: block; font-weight: bold; margin-bottom: 4px; }
-        .session-info { font-size: 0.75em; color: var(--text-dim); }
         .session-status {
-            font-size: 0.7em;
-            padding: 2px 4px;
-            border-radius: 3px;
-            background: #444;
-            float: right;
+            font-size: var(--font-xxs);
+            padding: 0 6px;
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            color: var(--evo-text-secondary);
+            background: var(--evo-surface);
+            white-space: nowrap;
         }
-        .status-training { color: #dcdcaa; border: 1px solid #dcdcaa; }
+        .status-training {
+            color: var(--evo-warning);
+            border-color: var(--evo-warning);
+            background: var(--evo-warning-light);
+        }
 
-        /* Main Content */
-        #main-content {
-            flex-grow: 1;
+        /* --- Node palette -------------------------------------------------- */
+        #node-palette {
+            flex-shrink: 0;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--evo-border);
             display: flex;
             flex-direction: column;
-            min-width: 300px;
-        }
-
-        #panel-resizer {
-            width: 4px;
-            cursor: col-resize;
-            background: transparent;
-            transition: background 0.2s;
-            z-index: 100;
-        }
-        #panel-resizer:hover, #panel-resizer.resizing {
-            background: var(--accent);
-        }
-        #top-toolbar {
-            height: 40px;
-            background-color: var(--bg-secondary);
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            border-bottom: 1px solid var(--border);
             gap: 10px;
         }
-        #session-select-combo {
-            font-weight: bold;
-            color: var(--accent);
-            background: #ffffff;
-            border: 1px solid var(--border);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            max-width: 220px;
+        .palette-group { display: flex; flex-direction: column; gap: 6px; }
+        .palette-group-title {
+            font-size: var(--font-xxs);
+            font-weight: 600;
+            color: var(--evo-text-muted);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            border-bottom: 1px solid var(--evo-border);
+            padding-bottom: 3px;
+        }
+        .palette-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+            gap: 5px;
+        }
+        .palette-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
+            cursor: grab;
+            font-size: 15px;
+            transition: border-color .15s;
+        }
+        .palette-item:hover {
+            border-color: var(--evo-primary);
+            background: var(--evo-primary-light);
+        }
+        .palette-item:active { cursor: grabbing; }
+
+        /* --- Forge mode tab strip (all Forge navigation destinations) ------ */
+        #interactive-demos-palette.tab-strip {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--evo-border);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .tab-strip-label {
+            font-size: var(--font-xxs);
+            font-weight: 600;
+            letter-spacing: .8px;
+            color: var(--evo-text-muted);
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+        .tab-btn {
+            height: var(--ctrl-h-sm);
+            padding: 0 10px;
+            flex-shrink: 0;
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
+            background: var(--evo-surface);
+            color: var(--evo-text-secondary);
+            font-family: inherit;
+            font-size: var(--font-xs);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { border-color: var(--evo-primary); color: var(--evo-primary); }
+        .tab-btn.active {
+            background: var(--evo-primary-light);
+            border-color: var(--evo-primary);
+            color: var(--evo-primary);
+            font-weight: 600;
         }
 
+        /* --- Draggable sashes (was missing in the SWT file:// context) ----- */
+        .evo-sash {
+            flex-shrink: 0;
+            background-color: var(--evo-border);
+            position: relative;
+            z-index: var(--z-sash);
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background-color .15s;
+        }
+        .evo-sash:hover, .evo-sash.active { background-color: var(--evo-primary); }
+        .evo-sash-v { width: 5px; cursor: col-resize; }
+        .evo-sash-v::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 1px;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 18px;
+            border-left: 1px solid var(--evo-border-dark);
+            border-right: 1px solid var(--evo-border-dark);
+        }
+        .evo-sash-v:hover::after, .evo-sash-v.active::after {
+            border-color: var(--evo-text-inverse);
+        }
+
+        /* ---------------------------------------------------------------------
+           Main content column
+           --------------------------------------------------------------------- */
+        #main-content {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Session toolbar ------------------------------------------------ */
+        #top-toolbar.toolbar {
+            height: var(--toolbar-h);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: 0 10px;
+            background-color: var(--evo-surface);
+            border-bottom: 1px solid var(--evo-border);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            flex-shrink: 0;
+        }
+        .toolbar-separator {
+            width: 1px;
+            height: 22px;
+            flex-shrink: 0;
+            background: var(--evo-border-dark);
+        }
+        .toolbar-spacer { flex: 1 1 auto; min-width: 6px; }
+        .toolbar-label {
+            font-size: var(--font-xxs);
+            font-weight: 600;
+            letter-spacing: .6px;
+            color: var(--evo-text-muted);
+            white-space: nowrap;
+        }
+        #session-select-combo {
+            height: var(--ctrl-h);
+            min-width: 150px;
+            max-width: 240px;
+            font-weight: 600;
+            color: var(--evo-primary);
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: var(--font-sm);
+            padding: 0 8px;
+        }
         .breadcrumbs {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8em;
+            height: 26px;
+            padding: 0 10px;
+            font-size: var(--font-sm);
             color: var(--evo-text-secondary);
-            background: var(--evo-surface);
-            padding: 3px 10px;
-            border-radius: var(--evo-radius);
+            background: var(--evo-surface-alt);
             border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
             white-space: nowrap;
             overflow-x: auto;
-            max-width: 380px;
+            overflow-y: hidden;
+            max-width: 420px;
         }
         .breadcrumb-item {
             cursor: pointer;
@@ -198,226 +486,404 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            transition: color 0.15s;
+            white-space: nowrap;
         }
-        .breadcrumb-item:hover {
-            color: var(--evo-primary);
-            text-decoration: underline;
-        }
-        .breadcrumb-item.active {
-            color: var(--evo-primary);
-            font-weight: 700;
-        }
-        .breadcrumb-separator {
-            color: var(--evo-text-muted);
-            font-size: 0.85em;
+        .breadcrumb-item:hover { color: var(--evo-primary); text-decoration: underline; }
+        .breadcrumb-item.active { color: var(--evo-primary); font-weight: 700; }
+        .breadcrumb-separator { color: var(--evo-text-muted); font-size: 11px; }
+
+        /* --- Status badge ---------------------------------------------------- */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            height: 22px;
+            padding: 0 8px;
+            font-size: var(--font-xxs);
+            font-weight: 600;
+            letter-spacing: .4px;
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            background: var(--evo-surface-alt);
+            color: var(--evo-text-secondary);
+            white-space: nowrap;
         }
 
-        /* Canvas */
-        #canvas-container {
-            flex-grow: 1;
-            position: relative;
-            background-color: var(--bg-primary);
-            background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-        #canvas { width: 100%; height: 100%; }
-
-        /* Right Panels */
-        #panels-container {
-            width: 320px;
-            min-width: 200px;
-            max-width: 600px;
-            background-color: var(--bg-secondary);
-            border-left: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-        .panel { padding: 15px; border-bottom: 1px solid var(--border); }
-        .panel h3 {
-            font-size: 0.85em;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            margin: 0 0 12px 0;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .control-group { margin-bottom: 10px; }
-        .control-group label { display: block; font-size: 0.8em; margin-bottom: 4px; color: var(--text-dim); }
-        .control-group input, .control-group select {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            color: #333333;
-            padding: 4px;
-            box-sizing: border-box;
-        }
-
-        /* Buttons */
+        /* ---------------------------------------------------------------------
+           Buttons — single consistent system (square-cornered, fixed heights)
+           --------------------------------------------------------------------- */
         .btn {
-            background-color: #ffffff;
-            color: #333333;
-            border: 1px solid var(--border);
-            padding: 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: var(--ctrl-h);
+            min-width: 72px;
+            padding: 0 12px;
+            flex-shrink: 0;
+            background: var(--evo-surface);
+            color: var(--evo-text);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: var(--font-sm);
+            font-weight: 500;
+            line-height: 1;
             cursor: pointer;
-            border-radius: 2px;
-            font-size: 0.85em;
+            user-select: none;
+            white-space: nowrap;
+            text-decoration: none;
         }
-        .btn:hover { background-color: #f0f0f0; }
-        .btn-primary { background-color: var(--accent); color: white; border-color: var(--accent); }
-        .btn-primary:hover { background-color: var(--accent-hover); }
-        .btn-danger { color: #d32f2f; border-color: #d32f2f; }
-        .btn-sm { padding: 2px 6px; font-size: 0.75em; }
+        .btn:hover:not(:disabled) {
+            border-color: var(--evo-primary);
+            color: var(--evo-primary);
+            background: var(--evo-surface-hover);
+            text-decoration: none;
+        }
+        .btn:active:not(:disabled) { background: var(--evo-surface-selected); }
+        .btn:focus-visible { outline: 2px solid var(--evo-primary); outline-offset: 1px; }
+        .btn:disabled { opacity: .45; cursor: not-allowed; }
 
-        /* Graph Elements */
-        .node circle { stroke: #333333; stroke-width: 2px; }
-        .node text { font-size: 11px; fill: #333333; pointer-events: none; }
-        .link { stroke: #444; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+        .btn-primary { background: var(--evo-primary); border-color: var(--evo-primary); color: var(--evo-text-inverse); }
+        .btn-primary:hover:not(:disabled) {
+            background: var(--evo-primary-hover);
+            border-color: var(--evo-primary-hover);
+            color: var(--evo-text-inverse);
+        }
+        .btn-danger { border-color: var(--evo-danger); color: var(--evo-danger); }
+        .btn-danger:hover:not(:disabled) { background: var(--evo-danger-light); color: var(--evo-danger); border-color: var(--evo-danger); }
 
-        /* Node Types Colors */
+        .btn-sm {
+            height: var(--ctrl-h-sm);
+            min-width: 60px;
+            padding: 0 10px;
+            font-size: var(--font-xs);
+        }
+        .btn-lg { height: var(--ctrl-h-lg); min-width: 88px; padding: 0 16px; }
+        .btn-icon {
+            width: var(--ctrl-h);
+            min-width: var(--ctrl-h);
+            padding: 0;
+        }
+        .btn-icon.btn-sm {
+            width: var(--ctrl-h-sm);
+            min-width: var(--ctrl-h-sm);
+        }
+        .btn-block { width: 100%; }
+
+        /* Button rows (action groups): predictable wrapping, no compression. */
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .btn-row > .btn { flex: 1 1 auto; min-width: 0; }
+
+        /* ---------------------------------------------------------------------
+           Inputs & selects — consistent heights and typography
+           --------------------------------------------------------------------- */
+        input[type="text"],
+        input[type="number"],
+        input[type="search"],
+        input[type="password"],
+        select {
+            height: var(--ctrl-h);
+            background-color: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            color: var(--evo-text);
+            padding: 0 8px;
+            font-family: inherit;
+            font-size: var(--font-sm);
+            outline: none;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="search"]:focus,
+        input[type="password"]:focus, select:focus {
+            border-color: var(--evo-primary);
+            outline: 1px solid var(--evo-primary-light);
+        }
+        input:disabled, select:disabled { opacity: .5; cursor: not-allowed; }
+        select option { background-color: var(--evo-surface); color: var(--evo-text); }
+        textarea {
+            width: 100%;
+            background-color: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            color: var(--evo-text);
+            padding: 6px 8px;
+            font-family: var(--evo-font-mono);
+            font-size: var(--font-sm);
+            outline: none;
+            resize: vertical;
+        }
+        textarea:focus { border-color: var(--evo-primary); outline: 1px solid var(--evo-primary-light); }
+        input[readonly], input.readonly {
+            background: var(--evo-surface-alt);
+            color: var(--evo-text-secondary);
+        }
+        input[type="checkbox"] { margin: 0; vertical-align: middle; }
+
+        .input-row { display: flex; gap: 6px; align-items: center; }
+        .input-row input { flex: 1 1 auto; min-width: 0; }
+
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 0;
+            font-size: var(--font-sm);
+            color: var(--evo-text);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* ---------------------------------------------------------------------
+           Panels — consistent headers, padding, dividers
+           --------------------------------------------------------------------- */
+        .panel {
+            position: relative;
+            padding: var(--space-3) 14px;
+            border-bottom: 1px solid var(--evo-border);
+        }
+        .panel:last-child { border-bottom: none; }
+        .panel-grow { flex: 1 1 auto; }
+        .panel > h3 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-3) 0;
+            font-size: var(--font-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--evo-text-secondary);
+        }
+        .panel-actions { display: flex; gap: 4px; align-items: center; }
+        .panel-action-btn {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            padding: 0;
+            font-size: 11px;
+            line-height: 1;
+            color: var(--evo-text-secondary);
+        }
+        .panel-action-btn:hover {
+            background: var(--evo-surface-hover);
+            color: var(--evo-primary);
+            border-color: var(--evo-primary);
+        }
+        .panel.maximized {
+            position: fixed !important;
+            top: 10px !important;
+            left: 10px !important;
+            right: 10px !important;
+            bottom: 10px !important;
+            z-index: var(--z-panel-max) !important;
+            background: var(--evo-surface) !important;
+            border: 1px solid var(--evo-primary) !important;
+            overflow: auto !important;
+            padding: 16px !important;
+            width: auto !important;
+            max-width: none !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+
+        .divider {
+            border: 0;
+            border-top: 1px solid var(--evo-border);
+            margin: var(--space-3) 0;
+        }
+
+        /* ---------------------------------------------------------------------
+           Forms
+           --------------------------------------------------------------------- */
+        .control-group { margin-bottom: var(--space-3); }
+        .control-group:last-child { margin-bottom: 0; }
+        .control-group > label {
+            display: block;
+            font-size: var(--font-xs);
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: var(--evo-text-secondary);
+        }
+        .control-group input, .control-group select { width: 100%; }
+        .control-group .check-row { cursor: pointer; }
+        .control-group .check-row input { width: auto; height: auto; }
+
+        /* ---------------------------------------------------------------------
+           Canvas workspace
+           --------------------------------------------------------------------- */
+        #canvas-container {
+            flex: 1 1 auto;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--evo-surface);
+            background-image: radial-gradient(circle, var(--evo-border) 1px, transparent 1px);
+            background-size: 26px 26px;
+            background-position: 6px 6px;
+        }
+        #canvas { display: block; width: 100%; height: 100%; }
+
+        /* Graph elements */
+        .node circle { stroke: var(--evo-text); stroke-width: 2px; }
+        .node text { font-size: 11px; fill: var(--evo-text); pointer-events: none; }
+        .link { stroke: var(--evo-text-secondary); stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+
         .node-NEURON circle { fill: #ce9178; }
         .node-LAYER circle { fill: #4fc1ff; }
         .node-ATTENTION circle { fill: #c586c0; }
         .node-TRANSFORMER circle { fill: #b5cea8; }
         .node-CUSTOM circle { fill: #858585; }
-        .node-TEXT text { font-size: 14px; font-weight: bold; fill: #555; }
+        .node-TEXT text { font-size: 14px; font-weight: bold; fill: var(--evo-text-secondary); }
         .node-TEXT circle { display: none; }
-        .node-SHAPE rect { stroke: #555; stroke-dasharray: 4, 4; fill: none; }
-        .node-DIRECTION path { fill: #555; }
-
-        /* Logs/Metrics */
-        #log-view {
-            height: 150px;
-            background: #ffffff;
-            color: #333333;
-            font-family: monospace;
-            font-size: 0.75em;
-            padding: 5px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-        }
-
-        /* Node Palette */
-        #node-palette {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .palette-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .palette-group-title {
-            font-size: 0.7em;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 2px;
-        }
-        .palette-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        .palette-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            cursor: grab;
-            font-size: 1.1em;
-            transition: all 0.2s;
-        }
-        .palette-item:hover {
-            border-color: var(--accent);
-            background: #f0f7ff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .palette-item:active { cursor: grabbing; }
+        .node-SHAPE rect { stroke: var(--evo-text-secondary); stroke-dasharray: 4, 4; fill: none; }
+        .node-DIRECTION path { fill: var(--evo-text-secondary); }
 
         #palette-context-menu {
             position: absolute;
             display: none;
-            background: white;
-            border: 1px solid var(--border);
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-size: 0.8em;
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            box-shadow: var(--evo-shadow-md);
+            z-index: var(--z-overlay);
+            font-size: var(--font-sm);
+            min-width: 220px;
         }
-        .menu-item {
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-        .menu-item:hover {
-            background: var(--bg-secondary);
-        }
+        .menu-item { padding: 6px 12px; cursor: pointer; }
+        .menu-item:hover { background: var(--evo-surface-hover); }
 
         #json-fallback {
             display: none;
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-primary);
-            color: #d4d4d4;
-            font-family: monospace;
-            padding: 20px;
-            box-sizing: border-box;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            background: var(--evo-surface);
+            color: var(--evo-text);
+            font-family: var(--evo-font-mono);
+            font-size: var(--font-sm);
+            padding: 12px;
             border: none;
             resize: none;
-            z-index: 100;
+            z-index: var(--z-overlay);
         }
 
-        /* Visualization Workspace */
+        /* ---------------------------------------------------------------------
+           Visualization workspace
+           --------------------------------------------------------------------- */
         #viz-workspace {
-            border-top: 1px solid var(--border);
-            padding: 15px;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            background: var(--bg-primary);
+            gap: var(--space-2);
+            padding: 10px 12px;
+            border-top: 1px solid var(--evo-border);
+            background: var(--evo-surface-alt);
         }
         #viz-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            gap: var(--space-3);
+            flex-wrap: wrap;
+        }
+        .viz-header-left { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+        .viz-title {
+            font-size: var(--font-xs);
+            font-weight: 600;
+            letter-spacing: .6px;
+            color: var(--evo-text-secondary);
+            white-space: nowrap;
         }
         #viz-selector {
-            background: #ffffff !important;
-            color: #333333 !important;
-            border: 1px solid var(--border) !important;
+            height: var(--ctrl-h);
+            min-width: 180px;
+            max-width: 260px;
+            background: var(--evo-surface);
+            color: var(--evo-text);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: var(--font-sm);
+            padding: 0 8px;
+        }
+        #viz-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        #viz-controls .viz-search-input {
+            height: var(--ctrl-h-sm);
+            width: 120px;
+            padding: 0 8px;
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            color: var(--evo-text);
+            font-family: inherit;
+            font-size: var(--font-xs);
+            outline: none;
+        }
+        #viz-controls .viz-search-input:focus { border-color: var(--evo-primary); }
+        #viz-controls label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: var(--font-xs);
+            color: var(--evo-text-secondary);
+            white-space: nowrap;
         }
         #viz-container {
             display: flex;
-            gap: 15px;
-            height: 450px;
+            gap: var(--space-2);
+            height: 38vh;
+            min-height: 220px;
+            max-height: 460px;
             position: relative;
         }
         #viz-container.expanded {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 9999;
-            background: var(--bg-primary);
-            padding: 15px;
-            box-sizing: border-box;
+            right: 0;
+            bottom: 0;
+            width: auto;
+            height: auto;
+            min-height: 0;
+            max-height: none;
+            z-index: var(--z-viz-expand);
+            background: var(--evo-surface);
+            padding: 12px;
         }
+        .viz-expand-btn {
+            position: absolute;
+            top: 8px;
+            right: 262px;
+            z-index: var(--z-overlay);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            height: var(--ctrl-h-sm);
+            padding: 0 10px;
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            font-size: var(--font-xs);
+            font-weight: 600;
+            color: var(--evo-text);
+            cursor: pointer;
+            box-shadow: var(--evo-shadow-sm);
+        }
+        .viz-expand-btn:hover { border-color: var(--evo-primary); color: var(--evo-primary); }
         #viz-area {
-            flex-grow: 1;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            flex: 1 1 auto;
+            min-width: 0;
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border);
             position: relative;
             overflow: auto;
             padding: 10px;
@@ -425,52 +891,85 @@
             justify-content: center;
             align-items: center;
         }
+        #viz-area > * { max-width: 100%; }
         #viz-details {
             width: 250px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            min-width: 180px;
+            flex-shrink: 0;
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border);
             padding: 10px;
-            font-size: 0.85em;
+            font-size: var(--font-sm);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
+        #viz-details h3 {
+            margin: 0 0 8px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--evo-border);
+            font-size: var(--font-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--evo-text-secondary);
+        }
+        #viz-details h4 { margin: 0 0 6px 0; color: var(--evo-primary); font-size: var(--font-sm); }
         .viz-card {
-            background: var(--bg-primary);
-            border: 1px solid var(--accent);
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-primary);
+            border-radius: var(--radius);
             padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 4px;
+            margin-bottom: 6px;
         }
-        .viz-card h4 { margin: 0 0 5px 0; color: var(--accent); }
+        .viz-card h4 { margin: 0 0 5px 0; color: var(--evo-primary); }
 
-        /* Dataset Explorer */
-        .sample-nav { display: flex; gap: 5px; margin-bottom: 10px; }
-        .data-block { background: #f8f8f8; color: #333; border: 1px solid var(--border); padding: 10px; font-family: monospace; font-size: 0.8em; margin-top: 5px; }
+        /* Shared interactive zoom/pan (EvoViz). */
+        .viz-pane { position: relative; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
+        .viz-pane svg, .viz-pane canvas { transition: none; display: block; }
+        .viz-toolbar { position: absolute; top: 6px; right: 6px; display: flex; align-items: center; gap: 3px;
+            background: rgba(2,6,23,0.82); border: 1px solid #33415c; border-radius: 4px; padding: 2px 4px; z-index: 50; }
+        .viz-toolbar button { background: #1e293b; color: #cbd5e1; border: 1px solid #33415c; border-radius: 3px;
+            min-width: 24px; height: 20px; font-size: 12px; line-height: 1; cursor: pointer; padding: 0 5px; }
+        .viz-toolbar button:hover { background: #2a3b58; color: #fff; }
+        .viz-zoom-level { font-size: 11px; color: #8ea3c0; min-width: 40px; text-align: center; }
 
-        /* Guided Workflow Steps */
+        /* ---------------------------------------------------------------------
+           Right panels column
+           --------------------------------------------------------------------- */
+        #panels-container {
+            width: var(--panels-w);
+            min-width: 200px;
+            max-width: 600px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background-color: var(--evo-surface-alt);
+            border-left: 1px solid var(--evo-border);
+        }
+
+        /* ---------------------------------------------------------------------
+           Guided workflow / demo panels
+           --------------------------------------------------------------------- */
         #workflow-panel {
-            background: #e1f5fe;
-            border: 1px solid #03a9f4;
+            background: var(--evo-info-light);
+            border: 1px solid var(--evo-info);
+            border-radius: var(--radius);
             padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            margin: 10px 12px 0 12px;
         }
         .workflow-step {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.8em;
+            gap: 8px;
+            font-size: var(--font-sm);
             margin: 6px 0;
-            color: #777;
+            color: var(--evo-text-muted);
         }
-        .workflow-step.active {
-            font-weight: bold;
-            color: var(--accent);
-        }
-        .workflow-step.completed {
-            color: var(--success);
-        }
-        .workflow-step.disabled {
-            opacity: 0.5;
-        }
+        .workflow-step.active { font-weight: 600; color: var(--evo-primary); }
+        .workflow-step.completed { color: var(--evo-success); }
+        .workflow-step.disabled { opacity: .5; }
         .step-icon {
             width: 16px;
             height: 16px;
@@ -479,78 +978,104 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7em;
+            font-size: 10px;
+            flex-shrink: 0;
         }
-        .workflow-step.completed .step-icon:after {
-            content: '✓';
+        .workflow-step.completed .step-icon:after { content: '✓'; }
+
+        #demo-panel {
+            background: var(--evo-warning-light);
+            border: 1px solid var(--evo-warning);
+            border-radius: var(--radius);
+            padding: 10px;
+            margin: 10px 12px 0 12px;
         }
+        .demo-step { font-size: var(--font-sm); margin: 4px 0; color: var(--evo-text-secondary); }
+        .demo-step.active { font-weight: 600; color: var(--evo-primary); }
+        .demo-step.completed { text-decoration: line-through; color: var(--evo-success); }
 
         .highlight-focus {
-            box-shadow: 0 0 10px 2px var(--accent);
-            border: 2px solid var(--accent) !important;
+            box-shadow: 0 0 10px 2px var(--evo-primary);
+            border: 1px solid var(--evo-primary) !important;
             animation: pulse-glow 2s ease-in-out infinite;
         }
 
-        /* Timeline */
+        .guidance-content {
+            font-size: var(--font-sm);
+            color: var(--evo-text-secondary);
+            line-height: 1.5;
+        }
+        .guidance-content .guidance-step { padding: 4px 0; }
+        .guidance-content .guidance-step .step-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            margin-right: 8px;
+            border-radius: 50%;
+            background: var(--evo-border-dark);
+        }
+        .guidance-content .guidance-step.current { color: var(--evo-text); font-weight: 600; }
+        .guidance-content .guidance-step.current .step-dot { background: var(--evo-primary); }
+        .guidance-content .guidance-step.done { color: var(--evo-success); }
+        .guidance-content .guidance-step.done .step-dot { background: var(--evo-success); }
+
+        /* ---------------------------------------------------------------------
+           Timeline / evolution / dataset
+           --------------------------------------------------------------------- */
         .timeline-item {
-            padding: 10px;
-            border-left: 2px solid var(--accent);
+            padding: 8px 10px;
+            border-left: 2px solid var(--evo-primary);
             margin-left: 10px;
             position: relative;
             cursor: pointer;
+            font-size: var(--font-sm);
         }
         .timeline-item:before {
             content: '';
             width: 10px; height: 10px;
-            background: var(--accent);
+            background: var(--evo-primary);
             border-radius: 50%;
             position: absolute;
-            left: -6px; top: 15px;
+            left: -6px; top: 13px;
         }
-        .timeline-item:hover { background: #f0f0f0; }
-        .timeline-item.active { background: var(--evo-primary-light); font-weight: bold; }
+        .timeline-item:hover { background: var(--evo-surface-hover); }
+        .timeline-item.active { background: var(--evo-primary-light); font-weight: 600; }
 
-        .diff-added { color: var(--success); }
-        .diff-removed { color: var(--error); }
+        .diff-added { color: var(--evo-success); }
+        .diff-removed { color: var(--evo-danger); }
 
-        /* Demo Animations */
-        @keyframes march {
-            to { stroke-dashoffset: -20; }
-        }
-        @keyframes pulse-glow {
-            0% { filter: drop-shadow(0 0 2px var(--accent)); }
-            50% { filter: drop-shadow(0 0 8px var(--accent)); }
-            100% { filter: drop-shadow(0 0 2px var(--accent)); }
-        }
-        .link.animating {
-            stroke: var(--accent);
-            stroke-dasharray: 5, 5;
-            animation: march 0.5s linear infinite, pulse-glow 2s ease-in-out infinite;
-            stroke-width: 3px;
-        }
-
-        #demo-panel {
-            background: #fff9c4;
-            border: 1px solid #fbc02d;
+        .sample-nav { display: flex; gap: 5px; margin-bottom: 10px; }
+        .data-block {
+            background: var(--evo-surface-alt);
+            color: var(--evo-text);
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
             padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            font-family: var(--evo-font-mono);
+            font-size: var(--font-sm);
+            margin-top: 5px;
+            overflow-wrap: anywhere;
         }
-        .demo-step { font-size: 0.8em; margin: 4px 0; color: #555; }
-        .demo-step.active { font-weight: bold; color: var(--accent); }
-        .demo-step.completed { text-decoration: line-through; color: var(--success); }
 
-        /* Evolutionary Pipeline Styles */
         .evo-stage-card {
-            width: 90px; padding: 12px; border: 1px solid #ddd; border-radius: 8px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #fff;
+            width: 90px; padding: 10px;
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            transition: all .4s cubic-bezier(.175, .885, .32, 1.275);
+            background: var(--evo-surface);
             cursor: pointer;
+            font-size: var(--font-sm);
         }
-        .evo-stage-card:hover { border-color: var(--accent); background: #f0f7ff; }
-        .evo-stage-card.active { border-color: var(--accent); background: var(--evo-primary-light); box-shadow: 0 0 15px rgba(0,122,204,0.4); transform: scale(1.1); z-index: 10; }
-        .evo-stage-card.completed { border-color: var(--success); background: #f6fff6; }
-        .evo-stage-card.completed div { color: var(--success) !important; }
-        .evo-stage-arrow { align-self: center; color: #ccc; font-weight: bold; }
+        .evo-stage-card:hover { border-color: var(--evo-primary); background: var(--evo-primary-light); }
+        .evo-stage-card.active {
+            border-color: var(--evo-primary);
+            background: var(--evo-primary-light);
+            box-shadow: 0 0 15px rgba(47,107,216,0.4);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        .evo-stage-card.completed { border-color: var(--evo-success); background: var(--evo-success-light); }
+        .evo-stage-card.completed div { color: var(--evo-success) !important; }
+        .evo-stage-arrow { align-self: center; color: var(--evo-text-muted); font-weight: bold; }
 
         .progress-glow {
             position: absolute; top: 0; right: 0; bottom: 0; width: 30px;
@@ -562,127 +1087,84 @@
             to { transform: translateX(500px); }
         }
 
-        /* Panel Maximize & Resize Controls */
-        .panel {
-            position: relative;
-            resize: vertical;
-            overflow: auto;
-            min-height: 80px;
-            transition: box-shadow 0.2s;
-        }
-        .panel.maximized {
-            position: fixed !important;
-            top: 10px !important;
-            left: 10px !important;
-            right: 10px !important;
-            bottom: 10px !important;
-            z-index: 10000 !important;
-            background: var(--bg-primary) !important;
-            border: 2px solid var(--accent) !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-            overflow: auto !important;
-            padding: 20px !important;
-            border-radius: 6px !important;
-            width: auto !important;
-            max-width: none !important;
-            height: auto !important;
-        }
-        .panel h3 {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .panel-actions {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-        .panel-action-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 3px;
-            cursor: pointer;
-            padding: 1px 5px;
-            font-size: 0.85em;
-            color: var(--text-dim);
-            line-height: 1;
-        }
-        .panel-action-btn:hover {
-            background: var(--bg-secondary);
-            color: var(--accent);
-            border-color: var(--accent);
-        }
-
-        /* Custom Modal Popups */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 20000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(2px);
-        }
-        .modal-container {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            width: 85%;
-            max-width: 950px;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
+        /* ---------------------------------------------------------------------
+           Training progress, metrics, log console
+           --------------------------------------------------------------------- */
+        .progress-track {
+            height: 10px;
+            background: var(--evo-surface-hover);
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
             overflow: hidden;
-            animation: modalSlideDown 0.2s ease-out;
         }
-        @keyframes modalSlideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--evo-primary);
+            transition: width .3s;
         }
-        .modal-header {
-            padding: 10px 16px;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
+        .progress-text {
+            font-size: var(--font-xs);
+            text-align: right;
+            margin-top: 2px;
+            color: var(--evo-text-secondary);
+        }
+        .metric-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            padding: 2px 0;
+            font-size: var(--font-sm);
         }
-        .modal-header h3 {
-            margin: 0;
-            font-size: 0.95em;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .modal-body {
-            padding: 16px;
+        .log-view {
+            height: 150px;
+            background: var(--evo-surface);
+            color: var(--evo-text);
+            font-family: var(--evo-font-mono);
+            font-size: var(--font-xs);
+            padding: 6px 8px;
             overflow-y: auto;
-            flex-grow: 1;
-            font-size: 0.88em;
-            user-select: text;
+            overflow-x: hidden;
+            border: 1px solid var(--evo-border);
+            border-radius: var(--radius);
+            white-space: pre-wrap;
+            word-break: break-word;
         }
-        .modal-footer {
-            padding: 8px 16px;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .test-result {
+            font-size: var(--font-xs);
+            margin-top: 8px;
+            color: var(--evo-text-secondary);
+            line-height: 1.4;
+            overflow-wrap: anywhere;
         }
 
-        /* Data Tables for Structured Data */
+        /* ---------------------------------------------------------------------
+           Demo animations
+           --------------------------------------------------------------------- */
+        @keyframes march { to { stroke-dashoffset: -20; } }
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 2px var(--evo-primary)); }
+            50% { filter: drop-shadow(0 0 8px var(--evo-primary)); }
+            100% { filter: drop-shadow(0 0 2px var(--evo-primary)); }
+        }
+        .link.animating {
+            stroke: var(--evo-primary);
+            stroke-dasharray: 5, 5;
+            animation: march .5s linear infinite, pulse-glow 2s ease-in-out infinite;
+            stroke-width: 3px;
+        }
+
+        /* ---------------------------------------------------------------------
+           Data tables
+           --------------------------------------------------------------------- */
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85em;
+            font-size: var(--font-sm);
             margin-top: 5px;
-            background: #ffffff;
+            background: var(--evo-surface);
         }
         .data-table th, .data-table td {
-            border: 1px solid var(--border);
+            border: 1px solid var(--evo-border);
             padding: 6px 10px;
             text-align: left;
             vertical-align: top;
@@ -691,51 +1173,133 @@
             overflow-wrap: anywhere;
         }
         .data-table th {
-            background: var(--bg-secondary);
-            color: var(--accent);
-            font-weight: bold;
+            background: var(--evo-surface-alt);
+            color: var(--evo-primary);
+            font-weight: 600;
             position: sticky;
             top: 0;
             z-index: 1;
         }
-        .data-table tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-        .data-table tr:hover {
-            background: var(--evo-primary-light);
-        }
+        .data-table tr:nth-child(even) { background: var(--evo-surface-alt); }
+        .data-table tr:hover { background: var(--evo-primary-light); }
         .table-toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: var(--space-2);
             margin-bottom: 8px;
         }
 
-        /* Process Logs Console & Progress Bar */
+        /* ---------------------------------------------------------------------
+           Process console
+           --------------------------------------------------------------------- */
         .process-log-box {
             height: 220px;
             background: #1e1e1e;
             color: #d4d4d4;
             padding: 10px;
             overflow-y: auto;
-            font-family: Consolas, 'Courier New', monospace;
-            font-size: 0.8em;
-            border-radius: 4px;
+            font-family: var(--evo-font-mono);
+            font-size: var(--font-sm);
+            border-radius: var(--radius);
             margin-top: 8px;
             user-select: text;
             white-space: pre-wrap;
             border: 1px solid #333;
         }
 
-        /* Shared interactive zoom/pan (EvoViz, see forge-viz/viz-interact.js). */
-        .viz-pane { position: relative; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
-        .viz-pane svg, .viz-pane canvas { transition: none; display: block; }
-        .viz-toolbar { position: absolute; top: 6px; right: 6px; display: flex; align-items: center; gap: 3px;
-            background: rgba(2,6,23,0.82); border: 1px solid #33415c; border-radius: 6px; padding: 2px 4px; z-index: 50; }
-        .viz-toolbar button { background: #1e293b; color: #cbd5e1; border: 1px solid #33415c; border-radius: 4px;
-            min-width: 24px; height: 20px; font-size: 12px; line-height: 1; cursor: pointer; padding: 0 5px; }
-        .viz-toolbar button:hover { background: #2a3b58; color: #fff; }
-        .viz-zoom-level { font-size: 11px; color: #8ea3c0; min-width: 40px; text-align: center; }
+        /* ---------------------------------------------------------------------
+           Modals
+           --------------------------------------------------------------------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: var(--z-modal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-container {
+            background: var(--evo-surface);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            width: 85%;
+            max-width: 950px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalSlideDown .2s ease-out;
+        }
+        @keyframes modalSlideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            padding: 10px 16px;
+            background: var(--evo-surface-alt);
+            border-bottom: 1px solid var(--evo-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 13px;
+            color: var(--evo-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: var(--font-sm);
+            user-select: text;
+        }
+        .modal-footer {
+            padding: 8px 16px;
+            background: var(--evo-surface-alt);
+            border-top: 1px solid var(--evo-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        /* ---------------------------------------------------------------------
+           Native guidance tooltip (data-guidance)
+           --------------------------------------------------------------------- */
+        .evo-tooltip {
+            position: fixed;
+            z-index: var(--z-tooltip);
+            max-width: 340px;
+            padding: 6px 9px;
+            background: var(--evo-surface);
+            color: var(--evo-text);
+            border: 1px solid var(--evo-border-dark);
+            border-radius: var(--radius);
+            box-shadow: var(--evo-shadow-md);
+            font-size: var(--font-xs);
+            line-height: 1.4;
+            pointer-events: none;
+        }
+
+        /* ---------------------------------------------------------------------
+           Responsive adjustments
+           --------------------------------------------------------------------- */
+        @media (max-width: 1080px) {
+            #panels-container { width: 270px; }
+            .brand-name { display: none; }
+        }
+        @media (max-width: 860px) {
+            #sidebar { width: 210px; }
+            #viz-details { width: 200px; }
+        }
 
     </style>
     <script src="auth-integration.js"></script>
@@ -743,33 +1307,34 @@
     <script src="forge-viz/viz-self-evo.js"></script>
 </head>
 <body>
-        <header id="evo-global-nav" class="topbar">
-      <div class="brand">
-        <span class="brand-mark"></span>
-        <span class="brand-name">EVOLUTION AI PLATFORM</span>
-        <span class="brand-sub">forge</span>
-      </div>
-      <nav class="views" id="nav">
-        <a class="view-btn" href="/experimental/chat">Chat</a>
-        <a class="view-btn" href="/experimental/architecture">Architecture</a>
-        <a class="view-btn active" href="/experimental/forge">Forge Lab</a>
-        <a class="view-btn" href="/mcp">MCP Tools</a>
-        <a class="view-btn" href="/develop">Develop</a>
-        <a class="view-btn" href="/mutation">Mutation</a>
-        <a class="view-btn" href="/admin">Admin</a>
-      </nav>
-      <div class="top-actions">
-        <span class="tag" id="global-session-badge">Session: Active</span>
-        <a class="btn" href="/server/status">Analytics</a>
-      </div>
+    <header id="evo-global-nav" class="topbar">
+        <div class="brand">
+            <span class="brand-mark"></span>
+            <span class="brand-name">EVOLUTION AI PLATFORM</span>
+            <span class="brand-sub">forge</span>
+        </div>
+        <nav class="views" id="nav">
+            <a class="view-btn" href="/experimental/chat">Chat</a>
+            <a class="view-btn" href="/experimental/architecture">Architecture</a>
+            <a class="view-btn active" href="/experimental/forge">Forge Lab</a>
+            <a class="view-btn" href="/mcp">MCP Tools</a>
+            <a class="view-btn" href="/develop">Develop</a>
+            <a class="view-btn" href="/mutation">Mutation</a>
+            <a class="view-btn" href="/admin">Admin</a>
+        </nav>
+        <div class="top-actions">
+            <span class="tag" id="global-session-badge">Session: Active</span>
+            <a class="btn btn-sm" href="/server/status">Analytics</a>
+        </div>
     </header>
-    <div id="layout" style="height: calc(100% - 37px);">
-        <!-- SESSION BAR -->
+
+    <div id="layout">
+        <!-- ================= LEFT SIDEBAR ================= -->
         <div id="sidebar">
             <div class="sidebar-header">
-                SESSIONS
-                <div style="display: flex; gap: 4px;">
-                    <button class="btn btn-sm" onclick="showDemoDialog()" title="Load Demo Template" data-guidance="Load a pre-configured architecture template (Neuron, MLP, CNN, or Transformer) to start quickly.">🎁</button>
+                <span class="sidebar-title">SESSIONS</span>
+                <div class="sidebar-actions">
+                    <button class="btn btn-icon btn-sm" onclick="showDemoDialog()" title="Load Demo Template" data-guidance="Load a pre-configured architecture template (Neuron, MLP, CNN, or Transformer) to start quickly.">🎁</button>
                     <button class="btn btn-sm btn-primary" onclick="createNewSession()" data-guidance="Create a new blank Forge session for custom model architecture development.">NEW</button>
                 </div>
             </div>
@@ -789,7 +1354,7 @@
                 </div>
 
                 <div class="palette-group">
-                    <div class="palette-group-title">Connections & Flow</div>
+                    <div class="palette-group-title">Connections &amp; Flow</div>
                     <div class="palette-items">
                         <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'CONNECTION')" title="Weighted Connection">🔗</div>
                         <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'RESIDUAL')" title="Residual Link">🔄</div>
@@ -806,45 +1371,47 @@
                 </div>
             </div>
 
-            <div id="interactive-demos-palette" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
-                <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">INTERACTIVE DEMOS</div>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('NEURON')">Neuron</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('MLP')">MLP</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('CNN')">CNN</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('TRANSFORMER')">Transformer</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('LLM')">LLM</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('LLM_EVO')">LLM-EVO</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('SELF_EVO')">Self-Evo</button>
+            <div id="interactive-demos-palette" class="tab-strip">
+                <span class="tab-strip-label">FORGE MODES</span>
+                <button class="tab-btn" data-demo-type="NEURON" onclick="setInteractiveDemo('NEURON')">Neuron</button>
+                <button class="tab-btn" data-demo-type="MLP" onclick="setInteractiveDemo('MLP')">MLP</button>
+                <button class="tab-btn" data-demo-type="CNN" onclick="setInteractiveDemo('CNN')">CNN</button>
+                <button class="tab-btn" data-demo-type="TRANSFORMER" onclick="setInteractiveDemo('TRANSFORMER')">Transformer</button>
+                <button class="tab-btn" data-demo-type="LLM" onclick="setInteractiveDemo('LLM')">LLM</button>
+                <button class="tab-btn" data-demo-type="LLM_EVO" onclick="setInteractiveDemo('LLM_EVO')">LLM-EVO</button>
+                <button class="tab-btn" data-demo-type="SELF_EVO" onclick="setInteractiveDemo('SELF_EVO')">Self-Evo</button>
             </div>
 
             <div id="session-list">
                 <!-- Sessions populated here -->
             </div>
-            <div class="panel" style="border-top: 1px solid var(--border); border-bottom: none;">
+
+            <div class="panel" id="snapshot-panel">
                 <h3>Genome Milestones</h3>
                 <div id="snapshot-list" class="session-info">No snapshots created</div>
-                <button class="btn btn-sm" id="snapshot-btn" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Capture a frozen milestone of your current model's genome for versioning and evolution tracking.">SNAPSHOT</button>
+                <button class="btn btn-sm btn-block" id="snapshot-btn" style="margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Capture a frozen milestone of your current model's genome for versioning and evolution tracking.">SNAPSHOT</button>
             </div>
         </div>
 
         <div class="evo-sash evo-sash-v" id="sidebar-sash"></div>
 
-        <!-- MAIN CANVAS -->
+        <!-- ================= MAIN WORKSPACE ================= -->
         <div id="main-content">
-            <div id="top-toolbar">
-                <span style="font-size:0.8em; font-weight:bold; color:var(--text-dim);">SESSION:</span>
-                <select id="session-select-combo" onchange="selectSession(this.value)">
-                    <option value="">No Session Selected</option>
-                </select>
-                <button class="btn btn-sm btn-primary" onclick="createNewSession()" title="Create New Session">+ New</button>
-
-                <div id="session-status-indicator">
-                    <span id="lifecycle-badge" style="background: #444; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; color: #aaa;">OFFLINE</span>
+            <div id="top-toolbar" class="toolbar">
+                <div class="toolbar-group">
+                    <span class="toolbar-label">SESSION</span>
+                    <select id="session-select-combo" onchange="selectSession(this.value)">
+                        <option value="">No Session Selected</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary" onclick="createNewSession()" title="Create New Session">+ New</button>
                 </div>
-
-                <div id="breadcrumbs" class="breadcrumbs"></div>
-
-                <div style="margin-left: auto; display: flex; gap: 10px;">
+                <span class="toolbar-separator"></span>
+                <div id="session-status-indicator" class="toolbar-group">
+                    <span id="lifecycle-badge" class="status-badge">OFFLINE</span>
+                    <div id="breadcrumbs" class="breadcrumbs"></div>
+                </div>
+                <div class="toolbar-spacer"></div>
+                <div class="toolbar-group">
                     <button class="btn btn-sm" id="json-editor-btn" onclick="toggleJsonEditor()" data-guidance="Switch to manual JSON editing mode for direct structural modifications.">JSON Editor</button>
                     <button class="btn btn-sm" id="save-all-btn" onclick="saveAllSessions()" title="Persist all sessions to disk" data-guidance="Save all open Forge sessions and their current states to the permanent repository.">💾 Save All</button>
                     <button class="btn btn-sm" id="clone-btn" onclick="cloneActiveSession()" data-guidance="Duplicate the current session to experiment with architectural variations without affecting the original.">Clone</button>
@@ -863,7 +1430,7 @@
                 </svg>
 
                 <div id="palette-context-menu">
-                    <div style="padding: 5px 12px; font-weight: bold; font-size: 0.9em; border-bottom: 1px solid var(--border); color: var(--text-dim);">DEMO TEMPLATES</div>
+                    <div style="padding: 5px 12px; font-weight: bold; font-size: 12px; border-bottom: 1px solid var(--evo-border); color: var(--evo-text-secondary);">DEMO TEMPLATES</div>
                     <div class="menu-item" onclick="loadTemplate('SEED')">🌱 Load Seed Model</div>
                     <div class="menu-item" onclick="loadTemplate('NEURON')">🎁 Load Neuron Demo</div>
                     <div class="menu-item" onclick="loadTemplate('MLP')">🎁 Load MLP Demo</div>
@@ -879,9 +1446,9 @@
             <!-- VISUALIZATION WORKSPACE -->
             <div id="viz-workspace">
                 <div id="viz-header">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 0.8em; font-weight: bold; color: var(--text-dim);">VISUALIZATION</span>
-                        <select id="viz-selector" style="background: #3c3c3c; border: 1px solid #555; color: white; padding: 2px;" onchange="onVizChange()" data-guidance="Switch between different visualization modes to monitor architecture, data, training metrics, or evolutionary history.">
+                    <div class="viz-header-left">
+                        <span class="viz-title">VISUALIZATION</span>
+                        <select id="viz-selector" onchange="onVizChange()" data-guidance="Switch between different visualization modes to monitor architecture, data, training metrics, or evolutionary history.">
                             <option value="ARCHITECTURE">Architecture Graph</option>
                             <option value="SELF_EVO">Self-Evo Forging</option>
                             <option value="DATASET">Dataset Explorer</option>
@@ -897,20 +1464,20 @@
                             <option value="INTERACTIVE_SELF_EVO">Interactive Self-Evo</option>
                         </select>
                     </div>
-                    <div id="viz-controls" style="display: flex; gap: 5px;">
+                    <div id="viz-controls">
                         <!-- Contextual controls inserted here -->
                     </div>
                 </div>
 
                 <div id="viz-container">
-                    <button id="viz-expand-btn" onclick="toggleVizExpand()" style="position: absolute; top: 10px; right: 275px; z-index: 1000; background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-size: 0.8em; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #333;">
+                    <button id="viz-expand-btn" class="viz-expand-btn" onclick="toggleVizExpand()">
                         <span>🗖</span> Expand
                     </button>
                     <div id="viz-area">
                         <!-- Dynamic HTML visualization -->
                     </div>
                     <div id="viz-details">
-                        <h3 style="font-size: 0.85em; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Details</h3>
+                        <h3>Details</h3>
                         <div id="viz-details-content">
                             Select an element to see details.
                         </div>
@@ -921,11 +1488,11 @@
 
         <div class="evo-sash evo-sash-v" id="panel-resizer"></div>
 
-        <!-- RIGHT PANELS -->
+        <!-- ================= RIGHT PANELS ================= -->
         <div id="panels-container">
             <!-- WORKFLOW PANEL -->
             <div id="workflow-panel" style="display:none">
-                <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🛠️ Forge Workflow</h3>
+                <h3 style="font-size: 12px; margin: 0 0 10px 0;">🛠️ Forge Workflow</h3>
                 <div id="workflow-steps">
                     <div class="workflow-step" id="w-arch"><div class="step-icon"></div> Architecture Generated</div>
                     <div class="workflow-step" id="w-props"><div class="step-icon"></div> Review Properties</div>
@@ -938,20 +1505,20 @@
 
             <!-- DEMO PANEL -->
             <div id="demo-panel" style="display:none">
-                <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🚀 E2E Demo Progress</h3>
+                <h3 style="font-size: 12px; margin: 0 0 10px 0;">🚀 E2E Demo Progress</h3>
                 <div id="demo-steps">
                     <div class="demo-step" id="step-init">Initializing Architecture...</div>
                     <div class="demo-step" id="step-data">Loading Training Data...</div>
                     <div class="demo-step" id="step-train">Training Model...</div>
                     <div class="demo-step" id="step-export">Exporting to Ollama...</div>
-                    <div class="demo-step" id="step-final">Finalizing & Saving...</div>
+                    <div class="demo-step" id="step-final">Finalizing &amp; Saving...</div>
                 </div>
             </div>
 
             <!-- GUIDANCE PANEL -->
             <div class="panel" id="guidance-panel">
                 <h3>Recommended Next Steps</h3>
-                <div id="guidance-content" style="font-size: 0.85em; color: var(--text-dim); line-height: 1.4;">
+                <div id="guidance-content" class="guidance-content">
                     Select a session to begin.
                 </div>
             </div>
@@ -963,15 +1530,15 @@
                     <!-- Populated based on architecture -->
                 </div>
                 <div class="control-group">
-                    <label>Learning Rate</label>
+                    <label for="lr">Learning Rate</label>
                     <input type="number" id="lr" step="0.0001" value="0.001" onchange="persistProperty('lr', this.value)">
                 </div>
                 <div class="control-group">
-                    <label>Batch Size</label>
+                    <label for="batch">Batch Size</label>
                     <input type="number" id="batch" value="32" onchange="persistProperty('batch', this.value)">
                 </div>
                 <div class="control-group">
-                    <label>Optimizer</label>
+                    <label for="optimizer">Optimizer</label>
                     <select id="optimizer" onchange="persistProperty('optimizer', this.value)">
                         <option value="adam">Adam</option>
                         <option value="sgd">SGD</option>
@@ -979,53 +1546,47 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Epochs</label>
+                    <label for="epochs">Epochs</label>
                     <input type="number" id="epochs" value="10" onchange="persistProperty('epochs', this.value)">
                 </div>
-                <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;" onclick="confirmProperties()" id="confirm-props-btn">Confirm Properties</button>
+                <button class="btn btn-sm btn-primary btn-block" style="margin-top: 10px;" onclick="confirmProperties()" id="confirm-props-btn">Confirm Properties</button>
             </div>
 
             <!-- TRAINING SOURCES & LLM ASSISTANCE PANEL -->
             <div class="panel" id="sources-assistance-panel">
-                <h3>Training Data Collectors & Sources</h3>
+                <h3>Training Data Collectors &amp; Sources</h3>
                 <div class="control-group">
-                    <label><b>Data Collectors Selection</b></label>
-                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; margin-top: 4px;">
-                        <label><input type="checkbox" id="collector-project" checked onchange="persistUiState('collector_project', this.checked)"> Project Source Tree</label>
-                        <label><input type="checkbox" id="collector-disk" onchange="persistUiState('collector_disk', this.checked)"> External Disk Paths</label>
-                        <label><input type="checkbox" id="collector-pdf" checked onchange="persistUiState('collector_pdf', this.checked)"> PDF Documents</label>
-                        <label><input type="checkbox" id="collector-mcp" onchange="persistUiState('collector_mcp', this.checked)"> MCP Tools / Sources</label>
-                        <label><input type="checkbox" id="collector-internet" onchange="persistUiState('collector_internet', this.checked)"> Internet Technical Content</label>
-                    </div>
+                    <label>Data Collectors Selection</label>
+                    <label class="check-row"><input type="checkbox" id="collector-project" checked onchange="persistUiState('collector_project', this.checked)"> Project Source Tree</label>
+                    <label class="check-row"><input type="checkbox" id="collector-disk" onchange="persistUiState('collector_disk', this.checked)"> External Disk Paths</label>
+                    <label class="check-row"><input type="checkbox" id="collector-pdf" checked onchange="persistUiState('collector_pdf', this.checked)"> PDF Documents</label>
+                    <label class="check-row"><input type="checkbox" id="collector-mcp" onchange="persistUiState('collector_mcp', this.checked)"> MCP Tools / Sources</label>
+                    <label class="check-row"><input type="checkbox" id="collector-internet" onchange="persistUiState('collector_internet', this.checked)"> Internet Technical Content</label>
                 </div>
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+                <hr class="divider">
                 <div class="control-group">
-                    <label><b>Project Knowledge Sources</b></label>
-                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; margin-top: 4px;">
-                        <label><input type="checkbox" id="source-markdown" checked onchange="persistUiState('source_markdown', this.checked)"> Markdown Documentation</label>
-                        <label><input type="checkbox" id="source-java" onchange="persistUiState('source_java', this.checked)"> Java Source Code</label>
-                        <label><input type="checkbox" id="source-xml" onchange="persistUiState('source_xml', this.checked)"> XML Specification</label>
-                        <label><input type="checkbox" id="source-json" onchange="persistUiState('source_json', this.checked)"> JSON Specification</label>
-                        <label><input type="checkbox" id="source-configuration" onchange="persistUiState('source_configuration', this.checked)"> Properties / OSGi Configuration</label>
-                        <label><input type="checkbox" id="source-external" onchange="persistUiState('source_external', this.checked)"> Curated External Web Sources</label>
-                    </div>
+                    <label>Project Knowledge Sources</label>
+                    <label class="check-row"><input type="checkbox" id="source-markdown" checked onchange="persistUiState('source_markdown', this.checked)"> Markdown Documentation</label>
+                    <label class="check-row"><input type="checkbox" id="source-java" onchange="persistUiState('source_java', this.checked)"> Java Source Code</label>
+                    <label class="check-row"><input type="checkbox" id="source-xml" onchange="persistUiState('source_xml', this.checked)"> XML Specification</label>
+                    <label class="check-row"><input type="checkbox" id="source-json" onchange="persistUiState('source_json', this.checked)"> JSON Specification</label>
+                    <label class="check-row"><input type="checkbox" id="source-configuration" onchange="persistUiState('source_configuration', this.checked)"> Properties / OSGi Configuration</label>
+                    <label class="check-row"><input type="checkbox" id="source-external" onchange="persistUiState('source_external', this.checked)"> Curated External Web Sources</label>
                 </div>
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+                <hr class="divider">
                 <div class="control-group">
-                    <label><b>Local LLM Data Assistance</b></label>
-                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; margin-top: 4px;">
-                        <label><input type="checkbox" id="assistance-extraction" checked onchange="persistUiState('assistance_extraction', this.checked)"> Knowledge Fact Extraction</label>
-                        <label><input type="checkbox" id="assistance-qa" checked onchange="persistUiState('assistance_qa', this.checked)"> Verified QA Pair Generation</label>
-                        <label><input type="checkbox" id="assistance-quality" checked onchange="persistUiState('assistance_quality', this.checked)"> Dataset Quality Review Agent</label>
-                    </div>
+                    <label>Local LLM Data Assistance</label>
+                    <label class="check-row"><input type="checkbox" id="assistance-extraction" checked onchange="persistUiState('assistance_extraction', this.checked)"> Knowledge Fact Extraction</label>
+                    <label class="check-row"><input type="checkbox" id="assistance-qa" checked onchange="persistUiState('assistance_qa', this.checked)"> Verified QA Pair Generation</label>
+                    <label class="check-row"><input type="checkbox" id="assistance-quality" checked onchange="persistUiState('assistance_quality', this.checked)"> Dataset Quality Review Agent</label>
                 </div>
             </div>
 
             <!-- DATASET PANEL -->
             <div class="panel" id="dataset-editor-panel">
-                <h3>Dataset Preparation & Acquisition <div class="panel-actions"><button class="panel-action-btn" onclick="toggleMaximizePanel(this)" title="Maximize Panel">🗖</button></div></h3>
+                <h3>Dataset Preparation &amp; Acquisition <div class="panel-actions"><button class="panel-action-btn" onclick="toggleMaximizePanel(this)" title="Maximize Panel">🗖</button></div></h3>
                 <div class="control-group">
-                    <label>FROM (Data Source Provider)</label>
+                    <label for="dataset-from-combo">FROM (Data Source Provider)</label>
                     <select id="dataset-from-combo" onchange="onDatasetFromChange()">
                         <option value="HUGGING_FACE">Hugging Face Hub</option>
                         <option value="LOCAL">Local Directory / Filesystem</option>
@@ -1035,16 +1596,16 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>WHAT (Dataset Schema / Domain)</label>
+                    <label for="dataset-what-combo">WHAT (Dataset Schema / Domain)</label>
                     <select id="dataset-what-combo" onchange="onDatasetWhatChange()">
                         <option value="TEXT">General Text Corpus (Unstructured)</option>
-                        <option value="INSTRUCTION">Instruction Tuning & QA Pairs</option>
-                        <option value="CODE">Source Code & Repositories</option>
-                        <option value="REASONING">Reasoning & Step-by-Step Proofs</option>
+                        <option value="INSTRUCTION">Instruction Tuning &amp; QA Pairs</option>
+                        <option value="CODE">Source Code &amp; Repositories</option>
+                        <option value="REASONING">Reasoning &amp; Step-by-Step Proofs</option>
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>WHERE (Predefined Preset / Target)</label>
+                    <label for="dataset-where-combo">WHERE (Predefined Preset / Target)</label>
                     <select id="dataset-where-combo" onchange="onDatasetWhereChange()">
                         <option value="wikitext">Salesforce/wikitext (Wikitext-2)</option>
                         <option value="huggingFaceFW/fineWeb">huggingFaceFW/fineWeb (FineWeb-10B)</option>
@@ -1055,35 +1616,35 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Repository / Target Path (Editable Field)</label>
+                    <label for="dataset-repo">Repository / Target Path (Editable Field)</label>
                     <input type="text" id="dataset-repo" value="wikitext" placeholder="e.g. wikitext or path">
                 </div>
                 <div class="control-group">
-                    <label>Split / Config</label>
+                    <label for="dataset-split">Split / Config</label>
                     <input type="text" id="dataset-split" value="train">
                 </div>
                 <div class="control-group">
-                    <label>Max Samples Limit (0 = Unlimited)</label>
+                    <label for="dataset-max-samples">Max Samples Limit (0 = Unlimited)</label>
                     <input type="number" id="dataset-max-samples" value="0" placeholder="0 = unlimited">
                 </div>
                 <div class="control-group">
-                    <label>Target Usable Data Size (MB)</label>
+                    <label for="dataset-max-size-mb">Target Usable Data Size (MB)</label>
                     <input type="number" id="dataset-max-size-mb" value="500" placeholder="e.g. 500">
                 </div>
                 <div class="control-group">
-                    <label>Destination Output Directory</label>
-                    <div style="display: flex; gap: 5px;">
-                        <input type="text" id="dataset-output-dir" value="forge-input" style="flex:1;">
+                    <label for="dataset-output-dir">Destination Output Directory</label>
+                    <div class="input-row">
+                        <input type="text" id="dataset-output-dir" value="forge-input">
                         <button class="btn btn-sm" onclick="browseDatasetOutputDir()">Browse</button>
                     </div>
                 </div>
-                <div style="display: flex; gap: 5px; margin-top: 6px;">
-                    <button class="btn btn-sm btn-primary" style="flex: 1;" onclick="downloadDataset()">Download Dataset</button>
-                    <button class="btn btn-sm" style="flex: 1;" onclick="previewDatasetSamples()">Preview</button>
-                    <button class="btn btn-sm" style="flex: 1;" onclick="buildEvoDatasetArtifact()">Build .evodata</button>
+                <div class="btn-row" style="margin-top: 8px;">
+                    <button class="btn btn-sm btn-primary" onclick="downloadDataset()">Download Dataset</button>
+                    <button class="btn btn-sm" onclick="previewDatasetSamples()">Preview</button>
+                    <button class="btn btn-sm" onclick="buildEvoDatasetArtifact()">Build .evodata</button>
                 </div>
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Active Dataset Artifact</label>
+                    <label for="dataset-selector">Active Dataset Artifact</label>
                     <select id="dataset-selector" onchange="onDatasetSelect(this.value)">
                         <option value="">Select...</option>
                         <option value="mnist">MNIST (Digits)</option>
@@ -1096,58 +1657,54 @@
 
             <!-- TRAINING PANEL -->
             <div class="panel">
-                <h3>Training & Execution</h3>
-                <div style="display: flex; gap: 5px;">
-                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
-                    <button id="pause-btn" class="btn btn-primary" style="flex: 1;" onclick="pauseTraining()" disabled data-guidance="Pause training after the current batch. A resumption checkpoint is saved so training can continue later.">PAUSE</button>
-                    <button id="resume-btn" class="btn btn-primary" style="flex: 1;" onclick="resumeTraining()" disabled data-guidance="Resume training from the last saved checkpoint.">RESUME</button>
-                    <button id="finish-btn" class="btn btn-primary" style="flex: 1;" onclick="finishTraining()" disabled data-guidance="Gracefully finish training at the current epoch/state and export all model files (.evo, GGUF, report).">FINISH</button>
-                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Request the backend to stop the current training run. The backend honors the request and reports its real final state.">STOP</button>
+                <h3>Training &amp; Execution</h3>
+                <div class="btn-row">
+                    <button id="train-btn" class="btn btn-primary" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
+                    <button id="pause-btn" class="btn" onclick="pauseTraining()" disabled data-guidance="Pause training after the current batch. A resumption checkpoint is saved so training can continue later.">PAUSE</button>
+                    <button id="resume-btn" class="btn" onclick="resumeTraining()" disabled data-guidance="Resume training from the last saved checkpoint.">RESUME</button>
+                    <button id="finish-btn" class="btn" onclick="finishTraining()" disabled data-guidance="Gracefully finish training at the current epoch/state and export all model files (.evo, GGUF, report).">FINISH</button>
+                    <button id="stop-btn" class="btn btn-danger" onclick="stopTraining()" disabled data-guidance="Request the backend to stop the current training run. The backend honors the request and reports its real final state.">STOP</button>
                 </div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
+                <button class="btn btn-sm btn-block" style="margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
             </div>
 
             <!-- EXPORT TARGETS PANEL -->
             <div class="panel" id="targets-panel">
-                <h3>Export Targets & Diagnostics</h3>
+                <h3>Export Targets &amp; Diagnostics</h3>
                 <div class="control-group">
-                    <label>Default Ollama Models directory</label>
-                    <input type="text" id="target-ollama-path" readonly value="~/.ollama/models" style="background:#f4f4f4; color:#555; cursor:text;">
+                    <label for="target-ollama-path">Default Ollama Models directory</label>
+                    <input type="text" id="target-ollama-path" class="readonly" readonly value="~/.ollama/models">
                 </div>
                 <div class="control-group">
-                    <label>Workspace Source Models directory</label>
-                    <input type="text" id="target-source-path" readonly value="source/models" style="background:#f4f4f4; color:#555; cursor:text;">
+                    <label for="target-source-path">Workspace Source Models directory</label>
+                    <input type="text" id="target-source-path" class="readonly" readonly value="source/models">
                 </div>
-                <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;" onclick="testLlmModel()" data-guidance="Run diagnostics and connection testing for the forged 'evo' model.">🧪 Test EVO Model</button>
-                <div id="llm-test-result" style="font-size: 0.75em; margin-top: 8px; color: var(--text-dim); line-height: 1.3;"></div>
+                <button class="btn btn-sm btn-primary btn-block" style="margin-top: 10px;" onclick="testLlmModel()" data-guidance="Run diagnostics and connection testing for the forged 'evo' model.">🧪 Test EVO Model</button>
+                <div id="llm-test-result" class="test-result"></div>
             </div>
 
             <!-- OBSERVABILITY PANEL -->
-            <div class="panel" style="flex-grow: 1; border-bottom: none;">
+            <div class="panel panel-grow">
                 <h3>Observability</h3>
                 <div id="training-progress-container" style="display:none; margin-bottom: 10px;">
-                    <div style="font-size: 0.75em; color: var(--text-dim); margin-bottom: 4px;">TRAINING PROGRESS</div>
-                    <div style="height: 10px; background: #eee; border-radius: 5px; overflow: hidden; border: 1px solid var(--border);">
-                        <div id="training-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+                    <div style="font-size: 11px; color: var(--evo-text-secondary); margin-bottom: 4px;">TRAINING PROGRESS</div>
+                    <div class="progress-track">
+                        <div id="training-progress-bar" class="progress-fill"></div>
                     </div>
-                    <div id="training-progress-text" style="font-size: 0.7em; text-align: right; margin-top: 2px;">0%</div>
+                    <div id="training-progress-text" class="progress-text">0%</div>
                 </div>
-                <div style="font-size: 0.8em; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span>Loss:</span> <span id="metric-loss" style="color: var(--accent);">--</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span>Accuracy:</span> <span id="metric-acc" style="color: var(--success);">--</span>
-                    </div>
+                <div style="margin-bottom: 10px;">
+                    <div class="metric-row"><span>Loss:</span> <span id="metric-loss" style="color: var(--evo-primary);">--</span></div>
+                    <div class="metric-row"><span>Accuracy:</span> <span id="metric-acc" style="color: var(--evo-success);">--</span></div>
                 </div>
-                <div id="log-view">
+                <div id="log-view" class="log-view">
                     <div>[SYS] Forge UI ready.</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="creatic.js"></script>
+
     <script src="forge-viz/viz-architecture.js"></script>
     <script src="forge-viz/viz-dataset.js"></script>
     <script src="forge-viz/viz-training.js"></script>
@@ -1234,18 +1791,15 @@
 
         async function loadTargets() {
             try {
-                const res = await fetch(getBaseUrl() + `/server/orchestrator/settings?runtime=SWT`);
-                if (res.ok) {
-                    const settings = await res.json();
-                    if (settings.ollamaTargetDir) {
-                        document.getElementById('target-ollama-path').value = settings.ollamaTargetDir;
-                    }
-                    if (settings.workspaceTargetDir) {
-                        document.getElementById('target-source-path').value = settings.workspaceTargetDir;
-                    }
+                const settings = await fetchBackendJson(getBaseUrl() + `/server/orchestrator/settings?runtime=SWT`);
+                if (settings.ollamaTargetDir) {
+                    document.getElementById('target-ollama-path').value = settings.ollamaTargetDir;
+                }
+                if (settings.workspaceTargetDir) {
+                    document.getElementById('target-source-path').value = settings.workspaceTargetDir;
                 }
             } catch (e) {
-                log(`Error loading targets: ${e.message}`);
+                logBackendError(`Error loading targets: ${e.message}`);
             }
         }
 
@@ -1357,6 +1911,46 @@
             return base;
         }
 
+        // Repeats an identical backend error at most once per 30s so periodic
+        // pollers cannot flood the log view / console while the backend is down.
+        let lastBackendError = '';
+        let lastBackendErrorAt = 0;
+        function logBackendError(msg) {
+            const now = Date.now();
+            if (msg === lastBackendError && now - lastBackendErrorAt < 30000) return;
+            lastBackendError = msg;
+            lastBackendErrorAt = now;
+            log(msg);
+        }
+
+        // Centralized backend request helper with actionable diagnostics. Returns
+        // parsed JSON; throws a clear Error when the backend is unreachable or the
+        // response is not JSON (e.g. another process occupying the EVO port and
+        // answering with an HTML page, which previously surfaced as cryptic
+        // exceptions such as "The string did not match the expected pattern.").
+        async function fetchBackendJson(url) {
+            let res;
+            try {
+                res = await fetch(url);
+            } catch (e) {
+                throw new Error(`backend unreachable at ${url} (${e.message || e}) — is the EVO server running?`);
+            }
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} ${res.statusText} from ${url}`);
+            }
+            const contentType = res.headers.get('content-type') || '';
+            const text = await res.text();
+            if (!contentType.includes('json')) {
+                throw new Error(`non-JSON response from ${url} (status ${res.status}, type '${contentType}') — ` +
+                    `another process may be occupying the EVO server port (${serverPort})`);
+            }
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error(`invalid JSON from ${url}: ${e.message}`);
+            }
+        }
+
         let isAutoCreating = false;
         async function loadSessions() {
             const url = getBaseUrl() + `/forge/sessions?runtime=SWT`;
@@ -1433,6 +2027,11 @@
                         // Keep current view refreshed without resetting state
                         renderTopCombo();
                         renderSessionList();
+                        // Re-fetch the active visualization so configuration and
+                        // training-state changes (e.g. committed by the Forge
+                        // Settings dialog) are reflected without re-selecting
+                        // the session or manually pressing Refresh.
+                        refreshViz();
                     }
                 } else if (!isAutoCreating) {
                     autoCreateSession();
@@ -1513,10 +2112,60 @@
         }
 
         function updateGuidance() {
-            // Replaced by Creatic integrated guidance
+            // Creatic assistant takes over when it is loaded (HTTP context);
+            // the SWT Browser (file://) falls back to native guidance so the
+            // "Recommended Next Steps" panel is always functional.
             if (window.Creatic && window.Creatic.refresh) {
                 window.Creatic.refresh();
+                return;
             }
+            renderNativeGuidance();
+        }
+
+        // Native guidance: derives recommended next steps from the
+        // authoritative forge.workflow.status of the active session.
+        function renderNativeGuidance() {
+            const el = document.getElementById('guidance-content');
+            if (!el) return;
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (!session) {
+                el.innerHTML = 'Select a session to begin.';
+                return;
+            }
+            const state = session.uiState ? session.uiState['forge.workflow.status'] : null;
+            const steps = [
+                { key: 'ARCH_GENERATED', label: 'Review and confirm model properties' },
+                { key: 'PROPERTIES_CONFIRMED', label: 'Select a training dataset' },
+                { key: 'DATASET_SELECTED', label: 'Start model training' },
+                { key: 'TRAINING_ACTIVE', label: 'Monitor training progress below' },
+                { key: 'TRAINING_COMPLETED', label: 'Run model evaluation' },
+                { key: 'EVALUATED', label: 'Export the trained model' }
+            ];
+            const order = ['START', 'ARCH_GENERATED', 'PROPERTIES_CONFIRMED', 'DATASET_SELECTED',
+                           'TRAINING_ACTIVE', 'TRAINING_COMPLETED', 'EVALUATED', 'EXPORTED'];
+            const currentIdx = order.indexOf(state || 'START');
+            const isTraining = session.status === 'TRAINING' || session.lifecycleState === 'TRAINING';
+            let html = '';
+            steps.forEach((step, i) => {
+                const stepIdx = order.indexOf(step.key);
+                const cls = isTraining && i === 3 ? 'current'
+                          : (stepIdx < currentIdx ? 'done'
+                          : (stepIdx === currentIdx ? 'current' : ''));
+                html += `<div class="guidance-step ${cls}"><span class="step-dot"></span>${step.label}</div>`;
+            });
+            if (isTraining && session.currentEpoch != null && session.totalEpochs > 0) {
+                html += `<div class="guidance-step current"><span class="step-dot"></span>` +
+                        `Epoch ${session.currentEpoch} / ${session.totalEpochs} in progress</div>`;
+            }
+            el.innerHTML = html;
+        }
+
+        // Syncs the Forge mode tab strip with the active visualization.
+        function updateDemoTabActive() {
+            document.querySelectorAll('#interactive-demos-palette .tab-btn').forEach(btn => {
+                const type = btn.getAttribute('data-demo-type');
+                btn.classList.toggle('active', !!type && currentViz === ('INTERACTIVE_' + type));
+            });
         }
 
         function updateBreadcrumbs() {
@@ -1630,21 +2279,17 @@
             const modelUrl = getBaseUrl() + `/forge/session/${encId}/model?runtime=SWT`;
             const sessionUrl = getBaseUrl() + `/forge/session/${encId}?runtime=SWT`;
             try {
-                const res = await fetch(modelUrl);
-                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                model = await res.json();
+                model = await fetchBackendJson(modelUrl);
                 if (!model.nodes) model = { nodes: [], links: [] };
 
                 document.getElementById('json-fallback').value = JSON.stringify(model, null, 2);
                 initGraph();
 
                 // Also fetch session details for UI state
-                const sres = await fetch(sessionUrl);
-                if (!sres.ok) throw new Error(`HTTP ${sres.status}: ${sres.statusText}`);
-                const sessionDetails = await sres.json();
+                const sessionDetails = await fetchBackendJson(sessionUrl);
                 updateWorkflowUI(sessionDetails.uiState);
             } catch (e) {
-                log(`Error fetching model/session details: ${e.message} (URLs: ${modelUrl}, ${sessionUrl})`);
+                logBackendError(`Error fetching model/session details: ${e.message} (URLs: ${modelUrl}, ${sessionUrl})`);
             }
         }
 
@@ -1695,8 +2340,7 @@
         async function updateModelPropertiesUI() {
             if (!activeSessionId) return;
             try {
-                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`);
-                const session = await res.json();
+                const session = await fetchBackendJson(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`);
                 const uiState = session.uiState || {};
 
                 document.getElementById('lr').value = uiState.lr || 0.001;
@@ -1740,7 +2384,7 @@
                     addDynamicProp('vocab_size', 'Vocab Size', uiState.vocab_size || 32000, 'number');
                     addDynamicProp('context_length', 'Context Length', uiState.context_length || 2048, 'number');
                 }
-            } catch (e) { log(`Error updating properties UI: ${e.message}`); }
+            } catch (e) { logBackendError(`Error updating properties UI: ${e.message}`); }
         }
 
         function addDynamicProp(id, label, value, type) {
@@ -2247,6 +2891,7 @@
             currentViz = document.getElementById('viz-selector').value;
             updateVizControls();
             updateBreadcrumbs();
+            updateDemoTabActive();
             refreshViz();
             persistUiState('selectedVisualization', currentViz);
         }
@@ -2282,9 +2927,8 @@
                 const search = document.createElement('input');
                 search.type = 'text';
                 search.placeholder = 'Search...';
-                search.className = 'btn btn-sm';
-                search.style.width = '80px';
-                search.style.background = '#3c3c3c';
+                search.className = 'viz-search-input';
+                search.style.width = '120px';
                 controls.appendChild(search);
 
                 const prevBtn = document.createElement('button');
@@ -3124,6 +3768,49 @@
         initPanelActions();
         document.addEventListener('DOMContentLoaded', initPanelActions);
         window.addEventListener('load', initPanelActions);
+
+        // --- Native data-guidance tooltips (no external component needed) ---
+        (function() {
+            let tip = null;
+            function hide() {
+                if (tip) { tip.remove(); tip = null; }
+            }
+            document.addEventListener('mouseover', function(e) {
+                const target = e.target && e.target.closest ? e.target.closest('[data-guidance]') : null;
+                hide();
+                if (!target) return;
+                tip = document.createElement('div');
+                tip.className = 'evo-tooltip';
+                tip.textContent = target.getAttribute('data-guidance');
+                document.body.appendChild(tip);
+                const r = target.getBoundingClientRect();
+                const tw = tip.offsetWidth;
+                const th = tip.offsetHeight;
+                let x = r.left;
+                let y = r.bottom + 6;
+                if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+                if (y + th > window.innerHeight - 8) y = r.top - th - 6;
+                tip.style.left = Math.max(4, x) + 'px';
+                tip.style.top = Math.max(4, y) + 'px';
+            });
+            document.addEventListener('mouseout', function(e) {
+                if (e.target && e.target.closest && e.target.closest('[data-guidance]')) hide();
+            });
+            document.addEventListener('scroll', hide, true);
+        })();
+
+        // In the SWT Browser the page is loaded from a file:// URL: the
+        // header view links cannot resolve there, so navigation clicks are
+        // suppressed instead of navigating to a 404 page.
+        (function() {
+            const proto = window.location.protocol;
+            if (proto !== 'file:' && !proto.startsWith('bundle')) return;
+            document.querySelectorAll('.view-btn').forEach(function(a) {
+                a.addEventListener('click', function(e) { e.preventDefault(); });
+            });
+        })();
+
+        updateDemoTabActive();
 
         // Notify SWT ready
         if (window.logFunction) logFunction("ready");

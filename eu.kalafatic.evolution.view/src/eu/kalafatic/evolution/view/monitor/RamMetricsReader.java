@@ -28,7 +28,7 @@ final class RamMetricsReader {
         } catch (Exception ignored) {
         }
         long used = (total > 0 && available > 0) ? (total - available) : (total > 0 && free > 0 ? total - free : -1);
-        return new long[]{total, used, available};
+        return new long[]{total, used, available, free};
     }
 
     private static long parseKb(String v) {

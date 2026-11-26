@@ -105,6 +105,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	private ForgePage forgePage;
 	private ServerPage serverPage;
 	private SettingsPage settingsPage;
+	private eu.kalafatic.evolution.view.editors.pages.EcosystemPage ecosystemPage;
 
 	private Orchestrator orchestrator;
 	private TaskContext currentContext;
@@ -220,6 +221,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 				taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
 
 				serverPage = ServerPageFactory.createServerPage(this, orchestrator);
+				ecosystemPage = EcosystemPageFactory.createEcosystemPage(this, orchestrator);
 				mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);
 				browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
 
@@ -493,6 +495,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			teipProtocolPage.setOrchestrator(orchestrator);
 		if (settingsPage != null)
 			settingsPage.setOrchestrator(orchestrator);
+		if (ecosystemPage != null)
+			ecosystemPage.setOrchestrator(orchestrator);
 	}
 
 	public void reloadModel() {
@@ -578,6 +582,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			developmentPage.scheduleRefresh();
 		if (teipProtocolPage != null)
 			teipProtocolPage.scheduleRefresh();
+		if (ecosystemPage != null)
+			ecosystemPage.scheduleRefresh();
 
 		int active = getActivePage();
 		if (active != -1 && getControl(active) == comparePage) {
@@ -766,6 +772,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 			aiChatPage.scheduleRefresh();
 		} else if (control == teipProtocolPage && teipProtocolPage != null) {
 			teipProtocolPage.scheduleRefresh();
+		} else if (control == ecosystemPage && ecosystemPage != null) {
+			ecosystemPage.scheduleRefresh();
 		}
 	}
 

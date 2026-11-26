@@ -35,7 +35,7 @@ Require-Bundle: org.eclipse.swt,
  org.eclipse.ui.navigator
 Import-Package: java.sql
 Automatic-Module-Name: eu.kalafatic.evolution.controller
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.contextual,
  eu.kalafatic.evolution.controller.memory,
@@ -44,6 +44,7 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.execution,
  eu.kalafatic.evolution.controller.handlers,
+ eu.kalafatic.evolution.controller.hardware,
  eu.kalafatic.evolution.controller.kernel,
  eu.kalafatic.evolution.controller.log,
  eu.kalafatic.evolution.controller.manager,

@@ -30,14 +30,22 @@ public class ForgePage extends AEvoPage {
         content.setLayout(new GridLayout(1, false));
         this.setContent(content);
 
-        // Live hardware monitoring panel (GPU / CPU / RAM + historical charts).
+        // Live hardware monitoring (GPU / CPU / RAM + historical charts) in one
+        // expandable/collapsible group. No fixed height: when collapsed it
+        // occupies a single compact summary row and the Forge browser below
+        // receives the released vertical space.
         eu.kalafatic.evolution.view.monitor.HardwareMonitorGroup hardwareMonitor =
                 new eu.kalafatic.evolution.view.monitor.HardwareMonitorGroup(content);
-        org.eclipse.swt.layout.GridData monitorData = new GridData(GridData.FILL_HORIZONTAL);
-        monitorData.heightHint = 300;
-        hardwareMonitor.setLayoutData(monitorData);
+        hardwareMonitor.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        // GPU diagnostics (CUDA backend + real Forge GPU training verification),
+        // shared with the AI Commander Forge panel and the Settings Hardware panel.
+        eu.kalafatic.evolution.view.editors.pages.aichat.GpuDiagnosticsGroup gpuDiagnostics =
+                new eu.kalafatic.evolution.view.editors.pages.aichat.GpuDiagnosticsGroup(
+                        toolkit, content, editor, orchestrator);
 
         this.browser = new Browser(content, SWT.NONE);
+        // The browser is the primary workspace: it grabs all remaining space.
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {

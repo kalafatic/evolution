@@ -3,8 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Forge Data
 Bundle-SymbolicName: eu.kalafatic.evolution.forge.data
 Bundle-Version: 2.6.11.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-21
-Require-Bundle: eu.kalafatic.evolution.forge.tokenizer
+Bundle-RequiredExecutionEnvironment: JavaSE-25
+Require-Bundle: eu.kalafatic.evolution.forge.tokenizer,
+ eu.kalafatic.evolution.forge.model
 Import-Package: org.json
 Export-Package: eu.kalafatic.evolution.forge.data.api,
  eu.kalafatic.evolution.forge.data.api.artifact,

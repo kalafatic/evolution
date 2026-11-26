@@ -297,6 +297,21 @@ public class ForgeSessionManager {
     private final java.util.Map<String, TrainingTelemetry> telemetryMap = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, java.util.List<eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener>> trainerListeners = new java.util.concurrent.ConcurrentHashMap<>();
     private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
+
+    /**
+     * Timestamps of the last fallback log per unknown session ID. Unknown IDs can be
+     * requested repeatedly (page pollers, stale UI state, other namespaces); logging
+     * every occurrence floods the console, so each ID is reported at most once per
+     * window. Bounded to prevent unbounded growth under ID churn.
+     */
+    private static final long FALLBACK_LOG_DEDUP_WINDOW_MS = 60_000L;
+    private final java.util.Map<String, Long> lastFallbackLogAt = new java.util.LinkedHashMap<>() {
+        private static final long serialVersionUID = 1L;
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Long> eldest) {
+            return size() > 256;
+        }
+    };
     private volatile boolean recoveredFromRestart = false;
 
     private static volatile java.nio.file.Path forgeStateDirOverride = null;
@@ -742,18 +757,18 @@ public class ForgeSessionManager {
             // No sessions exist at all. A lookup must NOT create a session as a side
             // effect: session creation is an explicit operation (createSession / the
             // /forge/session POST endpoint / seedDefaultSessions during initialization).
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session '" + requestedId
+            logFallbackOnce("none", "Requested session '" + requestedId
                     + "' not found and no Forge sessions exist. No session created (explicit creation required).");
             return null;
         } else if (requestedId != null && !requestedId.trim().isEmpty()) {
             // A requested session ID was not found (e.g. a stale or mismatched ID from a
             // different session namespace). Do NOT create a "dedicated" session; fall back
             // to the existing default so a single lookup failure cannot proliferate sessions.
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session '" + requestedId
+            logFallbackOnce(requestedId, "Requested session '" + requestedId
                     + "' not found; using default session '" + fallback.getName() + "' ("
                     + fallback.getSessionId() + ") instead of creating a new session.");
         } else {
-            System.err.println("[FORGE_SESSION_FALLBACK] Requested session ID is empty; using default session '"
+            logFallbackOnce("empty", "Requested session ID is empty; using default session '"
                     + fallback.getName() + "' (" + fallback.getSessionId() + ").");
         }
 
@@ -762,6 +777,23 @@ public class ForgeSessionManager {
         }
 
         return fallback;
+    }
+
+    /**
+     * Logs a session-lookup fallback at most once per dedup key within the configured
+     * window. Identical repeated lookups (page pollers, stale IDs) therefore produce a
+     * single console line instead of flooding the log.
+     */
+    private void logFallbackOnce(String key, String message) {
+        long now = System.currentTimeMillis();
+        synchronized (lastFallbackLogAt) {
+            Long last = lastFallbackLogAt.get(key);
+            if (last != null && now - last < FALLBACK_LOG_DEDUP_WINDOW_MS) {
+                return;
+            }
+            lastFallbackLogAt.put(key, now);
+        }
+        System.err.println("[FORGE_SESSION_FALLBACK] " + message);
     }
 
     public void updateModel(String sessionId, String modelGraph) {

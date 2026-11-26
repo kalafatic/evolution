@@ -286,6 +286,20 @@ public class ServerManager {
     }
 
     /**
+     * Logs a server auto-start failure. Port-conflict reports are logged in full by
+     * {@link #start(int)} / the port lifecycle pre-flight; re-printing the complete
+     * conflict block here only duplicates the console output, so it is summarized.
+     */
+    private static void logAutoStartFailure(String serviceLabel, Throwable t) {
+        String msg = t.getMessage() == null ? String.valueOf(t) : t.getMessage();
+        if (msg.startsWith("PORT CONFLICT DETECTED")) {
+            Log.log("[ServerManager] " + serviceLabel + " auto-start skipped: port conflict (see conflict report above).");
+        } else {
+            Log.log("[ServerManager] " + serviceLabel + " auto-start failed: " + msg);
+        }
+    }
+
+    /**
      * Non-blocking automatic startup of all configured EVO servers and web applications.
      */
     public CompletableFuture<Void> autoStartAll() {
@@ -302,7 +316,7 @@ public class ServerManager {
                 try {
                     start(primary);
                 } catch (Throwable t) {
-                    Log.log("[ServerManager] Primary server auto-start failed: " + t.getMessage());
+                    logAutoStartFailure("Primary server", t);
                 }
 
                 // 2. Secondary HTTP / Portal Server (28180)
@@ -310,7 +324,7 @@ public class ServerManager {
                 try {
                     start(secondary);
                 } catch (Throwable t) {
-                    Log.log("[ServerManager] Secondary server auto-start failed: " + t.getMessage());
+                    logAutoStartFailure("Secondary server", t);
                 }
 
                 // 3. MCP Demo Server (28280)
@@ -318,7 +332,7 @@ public class ServerManager {
                 try {
                     start(mcp);
                 } catch (Throwable t) {
-                    Log.log("[ServerManager] MCP server auto-start failed: " + t.getMessage());
+                    logAutoStartFailure("MCP server", t);
                 }
 
                 // 4. Develop Autonomous Coding Agent Endpoint (28380)
@@ -326,7 +340,7 @@ public class ServerManager {
                 try {
                     start(develop);
                 } catch (Throwable t) {
-                    Log.log("[ServerManager] Develop endpoint auto-start check failed: " + t.getMessage());
+                    logAutoStartFailure("Develop endpoint", t);
                 }
 
                 // 5. Supervisor API (28480) & Supervisor Control (28580)
@@ -334,14 +348,14 @@ public class ServerManager {
                 try {
                     start(supervisorApi);
                 } catch (Throwable t) {
-                    Log.log("[ServerManager] Supervisor API auto-start notice: " + t.getMessage());
+                    logAutoStartFailure("Supervisor API", t);
                 }
 
                 int supervisorControl = getPortForService(PortRegistry.EVO_SUPERVISOR_CONTROL);
                 try {
                     start(supervisorControl);
                 } catch (Throwable t) {
-                    Log.log("[ServerManager] Supervisor Control auto-start notice: " + t.getMessage());
+                    logAutoStartFailure("Supervisor Control", t);
                 }
 
                 Log.log("[ServerManager] Automatic server startup sequence finished.");

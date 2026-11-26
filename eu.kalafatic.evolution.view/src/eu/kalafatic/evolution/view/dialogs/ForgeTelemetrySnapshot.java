@@ -125,6 +125,11 @@ public final class ForgeTelemetrySnapshot {
     // telemetry history exists yet; labeled as such in the UI ---
     public final double[] legacyLossHistory;
 
+    // --- Total checked dataset bytes used for the preliminary estimate. Kept
+    // on the snapshot so a live configuration overlay can recompute the
+    // preliminary estimate without re-scanning the dataset paths. ---
+    public final long totalDatasetBytes;
+
     // --- Derived (honest) values ---
     public final double overallProgress;      // 0..1, or -1 when unavailable
     public final double epochProgress;        // 0..1 within current epoch (step-based), or -1
@@ -177,6 +182,7 @@ public final class ForgeTelemetrySnapshot {
         this.configuredTimeBudgetHours = b.configuredTimeBudgetHours;
         this.configuredEarlyStopping = b.configuredEarlyStopping;
         this.legacyLossHistory = b.legacyLossHistory;
+        this.totalDatasetBytes = b.totalDatasetBytes;
 
         // --- Derived values ---
         this.elapsedSeconds = computeElapsedSeconds(b);
@@ -387,6 +393,55 @@ public final class ForgeTelemetrySnapshot {
         public double[] legacyLossHistory = null;
         public long totalDatasetBytes = 0;
 
+        public Builder() {
+        }
+
+        /**
+         * Copies every field from an existing snapshot so callers can rebuild a
+         * snapshot with one or more values overridden (e.g. the live dialog
+         * configuration). Derived values (progress, ETA, budget) are recomputed
+         * by {@link #build()} from the copied inputs, never blindly retained.
+         */
+        public Builder(ForgeTelemetrySnapshot s) {
+            this.sessionId = s.sessionId;
+            this.sessionName = s.sessionName;
+            this.status = s.status;
+            this.workflowStatus = s.workflowStatus;
+            this.startTimeMs = s.startTimeMs;
+            this.durationMs = s.durationMs;
+            this.capturedAtMs = s.capturedAtMs;
+            this.currentEpoch = s.currentEpoch;
+            this.totalEpochs = s.totalEpochs;
+            this.currentStep = s.currentStep;
+            this.totalSteps = s.totalSteps;
+            this.currentSample = s.currentSample;
+            this.totalSamples = s.totalSamples;
+            this.processedTokens = s.processedTokens;
+            this.totalTokens = s.totalTokens;
+            this.currentLoss = s.currentLoss;
+            this.valLoss = s.valLoss;
+            this.bestValLoss = s.bestValLoss;
+            this.initialLoss = s.initialLoss;
+            this.learningRate = s.learningRate;
+            this.tokensPerSec = s.tokensPerSec;
+            this.stepsPerSec = s.stepsPerSec;
+            this.trainerEstimatedRemainingSeconds = s.trainerEstimatedRemainingSeconds;
+            this.ramUsedMb = s.ramUsedMb;
+            this.ramTotalMb = s.ramTotalMb;
+            this.cpuPercent = s.cpuPercent;
+            this.gpuStatus = s.gpuStatus;
+            this.lastEventMessage = s.lastEventMessage;
+            this.logTail = s.logTail != null ? new ArrayList<>(s.logTail) : Collections.emptyList();
+            this.history = s.history != null ? new ArrayList<>(s.history) : new ArrayList<>();
+            this.configuredModelSize = s.configuredModelSize;
+            this.configuredEpochs = s.configuredEpochs;
+            this.configuredDesiredLoss = s.configuredDesiredLoss;
+            this.configuredTimeBudgetHours = s.configuredTimeBudgetHours;
+            this.configuredEarlyStopping = s.configuredEarlyStopping;
+            this.legacyLossHistory = s.legacyLossHistory;
+            this.totalDatasetBytes = s.totalDatasetBytes;
+        }
+
         public ForgeTelemetrySnapshot build() {
             if (bestValLoss == Double.MAX_VALUE) bestValLoss = 0.0;
             if (initialLoss < 0.0 && !history.isEmpty()) {
@@ -476,6 +531,42 @@ public final class ForgeTelemetrySnapshot {
         } catch (Exception ignored) {
             // Telemetry unavailable: keep the honest UNKNOWN snapshot.
         }
+        return b.build();
+    }
+
+    /**
+     * Captures the authoritative telemetry state for the given session and then
+     * overlays the live working-copy configuration (model size, epochs, desired
+     * loss, time budget, early stopping). This is the single entry point used by
+     * the Forge Settings dialog so its diagrams always reflect the values the
+     * user is currently editing — before they are committed to the session on OK.
+     *
+     * The telemetry (status, counters, history) still comes exclusively from
+     * ForgeSessionManager; only the configured values are overlaid, and all
+     * derived values (preliminary estimate, budget, throughput basis) are
+     * recomputed from the overlaid configuration.
+     */
+    public static ForgeTelemetrySnapshot capture(ForgeSessionManager mgr, String sessionId,
+                                                 double[] legacyLossHistory, long totalDatasetBytes,
+                                                 String configuredModelSize, int configuredEpochs,
+                                                 double configuredDesiredLoss,
+                                                 double configuredTimeBudgetHours,
+                                                 boolean configuredEarlyStopping) {
+        ForgeTelemetrySnapshot base = capture(mgr, sessionId, legacyLossHistory, totalDatasetBytes);
+        Builder b = new Builder(base);
+        if (configuredModelSize != null && !configuredModelSize.trim().isEmpty()) {
+            b.configuredModelSize = configuredModelSize;
+        }
+        if (configuredEpochs > 0) {
+            b.configuredEpochs = configuredEpochs;
+        }
+        if (configuredDesiredLoss > 0.0) {
+            b.configuredDesiredLoss = configuredDesiredLoss;
+        }
+        if (configuredTimeBudgetHours > 0.0) {
+            b.configuredTimeBudgetHours = configuredTimeBudgetHours;
+        }
+        b.configuredEarlyStopping = configuredEarlyStopping;
         return b.build();
     }
 
