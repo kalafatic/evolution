@@ -546,6 +546,21 @@ public class SimpleBPETokenizer implements Tokenizer {
         return pad;
     }
 
+    /**
+     * Removes all synthetic {@code <pad_N>} placeholder tokens and returns the effective
+     * (real) vocabulary size. The placeholders are assigned only the highest IDs, so the
+     * remaining tokens keep contiguous IDs and encoding/decoding is unaffected.
+     *
+     * <p>A vocabulary must not be artificially filled with placeholders merely to satisfy
+     * a configured size. Callers that train on a small corpus must use the effective size
+     * returned here for the model's embedding/output dimensions.
+     */
+    public int compactToRealVocabulary() {
+        vocab.entrySet().removeIf(e -> e.getKey().startsWith("<pad_"));
+        updateInvVocab();
+        return vocab.size();
+    }
+
     public Map<String, Integer> getVocab() {
         return vocab;
     }

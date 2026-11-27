@@ -58,27 +58,36 @@ public class NativeEvoProvider implements ILlmProvider {
             prov = (InferenceProvenance) context.getMetadata().get("currentInferenceProvenance");
             traceObj = (InferenceExecutionTrace) context.getMetadata().get("currentInferenceTrace");
         }
-
-        if (prov != null) {
-            prov.setArtifactName(resolvedFile.getName());
-            prov.setArtifactPath(resolvedFile.getAbsolutePath());
-            prov.setArtifactFormat("EVO");
-            prov.setSourceFormat("EVO");
-            prov.setActualEngine(nativeEngine.getClass().getSimpleName());
-            prov.setRuntimeProvider("NativeEvoProvider");
-            prov.setBackend("NATIVE_EVO");
-            prov.setNative(true);
-            prov.setVerificationStatus("VERIFIED");
-            if (artifact.getModelContentHash() != null) {
-                prov.setArtifactChecksum(artifact.getModelContentHash());
-                prov.setLoadedModelChecksum(artifact.getModelContentHash());
-            } else {
-                try {
-                    byte[] b = Files.readAllBytes(resolvedFile.toPath());
-                    MessageDigest md = MessageDigest.getInstance("SHA-256");
-                    prov.setArtifactChecksum(HexFormat.of().formatHex(md.digest(b)));
-                } catch (Exception ignore) {}
+        if (prov == null) {
+            // Native EVO invoked directly (not through the Ollama wrapper): create the
+            // authoritative provenance so the actual provider/model is still recorded.
+            prov = new InferenceProvenance();
+            prov.setInferenceId(java.util.UUID.randomUUID().toString());
+            prov.setSessionId(context != null ? context.getSessionId() : "Default");
+            if (context != null && context.getMetadata() != null) {
+                context.getMetadata().put("currentInferenceProvenance", prov);
             }
+        }
+
+        prov.setArtifactName(resolvedFile.getName());
+        prov.setArtifactPath(resolvedFile.getAbsolutePath());
+        prov.setArtifactFormat("EVO");
+        prov.setSourceFormat("EVO");
+        prov.setLoadedModelIdentity(resolvedFile.getName());
+        prov.setActualEngine(nativeEngine.getClass().getSimpleName());
+        prov.setRuntimeProvider("NativeEvoProvider");
+        prov.setBackend("NATIVE_EVO");
+        prov.setNative(true);
+        prov.setVerificationStatus("VERIFIED");
+        if (artifact.getModelContentHash() != null) {
+            prov.setArtifactChecksum(artifact.getModelContentHash());
+            prov.setLoadedModelChecksum(artifact.getModelContentHash());
+        } else {
+            try {
+                byte[] b = Files.readAllBytes(resolvedFile.toPath());
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                prov.setArtifactChecksum(HexFormat.of().formatHex(md.digest(b)));
+            } catch (Exception ignore) {}
         }
 
         if (traceObj != null) {

@@ -21,7 +21,7 @@ public class EvoArchitectureDescriptor {
     // Positional encoding of the model. "rope" (rotary, Llama-compatible) is the
     // current training standard and is required for faithful GGUF/Ollama export;
     // "sinusoidal_abs" (additive sinusoidal) is retained for legacy artifacts.
-    private String positionalEncoding = "sinusoidal_abs";
+    private String positionalEncoding = "rope";
     private float ropeTheta = 10000.0f;
     private boolean embeddingTied = false;
 

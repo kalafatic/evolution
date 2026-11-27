@@ -129,6 +129,23 @@ window.ChatApp.Renderer = {
             bubbleContent.className = 'bubble-content';
             bubbleContent.innerHTML = this.formatText(m.text, primaryRole);
             bubble.appendChild(bubbleContent);
+
+            // Subtle provider · model metadata line at the bottom of the bubble,
+            // showing the provider/model that actually generated this response. Omitted
+            // when the provenance is unavailable or unreliable (never fabricated).
+            if (!isUser && m.inferenceProvenance) {
+                const prov = m.inferenceProvenance;
+                const provider = prov.runtimeProvider;
+                const model = prov.loadedModelIdentity;
+                if (provider && provider !== 'UNKNOWN' && model && model !== 'UNKNOWN') {
+                    const meta = document.createElement('div');
+                    meta.className = 'response-meta';
+                    meta.textContent = provider + ' · ' + model;
+                    meta.title = provider + ' · ' + model;
+                    bubble.appendChild(meta);
+                }
+            }
+
             content.appendChild(bubble);
             content.appendChild(window.ChatApp.Actions.renderActions(m));
 

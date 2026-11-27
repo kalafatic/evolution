@@ -252,6 +252,20 @@ code {
 .collapsed .bubble { padding: 8px 16px; min-height: 0; opacity: 0.7; }
 .collapsed .bubble::after { content: '... (message collapsed)'; font-style: italic; font-size: 12px; color: #94a3b8; }
 
+/* Response provider/model metadata line (subtle, single-line, theme-muted) */
+.response-meta {
+    margin-top: 3px;
+    font-size: 9px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--evo-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    user-select: none;
+}
+
 /* Inference Provenance Widget */
 .inference-details-widget {
     margin-top: 6px;

@@ -9,6 +9,7 @@ import java.util.Map;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -18,10 +19,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import eu.kalafatic.evolution.controller.manager.LlamaService;
@@ -68,30 +65,11 @@ public class ChatMgmtGroup extends AEvoGroup {
     private volatile List<LocalModelDescriptor> currentModelDescriptors = new ArrayList<>();
 
     /**
-     * Monotonic token for provider discovery requests. Results are applied only when
-     * the token still matches, so a stale asynchronous result can never overwrite a
-     * newer provider selection.
+     * Monotonic token for model-combo renders. A render (or its asynchronous cache
+     * completion) is applied only when the token still matches the latest provider
+     * selection/refresh, so a stale completion can never overwrite a newer selection.
      */
     private volatile long discoveryGeneration = 0;
-
-    /**
-     * Discovery key (provider@session) of the last requested discovery, used to
-     * avoid re-running discovery on every periodic UI refresh.
-     */
-    private volatile String lastDiscoveryKey = "";
-
-    /**
-     * True while a provider discovery {@link Job} is in flight, so periodic UI
-     * refreshes never re-trigger discovery for a combo that is still empty (loading).
-     */
-    private volatile boolean discoveryInFlight = false;
-
-    /**
-     * True when the most recent discovery for the current provider failed, so periodic
-     * UI refreshes do not hammer a failing provider. A manual Refresh or a provider
-     * change resets this.
-     */
-    private volatile boolean discoveryFailed = false;
 
     public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiCommanderPage page) {
         super(editor, orchestrator);
@@ -101,7 +79,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        load();
+       // load();
     }
 
     /**
@@ -253,9 +231,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         refreshModelsBtn = addRowButton(modelRow, "Refresh", new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String providerLabel = inferenceEngineCombo != null && !inferenceEngineCombo.isDisposed()
-                        ? inferenceEngineCombo.getText() : "";
-                refreshModelDiscovery(providerLabel, getLocalModelId());
+                reloadModels();
             }
         });
         refreshModelsBtn.setToolTipText("Re-discover the models available through the selected provider");
@@ -403,11 +379,17 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
     
     private static void setControlWidth(org.eclipse.swt.widgets.Control control, int width) {
-        GridData gd = (GridData) control.getLayoutData();
+       // GridData gd = (GridData) control.getLayoutData();
         //gd.horizontalAlignment = SWT.BEGINNING;
-        gd.widthHint = width;
+        //gd.widthHint = width;
        // gd.verticalAlignment = SWT.CENTER;
         //gd.grabExcessHorizontalSpace = false;
+    	GridData gd = new GridData(SWT.FILL, SWT.CENTER, true, false);
+    	gd.heightHint = 22;
+    	control.setLayoutData(gd);
+    	
+        Font font = new Font(control.getDisplay(), "Arial", 9, SWT.NORMAL);
+        control.setFont(font);
     }
 
     /**
@@ -465,125 +447,121 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private Combo selectEngine(Composite parent) {
-        Combo combo = GUIFactory.INSTANCE.createCombo(parent, ProviderModelSelectionSupport.PROVIDER_ITEMS);
+        Combo combo = GUIFactory.INSTANCE.createCombo(
+                parent,
+                ProviderModelSelectionSupport.PROVIDER_ITEMS);
+
         combo.addListener(SWT.Selection, e -> {
-            int index = combo.getSelectionIndex();
-            if (index >= 0) {
-                String selectedEngine = combo.getText();
-                Map<String, Object> settings = new HashMap<>();
-                settings.put("inferenceEngine", selectedEngine);
-                Log.log("[AI-CMD][PROVIDER] Provider selected: " + selectedEngine
-                        + " (key=" + ProviderModelSelectionSupport.providerKey(selectedEngine) + ")");
-
-                page.updateConfiguration(settings);
-                page.saveLastUsedSettings();
-                page.updateModeDisplay();
-                page.updateStatusInfo();
-
-                // Provider selection is authoritative for model discovery.
-                refreshModelDiscovery(selectedEngine, getLocalModelId());
+            if (isUpdating || combo.isDisposed()) {
+                return;
             }
+
+            int index = combo.getSelectionIndex();
+            if (index < 0) {
+                return;
+            }
+
+            String selectedEngine = combo.getText();
+
+            Log.log("[AI-CMD][PROVIDER] Provider selected: "
+                    + selectedEngine
+                    + " (key="
+                    + ProviderModelSelectionSupport.providerKey(selectedEngine)
+                    + ")");
+
+            Map<String, Object> settings = new HashMap<>();
+            settings.put("inferenceEngine", selectedEngine);
+
+            page.updateConfiguration(settings);
+            page.saveLastUsedSettings();
+
+            // Do not refresh the whole group here.
+            // Provider selection owns only the model combo, and only selects the
+            // cached list for the chosen provider — it never starts discovery.
+            discoveryGeneration++;
+            renderModelCombo(selectedEngine, getLocalModelId());
+
+            page.updateModeDisplay();
+            page.updateStatusInfo();
         });
+
         return combo;
     }
 
     /**
-     * Re-discovers the models of the selected provider on a background thread and
-     * applies the result on the UI thread. A monotonic generation token makes sure a
-     * stale asynchronous result can never overwrite a newer provider selection.
+     * Renders the LLM Combo for the given provider from the shared provider-model
+     * cache. This is the only entry point that (indirectly) writes the Combo contents;
+     * it never starts discovery. When the cache has not finished initializing, it kicks
+     * off the shared idempotent initialization (off the UI thread) and re-renders on
+     * completion, guarded by the generation token.
      */
-    private void refreshModelDiscovery(String providerLabel, String previousSelection) {
+    private void renderModelCombo(String providerLabel, String previousSelection) {
+        if (providerLabel == null || providerLabel.isBlank()) {
+            return;
+        }
+        LlmRouter router = LlmRouter.getInstance();
+        if (router.isProviderModelsReady()) {
+            // Cache already initialized: just render cached data, never discover.
+            populateModelCombo(providerLabel, previousSelection);
+            return;
+        }
+        final long generation = discoveryGeneration;
+        router.ensureProviderModels(orchestrator).whenComplete((v, t) -> {
+            Display.getDefault().asyncExec(() -> {
+                if (generation != discoveryGeneration) {
+                    return;
+                }
+                populateModelCombo(providerLabel, previousSelection);
+            });
+        });
+        // Render immediately from whatever is already cached (may be empty on the very
+        // first load; the completion callback above fills it in when discovery finishes).
+        populateModelCombo(providerLabel, previousSelection);
+    }
+
+    /**
+     * Explicit Refresh: re-discovers every provider through the shared cache and
+     * re-renders the Combo for the currently selected provider when the refresh
+     * completes. This is the only normal operation that reloads provider models.
+     */
+    private void reloadModels() {
+        String providerLabel = inferenceEngineCombo != null && !inferenceEngineCombo.isDisposed()
+                ? inferenceEngineCombo.getText() : "";
         if (providerLabel == null || providerLabel.isBlank()) {
             return;
         }
         final long generation = ++discoveryGeneration;
-        final String key = ProviderModelSelectionSupport.providerKey(providerLabel);
-        lastDiscoveryKey = providerLabel + "@" + (page != null ? page.getCurrentSessionName() : "");
-        discoveryInFlight = true;
-        discoveryFailed = false;
-
-        // Immediately clear the model combo (and its descriptor list) so models from
-        // the previous provider are never left visible or selectable while the new
-        // provider is being queried.
-        clearModelCombo();
-        setModelStatus("Loading models from " + providerLabel + "...");
-        Log.log("[AI-CMD][DISCOVERY] Provider discovery started: " + providerLabel
-                + " (key=" + key + ", previous=" + previousSelection + ")");
-
-        Job job = new Job("Discover " + providerLabel + " models") {
-            @Override
-            protected IStatus run(IProgressMonitor monitor) {
-                try {
-                    List<LocalModelDescriptor> models = LlmRouter.getInstance().discoverModels(providerLabel, orchestrator);
-                    Display.getDefault().asyncExec(() -> {
-                        if (generation != discoveryGeneration) {
-                            Log.log("[AI-CMD][DISCOVERY] Discarding stale discovery result for "
-                                    + providerLabel + " (a newer provider selection exists)");
-                            return;
-                        }
-                        applyDiscoveryResult(providerLabel, models, previousSelection, null);
-                    });
-                } catch (Exception ex) {
-                    Display.getDefault().asyncExec(() -> {
-                        if (generation != discoveryGeneration) {
-                            return;
-                        }
-                        applyDiscoveryResult(providerLabel, null, previousSelection, ex);
-                    });
+        setModelStatus("Refreshing models from " + providerLabel + "...");
+        LlmRouter router = LlmRouter.getInstance();
+        router.refreshProviderModels(orchestrator).whenComplete((v, t) -> {
+            Display.getDefault().asyncExec(() -> {
+                if (generation != discoveryGeneration) {
+                    return;
                 }
-                return Status.OK_STATUS;
-            }
-        };
-        job.setUser(false);
-        job.schedule();
+                populateModelCombo(providerLabel, getLocalModelId());
+            });
+        });
+        populateModelCombo(providerLabel, getLocalModelId());
     }
 
     /**
-     * Clears the model combo and the parallel descriptor list on the UI thread.
-     * Called synchronously before a new provider discovery and on discovery errors,
-     * so the combo never shows models from a previous (or failed) provider.
+     * The single authoritative method that writes the LLM Combo contents, always from
+     * the shared cache for the given provider (never from a fresh discovery result).
+     * Must be invoked on the SWT UI thread.
      */
-    private void clearModelCombo() {
-        currentModelDescriptors = new ArrayList<>();
+    private void populateModelCombo(String providerLabel, String previousSelection) {
         if (localModelCombo == null || localModelCombo.isDisposed()) {
             return;
         }
-        localModelCombo.removeAll();
-        localModelCombo.deselectAll();
-        localModelCombo.select(-1);
-    }
-
-    /**
-     * Applies a discovery result to the model combo on the UI thread.
-     */
-    private void applyDiscoveryResult(String providerLabel, List<LocalModelDescriptor> discovered,
-            String previousSelection, Exception error) {
-        if (localModelCombo == null || localModelCombo.isDisposed()) {
-            return;
-        }
-        // Guard: the result must still belong to the currently selected provider.
+        // Guard: the render must still belong to the currently selected provider.
         if (inferenceEngineCombo == null || inferenceEngineCombo.isDisposed()
                 || !providerLabel.equals(inferenceEngineCombo.getText())) {
-            Log.log("[AI-CMD][DISCOVERY] Discarding discovery result for " + providerLabel
-                    + " (current provider is " + inferenceEngineCombo.getText() + ")");
             return;
         }
 
-        if (error != null) {
-            Log.log("[AI-CMD][DISCOVERY] Provider discovery FAILED for " + providerLabel
-                    + ": " + error.getMessage());
-            // Never leave models from the previous provider in the combo. Surface an
-            // informative error state instead of silently keeping stale entries.
-            clearModelCombo();
-            setModelStatus("Discovery failed for " + providerLabel + ": " + error.getMessage());
-            discoveryInFlight = false;
-            discoveryFailed = true;
-            return;
-        }
-
-        discoveryInFlight = false;
-        discoveryFailed = false;
-        List<LocalModelDescriptor> models = ProviderModelSelectionSupport.dedupeById(discovered);
+        String key = ProviderModelSelectionSupport.providerKey(providerLabel);
+        List<LocalModelDescriptor> models = ProviderModelSelectionSupport.dedupeById(
+                LlmRouter.getInstance().getProviderModels(key));
         currentModelDescriptors = models;
 
         String[] items = new String[models.size()];
@@ -606,13 +584,12 @@ public class ChatMgmtGroup extends AEvoGroup {
         }
 
         if (models.isEmpty()) {
-            setModelStatus("No models available from " + providerLabel + ".");
-            Log.log("[AI-CMD][DISCOVERY] Provider discovery empty for " + providerLabel);
+            boolean failed = LlmRouter.getInstance().isProviderFailed(key);
+            setModelStatus(failed ? "Provider discovery failed for " + providerLabel + "."
+                    : "No models available from " + providerLabel + ".");
         } else {
             setModelStatus(models.size() + " model(s) available from " + providerLabel + ".");
         }
-        Log.log("[AI-CMD][DISCOVERY] Provider discovery applied: provider=" + providerLabel
-                + ", models=" + models.size() + ", selected=" + selectedId);
 
         Map<String, Object> settings = new HashMap<>();
         settings.put("localModel", selectedId);
@@ -643,10 +620,11 @@ public class ChatMgmtGroup extends AEvoGroup {
 
                 int modeVal = (int) config.getOrDefault("aiMode", session != null && session.getAiMode() != null ? session.getAiMode().getValue() : (orchestrator != null ? orchestrator.getAiMode().getValue() : 0));
                 AiMode mode = AiMode.get(modeVal);
-                if (aiModeCombo.getSelectionIndex() != mode.getValue()) {
+                int previousMode = aiModeCombo.getSelectionIndex();
+                if (previousMode != mode.getValue()) {
                     aiModeCombo.select(mode.getValue());
+                    Log.log("[AI-CMD][MODE] Mode restored: " + mode.getName());
                 }
-                Log.log("[AI-CMD][MODE] Mode restored: " + mode.getName());
 
                 // 1. Populate AI Remote combo
                 String currentRemote = aiRemoteCombo.getText();
@@ -685,19 +663,13 @@ public class ChatMgmtGroup extends AEvoGroup {
                     selectSafe(inferenceEngineCombo, providerLabel);
                 }
 
-                // 3. Repopulate the Model combo from the selected provider's own
-                // discovery mechanism. Runs asynchronously; the generation token
-                // guards against stale results when the provider changes again.
-                // Rediscovery only runs when the provider/session changed or the
-                // combo is still empty — periodic UI refreshes reuse the current list
-                // (the Refresh button forces a fresh discovery).
+                // 3. Render the Model combo exclusively from the shared provider-model
+                // cache for the selected provider. No discovery is started here: a
+                // normal refresh / session restore only re-renders cached data (the
+                // Refresh button is the only explicit reload).
                 String previousModel = (String) config.getOrDefault("localModel", session != null && session.getLocalModel() != null ? session.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : ""));
-                String discoveryKey = providerLabel + "@" + page.getCurrentSessionName();
-                boolean needsDiscovery = !discoveryKey.equals(lastDiscoveryKey)
-                        || (localModelCombo != null && localModelCombo.getItemCount() == 0
-                                && !discoveryInFlight && !discoveryFailed);
-                if (!providerLabel.isEmpty() && needsDiscovery) {
-                    refreshModelDiscovery(providerLabel, previousModel);
+                if (!providerLabel.isEmpty()) {
+                    renderModelCombo(providerLabel, previousModel);
                 }
             } finally {
                 isUpdating = false;
@@ -708,6 +680,10 @@ public class ChatMgmtGroup extends AEvoGroup {
 
     public void openForgeSettingsDialog() {
         String currentSessionId = page.getCurrentSessionName();
+        // The AI Commander chat session is a separate namespace from ForgeSession.
+        // Forge settings/telemetry must be resolved against the canonical forge
+        // session (the explicitly-seeded default), never keyed by the chat session ID.
+        String forgeSessionId = resolveDefaultForgeSessionId();
         eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(currentSessionId);
         Map<String, Object> config = projection.getConfiguration();
 
@@ -748,7 +724,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         try {
             Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
             Object instance = fsmClass.getMethod("getInstance").invoke(null);
-            org.json.JSONObject uiState = (org.json.JSONObject) fsmClass.getMethod("getUiState", String.class).invoke(instance, currentSessionId);
+            org.json.JSONObject uiState = (org.json.JSONObject) fsmClass.getMethod("getUiState", String.class).invoke(instance, forgeSessionId);
             if (uiState != null) {
                 if ((currentSize == null || currentSize.isEmpty()) && uiState.has("modelSize")) currentSize = uiState.getString("modelSize");
                 if (currentEpochs <= 0 && uiState.has("epochs")) currentEpochs = uiState.getInt("epochs");
@@ -834,7 +810,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 java.util.Iterator<String> keys2 = uiStateJson.keys();
                 while (keys2.hasNext()) {
                     String key = keys2.next();
-                    fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, key, uiStateJson.get(key));
+                    fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, forgeSessionId, key, uiStateJson.get(key));
                 }
             } catch (Exception ex) {
                 // Ignore if controller not loaded
@@ -842,7 +818,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
             if (orchestrator != null && orchestrator.getForgeSessions() != null) {
                 for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
-                    if (currentSessionId.equals(fs.getSessionId()) || orchestrator.getForgeSessions().size() == 1) {
+                    if ((forgeSessionId != null && forgeSessionId.equals(fs.getSessionId())) || orchestrator.getForgeSessions().size() == 1) {
                         if (fs.getModelState() != null) {
                             org.json.JSONObject hpJson = new org.json.JSONObject();
                             String hpStr = fs.getModelState().getHyperparameters();
@@ -861,6 +837,25 @@ public class ChatMgmtGroup extends AEvoGroup {
                 }
             }
         }
+    }
+
+    /**
+     * Resolves the canonical forge session identity for AI Commander forge
+     * operations. The chat session ID is a separate namespace and must not be
+     * passed to ForgeSessionManager. Returns the seeded "Self-Evo Forging" session
+     * ID, otherwise the first forge session ID, otherwise {@code null}.
+     */
+    private String resolveDefaultForgeSessionId() {
+        if (orchestrator == null || orchestrator.getForgeSessions() == null || orchestrator.getForgeSessions().isEmpty()) {
+            return null;
+        }
+        for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
+            if (fs != null && "Self-Evo Forging".equals(fs.getName())) {
+                return fs.getSessionId();
+            }
+        }
+        eu.kalafatic.evolution.model.orchestration.ForgeSession first = orchestrator.getForgeSessions().get(0);
+        return first != null ? first.getSessionId() : null;
     }
 
     public String getSelectedModelSize() {

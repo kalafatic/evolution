@@ -14,32 +14,48 @@ public class DarwinEngineFactory {
                                               IterationMemoryService memoryService,
                                               SystemStateSignalProvider stateProvider) {
         context.log("[FACTORY] Creating DarwinEngine for mode: " + platformType);
-        
+
+        ADarwinEngine engine;
         switch (platformType) {
             case FORGE:
-                return new LLMDarwinEngine(context, memoryService, stateProvider);
+                engine = new LLMDarwinEngine(context, memoryService, stateProvider);
+                break;
             case SIMPLE_CHAT:
-                return new ChatEngine(context, memoryService, stateProvider);
+                engine = new ChatEngine(context, memoryService, stateProvider);
+                break;
             case ASSISTED_CODING: //return new DarwinEngine(context, memoryService, stateProvider);
-               return new CodingEngine(context, memoryService, stateProvider);
+                engine = new CodingEngine(context, memoryService, stateProvider);
+                break;
             case DEVELOPER:
-                return new DeveloperEngine(context, memoryService, stateProvider);
+                engine = new DeveloperEngine(context, memoryService, stateProvider);
+                break;
             case HYBRID_MANUAL_EXPORT:
-                return new MediatedEngine(context, memoryService, stateProvider);
+                engine = new MediatedEngine(context, memoryService, stateProvider);
+                break;
             case SELF_DEV_MODE:
-                return new SelfDevelopmentEngine(context, memoryService, stateProvider);
+                engine = new SelfDevelopmentEngine(context, memoryService, stateProvider);
+                break;
             case INTENT_RECONSTRUCTION:
-                return new IntentReconstructionEngine(context, memoryService, stateProvider);
+                engine = new IntentReconstructionEngine(context, memoryService, stateProvider);
+                break;
             case MUTATION:
-                return new MutationEngine(context, memoryService, stateProvider);
+                engine = new MutationEngine(context, memoryService, stateProvider);
+                break;
             case DREAM_MODE:
-                return new DreamEngine(context, memoryService, stateProvider);
+                engine = new DreamEngine(context, memoryService, stateProvider);
+                break;
             case DARWIN_MODE:
-                return new DarwinEngine(context, memoryService, stateProvider);
+                engine = new DarwinEngine(context, memoryService, stateProvider);
+                break;
             default:
                 context.log("[FACTORY] Unknown mode: " + platformType + ". Defaulting to TASK.");
-                return new DarwinEngine(context, memoryService, stateProvider);
+                engine = new DarwinEngine(context, memoryService, stateProvider);
+                break;
         }
+        context.log("[DARWIN-FACTORY] sessionId=" + context.getSessionId()
+                + " resolvedMode=" + platformType
+                + " engine=" + engine.getClass().getSimpleName());
+        return engine;
     }
     
     public static ADarwinEngine createEngineForIntent(PromptIntentAnalyzer.IntentResult intent,

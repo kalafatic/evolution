@@ -511,6 +511,7 @@ public final class GpuTrainingEngine {
     /** One forward + backward pass, accumulating gradients into dGrad. Returns mean per-token loss. */
     private float step(CudaDevice dev, Module mod, long dW, long dGrad, int[] tokens, int[] labels, float[] mask,
                        int T, long dCos, long dSin, int validTokens) {
+        try {
         final float scale = 1.0f / (float) Math.sqrt(headDim);
         long dTokens = a(dev, T);
         long dLabels = a(dev, T);
@@ -624,8 +625,10 @@ public final class GpuTrainingEngine {
         float[] lossBuf = new float[1];
         dev.memcpyDtoH(lossBuf, dLoss);
         float loss = lossBuf[0] / validTokens;
-        freeScratch(dev);
         return loss;
+        } finally {
+            freeScratch(dev);
+        }
     }
 
     /**
@@ -875,6 +878,7 @@ public final class GpuTrainingEngine {
             List<Long> sc = new ArrayList<>();
             java.util.function.IntFunction<Long> s = n -> { long p = dev.alloc(n * 4L); sc.add(p); return p; };
 
+            try {
             final float scale = 1.0f / (float) Math.sqrt(headDim);
             long dTokens = s.apply(t), dLabels = s.apply(t), dMask = s.apply(t);
             dev.memcpyHtoD(dTokens, tokens);
@@ -987,9 +991,13 @@ public final class GpuTrainingEngine {
             dev.synchronize();
             float[] lossBuf = new float[1];
             dev.memcpyDtoH(lossBuf, dLoss);
-            float rawLoss = lossBuf[0];
-            for (long p : sc) dev.free(p);
-            return rawLoss;
+            return lossBuf[0];
+            } finally {
+                // Exception-safe cleanup: every scratch buffer allocated for this step must
+                // be released even when forward/backward fails part-way (e.g. cuMemAlloc
+                // OOM) so a failed step never leaks device memory.
+                for (long p : sc) dev.free(p);
+            }
         }
 
         /** AdamW step: grad-norm clip + update + zero grads (respecting the decay mask). */

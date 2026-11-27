@@ -24,7 +24,11 @@ public final class EvoLlmArchitecture implements Serializable {
     private final String positionalEncoding;
 
     public EvoLlmArchitecture(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
-        this(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen, POSITIONAL_SINUSOIDAL_ABS);
+        // RoPE is the current training standard and the only positional encoding that can
+        // be represented faithfully by the exported GGUF (general.architecture=llama).
+        // Defaulting here to RoPE keeps the native model, the CUDA training backend and
+        // the GGUF/Ollama export numerically consistent.
+        this(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen, POSITIONAL_ROPE);
     }
 
     public EvoLlmArchitecture(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen, String positionalEncoding) {

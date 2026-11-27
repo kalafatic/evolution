@@ -32,7 +32,7 @@ public class EcosystemTopologyBuilderTest {
                 .put("startupAfter", new JSONArray()));
         projects.put(new JSONObject()
                 .put("id", "ENR").put("name", "ENR – EVO Native Runtime").put("type", "maven")
-                .put("runtimeState", "STOPPED").put("apiBase", "http://127.0.0.1:8111/api/v1")
+                .put("runtimeState", "STOPPED").put("apiBase", "http://127.0.0.1:28780/api/v1")
                 .put("enrMonitor", true).put("startupAfter", new JSONArray()));
         projects.put(new JSONObject()
                 .put("id", "TRYST").put("name", "TRYST – Async Coding Platform").put("type", "eclipse-tycho")
@@ -57,7 +57,7 @@ public class EcosystemTopologyBuilderTest {
                 .put("pid", 1234).put("process", "evolution").put("detail", "listening"));
         entries.put(new JSONObject().put("app", "EVO").put("port", 28280).put("service", "MCP Server")
                 .put("status", "READY").put("protocol", "HTTP").put("kind", "implemented"));
-        entries.put(new JSONObject().put("app", "ENR").put("port", 8111).put("service", "HTTP Server")
+        entries.put(new JSONObject().put("app", "ENR").put("port", 28780).put("service", "HTTP Server")
                 .put("status", "READY").put("protocol", "HTTP").put("kind", "implemented"));
         entries.put(new JSONObject().put("app", "TRYST").put("port", 38080).put("service", "HTTP Server")
                 .put("status", "OCCUPIED").put("protocol", "HTTP").put("kind", "implemented"));

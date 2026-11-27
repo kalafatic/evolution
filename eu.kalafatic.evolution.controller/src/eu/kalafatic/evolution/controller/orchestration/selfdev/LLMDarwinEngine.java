@@ -256,6 +256,51 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		return value.substring(0, maximumLength);
 	}
 
+	/**
+	 * True when a generated response is degenerate: empty, whitespace-only, or a single
+	 * repeated character. Such output is evidence of a collapsed/broken model and must
+	 * fail validation.
+	 */
+	private static boolean isDegenerateOutput(String response) {
+		if (response == null || response.trim().isEmpty()) {
+			return true;
+		}
+		String t = response.trim();
+		if (t.length() >= 4) {
+			char first = t.charAt(0);
+			boolean repeated = true;
+			for (int i = 1; i < t.length(); i++) {
+				if (t.charAt(i) != first) {
+					repeated = false;
+					break;
+				}
+			}
+			if (repeated) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static String describeDegenerateOutput(String response) {
+		if (response == null || response.trim().isEmpty()) {
+			return "empty response";
+		}
+		String t = response.trim();
+		char first = t.charAt(0);
+		boolean repeated = t.length() >= 4;
+		for (int i = 1; i < t.length(); i++) {
+			if (t.charAt(i) != first) {
+				repeated = false;
+				break;
+			}
+		}
+		if (repeated) {
+			return "repeated character '" + first + "' (" + t.length() + " occurrences)";
+		}
+		return "short/meaningless text";
+	}
+
 	private static String safeReadString(Path path) throws Exception {
 		if (path == null || !Files.exists(path)) {
 			return "";
@@ -801,9 +846,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					context.log("[DARWIN_BRANCHES] " + verifyingBranchesJson.toString());
 
 					long startTime = System.currentTimeMillis();
-					double nativeLoss = 10.0;
+					double nativeLoss = Double.NaN;
 					long paramCount = 0;
-					double nativeFitness = 30.0;
+					double nativeFitness = Double.NaN;
 					double ollamaReferenceScore = 0.0;
 					boolean candFailed = false;
 					String candFailureReason = null;
@@ -820,11 +865,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 						candTrainedWeights = trainingResult.trainedWeights;
 						nativeSuccess = true;
 					} catch (Exception e) {
-						context.log("[FORGE] Pure-Java offline training failed for " + candidateName
-								+ " - assigning safe penalty score: " + e.getMessage());
-						nativeLoss = 10.0;
-						nativeFitness = 30.0;
-						paramCount = 1_000_000;
+						context.log("[FORGE] Candidate training FAILED for " + candidateName
+								+ " (trainingStatus=FAILED, validationStatus=NOT_EXECUTED): " + e.getMessage());
+						nativeLoss = Double.NaN;
+						nativeFitness = Double.NaN;
+						paramCount = 0;
 						candFailed = true;
 						candFailureReason = e.getMessage();
 					}
@@ -878,7 +923,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					// Ollama score does NOT participate in evolutionary ranking.
 					double candidateFitness = nativeFitness;
 
-					if (Double.isNaN(candidateFitness) || Double.isInfinite(candidateFitness))
+					// A failed candidate must carry N/A fitness (NaN), never a synthetic
+					// penalty value that could influence ranking.
+					if (!candFailed && (Double.isNaN(candidateFitness) || Double.isInfinite(candidateFitness)))
 						candidateFitness = 40.0;
 
 					String ollamaRefDisplay = enableOllamaRef ? String.format("%.4f", ollamaReferenceScore) : "N/A (disabled)";
@@ -931,10 +978,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			// A candidate that did not successfully execute training must never be treated
 			// as a valid winner. If every candidate in this generation failed, the generation
-			// has no winner and the overall winner is NOT updated from it.
+			// has no winner and the overall winner is NOT updated from it. Evolution must not
+			// continue using an invalid candidate as the genetic parent: abort the search and
+			// let the export gate below report the failure.
 			if (genWinner.failed) {
-				context.log("[FORGE] Generation " + gen + " produced no successfully trained candidate "
-						+ "(all " + results.size() + " candidate(s) failed).");
+				context.log("[FORGE] Generation " + gen + " FAILED: produced no successfully trained candidate "
+						+ "(all " + results.size() + " candidate(s) failed). Aborting evolution — no valid genetic parent.");
+				break;
 			}
 
 			String selectedId = null;
@@ -1225,7 +1275,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		// Build final model and save configuration & tokenizer
 		int dff = overallWinner.config.dff;
-		int actualVocabSize = finalTokenizer.getVocabSize();
+		int actualVocabSize = finalTokenizer.compactToRealVocabulary();
 		overallWinner.config.vocabSize = actualVocabSize;
 		EvoLlmModel winningModel = modelSource.createOrRestoreModel(actualVocabSize, overallWinner.config.embeddingSize,
 				overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
@@ -1367,6 +1417,44 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			context.log("[FORGE] Warning verifying saved artifact: " + ex.getMessage());
 		}
 
+		// Persist tokenizer.json and config.json — required export artifacts that the
+		// export summary references. A successful export must produce them, not merely
+		// link to them.
+		try {
+			org.json.JSONObject tokJson = new org.json.JSONObject();
+			tokJson.put("vocab_size", finalTokenizer.getVocabSize());
+			tokJson.put("eos_token", "</s>");
+			tokJson.put("bos_token", "<s>");
+			tokJson.put("unk_token", "<unk>");
+			org.json.JSONObject vocabObj = new org.json.JSONObject();
+			for (Map.Entry<String, Integer> e : finalTokenizer.getVocab().entrySet()) {
+				vocabObj.put(e.getKey(), e.getValue());
+			}
+			tokJson.put("vocab", vocabObj);
+			EvoModelArtifact.safeWriteString(forgeOutputDir.toPath().resolve("tokenizer.json"), tokJson.toString(4));
+			context.log("[FORGE] Saved tokenizer.json (" + finalTokenizer.getVocabSize() + " entries).");
+		} catch (Exception ex) {
+			context.log("[FORGE] Warning saving tokenizer.json: " + ex.getMessage());
+		}
+		try {
+			eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture arch = winningModel.getArchitecture();
+			org.json.JSONObject cfgJson = new org.json.JSONObject();
+			cfgJson.put("architecture_family", "evo_llm");
+			cfgJson.put("vocab_size", arch.getVocabSize());
+			cfgJson.put("d_model", arch.getDModel());
+			cfgJson.put("num_heads", arch.getNumHeads());
+			cfgJson.put("num_blocks", arch.getNumBlocks());
+			cfgJson.put("dff", arch.getDff());
+			cfgJson.put("max_seq_len", arch.getMaxSeqLen());
+			cfgJson.put("positional_encoding", arch.getPositionalEncoding());
+			cfgJson.put("norm_type", "rms_norm");
+			cfgJson.put("activation_type", "swiglu");
+			EvoModelArtifact.safeWriteString(forgeOutputDir.toPath().resolve("config.json"), cfgJson.toString(4));
+			context.log("[FORGE] Saved config.json (positional_encoding=" + arch.getPositionalEncoding() + ").");
+		} catch (Exception ex) {
+			context.log("[FORGE] Warning saving config.json: " + ex.getMessage());
+		}
+
 		context.log("[FORGE] Loading native EVO model artifact from *.evo file for subsequent target export.");
 
 		// EXPORT TO OLLAMA/GGUF WITHOUT RETRAINING (Consumes the loaded artifact or fresh artifact)
@@ -1415,6 +1503,16 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				String validationResponse = queryOllama(ollamaUrl, dynamicModelName, validationPrompt,
 						overallWinner.config);
 				context.log("[FORGE] Custom EVO Model Response: " + safePreview(validationResponse.trim(), 500));
+				// Quality gate: a model that emits only whitespace, a single repeated
+				// character, or otherwise degenerate output must NOT be reported as a
+				// successful model. Log a clear FAILED verdict rather than claiming success.
+				if (isDegenerateOutput(validationResponse)) {
+					context.log("[FORGE][VALIDATION] FAILED — generated model produced degenerate output ("
+							+ describeDegenerateOutput(validationResponse) + "). "
+							+ "The model is not a functional language model.");
+				} else {
+					context.log("[FORGE][VALIDATION] PASS — generated model produced a non-degenerate response.");
+				}
 			} catch (Exception ex) {
 				context.log("[FORGE] Warning: Querying the registered custom EVO model failed: " + ex.getMessage());
 			}
@@ -1709,7 +1807,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			long totalValTokens = valSamples.stream().mapToLong(s -> s.inputIds.length).sum();
 
 			int dff = config.dff;
-			int actualVocabSize = tokenizer.getVocabSize();
+			// A vocabulary must not be artificially padded with synthetic <pad_N>
+			// placeholders merely to satisfy a configured size. Compact to the effective
+			// vocabulary produced by the actual corpus so the model embedding/output
+			// dimensions match the tokens that can actually occur. Sample token IDs are
+			// unaffected (placeholders are never emitted by encoding).
+			int actualVocabSize = tokenizer.compactToRealVocabulary();
 			config.vocabSize = actualVocabSize;
 			model = modelSource != null ? modelSource.createOrRestoreModel(actualVocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen)
 					: new EvoLlmModel(actualVocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen);

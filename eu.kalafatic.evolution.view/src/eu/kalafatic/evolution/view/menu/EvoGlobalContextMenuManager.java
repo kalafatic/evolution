@@ -552,7 +552,7 @@ public class EvoGlobalContextMenuManager {
 
     private void addProcessAndSessionActions(IMenuManager manager, Control control) {
         // Query active sessions and processes
-        ForgeSession activeForgeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+        ForgeSession activeForgeSession = ForgeSessionManager.getInstance().findDefaultSession();
         List<ForgeSession> allSessions = ForgeSessionManager.getInstance().getSessions();
 
         // 1. Finish Forging Action

@@ -34,7 +34,10 @@ public enum PortRegistry {
     EVO_AUXILIARY("AUXILIARY", "EVO Auxiliary Network Service", 8680, 28680, PortProtocol.HTTP, "127.0.0.1", false),
 
     /** ENR — Evolution Neural Runtime HTTP API (Phase 6 family inference engine). */
-    EVO_ENR("ENR", "ENR Neural Runtime HTTP API", 8780, 28780, PortProtocol.HTTP, "127.0.0.1", false);
+    EVO_ENR("ENR", "ENR Neural Runtime HTTP API", 8780, 28780, PortProtocol.HTTP, "127.0.0.1", false),
+
+    /** ENR Web — Evolution Neural Runtime Web Control Center (independent listener). */
+    EVO_ENR_WEB("ENR_WEB", "ENR Web Control Center", 8880, 28880, PortProtocol.HTTP, "127.0.0.1", false);
 
     public static final int BASE_OFFSET = 20000;
     public static final int PORT_INCREMENT = 100;

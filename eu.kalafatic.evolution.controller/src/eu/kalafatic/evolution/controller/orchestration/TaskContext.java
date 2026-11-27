@@ -427,7 +427,7 @@ public class TaskContext {
 
     public EvolutionKernelContext getKernelContext() {
         if (kernelContext == null) {
-            Log.log("[CONTEXT] Initializing new EvolutionKernelContext for session: " + sessionId);
+            Log.log("[CONTEXT][CREATE] sessionId=" + sessionId + " contextIdentity=" + deterministicExecutionId);
             SessionContainer session = SessionManager.getInstance().getSession(sessionId);
             if (session != null) {
                 kernelContext = new EvolutionKernelContext(projectRoot, session.getEventBus(), session.getSignalBus(), session.getMemoryService(projectRoot));

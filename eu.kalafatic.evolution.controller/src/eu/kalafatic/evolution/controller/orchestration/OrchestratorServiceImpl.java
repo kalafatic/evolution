@@ -512,6 +512,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         pi.setPreferredMaxIterations(s.getMaxIterations());
                     });
 
+                Log.log("[ORCHESTRATOR] sessionId=" + sessionId
+                        + " authoritativeMode=" + (orchModel.getAiMode() != null ? orchModel.getAiMode().getName() : "null"));
+
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
 
                 if (context == null) {

@@ -85,29 +85,69 @@ public class EnrRuntime implements EnrInferenceEngine {
 
     @Override
     public List<EnrModel> listModels() {
-        List<EnrModel> models = new ArrayList<>();
+        String endpoint = resolveOllamaUrl();
+
+        // Ollama-compatible models (the Ollama registry /api/tags, reused verbatim).
+        List<EnrModel> ollamaModels = new ArrayList<>();
+        boolean ollamaFailed = false;
+        String ollamaError = "";
         try {
             for (OllamaModel model : ollamaService("").loadModels()) {
                 // Ollama tag discovery does not report context length; the
                 // conservative default (4096) is advertised with
                 // contextLengthKnown=false so consumers never mistake it
                 // for a verified limit.
-                models.add(new EnrModel("ollama:" + model.getName(), model.getName(),
+                ollamaModels.add(new EnrModel("ollama:" + model.getName(), model.getName(),
                         PROVIDER_OLLAMA_ID, ENGINE_OLLAMA, model.getSize(), true, 4096, false));
             }
         } catch (Throwable e) {
-            log("ENR Ollama model discovery failed: " + e.getMessage());
+            ollamaFailed = true;
+            ollamaError = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            log("Ollama-compatible discovery FAILED (endpoint " + endpoint + "): " + ollamaError);
         }
+
+        // EVO-specific models (native .evo artifacts and llama.cpp GGUF artifacts).
+        List<EnrModel> evoModels = new ArrayList<>();
         for (File evoFile : discoverNativeArtifacts(".evo")) {
-            models.add(new EnrModel("evo-native:" + evoFile.getName(), evoFile.getName(),
+            evoModels.add(new EnrModel("evo-native:" + evoFile.getName(), evoFile.getName(),
                     PROVIDER_NATIVE_ID, ENGINE_NATIVE, evoFile.length(), true, 0, false));
         }
         for (File ggufFile : discoverNativeArtifacts(".gguf")) {
-            models.add(new EnrModel("llama-cpp:" + ggufFile.getName(), ggufFile.getName(),
+            evoModels.add(new EnrModel("llama-cpp:" + ggufFile.getName(), ggufFile.getName(),
                     PROVIDER_LLAMACPP_ID, ENGINE_LLAMACPP, ggufFile.length(), true, 0, false));
         }
-        models.sort((a, b) -> a.id().compareToIgnoreCase(b.id()));
-        return models;
+
+        // Deterministic merge: union of both categories, de-duplicated by the
+        // stable provider-prefixed id (first occurrence wins). A failure of one
+        // source never discards the other source's models.
+        List<EnrModel> merged = mergeByStableId(ollamaModels, evoModels);
+        if (ollamaFailed) {
+            log("Discovery completed with a partial failure (Ollama source unavailable: "
+                    + ollamaError + "); EVO models remain available.");
+        }
+        return merged;
+    }
+
+    /**
+     * Merges two model lists into a single deterministic list, keyed by the stable
+     * provider-prefixed identifier. The first occurrence of each identifier wins;
+     * duplicate identifiers are collapsed rather than listed twice.
+     */
+    private static List<EnrModel> mergeByStableId(List<EnrModel> first, List<EnrModel> second) {
+        Map<String, EnrModel> byId = new LinkedHashMap<>();
+        for (EnrModel model : first) {
+            if (model != null && model.id() != null && !model.id().isBlank()) {
+                byId.putIfAbsent(model.id(), model);
+            }
+        }
+        for (EnrModel model : second) {
+            if (model != null && model.id() != null && !model.id().isBlank()) {
+                byId.putIfAbsent(model.id(), model);
+            }
+        }
+        List<EnrModel> merged = new ArrayList<>(byId.values());
+        merged.sort((a, b) -> a.id().compareToIgnoreCase(b.id()));
+        return merged;
     }
 
     @Override

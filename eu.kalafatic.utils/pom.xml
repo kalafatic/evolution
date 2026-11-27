@@ -22,6 +22,24 @@
 					<release>25</release>
 				</configuration>
 			</plugin>
+			<!--
+				Windows-only OLE (org.eclipse.swt.ole.win32) demo utilities that
+				cannot compile on non-Windows hosts. The sources are preserved in
+				the repository but excluded from the Tycho compile.
+			-->
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-compiler-plugin</artifactId>
+				<version>${tycho.version}</version>
+				<configuration>
+					<excludes>
+						<exclude>**/ui/Snippet264.java</exclude>
+						<exclude>**/ui/Excel.java</exclude>
+						<exclude>**/ui/SendEmail.java</exclude>
+						<exclude>**/ui/FileExplorerView.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

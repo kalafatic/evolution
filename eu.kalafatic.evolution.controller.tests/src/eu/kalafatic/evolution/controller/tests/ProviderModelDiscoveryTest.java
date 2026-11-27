@@ -277,6 +277,80 @@ public class ProviderModelDiscoveryTest {
         assertFalse(llamaIds.contains("llama3.2:3b"));
     }
 
+    @Test
+    public void testEnrDiscoveryReturnsCompleteMixedListWithoutFiltering() throws Exception {
+        // The ENR registry is authoritative: every registered model — Ollama-compatible,
+        // EVO-native and llama.cpp, loaded or not — must pass through discovery unchanged.
+        LlmRouter router = new LlmRouter();
+        List<LocalModelDescriptor> enrModels = new java.util.ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            enrModels.add(new LocalModelDescriptor("ollama:model-" + i, "model-" + i,
+                    LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", true));
+        }
+        enrModels.add(new LocalModelDescriptor("evo-native:shared.evo", "shared.evo",
+                LocalModelDescriptor.ORIGIN_EVO_NATIVE, "evo native", false));
+        enrModels.add(new LocalModelDescriptor("llama-cpp:shared.gguf", "shared.gguf",
+                LocalModelDescriptor.ORIGIN_LLAMA_CPP, "llama-cpp", false));
+        enrModels.add(new LocalModelDescriptor("evo-native:model-1", "model-1",
+                LocalModelDescriptor.ORIGIN_EVO_NATIVE, "evo native", true));
+        enrModels.add(new LocalModelDescriptor("ollama:unloaded", "unloaded",
+                LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", false));
+        FakeEnrProvider enr = new FakeEnrProvider(enrModels);
+        router.setEnrProvider(enr);
+
+        List<LocalModelDescriptor> models = router.discoverModels("EVO Native ENR", null);
+
+        assertEquals(10, models.size());
+        // Exact identity and order preserved — no filtering, no format/name exclusions.
+        assertEquals(enrModels, models);
+        // Duplicate display name "model-1" survives as two distinct identities.
+        assertTrue(models.stream().anyMatch(m -> "ollama:model-1".equals(m.id())));
+        assertTrue(models.stream().anyMatch(m -> "evo-native:model-1".equals(m.id())));
+        // Unloaded/unavailable models remain visible.
+        assertTrue(models.stream().anyMatch(m -> "ollama:unloaded".equals(m.id()) && !m.available()));
+    }
+
+    @Test
+    public void testOllamaDiscoveryListsEveryRegistryModelWithoutNameFiltering() throws Exception {
+        // The Ollama registry is authoritative: every returned name — including names
+        // that resemble native/GGUF artifacts — must be listed, never filtered.
+        HttpServer srv = HttpServer.create(new InetSocketAddress(0), 0);
+        try {
+            srv.createContext("/api/tags", exchange -> {
+                JSONObject resp = new JSONObject();
+                JSONArray models = new JSONArray();
+                for (String name : List.of("llama3.2:3b", "evo", "my-model.gguf", "forge-123", "gemma2:2b")) {
+                    JSONObject m = new JSONObject();
+                    m.put("name", name);
+                    m.put("size", 1000L);
+                    models.put(m);
+                }
+                resp.put("models", models);
+                byte[] bytes = resp.toString().getBytes();
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+            });
+            srv.start();
+
+            Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+            Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
+            ollama.setUrl("http://localhost:" + srv.getAddress().getPort());
+            orchestrator.setOllama(ollama);
+
+            List<LocalModelDescriptor> models = LlmRouter.getInstance().discoverModels("Ollama", orchestrator);
+
+            assertEquals(5, models.size());
+            for (String name : List.of("llama3.2:3b", "evo", "my-model.gguf", "forge-123", "gemma2:2b")) {
+                assertTrue("Expected registry model " + name + " to be visible",
+                        models.stream().anyMatch(m -> m.id().equals(name)));
+            }
+        } finally {
+            srv.stop(0);
+        }
+    }
+
     // ------------------------------------------------------------------
     // Routing agreement: explicit llama.cpp selection is not redirected
     // ------------------------------------------------------------------

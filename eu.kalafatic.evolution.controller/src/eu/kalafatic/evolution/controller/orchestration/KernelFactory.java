@@ -43,6 +43,9 @@ public class KernelFactory {
 			platformType = ModeRecognizer.determineType(intentResult, context);
 		}
 
+		context.log("[KERNEL-FACTORY] sessionId=" + context.getSessionId()
+				+ " requestedMode=" + platformType);
+
 		// 2. Resolve effective root for coding processes
 		java.io.File effectiveRoot = context.getProjectRoot();
 		if (platformType == PlatformType.ASSISTED_CODING || platformType == PlatformType.SELF_DEV_MODE) {

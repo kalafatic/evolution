@@ -104,4 +104,14 @@ public class EnrRuntimeTest {
             System.clearProperty(EnrRuntime.SYS_OLLAMA_URL);
         }
     }
+
+    @Test
+    public void degradedHealthReportsNotReady() {
+        // The /health endpoint must never report readiness from mere HTTP-server
+        // availability: a degraded runtime (inference provider down) is NOT ready.
+        assertTrue(EnrInferenceEngine.EnrHealth.up().ready());
+        assertEquals("UP", EnrInferenceEngine.EnrHealth.up().status());
+        assertFalse(EnrInferenceEngine.EnrHealth.degraded("down").ready());
+        assertEquals("DEGRADED", EnrInferenceEngine.EnrHealth.degraded("down").status());
+    }
 }

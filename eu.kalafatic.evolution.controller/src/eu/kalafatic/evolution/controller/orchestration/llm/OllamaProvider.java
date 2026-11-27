@@ -531,6 +531,7 @@ public class OllamaProvider implements ILlmProvider {
                             prov.setExportedGgufArtifact(ggufFile.getName());
                             prov.setArtifactPath(ggufFile.getAbsolutePath());
                             prov.setArtifactFormat("GGUF");
+                            prov.setLoadedModelIdentity(ggufFile.getName());
                             prov.setNative(false);
                             prov.setVerificationStatus("VERIFIED");
                             try {

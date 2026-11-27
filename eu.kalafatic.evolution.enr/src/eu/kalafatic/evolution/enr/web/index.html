@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENR — Neural Runtime</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>ENR <span class="accent">Neural Runtime</span></h1>
+    <div class="subtitle">Evolution Neural Runtime — Web Control Center</div>
+    <div class="connect"><span id="conn-dot" class="dot"></span><span id="conn-text">connecting…</span></div>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card">
+        <h2>ENR Runtime</h2>
+        <div class="status-line"><span class="label">Status</span><span id="rt-status" class="value unknown">…</span></div>
+        <div class="status-line"><span class="label">Version</span><span id="rt-version" class="value">…</span></div>
+        <div class="status-line"><span class="label">Ready</span><span id="rt-ready" class="value unknown">…</span></div>
+      </div>
+
+      <div class="card">
+        <h2>ENR API</h2>
+        <div class="status-line"><span class="label">Endpoint</span><span id="api-endpoint" class="value">…</span></div>
+        <div class="status-line"><span class="label">Health</span><span id="api-health" class="value unknown">…</span></div>
+        <div class="status-line"><span class="label">Engines</span><span id="api-engines" class="value">…</span></div>
+      </div>
+
+      <div class="card">
+        <h2>ENR Web</h2>
+        <div class="status-line"><span class="label">Endpoint</span><span id="web-endpoint" class="value">…</span></div>
+        <div class="status-line"><span class="label">Status</span><span id="web-status" class="value ok">UP</span></div>
+        <div class="status-line"><span class="label">API Base</span><span id="web-api-base" class="value">…</span></div>
+      </div>
+
+      <div class="card">
+        <h2>LLM Provider</h2>
+        <div class="status-line"><span class="label">Ollama</span><span id="prov-ollama" class="value unknown">…</span></div>
+        <div class="status-line"><span class="label">Native EVO</span><span id="prov-native" class="value unknown">…</span></div>
+        <div class="status-line"><span class="label">llama.cpp</span><span id="prov-llama" class="value unknown">…</span></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Available Models <span id="model-count" class="pill">0</span></h2>
+        <div class="model-split">
+          <div><h3>Ollama <span id="count-ollama" class="pill">0</span></h3><ul id="models-ollama" class="model-list"></ul></div>
+          <div><h3>EVO Native <span id="count-native" class="pill">0</span></h3><ul id="models-native" class="model-list"></ul></div>
+          <div><h3>llama.cpp <span id="count-llama" class="pill">0</span></h3><ul id="models-llama" class="model-list"></ul></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Capabilities</h2>
+        <ul id="capabilities" class="cap-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>ENR Web — independent listener · API at <span id="footer-api">…</span></span>
+    <button id="refresh-btn">Refresh</button>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -103,6 +103,62 @@ public class ProviderModelSelectionSupportTest {
     }
 
     @Test
+    public void testDedupeByIdPreservesDistinctIdsSharingADisplayName() {
+        // Different providers can register models with the same human-readable name;
+        // they are distinct identities and must never be merged by name.
+        List<LocalModelDescriptor> models = new ArrayList<>();
+        models.add(new LocalModelDescriptor("ollama:my-model", "my-model",
+                LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", true));
+        models.add(new LocalModelDescriptor("evo-native:my-model", "my-model",
+                LocalModelDescriptor.ORIGIN_EVO_NATIVE, "evo native", true));
+        models.add(new LocalModelDescriptor("llama-cpp:my-model", "my-model",
+                LocalModelDescriptor.ORIGIN_LLAMA_CPP, "llama-cpp", true));
+
+        List<LocalModelDescriptor> unique = ProviderModelSelectionSupport.dedupeById(models);
+
+        assertEquals(3, unique.size());
+        assertTrue(unique.stream().anyMatch(m -> "ollama:my-model".equals(m.id())));
+        assertTrue(unique.stream().anyMatch(m -> "evo-native:my-model".equals(m.id())));
+        assertTrue(unique.stream().anyMatch(m -> "llama-cpp:my-model".equals(m.id())));
+    }
+
+    @Test
+    public void testDedupeByIdPreservesEntireLargeModelList() {
+        int ollamaCount = 44;
+        List<LocalModelDescriptor> models = new ArrayList<>();
+        for (int i = 0; i < ollamaCount; i++) {
+            String id = "ollama:model-" + i;
+            models.add(new LocalModelDescriptor(id, "model-" + i,
+                    LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", true));
+        }
+        // Mixed formats and origins must all survive alongside the Ollama set.
+        models.add(new LocalModelDescriptor("evo-native:native.evo", "native.evo",
+                LocalModelDescriptor.ORIGIN_EVO_NATIVE, "evo native", false));
+        models.add(new LocalModelDescriptor("llama-cpp:native.gguf", "native.gguf",
+                LocalModelDescriptor.ORIGIN_LLAMA_CPP, "llama-cpp", false));
+
+        List<LocalModelDescriptor> unique = ProviderModelSelectionSupport.dedupeById(models);
+
+        assertEquals(ollamaCount + 2, unique.size());
+    }
+
+    @Test
+    public void testDedupeByIdNeverFiltersUnavailableModels() {
+        // Visibility must not depend on load/readiness state: an unloaded model is
+        // still visible in the combo and only fails at the inference layer.
+        List<LocalModelDescriptor> models = new ArrayList<>();
+        models.add(new LocalModelDescriptor("ollama:loaded", "loaded",
+                LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", true));
+        models.add(new LocalModelDescriptor("ollama:unloaded", "unloaded",
+                LocalModelDescriptor.ORIGIN_OLLAMA, "ollama", false));
+
+        List<LocalModelDescriptor> unique = ProviderModelSelectionSupport.dedupeById(models);
+
+        assertEquals(2, unique.size());
+        assertTrue(unique.stream().anyMatch(m -> "ollama:unloaded".equals(m.id()) && !m.available()));
+    }
+
+    @Test
     public void testProviderSwitchingDoesNotCarryIncompatibleSelections() {
         // ENR-only native model must not resolve against an Ollama-only list.
         List<LocalModelDescriptor> ollamaModels = List.of(ollama("llama3.2:3b"), ollama("gemma2:2b"));

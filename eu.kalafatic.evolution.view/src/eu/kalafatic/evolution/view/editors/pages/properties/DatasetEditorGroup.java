@@ -615,7 +615,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                     HuggingFaceDatasetProvider provider = new HuggingFaceDatasetProvider();
                     List<DatasetCandidate> discovered = provider.search(request);
 
-                    ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+                    ForgeSession activeSession = ForgeSessionManager.getInstance().findDefaultSession();
                     DatasetCandidateManager.getInstance().addCandidates(activeSession, discovered);
 
                     Display.getDefault().asyncExec(() -> {
@@ -907,14 +907,14 @@ public class DatasetEditorGroup extends AEvoGroup {
         int idx = candidatesTable.getSelectionIndex();
         if (idx >= 0 && idx < candidateList.size()) {
             DatasetCandidate cand = candidateList.remove(idx);
-            ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+            ForgeSession activeSession = ForgeSessionManager.getInstance().findDefaultSession();
             DatasetCandidateManager.getInstance().removeCandidate(activeSession, cand.getId());
             refreshCandidatesTableFromEmf();
         }
     }
 
     private void handleClearCandidates() {
-        ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+        ForgeSession activeSession = ForgeSessionManager.getInstance().findDefaultSession();
         DatasetCandidateManager.getInstance().clearCandidates(activeSession);
         refreshCandidatesTableFromEmf();
     }
@@ -970,7 +970,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     private void refreshCandidatesTableFromEmf() {
         if (candidatesTable == null || candidatesTable.isDisposed()) return;
         candidatesTable.removeAll();
-        ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+        ForgeSession activeSession = ForgeSessionManager.getInstance().findDefaultSession();
         candidateList = DatasetCandidateManager.getInstance().getCandidates(activeSession);
 
         for (DatasetCandidate cand : candidateList) {

@@ -81,10 +81,15 @@ public class OllamaExporter implements EvoModelExporter {
         System.out.println("[Export] Starting GGUF export (" + quantConfig.getScheme().name() + ") from canonical ModelSnapshot: " + modelName);
         EvoLlmArchitecture arch = snapshot.getArchitecture();
         if (arch != null && !eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture.POSITIONAL_ROPE.equalsIgnoreCase(arch.getPositionalEncoding())) {
-            System.err.println("[Export][WARN] Model positional encoding is '" + arch.getPositionalEncoding()
-                    + "' but the exported GGUF declares general.architecture=llama, which llama.cpp/Ollama evaluates with RoPE. "
-                    + "Ollama inference for this model will NOT match native inference. "
-                    + "Train with positionalEncoding=rope (the current Forge default) for a faithful GGUF export.");
+            // A GGUF of architecture=llama is evaluated by llama.cpp/Ollama with RoPE. A
+            // model trained with any other positional encoding (e.g. additive sinusoidal)
+            // cannot be represented faithfully by that GGUF, so exporting it would produce
+            // a numerically broken artifact that loads but generates garbage. Refuse the
+            // export instead of silently substituting RoPE.
+            throw new IllegalStateException("Cannot export model to GGUF: positional encoding is '"
+                    + arch.getPositionalEncoding()
+                    + "' but GGUF general.architecture=llama requires RoPE. "
+                    + "Train with positionalEncoding=rope for a faithful GGUF export.");
         }
 
         // Apply quantization if enabled

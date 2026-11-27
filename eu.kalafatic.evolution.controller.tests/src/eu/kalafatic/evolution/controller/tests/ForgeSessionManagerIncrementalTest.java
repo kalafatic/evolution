@@ -31,7 +31,7 @@ public class ForgeSessionManagerIncrementalTest {
     }
 
     @Test
-    public void testStrictFindSessionByIdAndFallbackLogging() {
+    public void testStrictFindSessionByIdAndNameResolution() {
         ForgeSession s1 = manager.createSession("Session Alpha", "TRANSFORMER");
         assertNotNull(s1);
 
@@ -48,13 +48,10 @@ public class ForgeSessionManagerIncrementalTest {
         assertNotNull(foundByName);
         assertEquals(s1.getSessionId(), foundByName.getSessionId());
 
-        // findSession with an unknown ID never returns null: it falls back to a
-        // dedicated forge session created for the requested ID (logged), keeping
-        // per-caller state isolated from other sessions.
-        ForgeSession fallback = manager.findSession("unknown-uuid-12345");
-        assertNotNull(fallback);
-        assertEquals("unknown-uuid-12345", fallback.getName());
-        assertNotEquals(s1.getSessionId(), fallback.getSessionId());
+        // findSession with an unknown ID must NOT silently substitute another
+        // session: it returns null (INVALID REQUEST), leaving all sessions untouched.
+        ForgeSession unknown = manager.findSession("unknown-uuid-12345");
+        assertNull(unknown);
     }
 
     @Test

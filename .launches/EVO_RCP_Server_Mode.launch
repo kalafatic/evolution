@@ -23,7 +23,7 @@
         <setEntry value="eu.kalafatic.evolution.controller"/>
         <setEntry value="eu.kalafatic.evolution.controller.tests"/>
         <setEntry value="eu.kalafatic.evolution.creatic"/>
-        <setEntry value="eu.kalafatic.evolution.enr"/>
+        <setEntry value="eu.kalafatic.evolution.enr@default:true"/>
         <setEntry value="eu.kalafatic.evolution.forge.agent"/>
         <setEntry value="eu.kalafatic.evolution.forge.agent.api"/>
         <setEntry value="eu.kalafatic.evolution.forge.controller"/>

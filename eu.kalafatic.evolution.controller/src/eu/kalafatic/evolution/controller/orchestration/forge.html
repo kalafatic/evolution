@@ -1778,14 +1778,17 @@
         };
 
         window.updateActiveSession = function(activeAi, aiList) {
+            // Detect an actual change of the authoritative AI Commander session. When
+            // it changes, the Forge page follows it; otherwise the user's current
+            // (possibly manual) selection is preserved across periodic refreshes.
+            const aiChanged = !!(activeAi && activeAi !== activeAiSession);
             if (activeAi) {
                 activeAiSession = activeAi;
-                // If the incoming session is actively training or activeSessionId is not set, synchronize it
-                if (!activeSessionId || activeSessionId === 'Default') {
-                    activeSessionId = activeAi;
-                }
             }
             if (aiList && Array.isArray(aiList)) aiSessionList = aiList;
+            if (aiChanged) {
+                activeSessionId = activeAiSession;
+            }
             loadSessions();
         };
 
@@ -1972,8 +1975,8 @@
                             id: activeAiSession,
                             name: activeAiSession,
                             modelType: 'SELF_EVO',
-                            status: 'TRAINING',
-                            lifecycleState: 'TRAINING'
+                            status: 'IDLE',
+                            lifecycleState: 'CREATED'
                         };
                         sessions.unshift(found);
                     }

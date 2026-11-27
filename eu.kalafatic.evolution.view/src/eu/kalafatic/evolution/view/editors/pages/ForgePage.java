@@ -18,6 +18,8 @@ public class ForgePage extends AEvoPage {
     private boolean isJsReady = false;
     private boolean bridgesInstalled = false;
     private boolean forgeInitialized = false;
+    /** Last session id propagated to the JS bridge; used to avoid redundant updates. */
+    private volatile String lastSyncedSessionId = null;
 
     public ForgePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -60,6 +62,32 @@ public class ForgePage extends AEvoPage {
         });
 
         initBrowser();
+
+        // Propagate AI Commander session selection changes into the Forge page. The AI
+        // Commander owns the current session selection; a lightweight periodic re-resolve
+        // keeps the Forge Models page and Training Monitor bound to the same session
+        // without requiring a duplicate manual selection. refreshUI() no-ops when the
+        // resolved session is unchanged.
+        Runnable sessionSyncTimer = new Runnable() {
+            @Override
+            public void run() {
+                Display.getDefault().asyncExec(() -> {
+                    if (browser == null || browser.isDisposed() || !isJsReady) {
+                        if (browser != null && !browser.isDisposed()) {
+                            Display.getDefault().timerExec(1000, this);
+                        }
+                        return;
+                    }
+                    refreshUI();
+                    Display.getDefault().timerExec(1000, this);
+                });
+            }
+        };
+        Display.getDefault().asyncExec(() -> {
+            if (!browser.isDisposed()) {
+                Display.getDefault().timerExec(1000, sessionSyncTimer);
+            }
+        });
     }
 
     private void initBrowser() {
@@ -217,17 +245,16 @@ public class ForgePage extends AEvoPage {
         String activeAiSession = "";
         org.json.JSONArray aiSessionArray = new org.json.JSONArray();
 
-        String activeTrainingSession = ForgeSessionManager.getInstance().getActiveTrainingSessionId();
-        if (activeTrainingSession != null && !activeTrainingSession.trim().isEmpty()) {
-            activeAiSession = activeTrainingSession;
-        } else if (editor != null && editor.getAiChatPage() != null) {
-            AiCommanderPage aiPage = editor.getAiChatPage();
-            activeAiSession = aiPage.getCurrentSessionName();
-        }
-        if (activeAiSession == null || activeAiSession.trim().isEmpty()) {
-            if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-                activeAiSession = orchestrator.getSelfDevSession().getId();
-            }
+        // The Forge session (canonical UUID) is the authoritative source for the Training
+        // Monitor's telemetry binding. Resolve it via ForgeSessionManager (active training ->
+        // non-IDLE telemetry -> default session). Do NOT fall back to the AI Commander
+        // chat-thread id here: it lives in a different namespace and would be resolved
+        // against the Forge session registry on every telemetry poll, flooding the log with
+        // NOT_FOUND diagnostics. Chat-thread ids are supplied separately via aiSessionArray
+        // for the session-list display only.
+        String forgeSessionId = ForgeSessionManager.getInstance().getCurrentSessionId();
+        if (forgeSessionId != null && !forgeSessionId.trim().isEmpty()) {
+            activeAiSession = forgeSessionId;
         }
         if (activeAiSession == null || activeAiSession.trim().isEmpty()) {
             activeAiSession = "Default";
@@ -254,12 +281,20 @@ public class ForgePage extends AEvoPage {
         String escapedActiveSession = activeAiSession.replace("'", "\\'");
         if (!forgeInitialized) {
             forgeInitialized = true;
+            lastSyncedSessionId = activeAiSession;
             String jsCall = String.format("if(window.initializeForge) { window.initializeForge(%d, '%s', %s); }",
                     port,
                     escapedActiveSession,
                     aiSessionArray.toString());
             browser.execute(jsCall);
         } else {
+            // No-op when the resolved session is unchanged: the periodic sync timer and
+            // explicit refreshes share this path, so a stable session must not trigger a
+            // redundant re-selection (which would reset the JS viz/selection state).
+            if (activeAiSession.equals(lastSyncedSessionId)) {
+                return;
+            }
+            lastSyncedSessionId = activeAiSession;
             String jsCall = String.format("if(window.updateActiveSession) { window.updateActiveSession('%s', %s); }",
                     escapedActiveSession,
                     aiSessionArray.toString());

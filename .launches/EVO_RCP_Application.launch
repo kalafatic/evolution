@@ -304,7 +304,7 @@
         <setEntry value="eu.kalafatic.evolution.controller.tests@default:default"/>
         <setEntry value="eu.kalafatic.evolution.controller@default:default"/>
         <setEntry value="eu.kalafatic.evolution.creatic@default:default"/>
-        <setEntry value="eu.kalafatic.evolution.enr@default:default"/>
+        <setEntry value="eu.kalafatic.evolution.enr@default:true"/>
         <setEntry value="eu.kalafatic.evolution.forge.agent.api@default:default"/>
         <setEntry value="eu.kalafatic.evolution.forge.agent@default:default"/>
         <setEntry value="eu.kalafatic.evolution.forge.controller@default:default"/>

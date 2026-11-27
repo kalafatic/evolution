@@ -49,6 +49,7 @@
       <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
       <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
       <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+      <plugin id="eu.kalafatic.evolution.enr" autoStart="true" startLevel="3" />
    </configurations>
 
    <preferencesInfo>

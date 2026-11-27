@@ -141,4 +141,39 @@ public class EnrModelRegistryTest {
             assertTrue(expected.getMessage().contains("does-not-exist.evo"));
         }
     }
+
+    @Test
+    public void testPartialFailureOllamaUnavailableKeepsEvoModels() throws Exception {
+        // Ollama-compatible discovery fails (unreachable endpoint) but EVO models
+        // are still returned — one failing source never discards the other.
+        System.setProperty(EnrRuntime.SYS_OLLAMA_URL, "http://127.0.0.1:1");
+        java.io.File forgeOutput = tempFolder.newFolder("forge-output");
+        assertTrue(new java.io.File(forgeOutput, "survives-failure.evo").createNewFile());
+        System.setProperty("evo.test.modelDirsOverride", tempFolder.getRoot().getAbsolutePath());
+        try {
+            List<EnrInferenceEngine.EnrModel> models = runtime.listModels();
+            assertTrue(models.stream().anyMatch(m -> "evo-native:survives-failure.evo".equals(m.id())));
+            // No Ollama models should be present when the Ollama endpoint is unreachable.
+            assertEquals(0, models.stream().filter(m -> "ollama".equals(m.provider())).count());
+        } finally {
+            System.clearProperty(EnrRuntime.SYS_OLLAMA_URL);
+            System.clearProperty("evo.test.modelDirsOverride");
+        }
+    }
+
+    @Test
+    public void testUnifiedListingHasNoDuplicateIdentifiers() throws Exception {
+        java.io.File forgeOutput = tempFolder.newFolder("forge-output");
+        assertTrue(new java.io.File(forgeOutput, "my-evo-candidate.evo").createNewFile());
+        System.setProperty("evo.test.modelDirsOverride", tempFolder.getRoot().getAbsolutePath());
+        try {
+            List<EnrInferenceEngine.EnrModel> models = runtime.listModels();
+            Set<String> ids = new HashSet<>();
+            for (EnrInferenceEngine.EnrModel m : models) {
+                assertTrue("Duplicate model id " + m.id(), ids.add(m.id()));
+            }
+        } finally {
+            System.clearProperty("evo.test.modelDirsOverride");
+        }
+    }
 }

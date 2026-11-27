@@ -48,4 +48,37 @@ public class SimpleBPETokenizerPadTokenTest {
         String decoded = tokenizer.decode(java.util.List.of(padId));
         assertFalse("Decoded text must not contain a <pad_ literal", decoded.contains("<pad_"));
     }
+
+    @Test
+    public void testCompactToRealVocabularyRemovesPlaceholdersAndKeepsIdsContiguous() {
+        SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
+        tokenizer.train("a tiny corpus for testing", 256);
+        int padded = tokenizer.getVocabSize();
+        int real = tokenizer.getRealVocabSize();
+        assertTrue("A tiny corpus must produce padding placeholders", tokenizer.getPaddingTokenCount() > 0);
+        assertEquals(256, padded);
+
+        String text = "a tiny corpus for testing";
+        java.util.List<Integer> before = tokenizer.encode(text);
+
+        int compacted = tokenizer.compactToRealVocabulary();
+        assertEquals("Compacted size must equal the real (non-placeholder) vocabulary", real, compacted);
+        assertEquals("getVocabSize must reflect the compacted size", compacted, tokenizer.getVocabSize());
+        assertEquals("Compaction must remove all placeholders", 0, tokenizer.getPaddingTokenCount());
+
+        // Encoding/decoding must be unaffected (placeholders are never emitted).
+        java.util.List<Integer> after = tokenizer.encode(text);
+        assertEquals("Encoding must be unchanged after compaction", before, after);
+        assertEquals("Round-trip decode must be unchanged after compaction",
+                text, tokenizer.decode(after).replace(SimpleBPETokenizer.METASPACE, " ").trim());
+
+        // All remaining IDs must be contiguous and in range.
+        java.util.Set<Integer> ids = new java.util.HashSet<>();
+        for (java.util.Map.Entry<String, Integer> e : tokenizer.getVocab().entrySet()) {
+            int id = e.getValue();
+            assertFalse("Compacted token must not be a placeholder: " + e.getKey(), e.getKey().startsWith("<pad_"));
+            assertTrue("ID out of range: " + id, id >= 0 && id < compacted);
+            assertTrue("Duplicate ID: " + id, ids.add(id));
+        }
+    }
 }

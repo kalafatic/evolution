@@ -410,6 +410,16 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		register(openWebAction);
 		menuManager.add(openWebAction);
 
+		IAction openEnrWebAction = new org.eclipse.jface.action.Action("Open ENR &Web (Neural Runtime)") {
+			@Override
+			public void run() {
+				eu.kalafatic.evolution.view.workbench.EvoDesktopLauncher.openEnrWeb();
+			}
+		};
+		openEnrWebAction.setId("eu.kalafatic.evolution.view.openEnrWeb");
+		register(openEnrWebAction);
+		menuManager.add(openEnrWebAction);
+
 		menuManager.add(new Separator());
 
 		menuManager.add(new org.eclipse.jface.action.Action("Start Background Discovery (Git / Workspace)") {

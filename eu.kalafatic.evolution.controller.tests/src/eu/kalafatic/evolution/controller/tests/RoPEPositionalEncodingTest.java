@@ -168,10 +168,16 @@ public class RoPEPositionalEncodingTest {
 
     @Test
     public void testLegacySinusoidalModelFallback() {
-        // The 6-arg constructor keeps the legacy additive sinusoidal encoding so
-        // previously saved artifacts still evaluate identically.
-        EvoLlmArchitecture legacy = new EvoLlmArchitecture(32, 16, 2, 1, 32, 32);
-        Assert.assertEquals(EvoLlmArchitecture.POSITIONAL_SINUSOIDAL_ABS, legacy.getPositionalEncoding());
+        // The default (6-arg) constructor now uses RoPE for faithful GGUF/llama.cpp
+        // export; legacy additive sinusoidal encoding remains available explicitly.
+        EvoLlmArchitecture defaultArch = new EvoLlmArchitecture(32, 16, 2, 1, 32, 32);
+        Assert.assertEquals(EvoLlmArchitecture.POSITIONAL_ROPE, defaultArch.getPositionalEncoding());
+        EvoLlmModel defaultModel = new EvoLlmModel(defaultArch);
+        Assert.assertNull(defaultModel.getPositionalEncoding());
+        Assert.assertNotNull(defaultModel.getRoPEPositionalEncoding());
+
+        EvoLlmArchitecture legacy = new EvoLlmArchitecture(32, 16, 2, 1, 32, 32,
+                EvoLlmArchitecture.POSITIONAL_SINUSOIDAL_ABS);
         EvoLlmModel model = new EvoLlmModel(legacy);
         Assert.assertNotNull(model.getPositionalEncoding());
         Assert.assertNull(model.getRoPEPositionalEncoding());

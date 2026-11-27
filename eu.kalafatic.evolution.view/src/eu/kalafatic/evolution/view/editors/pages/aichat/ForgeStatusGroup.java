@@ -106,22 +106,9 @@ public class ForgeStatusGroup extends AEvoGroup {
     }
 
     private String resolveForgeSessionId() {
-        ForgeSessionManager mgr = ForgeSessionManager.getInstance();
-        String active = mgr.getActiveTrainingSessionId();
-        if (active != null && !active.trim().isEmpty()) return active;
-
-        List<ForgeSession> sessions = mgr.getSessions();
-        for (ForgeSession s : sessions) {
-            if (s == null || s.getSessionId() == null) continue;
-            TrainingTelemetry t = mgr.getTelemetry(s.getSessionId());
-            if (t != null && t.status != null && !"IDLE".equals(t.status) && !"UNKNOWN".equals(t.status)) {
-                return s.getSessionId();
-            }
-        }
-        if (!sessions.isEmpty() && sessions.get(0) != null) {
-            return sessions.get(0).getSessionId();
-        }
-        return null;
+        // Single source of truth: the authoritative ForgeSessionManager resolution
+        // (active training → non-IDLE telemetry → default session).
+        return ForgeSessionManager.getInstance().getCurrentSessionId();
     }
 
     private void startOrResume() {

@@ -96,8 +96,13 @@ public interface EnrInferenceEngine {
                     java.time.Instant.now().toString());
         }
 
+        /**
+         * A degraded runtime is NOT inference-ready: {@code ready} is false so that the
+         * {@code /health} endpoint never reports readiness from mere HTTP-server
+         * availability when the backing inference provider is unreachable.
+         */
         public static EnrHealth degraded(String reason) {
-            return new EnrHealth("DEGRADED", true, ENGINE_VERSION,
+            return new EnrHealth("DEGRADED", false, ENGINE_VERSION,
                     java.time.Instant.now().toString());
         }
     }

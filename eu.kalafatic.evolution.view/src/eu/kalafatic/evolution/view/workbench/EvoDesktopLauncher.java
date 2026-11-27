@@ -111,6 +111,48 @@ public final class EvoDesktopLauncher {
     }
 
     /**
+     * Opens the ENR Web Control Center (authoritative port 28880) in the system
+     * browser. The URL is resolved from the authoritative {@link PortRegistry} ENR Web
+     * allocation (never hardcoded). When the ENR Web listener is not running, a clear
+     * message dialog is shown instead of opening an invalid URL.
+     */
+    public static void openEnrWeb() {
+        int port = resolveEnrWebPort();
+        if (!isReachable("127.0.0.1", port)) {
+            showMessage("Open ENR Web",
+                    "The ENR Web Control Center is not running on http://127.0.0.1:" + port
+                            + ".\n\nIt starts automatically with the ENR runtime. If it failed "
+                            + "to start, check the Server page or the log console for ENR Web "
+                            + "startup errors.");
+            return;
+        }
+        launchBrowser("http://127.0.0.1:" + port + "/");
+    }
+
+    /**
+     * Resolves the actual ENR Web port: the authoritative port allocation
+     * (PortAllocationManager) first, then the PortRegistry default (28880).
+     */
+    public static int resolveEnrWebPort() {
+        int port = PortAllocationManager.getInstance()
+                .getPort(PortRegistry.EVO_ENR_WEB.getServiceId());
+        if (port <= 0) {
+            port = PortRegistry.EVO_ENR_WEB.getDefaultPort();
+        }
+        return port;
+    }
+
+    /** Lightweight TCP reachability probe (the ENR Web listener is not an EVO-managed server). */
+    private static boolean isReachable(String host, int port) {
+        try (java.net.Socket socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress(host, port), 1500);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
      * Builds the primary web interface URL from the live {@link ServerEntry}
      * endpoint (configured host + actually allocated port). Falls back to the
      * resolved primary port when no entry is available. Never hardcoded.

@@ -120,6 +120,7 @@ public class ServerManager {
         int supervisorApi = getPortForService(PortRegistry.EVO_SUPERVISOR_API);
         int auxiliary = getPortForService(PortRegistry.EVO_AUXILIARY);
         int enr = getPortForService(PortRegistry.EVO_ENR);
+        int enrWeb = getPortForService(PortRegistry.EVO_ENR_WEB);
 
         // Web Applications hosted on Primary HTTP (and shared with secondary/develop endpoints)
         registerWebApp(new WebApplicationDescriptor("chat", "AI Chat", "/experimental/chat?runtime=SWT", primary, PortRegistry.EVO_HTTP_PRIMARY.getServiceId()));
@@ -143,6 +144,7 @@ public class ServerManager {
         registerWebApp(new WebApplicationDescriptor("supervisor_api", "Supervisor REST API", "/health", supervisorApi, PortRegistry.EVO_SUPERVISOR_API.getServiceId()));
         registerWebApp(new WebApplicationDescriptor("auxiliary", "Auxiliary Service", "/", auxiliary, PortRegistry.EVO_AUXILIARY.getServiceId()));
         registerWebApp(new WebApplicationDescriptor("enr_runtime", "ENR Neural Runtime", "/status", enr, PortRegistry.EVO_ENR.getServiceId()));
+        registerWebApp(new WebApplicationDescriptor("enr_web", "ENR Web Control Center", "/", enrWeb, PortRegistry.EVO_ENR_WEB.getServiceId()));
     }
 
     public synchronized void registerWebApp(WebApplicationDescriptor desc) {

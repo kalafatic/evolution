@@ -3,14 +3,23 @@ window.renderTrainingViz = function(data, events) {
     const details = document.getElementById('viz-details-content');
     if (!area) return;
 
-    if (!data || (!data.sessionId && !data.loss && !data.currentLoss && (!data.history || data.history.length === 0))) {
+    const hasSession = !!(data && data.sessionId);
+    const hasMetrics = !!(data && ((typeof data.currentLoss === 'number' && data.currentLoss > 0)
+        || (data.history && data.history.length > 0)));
+
+    // Session-aware empty state: distinguish "no session selected" from "session selected
+    // but no training has produced telemetry yet". Do not show "No Active Training Telemetry"
+    // merely because no new event has arrived recently.
+    if (!hasSession || (!hasMetrics && (data.status === 'IDLE' || !data.status || data.status === 'UNKNOWN'))) {
+        const title = hasSession ? "No Training Telemetry Yet" : "No Forge Session Selected";
+        const body = hasSession
+            ? "Selected Forge session has no training telemetry yet. Start a training run from the Training panel to populate live metrics and loss curves."
+            : "Select a Forge session in AI Commander to view training metrics.";
         area.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--evo-text-muted); text-align:center; padding:30px;">
                 <div style="font-size:2.5em; margin-bottom:12px; opacity:0.6;">🎛️</div>
-                <div style="font-weight:bold; font-size:1.1em; margin-bottom:6px; color:var(--evo-text);">No Active Training Telemetry</div>
-                <div style="font-size:0.85em; max-width:400px; line-height:1.4;">
-                    Select or start a Forge training run from AI Commander or the Training panel to observe real-time metrics, loss curves, and diagnostic events.
-                </div>
+                <div style="font-weight:bold; font-size:1.1em; margin-bottom:6px; color:var(--evo-text);">${title}</div>
+                <div style="font-size:0.85em; max-width:400px; line-height:1.4;">${body}</div>
             </div>
         `;
         if (details) details.innerHTML = `<div style="color:var(--evo-text-muted); font-size:0.85em;">No session details available.</div>`;
@@ -28,6 +37,14 @@ window.renderTrainingViz = function(data, events) {
         'IDLE': '#718096'
     };
     const badgeColor = statusColors[status] || '#1d5296';
+    const statusTitle = {
+        'RUNNING': 'Live Training Monitoring',
+        'TRAINING': 'Live Training Monitoring',
+        'COMPLETED': 'Training Completed – Historical Metrics',
+        'FAILED': 'Training Failed – Diagnostic Information Available',
+        'PAUSED': 'Training Paused',
+        'STOPPING': 'Training Stopping'
+    }[status] || 'Training Metrics';
 
     const currentEpoch = data.currentEpoch || 0;
     const totalEpochs = data.totalEpochs || 0;
@@ -123,7 +140,7 @@ window.renderTrainingViz = function(data, events) {
             <div style="background:var(--evo-surface); border:1px solid var(--evo-border); border-radius:var(--evo-radius); padding:12px 16px; box-shadow:var(--evo-shadow-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-weight:bold; font-size:1.05em; color:var(--evo-text);">FORGE TRAINING CONTROL ROOM</span>
+                        <span style="font-weight:bold; font-size:1.05em; color:var(--evo-text);">${statusTitle}</span>
                         <span style="background:${badgeColor}; color:white; font-size:0.7em; font-weight:bold; padding:2px 8px; border-radius:10px; letter-spacing:0.5px;">${status}</span>
                     </div>
                     <div style="font-size:0.8em; color:var(--evo-text-secondary); font-family:var(--evo-font-mono);">

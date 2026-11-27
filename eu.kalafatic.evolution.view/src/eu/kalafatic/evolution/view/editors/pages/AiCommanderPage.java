@@ -21,6 +21,7 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.bindings.keys.KeyStroke;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.InputDialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.fieldassist.ContentProposalAdapter;
 import org.eclipse.jface.fieldassist.IContentProposal;
 import org.eclipse.jface.fieldassist.IContentProposalProvider;
@@ -63,6 +64,9 @@ import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
+import eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor;
+import eu.kalafatic.evolution.controller.orchestration.llm.ProviderLifecycle;
+import eu.kalafatic.evolution.controller.orchestration.llm.ProviderLifecycleRegistry;
 import eu.kalafatic.evolution.forge.model.target.ForgeTarget;
 import eu.kalafatic.evolution.forge.model.target.ForgeTargetDetector;
 import eu.kalafatic.evolution.forge.model.target.ForgeTargetType;
@@ -375,7 +379,9 @@ public class AiCommanderPage extends AEvoPage {
 		IDialogSettings section = settings.getSection("AiChatSettings");
 		if (section == null) section = settings.addNewSection("AiChatSettings");
 
-		section.put("AiMode", orchestrator.getAiMode().getValue());
+		// Execution mode (AiMode) is session-specific and intentionally NOT persisted in
+		// the "last used" global preferences: a new session must never inherit the mode
+		// of a previous session (e.g. a completed FORGE run).
 		if (orchestrator.getLocalModel() != null) section.put("LocalModel", orchestrator.getLocalModel());
 		if (orchestrator.getRemoteModel() != null) section.put("RemoteModel", orchestrator.getRemoteModel());
 		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteToken());
@@ -398,8 +404,6 @@ public class AiCommanderPage extends AEvoPage {
 			section.put("gitAutomation", currentSession.isGitAutomation());
 			section.put("maxIterations", currentSession.getMaxIterations());
 			section.put("stepMode", currentSession.isStepMode());
-			if (currentSession.getTargetPath() != null) section.put("targetPath", currentSession.getTargetPath());
-			if (currentSession.getTargetType() != null) section.put("targetType", currentSession.getTargetType());
 			section.put("autoApprove", currentSession.isAutoApprove());
 			section.put("expansion", currentSession.getExpansion());
 		}
@@ -412,11 +416,8 @@ public class AiCommanderPage extends AEvoPage {
 		IDialogSettings section = settings.getSection("AiChatSettings");
 		if (section == null) return;
 
-		try {
-			int modeVal = section.getInt("AiMode");
-			orchestrator.setAiMode(AiMode.get(modeVal));
-		} catch (NumberFormatException e) {}
-
+		// Execution mode (AiMode) is session-specific and intentionally NOT restored from
+		// the "last used" global preferences here; a new session starts in LOCAL.
 		String localModel = section.get("LocalModel");
 		if (localModel != null) {
 			orchestrator.setLocalModel(localModel);
@@ -459,10 +460,6 @@ public class AiCommanderPage extends AEvoPage {
 			if (section.get("gitAutomation") != null) currentSession.setGitAutomation(section.getBoolean("gitAutomation"));
 			try { if (section.get("maxIterations") != null) currentSession.setMaxIterations(section.getInt("maxIterations")); } catch (NumberFormatException e) {}
 			if (section.get("stepMode") != null) currentSession.setStepMode(section.getBoolean("stepMode"));
-			String targetPath = section.get("targetPath");
-			if (targetPath != null) currentSession.setTargetPath(targetPath);
-			String targetType = section.get("targetType");
-			if (targetType != null) currentSession.setTargetType(targetType);
 			if (section.get("autoApprove") != null) currentSession.setAutoApprove(section.getBoolean("autoApprove"));
 			try { if (section.get("expansion") != null) currentSession.setExpansion(section.getInt("expansion")); } catch (NumberFormatException e) {}
 
@@ -569,7 +566,14 @@ public class AiCommanderPage extends AEvoPage {
 				}
 			} else if (selectedMode == AiMode.FORGE) {
 				String modelSizeStr = chatMgmtGroup != null ? chatMgmtGroup.getSelectedModelSize() : "SMALL";
-				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(currentSessionId, "modelSize", modelSizeStr);
+				// Forge uiState is keyed by the canonical forge session, not the AI
+				// Commander chat session ID. Select the default forge session explicitly.
+				eu.kalafatic.evolution.model.orchestration.ForgeSession forgeSession =
+						eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().findDefaultSession();
+				if (forgeSession != null) {
+					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance()
+							.updateUiState(forgeSession.getSessionId(), "modelSize", modelSizeStr);
+				}
 
 				String targetPathStr = currentSession != null ? currentSession.getTargetPath() : null;
 				if (targetPathStr != null && !targetPathStr.trim().isEmpty()) {
@@ -634,7 +638,6 @@ public class AiCommanderPage extends AEvoPage {
 		currentTurnId = sessionId + "__" + System.currentTimeMillis();
 
 		outputController.submitMessage(sessionId, currentTurnId, "You", request, "user", MessagePriority.NORMAL, false);
-		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
 		chatGroup.resetLogCount();
 
@@ -645,7 +648,145 @@ public class AiCommanderPage extends AEvoPage {
 		taskRequest.getContext().put("userMessageHandled", Boolean.TRUE);
 		applyProviderSelection(taskRequest);
 
-		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
+		// Provider availability gate: if the explicitly selected provider has an
+		// availability/startup lifecycle (ENR, Ollama), verify it is running before
+		// submitting; offer to start it when it is not. Other providers (llama.cpp)
+		// submit directly.
+		String provider = (chatMgmtGroup != null) ? chatMgmtGroup.getInferenceEngine() : "";
+		ProviderLifecycle lifecycle = ProviderLifecycleRegistry.getInstance().forKey(provider);
+		if (lifecycle == null) {
+			outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
+			OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
+		} else {
+			ensureProviderAvailableThenSubmit(lifecycle, sessionId, currentTurnId, taskRequest);
+		}
+	}
+
+	/**
+	 * Checks the selected provider's availability off the SWT thread; submits directly
+	 * when it is available, otherwise prompts the user to start it (or attaches to an
+	 * already-running startup). The original request (session, turn, mode, provider,
+	 * model, config) is preserved and submitted exactly once when startup completes.
+	 */
+	private void ensureProviderAvailableThenSubmit(ProviderLifecycle lifecycle,
+			String sessionId, String turnId, TaskRequest taskRequest) {
+		new Thread(() -> {
+			boolean available = lifecycle.isAvailable(orchestrator);
+			Display.getDefault().asyncExec(() -> {
+				if (isDisposed()) return;
+				if (available) {
+					submitAfterProviderReady(lifecycle, sessionId, turnId, taskRequest);
+				} else if (ProviderLifecycleRegistry.getInstance()
+						.isStarting(lifecycle.providerKey())) {
+					// A startup is already in progress: attach to it, no duplicate dialog.
+					startProviderAndContinue(lifecycle, sessionId, turnId, taskRequest);
+				} else {
+					promptStartProvider(lifecycle, sessionId, turnId, taskRequest);
+				}
+			});
+		}, "provider-availability-check").start();
+	}
+
+	private void promptStartProvider(ProviderLifecycle lifecycle, String sessionId,
+			String turnId, TaskRequest taskRequest) {
+		String name = lifecycle.displayName();
+		MessageDialog dialog = new MessageDialog(getShell(), name + " provider is not running.", null,
+				name + " inference service is currently unavailable.\n\nDo you want to start " + name + " now?",
+				MessageDialog.QUESTION, new String[] { "Start " + name, "Cancel" }, 0);
+		int result = dialog.open();
+		if (result != 0) {
+			// Cancel: keep the session intact, do not fall back to another provider.
+			outputController.submitMessage(sessionId, turnId, "Evo",
+					name + " is not running. Request cancelled — no provider fallback.", "ai",
+					MessagePriority.NORMAL, false);
+			return;
+		}
+		outputController.submitMessage(sessionId, turnId, "Evo",
+				"Starting " + name + " service...", "ai", MessagePriority.PROGRESS, false);
+		startProviderAndContinue(lifecycle, sessionId, turnId, taskRequest);
+	}
+
+	/**
+	 * Starts (or attaches to the shared startup of) the provider, then validates the
+	 * selected model and resumes the original request exactly once. Cancellation of one
+	 * chat request never cancels the shared provider startup used by other requests.
+	 */
+	private void startProviderAndContinue(ProviderLifecycle lifecycle, String sessionId,
+			String turnId, TaskRequest taskRequest) {
+		String name = lifecycle.displayName();
+		ProviderLifecycleRegistry.getInstance()
+				.ensureAvailable(lifecycle.providerKey(), orchestrator, progress -> {
+					if (progress != null) {
+						Display.getDefault().asyncExec(() -> outputController.submitMessage(
+								sessionId, turnId, "Evo", progress, "ai", MessagePriority.PROGRESS, false));
+					}
+				})
+				.whenComplete((lc, t) -> Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
+					if (t != null) {
+						outputController.submitMessage(sessionId, turnId, "Evo",
+								name + " startup failed: " + t.getMessage(), "ai error",
+								MessagePriority.FINAL, true);
+						return;
+					}
+					submitAfterProviderReady(lifecycle, sessionId, turnId, taskRequest);
+				}));
+	}
+
+	private void submitAfterProviderReady(ProviderLifecycle lifecycle, String sessionId,
+			String turnId, TaskRequest taskRequest) {
+		new Thread(() -> {
+			String selectedModel = (chatMgmtGroup != null) ? chatMgmtGroup.getLocalModelId() : "";
+			boolean modelAvailable = true;
+			String error = null;
+			try {
+				List<LocalModelDescriptor> models = lifecycle.discoverModels(orchestrator);
+				if (selectedModel != null && !selectedModel.isBlank()) {
+					modelAvailable = isModelInList(selectedModel, models);
+				}
+			} catch (Exception e) {
+				modelAvailable = false;
+				error = e.getMessage();
+			}
+			final boolean ok = modelAvailable;
+			final String err = error;
+			Display.getDefault().asyncExec(() -> {
+				if (isDisposed()) return;
+				if (!ok) {
+					outputController.submitMessage(sessionId, turnId, "Evo",
+							"Selected model '" + selectedModel + "' is not available from "
+									+ lifecycle.displayName()
+									+ (err != null ? " (" + err + ")" : "") + ".",
+							"ai error", MessagePriority.FINAL, true);
+					return;
+				}
+				outputController.submitMessage(sessionId, turnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
+				OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
+			});
+		}, "provider-model-validation").start();
+	}
+
+	/**
+	 * Canonical, case-insensitive model match by provider-prefixed inference ID or plain
+	 * name — never relies on display labels alone.
+	 */
+	private static boolean isModelInList(String selectedModel, List<LocalModelDescriptor> models) {
+		String plain = LocalModelDescriptor.plainName(selectedModel);
+		String selectedLower = selectedModel.toLowerCase();
+		String plainLower = plain.toLowerCase();
+		for (LocalModelDescriptor m : models) {
+			String id = m.id();
+			String name = m.name();
+			if (selectedModel.equals(id) || selectedModel.equals(name)
+					|| plain.equals(id) || plain.equals(name)
+					|| (id != null && selectedLower.equals(id.toLowerCase()))
+					|| (name != null && selectedLower.equals(name.toLowerCase()))
+					|| (id != null && plainLower.equals(id.toLowerCase()))
+					|| (name != null && plainLower.equals(name.toLowerCase()))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void handlePause() {
@@ -713,7 +854,15 @@ public class AiCommanderPage extends AEvoPage {
 			ChatSession newSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			newSession.setId(id);
 
-			// Copy general settings from current session
+			// A new session always starts in the neutral LOCAL mode. Execution mode
+			// (aiMode) and the Forge training target (targetPath/targetType) are
+			// session-specific and MUST NEVER be inherited from a previous session — a
+			// completed FORGE training run must not implicitly activate FORGE here.
+			newSession.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
+			eu.kalafatic.evolution.controller.log.Log.log("[AI-COMMANDER] sessionId=" + id
+					+ " selectedMode=LOCAL persistedMode=LOCAL");
+
+			// Copy only GENERAL workflow preferences from the current session.
 			if (currentSession != null) {
 				newSession.setIterativeMode(currentSession.isIterativeMode());
 				newSession.setSelfIterativeMode(currentSession.isSelfIterativeMode());
@@ -721,10 +870,7 @@ public class AiCommanderPage extends AEvoPage {
 				newSession.setGitAutomation(currentSession.isGitAutomation());
 				newSession.setMaxIterations(currentSession.getMaxIterations());
 				newSession.setStepMode(currentSession.isStepMode());
-				newSession.setTargetPath(currentSession.getTargetPath());
-				newSession.setTargetType(currentSession.getTargetType());
 				newSession.setAutoApprove(currentSession.isAutoApprove());
-				newSession.setAiMode(currentSession.getAiMode());
 				newSession.setLocalModel(currentSession.getLocalModel());
 				newSession.setRemoteModel(currentSession.getRemoteModel());
 				newSession.setExpansion(currentSession.getExpansion());

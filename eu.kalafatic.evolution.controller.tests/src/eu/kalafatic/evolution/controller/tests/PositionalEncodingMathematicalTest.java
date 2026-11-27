@@ -61,7 +61,10 @@ public class PositionalEncodingMathematicalTest {
 
     @Test
     public void testModelIntegrationAndBackwardPass() {
-        EvoLlmArchitecture arch = new EvoLlmArchitecture(32, 16, 2, 1, 32, 32);
+        // Explicitly use the legacy additive sinusoidal encoding, which this suite
+        // exercises. (The default constructor now uses RoPE for faithful GGUF export.)
+        EvoLlmArchitecture arch = new EvoLlmArchitecture(32, 16, 2, 1, 32, 32,
+                EvoLlmArchitecture.POSITIONAL_SINUSOIDAL_ABS);
         EvoLlmModel model = new EvoLlmModel(arch);
 
         Assert.assertNotNull("Positional encoding must be integrated in EvoLlmModel", model.getPositionalEncoding());

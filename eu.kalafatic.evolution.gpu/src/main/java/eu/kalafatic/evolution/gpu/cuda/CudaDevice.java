@@ -42,7 +42,7 @@ public final class CudaDevice implements AutoCloseable {
     private final MethodHandle cuInit, cuDeviceGet, cuDeviceGetName, cuDeviceGetAttribute,
             cuCtxCreate, cuCtxDestroy, cuCtxSetCurrent, cuMemAlloc, cuMemFree, cuMemcpyHtoD, cuMemcpyDtoH,
             cuModuleLoadData, cuModuleGetFunction, cuLaunchKernel, cuCtxSynchronize,
-            cuMemGetInfo, cuGetErrorString;
+            cuMemGetInfo, cuMemGetInfo_v2, cuDeviceTotalMem_v2, cuGetErrorString;
 
     // NVRTC method handles.
     private final MethodHandle nvrtcCreateProgram, nvrtcCompileProgram, nvrtcGetPTXSize,
@@ -128,6 +128,8 @@ public final class CudaDevice implements AutoCloseable {
         cuLaunchKernel = down(cuda, "cuLaunchKernel", I32, ADDR, I32, I32, I32, I32, I32, I32, I32, ADDR, ADDR, ADDR);
         cuCtxSynchronize = down(cuda, "cuCtxSynchronize", I32);
         cuMemGetInfo = down(cuda, "cuMemGetInfo", I32, ADDR, ADDR);
+        cuMemGetInfo_v2 = downOrNull(cuda, "cuMemGetInfo_v2", I32, I32, ADDR, ADDR, ADDR);
+        cuDeviceTotalMem_v2 = downOrNull(cuda, "cuDeviceTotalMem_v2", I32, ADDR, I32);
         cuGetErrorString = down(cuda, "cuGetErrorString", I32, I32, ADDR);
 
         nvrtcCreateProgram = down(nvrtc, "nvrtcCreateProgram", I32, ADDR, ADDR, ADDR, I32, ADDR, ADDR);
@@ -156,16 +158,56 @@ public final class CudaDevice implements AutoCloseable {
         this.context = arena.allocate(8);
         check((int) invoke(cuCtxCreate, context, 0, devOrdinal), "cuCtxCreate");
 
+        // Total device memory. The legacy cuMemGetInfo / cuDeviceTotalMem return a
+        // 32-bit-truncated value (0xFFFFFFFF = 4 GiB) on GPUs with >4 GiB of VRAM
+        // (observed on RTX 5070 Ti, driver 595.99.02). The _v2 entry points report the
+        // correct 64-bit size. Prefer _v2; fall back to the legacy query only when the
+        // _v2 symbol is absent from the driver.
+        this.totalMemBytes = queryTotalMemBytes(devOrdinal);
+    }
+
+    /**
+     * Queries the true 64-bit total device memory. Prefers {@code cuDeviceTotalMem_v2}
+     * (which returns the correct value on GPUs with &gt;4 GiB of VRAM) and falls back to
+     * the legacy {@code cuMemGetInfo} total, which is known to return a 32-bit-truncated
+     * {@code 0xFFFFFFFF} (4 GiB) on some Blackwell drivers.
+     */
+    private long queryTotalMemBytes(int devOrdinal) {
+        if (cuDeviceTotalMem_v2 != null) {
+            MemorySegment bytes = arena.allocate(8);
+            try {
+                if ((int) invoke(cuDeviceTotalMem_v2, bytes, devOrdinal) == 0) {
+                    long total = bytes.get(I64, 0);
+                    if (total > 0) {
+                        return total;
+                    }
+                }
+            } catch (Throwable ignored) {
+                // fall back to the legacy query below
+            }
+        }
         MemorySegment free = arena.allocate(8);
         MemorySegment total = arena.allocate(8);
         check((int) invoke(cuMemGetInfo, free, total), "cuMemGetInfo");
-        this.totalMemBytes = total.get(I64, 0);
+        return total.get(I64, 0);
     }
 
     private MethodHandle down(SymbolLookup lib, String name, Object... layouts) {
         MemoryLayout[] l = new MemoryLayout[layouts.length];
         for (int i = 0; i < layouts.length; i++) l[i] = (MemoryLayout) layouts[i];
         return linker.downcallHandle(lib.find(name).orElseThrow(() -> new IllegalStateException("Missing symbol " + name)),
+                FunctionDescriptor.of((MemoryLayout) layouts[0], java.util.Arrays.copyOfRange(l, 1, l.length)));
+    }
+
+    /** Like {@link #down} but returns {@code null} instead of throwing when the symbol is absent (older drivers). */
+    private MethodHandle downOrNull(SymbolLookup lib, String name, Object... layouts) {
+        var opt = lib.find(name);
+        if (opt.isEmpty()) {
+            return null;
+        }
+        MemoryLayout[] l = new MemoryLayout[layouts.length];
+        for (int i = 0; i < layouts.length; i++) l[i] = (MemoryLayout) layouts[i];
+        return linker.downcallHandle(opt.get(),
                 FunctionDescriptor.of((MemoryLayout) layouts[0], java.util.Arrays.copyOfRange(l, 1, l.length)));
     }
 
@@ -239,20 +281,54 @@ public final class CudaDevice implements AutoCloseable {
     /** Total number of device memory releases (cuMemFree). */
     public long getMemFreeCount() { return memFreeCount.get(); }
 
-    /** Free + total device memory in bytes. */
+    /** Free + total device memory in bytes (64-bit correct; prefers the _v2 API). */
     public long[] memGetInfo() {
         ensureContext();
         MemorySegment free = arena.allocate(8);
         MemorySegment total = arena.allocate(8);
+        if (cuMemGetInfo_v2 != null) {
+            MemorySegment largest = arena.allocate(8);
+            try {
+                if ((int) invoke(cuMemGetInfo_v2, deviceOrdinal, free, total, largest) == 0) {
+                    long t = total.get(I64, 0);
+                    if (t > 0) {
+                        return new long[]{free.get(I64, 0), t};
+                    }
+                }
+            } catch (Throwable ignored) {
+                // fall back to the legacy query below
+            }
+        }
         check((int) invoke(cuMemGetInfo, free, total), "cuMemGetInfo");
-        return new long[]{free.get(I64, 0), total.get(I64, 0)};
+        // Legacy cuMemGetInfo total is 32-bit-truncated on >4 GiB GPUs; correct it with
+        // the reliably queried total when the legacy value looks truncated.
+        long legacyTotal = total.get(I64, 0);
+        long correctedTotal = (legacyTotal == 0xFFFFFFFFL && totalMemBytes > legacyTotal) ? totalMemBytes : legacyTotal;
+        return new long[]{free.get(I64, 0), correctedTotal};
     }
 
     /** Allocates {@code bytes} of device memory, returns the device pointer. */
     public long alloc(long bytes) {
+        if (bytes <= 0) {
+            throw new IllegalArgumentException("Invalid CUDA allocation size: " + bytes
+                    + " bytes (must be > 0)");
+        }
+        if (bytes > totalMemBytes) {
+            // A single allocation larger than the device total can never succeed; fail
+            // fast with an actionable diagnostic instead of a bare cuMemAlloc OOM.
+            throw new IllegalStateException("cuMemAlloc size " + bytes + " bytes exceeds device total "
+                    + totalMemBytes + " bytes (" + (totalMemBytes / (1024 * 1024)) + " MiB)");
+        }
         ensureContext();
         MemorySegment ptr = arena.allocate(8);
-        check((int) invoke(cuMemAlloc, ptr, bytes), "cuMemAlloc");
+        try {
+            check((int) invoke(cuMemAlloc, ptr, bytes), "cuMemAlloc");
+        } catch (IllegalStateException oom) {
+            long[] mem = memGetInfo();
+            throw new IllegalStateException("cuMemAlloc failed: " + oom.getMessage()
+                    + " (requested=" + bytes + " bytes, free=" + mem[0] + " bytes, total="
+                    + mem[1] + " bytes, device=" + deviceName + ")", oom);
+        }
         memAllocCount.incrementAndGet();
         return ptr.get(I64, 0);
     }
@@ -266,25 +342,34 @@ public final class CudaDevice implements AutoCloseable {
 
     public void memcpyHtoD(long devPtr, float[] host) {
         ensureContext();
-        MemorySegment h = arena.allocate((long) host.length * 4);
-        h.copyFrom(MemorySegment.ofArray(host));
-        check((int) invoke(cuMemcpyHtoD, devPtr, h, (long) host.length * 4), "cuMemcpyHtoD");
+        // Confined arena so the temporary host staging buffer is released immediately
+        // after the transfer (the shared process arena would otherwise retain every
+        // copy for the process lifetime and grow without bound across candidates).
+        try (Arena confined = Arena.ofConfined()) {
+            MemorySegment h = confined.allocate((long) host.length * 4);
+            h.copyFrom(MemorySegment.ofArray(host));
+            check((int) invoke(cuMemcpyHtoD, devPtr, h, (long) host.length * 4), "cuMemcpyHtoD");
+        }
         memcpyCount.incrementAndGet();
     }
 
     public void memcpyHtoD(long devPtr, int[] host) {
         ensureContext();
-        MemorySegment h = arena.allocate((long) host.length * 4);
-        h.copyFrom(MemorySegment.ofArray(host));
-        check((int) invoke(cuMemcpyHtoD, devPtr, h, (long) host.length * 4), "cuMemcpyHtoD");
+        try (Arena confined = Arena.ofConfined()) {
+            MemorySegment h = confined.allocate((long) host.length * 4);
+            h.copyFrom(MemorySegment.ofArray(host));
+            check((int) invoke(cuMemcpyHtoD, devPtr, h, (long) host.length * 4), "cuMemcpyHtoD");
+        }
         memcpyCount.incrementAndGet();
     }
 
     public void memcpyDtoH(float[] host, long devPtr) {
         ensureContext();
-        MemorySegment h = arena.allocate((long) host.length * 4);
-        check((int) invoke(cuMemcpyDtoH, h, devPtr, (long) host.length * 4), "cuMemcpyDtoH");
-        MemorySegment.ofArray(host).copyFrom(h);
+        try (Arena confined = Arena.ofConfined()) {
+            MemorySegment h = confined.allocate((long) host.length * 4);
+            check((int) invoke(cuMemcpyDtoH, h, devPtr, (long) host.length * 4), "cuMemcpyDtoH");
+            MemorySegment.ofArray(host).copyFrom(h);
+        }
         memcpyCount.incrementAndGet();
     }
 

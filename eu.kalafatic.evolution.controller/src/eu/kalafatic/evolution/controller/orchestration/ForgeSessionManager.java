@@ -299,13 +299,15 @@ public class ForgeSessionManager {
     private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
 
     /**
-     * Timestamps of the last fallback log per unknown session ID. Unknown IDs can be
-     * requested repeatedly (page pollers, stale UI state, other namespaces); logging
-     * every occurrence floods the console, so each ID is reported at most once per
-     * window. Bounded to prevent unbounded growth under ID churn.
+     * Timestamps of the last session-resolution diagnostic per unknown session ID.
+     * Unknown IDs can be requested repeatedly (page pollers, stale UI state, other
+     * namespaces); logging every occurrence floods the console, so each ID is
+     * reported at most once per window. Bounded to prevent unbounded growth under
+     * ID churn. This is diagnostic only: a missed lookup is NEVER silently resolved
+     * to a different session.
      */
-    private static final long FALLBACK_LOG_DEDUP_WINDOW_MS = 60_000L;
-    private final java.util.Map<String, Long> lastFallbackLogAt = new java.util.LinkedHashMap<>() {
+    private static final long SESSION_LOG_DEDUP_WINDOW_MS = 60_000L;
+    private final java.util.Map<String, Long> lastSessionLogAt = new java.util.LinkedHashMap<>() {
         private static final long serialVersionUID = 1L;
         @Override
         protected boolean removeEldestEntry(java.util.Map.Entry<String, Long> eldest) {
@@ -346,12 +348,13 @@ public class ForgeSessionManager {
 
     public String getActiveTrainingSessionId() {
         for (java.util.Map.Entry<String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer> entry : activeTrainers.entrySet()) {
-            if (entry.getValue() != null) {
+            if (entry.getValue() != null && findSessionById(entry.getKey()) != null) {
                 return entry.getKey();
             }
         }
         for (java.util.Map.Entry<String, TrainingTelemetry> entry : telemetryMap.entrySet()) {
-            if (entry.getValue() != null && ("RUNNING".equals(entry.getValue().status) || "TRAINING".equals(entry.getValue().status))) {
+            if (entry.getValue() != null && ("RUNNING".equals(entry.getValue().status) || "TRAINING".equals(entry.getValue().status))
+                    && findSessionById(entry.getKey()) != null) {
                 return entry.getKey();
             }
         }
@@ -359,6 +362,42 @@ public class ForgeSessionManager {
             if (s != null && s.getStatus() == ForgeStatus.TRAINING) {
                 return s.getSessionId();
             }
+        }
+        return null;
+    }
+
+    /**
+     * Authoritative resolution of the currently selected Forge session, expressed as the
+     * canonical {@link ForgeSession#getSessionId()} (UUID). This is the single source of
+     * truth that the Forge Models page / Training Monitor must bind to — not the AI
+     * Commander chat-thread id, which lives in a different namespace.
+     *
+     * <p>Resolution order (first non-empty wins):
+     * <ol>
+     *   <li>the actively training session ({@link #getActiveTrainingSessionId()});</li>
+     *   <li>the first session whose telemetry is not IDLE/UNKNOWN (a completed/paused/failed
+     *       run that still owns its historical graph);</li>
+     *   <li>the default session ({@link #findDefaultSession()});</li>
+     * </ol>
+     * Returns {@code null} only when no Forge session exists at all.
+     */
+    public String getCurrentSessionId() {
+        String active = getActiveTrainingSessionId();
+        if (active != null && !active.trim().isEmpty()) {
+            return active;
+        }
+        for (ForgeSession s : getSessions()) {
+            if (s == null || s.getSessionId() == null) {
+                continue;
+            }
+            TrainingTelemetry t = getTelemetry(s.getSessionId());
+            if (t != null && t.status != null && !"IDLE".equals(t.status) && !"UNKNOWN".equals(t.status)) {
+                return s.getSessionId();
+            }
+        }
+        ForgeSession def = findDefaultSession();
+        if (def != null && def.getSessionId() != null) {
+            return def.getSessionId();
         }
         return null;
     }
@@ -594,6 +633,8 @@ public class ForgeSessionManager {
         session.setCreatedAt(System.currentTimeMillis());
         session.setLastModified(System.currentTimeMillis());
         session.setStatus(ForgeStatus.IDLE);
+        System.out.println("[SESSION][CREATE] sessionId=" + session.getSessionId()
+                + " name=" + name + " modelType=" + modelType);
 
         SessionModelState state = OrchestrationFactory.eINSTANCE.createSessionModelState();
         state.setSessionId(session.getSessionId());
@@ -722,9 +763,19 @@ public class ForgeSessionManager {
         }
     }
 
+    /**
+     * Resolves a forge session by its canonical ID, or — for callers that only hold
+     * a display name — by case-insensitive name. A non-empty identifier that matches
+     * neither is treated as INVALID REQUEST and returns {@code null}: it is never
+     * silently substituted with another (e.g. the default) session. Callers that
+     * genuinely want the default session must use {@link #findDefaultSession()}.
+     *
+     * <p>A {@code null}/blank identifier is interpreted as an explicit
+     * "select default" request and returns {@link #findDefaultSession()}.
+     */
     public ForgeSession findSession(String sessionId) {
-        if (sessionId == null) {
-            return getFallbackSession(null);
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return findDefaultSession();
         }
         Orchestrator orch = getOrchestratorModel();
         if (orch == null) return null;
@@ -739,61 +790,53 @@ public class ForgeSessionManager {
         }
         if (found != null) return found;
 
-        return getFallbackSession(sessionId);
-    }
-
-    private ForgeSession getFallbackSession(String requestedId) {
-        Orchestrator orch = getOrchestratorModel();
-        if (orch == null) return null;
-
-        ForgeSession fallback = null;
-        synchronized (orch.getForgeSessions()) {
-            if (!orch.getForgeSessions().isEmpty()) {
-                fallback = orch.getForgeSessions().get(0);
-            }
-        }
-
-        if (fallback == null) {
-            // No sessions exist at all. A lookup must NOT create a session as a side
-            // effect: session creation is an explicit operation (createSession / the
-            // /forge/session POST endpoint / seedDefaultSessions during initialization).
-            logFallbackOnce("none", "Requested session '" + requestedId
-                    + "' not found and no Forge sessions exist. No session created (explicit creation required).");
-            return null;
-        } else if (requestedId != null && !requestedId.trim().isEmpty()) {
-            // A requested session ID was not found (e.g. a stale or mismatched ID from a
-            // different session namespace). Do NOT create a "dedicated" session; fall back
-            // to the existing default so a single lookup failure cannot proliferate sessions.
-            logFallbackOnce(requestedId, "Requested session '" + requestedId
-                    + "' not found; using default session '" + fallback.getName() + "' ("
-                    + fallback.getSessionId() + ") instead of creating a new session.");
-        } else {
-            logFallbackOnce("empty", "Requested session ID is empty; using default session '"
-                    + fallback.getName() + "' (" + fallback.getSessionId() + ").");
-        }
-
-        if (fallback != null) {
-            publishEvent(fallback, RuntimeEventType.VIEW_UPDATED, "SESSION_LOOKUP_FALLBACK");
-        }
-
-        return fallback;
+        logSessionNotFound(sessionId);
+        return null;
     }
 
     /**
-     * Logs a session-lookup fallback at most once per dedup key within the configured
-     * window. Identical repeated lookups (page pollers, stale IDs) therefore produce a
-     * single console line instead of flooding the log.
+     * Explicitly selects the default forge session ("Self-Evo Forging") — the single
+     * well-defined entry point for callers that want the default session rather than a
+     * specific one. This is an intentional SELECT DEFAULT operation, not a fallback:
+     * it is never reached implicitly for an arbitrary missing session ID.
+     *
+     * <p>Returns the seeded "Self-Evo Forging" session when present, otherwise the
+     * first session, otherwise {@code null}. Never creates a session as a side effect.
      */
-    private void logFallbackOnce(String key, String message) {
+    public ForgeSession findDefaultSession() {
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return null;
+        synchronized (orch.getForgeSessions()) {
+            for (ForgeSession s : orch.getForgeSessions()) {
+                if (s != null && "Self-Evo Forging".equals(s.getName())) {
+                    return s;
+                }
+            }
+            if (!orch.getForgeSessions().isEmpty()) {
+                return orch.getForgeSessions().get(0);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Logs a failed session resolution at most once per dedup key within the
+     * configured window, so repeated lookups of the same stale/foreign ID (page
+     * pollers, mismatched namespaces) produce a single, clear INVALID-REQUEST
+     * diagnostic instead of flooding the log. This is diagnostic only — the lookup
+     * still returns {@code null} and no other session is touched.
+     */
+    private void logSessionNotFound(String sessionId) {
         long now = System.currentTimeMillis();
-        synchronized (lastFallbackLogAt) {
-            Long last = lastFallbackLogAt.get(key);
-            if (last != null && now - last < FALLBACK_LOG_DEDUP_WINDOW_MS) {
+        synchronized (lastSessionLogAt) {
+            Long last = lastSessionLogAt.get(sessionId);
+            if (last != null && now - last < SESSION_LOG_DEDUP_WINDOW_MS) {
                 return;
             }
-            lastFallbackLogAt.put(key, now);
+            lastSessionLogAt.put(sessionId, now);
         }
-        System.err.println("[FORGE_SESSION_FALLBACK] " + message);
+        System.err.println("[SESSION][ERROR] sessionId=" + sessionId
+                + " reason=NOT_FOUND operation=RESOLVE (no session substitution performed; caller must handle a missing session)");
     }
 
     public void updateModel(String sessionId, String modelGraph) {

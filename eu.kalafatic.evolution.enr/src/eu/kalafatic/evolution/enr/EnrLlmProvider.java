@@ -6,6 +6,7 @@ import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
 import eu.kalafatic.evolution.controller.orchestration.llm.LocalModelDescriptor;
+import eu.kalafatic.evolution.forge.model.inference.InferenceProvenance;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -49,6 +50,24 @@ public class EnrLlmProvider implements ILlmProvider {
             String proxyUrl, TaskContext context) {
         String model = resolveModel(orchestrator, context);
         eu.kalafatic.utils.log.Log.log("[AI-CMD][INFERENCE] ENR dispatch: model=" + model);
+
+        // Record the actual inference provenance (provider + model) so the UI can
+        // display which provider/model generated the response.
+        if (context != null && context.getMetadata() != null) {
+            InferenceProvenance prov = (InferenceProvenance) context.getMetadata()
+                    .get("currentInferenceProvenance");
+            if (prov == null) {
+                prov = new InferenceProvenance();
+                prov.setInferenceId(java.util.UUID.randomUUID().toString());
+                prov.setSessionId(context.getSessionId() != null ? context.getSessionId() : "Default");
+                context.getMetadata().put("currentInferenceProvenance", prov);
+            }
+            prov.setRuntimeProvider("ENR");
+            prov.setBackend("ENR");
+            prov.setActualEngine("EnrRuntime");
+            prov.setLoadedModelIdentity(model);
+        }
+
         List<EnrInferenceEngine.EnrChatMessage> messages = new ArrayList<>();
         messages.add(EnrInferenceEngine.EnrChatMessage.user(
                 prompt == null ? "" : prompt));

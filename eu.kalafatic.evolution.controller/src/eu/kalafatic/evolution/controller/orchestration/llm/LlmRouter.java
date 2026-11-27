@@ -1,6 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import org.osgi.framework.Bundle;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -11,6 +15,16 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  * Refactored to remove hardcoded mode-based branching.
  */
 public class LlmRouter {
+    /**
+     * Authoritative enumeration of the supported local LLM provider identifiers
+     * (normalized keys). Provider selection and cache lookup must use exactly these
+     * keys, normalized through {@link #normalizeProviderKey(String)}.
+     *
+     * <p>Declared before the singleton so its value is available during singleton
+     * construction (static initialization order).</p>
+     */
+    public static final List<String> PROVIDER_KEYS = List.of("ollama", "llama-cpp", "enr");
+
     private static final LlmRouter INSTANCE = new LlmRouter();
 
     public static LlmRouter getInstance() {
@@ -20,6 +34,15 @@ public class LlmRouter {
     private ILlmProvider ollamaProvider = new OllamaProvider();
     private ILlmProvider nativeEvoProvider = new NativeEvoProvider();
     private volatile ILlmProvider enrProvider;
+
+    /**
+     * Shared provider-model cache: initialized once per application, discovered once per
+     * provider, and reused by every UI consumer. Only an explicit
+     * {@link #refreshProviderModels(Orchestrator)} re-runs discovery.
+     */
+    private final ProviderModelCache providerModelCache = new ProviderModelCache(
+            PROVIDER_KEYS, this::discoverModelsByKey, null,
+            msg -> eu.kalafatic.utils.log.Log.log("[AI-CMD][CACHE] " + msg));
 
     public void setLocalProvider(ILlmProvider provider) {
         this.ollamaProvider = provider;
@@ -110,7 +133,18 @@ public class LlmRouter {
         }
 
         ReasoningProtocol protocol = ReasoningProtocolRegistry.resolve(orchestrator, context);
-        return protocol.parse(rawResponse);
+        LlmResponse normalized = protocol.parse(rawResponse);
+        // Propagate the actual inference provenance recorded by the provider that
+        // executed the request (Ollama / llama.cpp / native EVO / ENR) so downstream
+        // consumers can display the actual provider and model that generated the
+        // response — never the configured/requested provider.
+        if (context != null && context.getMetadata() != null) {
+            Object prov = context.getMetadata().get("currentInferenceProvenance");
+            if (prov instanceof eu.kalafatic.evolution.forge.model.inference.InferenceProvenance inferenceProv) {
+                normalized.setInferenceProvenance(inferenceProv);
+            }
+        }
+        return normalized;
     }
 
     /**
@@ -209,9 +243,14 @@ public class LlmRouter {
         List<LocalModelDescriptor> models;
         switch (key) {
             case "enr" -> {
+                eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] ENR service lookup started (key=enr, provider="
+                        + (enrProvider != null ? "registered" : "null") + ")");
                 if (enrProvider == null) {
-                    throw new IllegalStateException("ENR provider is not registered (ENR bundle not present)");
+                    throw new IllegalStateException("ENR provider is not registered: "
+                            + describeEnrBundle());
                 }
+                eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] ENR service registered; "
+                        + "delegating model discovery to ENR.");
                 models = enrProvider.discoverModels(orchestrator);
             }
             case "llama-cpp" -> models = eu.kalafatic.evolution.controller.manager.LlamaService
@@ -224,6 +263,96 @@ public class LlmRouter {
         eu.kalafatic.utils.log.Log.log("[AI-CMD][DISCOVERY] Provider discovery requested: "
                 + providerSelection + " -> key=" + key + ", models=" + models.size());
         return models;
+    }
+
+    private List<LocalModelDescriptor> discoverModelsByKey(String providerKey,
+            Orchestrator orchestrator) throws Exception {
+        return discoverModels(providerKey, orchestrator);
+    }
+
+    /**
+     * The authoritative normalized provider keys this router supports.
+     */
+    public List<String> getProviderKeys() {
+        return PROVIDER_KEYS;
+    }
+
+    /**
+     * Idempotently initializes the shared provider-model cache (one discovery per
+     * provider, off the caller thread). Every subsequent call reuses the same
+     * initialization and never triggers additional discovery.
+     */
+    public CompletableFuture<Void> ensureProviderModels(Orchestrator orchestrator) {
+        return providerModelCache.ensureInitialized(orchestrator);
+    }
+
+    /**
+     * Explicitly re-discovers every provider and updates the shared cache. A provider
+     * failure preserves that provider's previous valid list. This is the only normal
+     * operation that reloads provider models.
+     */
+    public CompletableFuture<Void> refreshProviderModels(Orchestrator orchestrator) {
+        eu.kalafatic.utils.log.Log.log("[AI-CMD][CACHE] Provider-model cache refresh requested");
+        return providerModelCache.refresh(orchestrator);
+    }
+
+    /**
+     * Immutable snapshot of the cached model lists, keyed by normalized provider key.
+     */
+    public Map<String, List<LocalModelDescriptor>> getProviderModels() {
+        return providerModelCache.snapshot();
+    }
+
+    /**
+     * The cached model list for a normalized provider key (empty when unknown or not
+     * yet loaded).
+     */
+    public List<LocalModelDescriptor> getProviderModels(String providerKey) {
+        return providerModelCache.models(providerKey);
+    }
+
+    /**
+     * Whether the most recent discovery for the given provider key failed.
+     */
+    public boolean isProviderFailed(String providerKey) {
+        return providerModelCache.isFailed(providerKey);
+    }
+
+    /**
+     * Whether the shared cache has completed its initial discovery run.
+     */
+    public boolean isProviderModelsReady() {
+        return providerModelCache.isInitialized();
+    }
+
+    /**
+     * Describes the ENR bundle state for diagnostics when the ENR provider is not
+     * registered. Replaces the misleading "ENR bundle not present" wording: the bundle
+     * is typically present but simply not started (so its {@code EnrActivator} never
+     * wired the provider into this router).
+     */
+    private static String describeEnrBundle() {
+        try {
+            Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.enr");
+            if (bundle == null) {
+                return "the ENR bundle (eu.kalafatic.evolution.enr) is not installed";
+            }
+            String state;
+            switch (bundle.getState()) {
+                case Bundle.ACTIVE -> state = "ACTIVE";
+                case Bundle.STARTING -> state = "STARTING";
+                case Bundle.STOPPING -> state = "STOPPING";
+                case Bundle.RESOLVED -> state = "RESOLVED (installed but NOT started)";
+                case Bundle.INSTALLED -> state = "INSTALLED (not resolved)";
+                default -> state = "state=" + bundle.getState();
+            }
+            return "the ENR bundle (eu.kalafatic.evolution.enr) is " + state
+                    + "; its EnrActivator has not wired the provider into LlmRouter "
+                    + "(verify autoStart=true in the product/launch configuration)";
+        } catch (Throwable t) {
+            return "the ENR bundle (eu.kalafatic.evolution.enr) could not be inspected: "
+                    + t.getMessage();
+        }
     }
 
     public String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
