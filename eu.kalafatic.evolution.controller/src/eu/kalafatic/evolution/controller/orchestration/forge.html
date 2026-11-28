@@ -1728,6 +1728,27 @@
         }
 
         let serverPort = 28080;
+
+        // Defense in depth: never parse a non-JSON response (e.g. an unrelated HTTP
+        // server occupying the EVO port and answering HTTP 200 with an HTML page) as
+        // JSON. Every raw res.json() call site now gets an actionable error instead
+        // of a cryptic SyntaxError.
+        (function guardJsonParsing() {
+            const nativeJson = Response.prototype.json;
+            Response.prototype.json = function() {
+                const ct = (this.headers.get('content-type') || '').toLowerCase();
+                if (!ct.includes('json')) {
+                    // Consume the body first so the browser does not cancel a still-
+                    // streaming response (which the server sees as a connection reset).
+                    return this.text().catch(() => '').then(() => {
+                        throw new Error(
+                            `non-JSON response from ${this.url} (HTTP ${this.status}, type '${ct || 'unknown'}') — ` +
+                            `a different application may be occupying the EVO server port (${serverPort})`);
+                    });
+                }
+                return nativeJson.call(this);
+            };
+        })();
         let activeAiSession = "";
         let aiSessionList = [];
         let activeSessionId = null;
@@ -1947,6 +1968,11 @@
                 throw new Error(`non-JSON response from ${url} (status ${res.status}, type '${contentType}') — ` +
                     `another process may be occupying the EVO server port (${serverPort})`);
             }
+            const appIdentity = res.headers.get('x-evo-application');
+            if (appIdentity && appIdentity.toLowerCase() !== 'evolution') {
+                throw new Error(`unexpected backend identity '${appIdentity}' from ${url} — ` +
+                    `the EVO server port (${serverPort}) is served by a different application`);
+            }
             try {
                 return JSON.parse(text);
             } catch (e) {
@@ -1995,12 +2021,25 @@
                 }
 
                 if (aiSessionList && aiSessionList.length > 0) {
-                    aiSessionList.forEach(sName => {
-                        let found = sessions.find(s => s.id === sName || s.name === sName);
-                        if (!found) {
+                    aiSessionList.forEach(item => {
+                        // Entries are {id, name} pairs: id = canonical global session UUID
+                        // (used by the REST API / telemetry), name = the human-readable chat
+                        // id shown in the AI Commander. Legacy plain-string entries are still
+                        // accepted.
+                        const sid = (item && typeof item === 'object') ? item.id : item;
+                        const sname = (item && typeof item === 'object') ? (item.name || item.id) : item;
+                        if (!sid) return;
+                        let found = sessions.find(s => s.id === sid || s.name === sid || s.name === sname);
+                        if (found) {
+                            // Upgrade a UUID-only synthesized entry to the human-readable name
+                            // so the Forge combo matches the AI Commander ("20261128-0757_task").
+                            if (sname && found.name === found.id) {
+                                found.name = sname;
+                            }
+                        } else {
                             sessions.push({
-                                id: sName,
-                                name: sName,
+                                id: sid,
+                                name: sname,
                                 modelType: 'SELF_EVO',
                                 status: 'IDLE',
                                 lifecycleState: 'CREATED'
@@ -2629,7 +2668,7 @@
             if (!name) return;
 
             try {
-                const res = await fetch(`/forge/session?runtime=SWT`, {
+                const res = await fetch(getBaseUrl() + '/forge/session?runtime=SWT', {
                     method: 'POST',
                     body: JSON.stringify({ name: name, modelType: type.toUpperCase(), isDemo: true })
                 });

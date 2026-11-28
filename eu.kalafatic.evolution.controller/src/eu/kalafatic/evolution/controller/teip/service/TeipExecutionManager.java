@@ -357,7 +357,7 @@ public class TeipExecutionManager {
                 // Build TaskRequest for OrchestratorServiceImpl
                 TaskRequest taskReq = new TaskRequest();
                 taskReq.setPrompt(request.getInstruction());
-                taskReq.setProjectRoot(new File(System.getProperty("user.dir")));
+                taskReq.setProjectRoot(resolveConfiguredProjectRoot());
                 taskReq.getContext().put("sessionId", evoSessionId);
                 taskReq.getContext().put("executionId", executionId);
                 taskReq.getContext().put("grantedToolScopes", request.getGrantedToolScopes());
@@ -521,5 +521,22 @@ public class TeipExecutionManager {
         statusCache.clear();
         TeipEventStore.getInstance().reset();
         TeipPersistenceStore.getInstance().clearAll();
+    }
+
+    /**
+     * Project root for TEIP tasks that do not carry an explicit target. The process
+     * working directory is the Eclipse/RCP install directory, not a project; the
+     * EMF-configured source repository is authoritative instead.
+     */
+    private File resolveConfiguredProjectRoot() {
+        try {
+            java.nio.file.Path repo = eu.kalafatic.evolution.controller.resource.ResourceManager
+                    .getInstance().getEvoGitRepository();
+            if (repo != null && repo.toFile().exists()) {
+                return repo.toFile();
+            }
+        } catch (Throwable ignored) {
+        }
+        return new File(System.getProperty("user.dir"));
     }
 }

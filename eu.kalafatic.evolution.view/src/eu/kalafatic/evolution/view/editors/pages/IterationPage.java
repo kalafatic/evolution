@@ -136,7 +136,11 @@ public class IterationPage extends AEvoPage {
 			}
 		}
 		if (projectRoot != null) {
-			this.memoryService = new IterationMemoryService(projectRoot);
+			// Reject runtime-workspace / IDE-install roots: orchestrator memory must live in
+			// the configured source repository, not an unrelated filesystem location.
+			this.projectRoot = eu.kalafatic.evolution.controller.resource.ResourceManager
+					.getInstance().resolveCanonicalProjectRoot(projectRoot);
+			this.memoryService = new IterationMemoryService(this.projectRoot);
 		}
 	}
 

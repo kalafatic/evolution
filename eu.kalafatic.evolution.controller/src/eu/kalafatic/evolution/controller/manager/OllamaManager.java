@@ -51,4 +51,18 @@ public class OllamaManager {
     public void clear() {
         services.clear();
     }
+
+    /**
+     * Clears the model list cache of every cached service without discarding
+     * the service instances. Used after model registrations change.
+     */
+    public void clearAllModelCaches() {
+        for (OllamaService service : services.values()) {
+            try {
+                service.clearCache();
+            } catch (Exception ignored) {
+                // Keep clearing the remaining services
+            }
+        }
+    }
 }

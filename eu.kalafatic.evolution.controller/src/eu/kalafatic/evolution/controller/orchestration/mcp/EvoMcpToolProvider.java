@@ -414,6 +414,15 @@ public class EvoMcpToolProvider {
     }
 
     private static File resolveProjectRoot() {
+        // The configured source repository (EMF ResourceManager) is authoritative.
+        try {
+            java.nio.file.Path repo = eu.kalafatic.evolution.controller.resource.ResourceManager
+                    .getInstance().getEvoGitRepository();
+            if (repo != null && repo.toFile().exists()) {
+                return repo.toFile();
+            }
+        } catch (Throwable ignored) {
+        }
         try {
             SourceDiscoveryResult result = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
             if (result != null && result.getPrimaryRepository() != null && result.getPrimaryRepository().exists()) {

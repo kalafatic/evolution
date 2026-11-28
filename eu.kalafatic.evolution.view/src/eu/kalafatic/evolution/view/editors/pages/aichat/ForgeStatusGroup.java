@@ -11,6 +11,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -119,19 +120,30 @@ public class ForgeStatusGroup extends AEvoGroup {
             port = orchestrator.getServerSettings().getPort();
         }
         final int serverPort = port;
+        final String endpoint = "http://localhost:" + serverPort + "/forge/session/" + sid + "/forging/start";
         new Thread(() -> {
             try {
                 HttpClient client = HttpClient.newBuilder()
                         .connectTimeout(Duration.ofSeconds(10))
                         .build();
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("http://localhost:" + serverPort + "/forge/session/" + sid + "/forging/start"))
+                        .uri(URI.create(endpoint))
                         .timeout(Duration.ofSeconds(15))
                         .POST(HttpRequest.BodyPublishers.noBody())
                         .build();
-                client.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                eu.kalafatic.evolution.view.HTTPUtils.requireEvolutionJson(endpoint,
+                        response.statusCode(),
+                        response.headers().firstValue("content-type").orElse(null));
             } catch (Exception ex) {
                 System.err.println("[FORGE] Could not start forging via REST: " + ex.getMessage());
+                Display.getDefault().asyncExec(() -> {
+                    if (group != null && !group.isDisposed()) {
+                        org.eclipse.jface.dialogs.MessageDialog.openError(group.getShell(),
+                                "Forge backend unavailable",
+                                "Could not start forging via the EVO backend:\n\n" + ex.getMessage());
+                    }
+                });
             }
         }, "forge-status-group-start").start();
     }

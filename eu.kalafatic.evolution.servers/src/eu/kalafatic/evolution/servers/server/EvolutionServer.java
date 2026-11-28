@@ -74,6 +74,9 @@ public class EvolutionServer extends NanoHTTPD {
         res.addHeader("Access-Control-Allow-Origin", "*");
         res.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
         res.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-evo-runtime");
+        res.addHeader("Access-Control-Expose-Headers", "X-EVO-Application, X-EVO-Component");
+        res.addHeader("X-EVO-Application", "evolution");
+        res.addHeader("X-EVO-Component", "EvolutionServer-secondary");
     }
 
     private Response handleInternal(IHTTPSession session) {

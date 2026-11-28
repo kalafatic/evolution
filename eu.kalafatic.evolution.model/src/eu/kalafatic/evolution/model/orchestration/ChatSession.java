@@ -415,4 +415,28 @@ public interface ChatSession extends EObject {
 	 */
 	void setExpansion(int value);
 
+	/**
+	 * Returns the value of the '<em><b>Global Session Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>The globally unique, persistent EVO session identity (a UUID). It is
+	 * generated exactly once when a session is created, is preserved across mode,
+	 * application and page switches, and is restored after an application restart.
+	 * It is independent of the human-readable {@link #getId() id} (display name).</p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Global Session Id</em>' attribute.
+	 * @see #setGlobalSessionId(String)
+	 * @generated
+	 */
+	String getGlobalSessionId();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getGlobalSessionId <em>Global Session Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Global Session Id</em>' attribute.
+	 * @see #getGlobalSessionId()
+	 * @generated
+	 */
+	void setGlobalSessionId(String value);
+
 } // ChatSession

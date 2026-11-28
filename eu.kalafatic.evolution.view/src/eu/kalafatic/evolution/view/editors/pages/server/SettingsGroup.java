@@ -177,6 +177,27 @@ public class SettingsGroup extends AToolGroup implements ServerLifecycleListener
         createServerColumn("Advertised URL", 200, ServerEntry::getAdvertisedUrl);
         createServerColumn("Service / Description", 200, ServerEntry::getName);
 
+        // Actionable diagnostics for FAILED/CONFLICT states (PID, owner, HTTP identity).
+        // The full conflict report is multi-line, so the cell shows its first line and
+        // the tooltip carries the complete diagnostic.
+        TableViewerColumn diagCol = new TableViewerColumn(serverViewer, SWT.NONE);
+        diagCol.getColumn().setText("Diagnostics");
+        diagCol.getColumn().setWidth(360);
+        diagCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                String err = ((ServerEntry) element).getLastError();
+                if (err == null || err.isEmpty()) return "";
+                int nl = err.indexOf('\n');
+                return nl > 0 ? err.substring(0, nl) : err;
+            }
+
+            @Override
+            public String getToolTipText(Object element) {
+                return ((ServerEntry) element).getLastError();
+            }
+        });
+
         serverViewer.setContentProvider(ArrayContentProvider.getInstance());
 
         // Context menu

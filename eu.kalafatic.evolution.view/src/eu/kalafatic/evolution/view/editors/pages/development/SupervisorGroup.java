@@ -85,13 +85,17 @@ public class SupervisorGroup extends AEvoGroup {
         this.sharedController = controller;
     }
 
-    private SelfDevBootstrapController resolveController() {
+    private synchronized SelfDevBootstrapController resolveController() {
         SelfDevBootstrapController existing = sharedController;
         if (existing != null) {
             return existing;
         }
+        // Cache the controller: creating a SelfDevBootstrapController also creates a
+        // SelfDevContext (new run directory tree + preflight banner). It must not be
+        // re-created on every supervisor button click.
         File projectRoot = resolveProjectRoot();
-        return new SelfDevBootstrapController(projectRoot, orchestrator);
+        sharedController = new SelfDevBootstrapController(projectRoot, orchestrator);
+        return sharedController;
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {

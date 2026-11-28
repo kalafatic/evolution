@@ -201,8 +201,12 @@ public class DevelopmentPage extends AEvoPage {
 			projectRoot = fei.getFile().getProject().getLocation().toFile();
 		}
 		if (projectRoot != null) {
-			this.memoryService = new IterationMemoryService(projectRoot);
-			this.bootstrapController = new SelfDevBootstrapController(projectRoot, orchestrator);
+			// Reject runtime-workspace / IDE-install roots: orchestrator memory must live in
+			// the configured source repository, not an unrelated filesystem location.
+			this.projectRoot = eu.kalafatic.evolution.controller.resource.ResourceManager
+					.getInstance().resolveCanonicalProjectRoot(projectRoot);
+			this.memoryService = new IterationMemoryService(this.projectRoot);
+			this.bootstrapController = new SelfDevBootstrapController(this.projectRoot, orchestrator);
 		}
 	}
 

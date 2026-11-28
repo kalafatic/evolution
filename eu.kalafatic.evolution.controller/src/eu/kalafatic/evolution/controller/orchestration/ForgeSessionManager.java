@@ -294,6 +294,7 @@ public class ForgeSessionManager {
     private Orchestrator orchestrator;
     private final java.util.Map<String, List<RuntimeEvent>> eventBuffer = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer> activeTrainers = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter> activeGpuTrainers = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, TrainingTelemetry> telemetryMap = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, java.util.List<eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener>> trainerListeners = new java.util.concurrent.ConcurrentHashMap<>();
     private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
@@ -352,6 +353,13 @@ public class ForgeSessionManager {
                 return entry.getKey();
             }
         }
+        // GPU (EVO-CUDA) trainers are tracked in a separate map; they are equally
+        // authoritative for "is training active" resolution.
+        for (java.util.Map.Entry<String, eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter> entry : activeGpuTrainers.entrySet()) {
+            if (entry.getValue() != null && findSessionById(entry.getKey()) != null) {
+                return entry.getKey();
+            }
+        }
         for (java.util.Map.Entry<String, TrainingTelemetry> entry : telemetryMap.entrySet()) {
             if (entry.getValue() != null && ("RUNNING".equals(entry.getValue().status) || "TRAINING".equals(entry.getValue().status))
                     && findSessionById(entry.getKey()) != null) {
@@ -381,7 +389,29 @@ public class ForgeSessionManager {
      * </ol>
      * Returns {@code null} only when no Forge session exists at all.
      */
+    /**
+     * The global EVO session UUID currently selected in AI Commander. This is the single
+     * cross-application identity: it is set by the AI Commander on every session selection
+     * and consumed by Forge, the Training Monitor and the Darwin engine. It is a pointer to
+     * the authoritative selection, NOT a second session manager.
+     */
+    private volatile String currentGlobalSessionId;
+
+    /** Propagates the globally selected EVO session UUID from the AI Commander. */
+    public void setCurrentGlobalSessionId(String globalSessionId) {
+        this.currentGlobalSessionId = globalSessionId;
+    }
+
+    /**
+     * The currently selected session identity. Prefers the global EVO session UUID
+     * propagated from the AI Commander; falls back to the active-training/default Forge
+     * session only when no global selection has been propagated (e.g. headless or legacy
+     * callers that predate the global-session architecture).
+     */
     public String getCurrentSessionId() {
+        if (currentGlobalSessionId != null && !currentGlobalSessionId.trim().isEmpty()) {
+            return currentGlobalSessionId;
+        }
         String active = getActiveTrainingSessionId();
         if (active != null && !active.trim().isEmpty()) {
             return active;
@@ -616,6 +646,20 @@ public class ForgeSessionManager {
     }
 
     public ForgeSession createSession(String name, String modelType, boolean isDemo) {
+        return createSessionWithId(UUID.randomUUID().toString(), name, modelType, isDemo);
+    }
+
+    /**
+     * Creates a Forge session with an explicit session id. This is used by
+     * {@link #getOrCreateForgeSession(String)} to bind a Forge session directly to a global
+     * EVO session UUID (the single cross-application identity), and by the default seeding
+     * path with a fresh random UUID.
+     */
+    public ForgeSession createSessionWithId(String sessionId, String name, String modelType) {
+        return createSessionWithId(sessionId, name, modelType, false);
+    }
+
+    public ForgeSession createSessionWithId(String sessionId, String name, String modelType, boolean isDemo) {
         Orchestrator orch = getOrchestratorModel();
         if (orch == null) return null;
 
@@ -627,7 +671,7 @@ public class ForgeSessionManager {
         git.setBranch(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryBranch(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_LLM));
         session.setGit(git);
 
-        session.setSessionId(UUID.randomUUID().toString());
+        session.setSessionId(sessionId);
         session.setName(name);
         session.setSelectedModelType(modelType);
         session.setCreatedAt(System.currentTimeMillis());
@@ -870,7 +914,15 @@ public class ForgeSessionManager {
     }
 
     public void updateUiState(String sessionId, String key, Object value) {
-        ForgeSession session = findSession(sessionId);
+        ForgeSession session = resolveSessionForState(sessionId);
+        if (session == null) {
+            // A global EVO session (UUID or legacy chat id) has no Forge state yet: bind it
+            // now so the configured datasets/hyperparameters persist under the SAME global
+            // session id the Darwin engine and the Training Monitor later read from.
+            String gid = resolveGlobalSessionId(sessionId);
+            if (gid == null) gid = sessionId;
+            session = getOrCreateForgeSession(gid);
+        }
         if (session != null && session.getModelState() != null) {
             String current = session.getModelState().getHyperparameters();
             JSONObject json = (current != null && !current.isEmpty() && !current.equals("{}")) ? new JSONObject(current) : new JSONObject();
@@ -904,7 +956,7 @@ public class ForgeSessionManager {
     }
 
     public JSONObject getUiState(String sessionId) {
-        ForgeSession session = findSession(sessionId);
+        ForgeSession session = resolveSessionForState(sessionId);
         if (session != null && session.getModelState() != null) {
             String current = session.getModelState().getHyperparameters();
             return (current != null && !current.isEmpty() && !current.equals("{}")) ? new JSONObject(current) : new JSONObject();
@@ -916,10 +968,161 @@ public class ForgeSessionManager {
         return "{\"type\": \"" + type + "\", \"samples\": 1000, \"status\": \"generated\"}";
     }
 
+    /**
+     * Resolves any EVO session reference to the single canonical {@link ForgeSession}
+     * holding the Forge training state. The global EVO session is the ONE identity shared
+     * across the EVO family; a Forge training state is associated with it by keying the
+     * Forge session's {@code sessionId} on the global EVO session UUID (see
+     * {@link #getOrCreateForgeSession(String)}).
+     *
+     * <p>Resolution order (first match wins, otherwise {@code null} — a missing session is
+     * NEVER silently substituted with another session):
+     * <ol>
+     *   <li>exact {@link ForgeSession#getSessionId()} match (a global EVO session UUID or a
+     *       legacy Forge UUID);</li>
+     *   <li>a global EVO session UUID / legacy chat id mapped through the orchestrator's
+     *       {@code AiChat.sessions} to the associated Forge session;</li>
+     *   <li>a case-insensitive Forge session display-name match (legacy demo sessions).</li>
+     * </ol>
+     */
+    private ForgeSession resolveSessionForState(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return null;
+        }
+        ForgeSession s = findSessionById(sessionId);
+        if (s != null) {
+            return s;
+        }
+        // Map a global EVO session UUID / legacy chat id to its associated Forge session.
+        String globalUuid = resolveGlobalSessionId(sessionId);
+        if (globalUuid != null) {
+            ForgeSession gs = findSessionById(globalUuid);
+            if (gs != null) {
+                return gs;
+            }
+        }
+        Orchestrator orch = getOrchestratorModel();
+        if (orch != null) {
+            synchronized (orch.getForgeSessions()) {
+                for (ForgeSession fs : orch.getForgeSessions()) {
+                    if (fs != null && fs.getName() != null && fs.getName().equalsIgnoreCase(sessionId)) {
+                        return fs;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Maps any EVO session reference — a global EVO session UUID or a legacy chat id
+     * (display name) — to the canonical global EVO session UUID, or {@code null} when the
+     * reference does not correspond to any AI Commander session. This is the bridge between
+     * the human-readable chat id and the global UUID that is the single cross-application
+     * identity.
+     */
+    public String resolveGlobalSessionId(String ref) {
+        if (ref == null) return null;
+        String t = ref.trim();
+        if (t.isEmpty()) return null;
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null || orch.getAiChat() == null) return null;
+        synchronized (orch.getAiChat().getSessions()) {
+            for (eu.kalafatic.evolution.model.orchestration.ChatSession cs : orch.getAiChat().getSessions()) {
+                if (cs == null) continue;
+                String gid = cs.getGlobalSessionId();
+                if (gid != null && gid.equals(t)) {
+                    return gid; // already the global UUID
+                }
+                if (t.equals(cs.getId())) {
+                    return gid; // legacy chat id -> global UUID (null if not yet backfilled)
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns (or lazily creates) the Forge session whose {@code sessionId} is the given
+     * global EVO session UUID. This is the single association point between the global EVO
+     * session and its Forge training state: telemetry, uiState, dataset configuration and
+     * the active trainer are all keyed by the same global UUID.
+     *
+     * <p>Returns {@code null} for a blank input. Never creates a session for a non-global
+     * (legacy Forge UUID) reference.
+     */
+    public ForgeSession getOrCreateForgeSession(String globalSessionId) {
+        if (globalSessionId == null || globalSessionId.trim().isEmpty()) {
+            return null;
+        }
+        ForgeSession existing = findSessionById(globalSessionId);
+        if (existing != null) {
+            return existing;
+        }
+        String displayName = chatDisplayNameFor(globalSessionId);
+        ForgeSession created = createSessionWithId(globalSessionId, displayName != null ? displayName : "EVO Session", null);
+        // One-time migration: carry over the configured training state (dataset folders,
+        // model size, epochs, ...) from the legacy default "Self-Evo Forging" session so a
+        // previously-configured dataset is used immediately under the new global id. Without
+        // this, the Darwin engine reads an empty uiState under the global UUID and silently
+        // falls back to the chat target folder.
+        migrateFromLegacyDefault(globalSessionId);
+        return created;
+    }
+
+    /**
+     * Copies missing configuration keys (dataset folders, model size, epochs, ...) from the
+     * legacy seeded "Self-Evo Forging" session into a newly created global-EVO-session Forge
+     * session. Runs once per new session; never overwrites an already-present key, so a
+     * user's later edits always win.
+     */
+    private void migrateFromLegacyDefault(String targetSessionId) {
+        try {
+            ForgeSession def = findDefaultSession();
+            if (def == null || def.getSessionId() == null || def.getSessionId().equals(targetSessionId)) {
+                return;
+            }
+            JSONObject defUi = getUiState(def.getSessionId());
+            if (defUi == null || defUi.length() == 0) {
+                return;
+            }
+            JSONObject targetUi = getUiState(targetSessionId);
+            boolean migrated = false;
+            for (Object keyObj : defUi.keySet()) {
+                String key = String.valueOf(keyObj);
+                if ("isDemo".equals(key) || "forge.workflow.status".equals(key)) {
+                    continue;
+                }
+                if (targetUi.has(key)) {
+                    continue;
+                }
+                updateUiState(targetSessionId, key, defUi.get(key));
+                migrated = true;
+            }
+            if (migrated) {
+                System.out.println("[SESSION][MIGRATE] Migrated legacy 'Self-Evo Forging' config to global session '" + targetSessionId + "'");
+            }
+        } catch (Exception ignored) {
+            // Best-effort migration; never block session creation.
+        }
+    }
+
+    private String chatDisplayNameFor(String globalSessionId) {
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null || orch.getAiChat() == null) return null;
+        synchronized (orch.getAiChat().getSessions()) {
+            for (eu.kalafatic.evolution.model.orchestration.ChatSession cs : orch.getAiChat().getSessions()) {
+                if (cs != null && globalSessionId.equals(cs.getGlobalSessionId())) {
+                    return cs.getId();
+                }
+            }
+        }
+        return null;
+    }
+
     public TrainingTelemetry getTelemetry(String sessionId) {
         if (sessionId == null) return null;
-        ForgeSession s = findSessionById(sessionId);
-        if (s == null) s = findSession(sessionId);
+        ForgeSession s = resolveSessionForState(sessionId);
         String key = s != null ? s.getSessionId() : sessionId;
         TrainingTelemetry telemetry = telemetryMap.computeIfAbsent(key, TrainingTelemetry::new);
         if (!key.equals(sessionId)) {
@@ -941,8 +1144,7 @@ public class ForgeSessionManager {
     public void registerActiveTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer trainer, boolean freshStart) {
         if (sessionId == null || trainer == null) return;
 
-        ForgeSession s = findSessionById(sessionId);
-        if (s == null) s = findSession(sessionId);
+        ForgeSession s = resolveSessionForState(sessionId);
         String key = s != null ? s.getSessionId() : sessionId;
 
         activeTrainers.put(key, trainer);
@@ -976,10 +1178,29 @@ public class ForgeSessionManager {
             publishEvent(s, RuntimeEventType.FORGE_TRAINING_STARTED, "TRAINING_STARTED");
         }
 
-        final String telemetryKey = key;
         eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener listener =
-                new eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener() {
+                createTelemetryProgressListener(telemetry);
+        trainer.addProgressListener(listener);
+        // Keep the listener reference so it can be detached when the trainer is
+        // unregistered; without removal, the trainer would retain the telemetry
+        // reference chain for its whole lifetime.
+        trainerListeners.computeIfAbsent(key, k -> new ArrayList<>()).add(listener);
+
+        persistSessionState(key);
+    }
+
+    /**
+     * Builds the single progress listener that publishes an active trainer's metrics into
+     * the session {@link TrainingTelemetry} (loss, epochs, steps, samples and log stream).
+     * It is shared by both the CPU trainer ({@code EvoLlmTrainer}) and the GPU adapter
+     * ({@code GpuTrainingAdapter}) so a GPU run publishes exactly the same telemetry the
+     * Forge page / Training Monitor reads.
+     */
+    private eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener createTelemetryProgressListener(
+            final TrainingTelemetry telemetry) {
+        return new eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener() {
             private long lastSampleTime = 0;
+            private long lastPublishTime = 0;
 
             @Override
             public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamplesCount, double currentLoss) {
@@ -1044,6 +1265,14 @@ public class ForgeSessionManager {
                     sample.learningRate = learningRate > 0.0 ? learningRate : telemetry.learningRate;
                     telemetry.addSample(sample);
 
+                    // Publish a throttled telemetry-change event on the shared runtime event
+                    // bus so the Forge page / Training Monitor / Forge Settings dialog can
+                    // subscribe and refresh live without relying exclusively on polling.
+                    if (now - lastPublishTime >= 1000 || currentStep == totalSteps) {
+                        lastPublishTime = now;
+                        publishTelemetryUpdated(telemetry.sessionId);
+                    }
+
                     if (currentStep % Math.max(1, totalSteps / 10) == 0 || currentStep == totalSteps) {
                         telemetry.addLog("INFO", String.format("Epoch %d/%d | Step %d/%d | Loss: %.4f | Speed: %.1f tok/s",
                                 epoch + 1, totalEpochs, currentStep, totalSteps, currentLoss, tokensPerSec));
@@ -1051,10 +1280,77 @@ public class ForgeSessionManager {
                 }
             }
         };
-        trainer.addProgressListener(listener);
-        // Keep the listener reference so it can be detached when the trainer is
-        // unregistered; without removal, the trainer would retain the telemetry
-        // reference chain for its whole lifetime.
+    }
+
+    /**
+     * Publishes a throttled {@code FORGE_TELEMETRY_UPDATED} event on the shared runtime
+     * event bus for a session whose training telemetry just changed. Live subscribers (the
+     * Forge page / Training Monitor / Forge Settings dialog) observe this event and refresh,
+     * so telemetry is pushed through the event bus rather than only discovered by polling.
+     */
+    private void publishTelemetryUpdated(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return;
+        }
+        try {
+            ForgeSession session = findSessionById(sessionId);
+            if (session == null) {
+                session = findSession(sessionId);
+            }
+            if (session != null) {
+                publishEvent(session, RuntimeEventType.FORGE_TELEMETRY_UPDATED, "TELEMETRY_UPDATED");
+            }
+        } catch (Exception ignored) {
+            // Telemetry publication is best-effort; a transient EMF/registry read from the
+            // training thread must never abort the actual training loop.
+        }
+    }
+
+    /**
+     * Registers a running GPU training adapter (EVO-CUDA) with the session telemetry, so a
+     * GPU forge run publishes the same live metrics the Forge page / Training Monitor reads.
+     * Mirrors {@link #registerActiveTrainer(String, eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer, boolean)}.
+     */
+    public void registerActiveGpuTrainer(String sessionId, eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter gpu, boolean freshStart) {
+        if (sessionId == null || gpu == null) return;
+
+        ForgeSession s = resolveSessionForState(sessionId);
+        String key = s != null ? s.getSessionId() : sessionId;
+
+        activeGpuTrainers.put(key, gpu);
+        if (!key.equals(sessionId)) activeGpuTrainers.put(sessionId, gpu);
+
+        TrainingTelemetry telemetry = getTelemetry(key);
+        if (freshStart) {
+            synchronized (telemetry.history) {
+                telemetry.history.clear();
+            }
+            synchronized (telemetry.logStream) {
+                telemetry.logStream.clear();
+            }
+            telemetry.bestValLoss = Double.MAX_VALUE;
+            telemetry.learningRate = -1.0;
+            telemetry.currentLoss = 0.0;
+            telemetry.valLoss = 0.0;
+            telemetry.processedTokens = 0;
+            telemetry.totalTokens = 0;
+            telemetry.tokensPerSec = 0.0;
+            telemetry.stepsPerSec = 0.0;
+            telemetry.estimatedRemainingSeconds = 0.0;
+        }
+        telemetry.setStatus("RUNNING", "GPU training session attached to GpuTrainingAdapter.");
+        telemetry.startTimeMs = System.currentTimeMillis();
+        telemetry.durationMs = 0;
+
+        if (s != null) {
+            s.setStatus(ForgeStatus.TRAINING);
+            updateWorkflowStatus(s.getSessionId(), "TRAINING_ACTIVE");
+            publishEvent(s, RuntimeEventType.FORGE_TRAINING_STARTED, "TRAINING_STARTED");
+        }
+
+        eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener listener =
+                createTelemetryProgressListener(telemetry);
+        gpu.addProgressListener(listener);
         trainerListeners.computeIfAbsent(key, k -> new ArrayList<>()).add(listener);
 
         persistSessionState(key);
@@ -1092,6 +1388,13 @@ public class ForgeSessionManager {
         if (trainer != null && listeners != null) {
             for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener l : listeners) {
                 trainer.removeProgressListener(l);
+            }
+        }
+        eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter gpu = activeGpuTrainers.remove(key);
+        if (gpu == null) gpu = activeGpuTrainers.remove(sessionId);
+        if (gpu != null && listeners != null) {
+            for (eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer.ProgressListener l : listeners) {
+                gpu.removeProgressListener(l);
             }
         }
         trainerListeners.remove(sessionId);
@@ -1163,6 +1466,11 @@ public class ForgeSessionManager {
             trainer.requestStop();
             requested = true;
         }
+        eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter gpu = activeGpuTrainers.get(sessionId);
+        if (gpu != null) {
+            gpu.requestStop();
+            requested = true;
+        }
 
         // Target trainer registered under actual resolved session UUID
         ForgeSession session = findSessionById(sessionId);
@@ -1175,6 +1483,11 @@ public class ForgeSessionManager {
             eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer sessionTrainer = activeTrainers.get(actualId);
             if (sessionTrainer != null && sessionTrainer != trainer) {
                 sessionTrainer.requestStop();
+                requested = true;
+            }
+            eu.kalafatic.evolution.forge.trainer.device.GpuTrainingAdapter sessionGpu = activeGpuTrainers.get(actualId);
+            if (sessionGpu != null && sessionGpu != gpu) {
+                sessionGpu.requestStop();
                 requested = true;
             }
             updateWorkflowStatus(actualId, "FINISHING_EXPORTING");

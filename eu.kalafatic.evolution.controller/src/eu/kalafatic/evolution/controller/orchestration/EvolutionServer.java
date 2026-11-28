@@ -68,6 +68,21 @@ public class EvolutionServer extends NanoHTTPD {
 
     private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
     private final java.util.Set<String> completedForgingRefreshes = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Cached Ollama status for {@code GET /server/status}. The probe performs network
+     * calls to Ollama (models can take up to 10 s); doing it synchronously inside the
+     * status handler made the response slow enough that short-timeout clients aborted
+     * mid-response, which NanoHTTPD logs as a SEVERE "connection reset". The endpoint
+     * now always answers from the cache and refreshes it on a daemon thread.
+     */
+    private final java.util.concurrent.atomic.AtomicReference<JSONObject> ollamaStatusCache =
+            new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicLong ollamaStatusAt =
+            new java.util.concurrent.atomic.AtomicLong(0);
+    private final java.util.concurrent.atomic.AtomicBoolean ollamaRefreshInFlight =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private static final long OLLAMA_STATUS_TTL_MS = 15000;
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
     private final AuthService authService;
@@ -172,6 +187,12 @@ public class EvolutionServer extends NanoHTTPD {
         res.addHeader("Access-Control-Allow-Origin", "*");
         res.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
         res.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-evo-runtime");
+        // Cross-origin pages (file:// SWT pages) can only read headers explicitly exposed.
+        res.addHeader("Access-Control-Expose-Headers", "X-EVO-Application, X-EVO-Component");
+        // Backend identity: lets clients distinguish the EVO server from an unrelated
+        // process that happens to occupy the same port and answers with HTTP 200.
+        res.addHeader("X-EVO-Application", "evolution");
+        res.addHeader("X-EVO-Component", "EvolutionServer");
     }
 
     private Response handleInternal(IHTTPSession session) {
@@ -491,10 +512,10 @@ public class EvolutionServer extends NanoHTTPD {
                 if (mutSession != null) {
                     request.setProjectRoot(mutSession.getWorkspaceDir());
                 } else {
-                    request.setProjectRoot(new File(json.optString("projectRoot", System.getProperty("user.dir"))));
+                    request.setProjectRoot(new File(json.optString("projectRoot", defaultProjectRootPath())));
                 }
             } else {
-                request.setProjectRoot(new File(json.optString("projectRoot", System.getProperty("user.dir"))));
+                request.setProjectRoot(new File(json.optString("projectRoot", defaultProjectRootPath())));
             }
 
             if (json.has("model")) {
@@ -662,7 +683,7 @@ public class EvolutionServer extends NanoHTTPD {
 
         String path = json.getString("path");
         String content = json.getString("content");
-        File root = new File(json.optString("projectRoot", System.getProperty("user.dir")));
+        File root = new File(json.optString("projectRoot", defaultProjectRootPath()));
 
         if (!isPathSafe(root)) {
             return newFixedLengthResponse(Response.Status.FORBIDDEN, "application/json",
@@ -1380,6 +1401,24 @@ public class EvolutionServer extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", new JSONObject().put("error", "Session not found").toString());
         }
         return newFixedLengthResponse(Response.Status.OK, "application/json", s.toJsonObject().toString());
+    }
+
+    /**
+     * Default project root for API calls that omit {@code projectRoot}. The process
+     * working directory is the Eclipse/RCP install directory, not a project; using it
+     * would create orchestrator state under the IDE installation. The EMF-configured
+     * source repository is authoritative, with {@code user.dir} only as a last resort.
+     */
+    private static String defaultProjectRootPath() {
+        try {
+            java.nio.file.Path repo = eu.kalafatic.evolution.controller.resource.ResourceManager
+                    .getInstance().getEvoGitRepository();
+            if (repo != null && repo.toFile().exists()) {
+                return repo.toAbsolutePath().normalize().toString();
+            }
+        } catch (Throwable ignored) {
+        }
+        return System.getProperty("user.dir");
     }
 
     private Response handleGetMutationDiff(IHTTPSession session) {
@@ -2197,26 +2236,8 @@ public class EvolutionServer extends NanoHTTPD {
         monitoring.put("timestamp", System.currentTimeMillis());
         status.put("monitoring", monitoring);
 
-        // Ollama Status
-        JSONObject ollamaStatus = new JSONObject();
-        String ollamaUrl = "http://localhost:11434"; // Default
-
-        // Try to get available models to avoid hardcoded default if it's missing
-        OllamaService ollama = new OllamaService(ollamaUrl, null);
-        boolean ollamaOnline = ollama.ping();
-        ollamaStatus.put("online", ollamaOnline);
-        ollamaStatus.put("url", ollamaUrl);
-        ollamaStatus.put("version", ollamaOnline ? ollama.getVersion() : "N/A");
-
-        JSONArray modelsArray = new JSONArray();
-        if (ollamaOnline) {
-            List<OllamaModel> models = ollama.loadModels();
-            for (OllamaModel m : models) {
-                modelsArray.put(new JSONObject().put("name", m.getName()).put("size", m.getSize()));
-            }
-        }
-        ollamaStatus.put("models", modelsArray);
-        status.put("ollama", ollamaStatus);
+        // Ollama status from the background cache (never blocks the status response).
+        status.put("ollama", ollamaStatusSnapshot());
 
         // Sessions
         JSONArray sessions = new JSONArray();
@@ -2244,6 +2265,62 @@ public class EvolutionServer extends NanoHTTPD {
         status.put("port", getListeningPort());
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", status.toString());
+    }
+
+    /** Returns the cached Ollama status and triggers a background refresh when stale. */
+    private JSONObject ollamaStatusSnapshot() {
+        long now = System.currentTimeMillis();
+        JSONObject cached = ollamaStatusCache.get();
+        if (cached == null || now - ollamaStatusAt.get() > OLLAMA_STATUS_TTL_MS) {
+            if (ollamaRefreshInFlight.compareAndSet(false, true)) {
+                Thread t = new Thread(() -> {
+                    try {
+                        ollamaStatusCache.set(probeOllamaStatus());
+                        ollamaStatusAt.set(System.currentTimeMillis());
+                    } catch (Throwable ignored) {
+                        ollamaStatusCache.set(offlineOllamaStatus());
+                        ollamaStatusAt.set(System.currentTimeMillis());
+                    } finally {
+                        ollamaRefreshInFlight.set(false);
+                    }
+                }, "evo-ollama-status");
+                t.setDaemon(true);
+                t.start();
+            }
+        }
+        return cached != null ? cached : offlineOllamaStatus();
+    }
+
+    /** Performs the actual Ollama probe (bounded by OllamaService timeouts). */
+    private JSONObject probeOllamaStatus() {
+        JSONObject ollamaStatus = new JSONObject();
+        String ollamaUrl = "http://localhost:11434";
+        OllamaService ollama = new OllamaService(ollamaUrl, null);
+        boolean ollamaOnline = ollama.ping();
+        ollamaStatus.put("online", ollamaOnline);
+        ollamaStatus.put("url", ollamaUrl);
+        ollamaStatus.put("version", ollamaOnline ? ollama.getVersion() : "N/A");
+
+        JSONArray modelsArray = new JSONArray();
+        if (ollamaOnline) {
+            List<OllamaModel> models = ollama.loadModels();
+            for (OllamaModel m : models) {
+                modelsArray.put(new JSONObject().put("name", m.getName()).put("size", m.getSize()));
+            }
+        }
+        ollamaStatus.put("models", modelsArray);
+        return ollamaStatus;
+    }
+
+    /** Truthful "not yet confirmed" status used until the first background probe finishes. */
+    private JSONObject offlineOllamaStatus() {
+        JSONObject ollamaStatus = new JSONObject();
+        ollamaStatus.put("online", false);
+        ollamaStatus.put("url", "http://localhost:11434");
+        ollamaStatus.put("version", "N/A");
+        ollamaStatus.put("models", new JSONArray());
+        ollamaStatus.put("probing", true);
+        return ollamaStatus;
     }
 
     private Response handleGetSystemState() {

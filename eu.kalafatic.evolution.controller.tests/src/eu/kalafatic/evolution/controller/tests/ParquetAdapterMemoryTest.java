@@ -26,7 +26,7 @@ public class ParquetAdapterMemoryTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
-    public void testDecompressSnappyBlockMemoryLimit() throws Exception {
+    public void testMalformedParquetHandledSafelyWithoutOom() throws Exception {
         File tempFile = tempFolder.newFile("malformed_large_varint.parquet");
 
         // Write PAR1 magic header + large varint uncompressed length (e.g. 50MB varint length marker)
@@ -53,8 +53,15 @@ public class ParquetAdapterMemoryTest {
         DatasetItem item = new DatasetItem(true, tempFile.getAbsolutePath(), "PARQUET");
         DatasetPreparationContext context = new DatasetPreparationContext();
 
-        // Convert should process safely without throwing OutOfMemoryError
-        List<NormalizedSample> samples = adapter.convert(item, context);
+        // The real Parquet codec must either reject the malformed file cleanly or return no
+        // samples — but never throw OutOfMemoryError while decoding the crafted varint length.
+        List<NormalizedSample> samples = null;
+        try {
+            samples = adapter.convert(item, context);
+        } catch (java.io.IOException cleanError) {
+            // A clean corruption diagnostic is the expected behaviour of a real codec.
+            return;
+        }
         assertNotNull("Samples list must not be null", samples);
         assertTrue("Execution completed safely without OutOfMemoryError", true);
     }

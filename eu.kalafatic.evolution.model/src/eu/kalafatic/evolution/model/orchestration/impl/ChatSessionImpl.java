@@ -74,6 +74,26 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	protected String id = ID_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getGlobalSessionId() <em>Global Session Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGlobalSessionId()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String GLOBAL_SESSION_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getGlobalSessionId() <em>Global Session Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGlobalSessionId()
+	 * @generated
+	 * @ordered
+	 */
+	protected String globalSessionId = GLOBAL_SESSION_ID_EDEFAULT;
+
+	/**
 	 * The cached value of the '{@link #getMessages() <em>Messages</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -785,6 +805,30 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 
 	/**
 	 * <!-- begin-user-doc -->
+	 * The globally unique, persistent EVO session identity (UUID).
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getGlobalSessionId() {
+		return globalSessionId;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGlobalSessionId(String newGlobalSessionId) {
+		String oldGlobalSessionId = globalSessionId;
+		globalSessionId = newGlobalSessionId;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__GLOBAL_SESSION_ID, oldGlobalSessionId, globalSessionId));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
@@ -839,6 +883,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return getBitState();
 			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
 				return getExpansion();
+			case OrchestrationPackage.CHAT_SESSION__GLOBAL_SESSION_ID:
+				return getGlobalSessionId();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -904,6 +950,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
 				setExpansion((Integer)newValue);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__GLOBAL_SESSION_ID:
+				setGlobalSessionId((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -967,6 +1016,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
 				setExpansion(EXPANSION_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__GLOBAL_SESSION_ID:
+				setGlobalSessionId(GLOBAL_SESSION_ID_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1013,6 +1065,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return bitState != BIT_STATE_EDEFAULT;
 			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
 				return expansion != EXPANSION_EDEFAULT;
+			case OrchestrationPackage.CHAT_SESSION__GLOBAL_SESSION_ID:
+				return GLOBAL_SESSION_ID_EDEFAULT == null ? globalSessionId != null : !GLOBAL_SESSION_ID_EDEFAULT.equals(globalSessionId);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1059,6 +1113,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(bitState);
 		result.append(", expansion: ");
 		result.append(expansion);
+		result.append(", globalSessionId: ");
+		result.append(globalSessionId);
 		result.append(')');
 		return result.toString();
 	}

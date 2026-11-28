@@ -426,15 +426,23 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		context.log("[FORGE] Darwin LLM Evolution Instance Started.");
 
-		String sid = context.getSessionId();
+		// Unify the session identity: the ONE global EVO session (UUID) is authoritative.
+		// The task context may carry the legacy chat id; map it to the global UUID and bind
+		// the Forge training state to that same id so telemetry, uiState and the active
+		// trainer all observe the single session (no Forge-specific identity is created).
+		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager forgeSessionManager =
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance();
+		String rawSid = context.getSessionId();
+		String globalUuid = forgeSessionManager.resolveGlobalSessionId(rawSid);
+		String sid = globalUuid != null ? globalUuid : rawSid;
 		eu.kalafatic.evolution.model.orchestration.ForgeSession forgeSession =
-				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().findSession(sid);
+				forgeSessionManager.getOrCreateForgeSession(sid);
 		if (forgeSession != null) {
-			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateStatus(sid,
+			forgeSessionManager.updateStatus(sid,
 					eu.kalafatic.evolution.model.orchestration.ForgeStatus.TRAINING);
 		}
 		eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.TrainingTelemetry mainTelemetry =
-				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().getTelemetry(sid);
+				forgeSessionManager.getTelemetry(sid);
 		if (mainTelemetry != null) {
 			mainTelemetry.status = "RUNNING";
 			mainTelemetry.startTimeMs = overallForgingStartTime;
@@ -491,9 +499,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 		context.log("[FORGE] Using base model for reference evaluation assistance: " + baseModel);
 
-		// Load dynamic configuration from ForgeSessionManager
-		JSONObject uiState = eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance()
-				.getUiState(context.getSessionId());
+		// Load dynamic configuration from ForgeSessionManager keyed by the global EVO session
+		// UUID (the same id the Forge Settings dialog persisted the dataset folders under),
+		// so the configured training dataset is read and the pipeline no longer silently
+		// falls back to the chat target folder.
+		JSONObject uiState = forgeSessionManager.getUiState(sid);
 
 		// Documented dataset limits, overridable through the existing forge
 		// session configuration (uiState), defaulting to the production limits.
@@ -1306,18 +1316,27 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			// EVO-CUDA backend: train the winner on GPU; weights are restored into
 			// winningModel in place, so the subsequent *.evo export preserves them.
 			GpuTrainingAdapter gpu = new GpuTrainingAdapter(winningModel);
-			gpu.setProgressListener(new EvoLlmTrainer.ProgressListener() {
-				@Override
-				public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
+			// Register GPU telemetry so the Forge page / Training Monitor receives the
+			// same live metrics as a CPU run (the previous GPU path published nothing).
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager fsm =
+					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance();
+			fsm.registerActiveGpuTrainer(context.getSessionId(), gpu, false);
+			try {
+				gpu.addProgressListener(new EvoLlmTrainer.ProgressListener() {
+					@Override
+					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
 
-				@Override
-				public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
-					context.log(String.format(
-							"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
-							epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
-				}
-			});
-			gpu.train(samples, finalEpochs);
+					@Override
+					public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+						context.log(String.format(
+								"[EVO Training Progress] Global Winner Refinement - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+								epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
+					}
+				});
+				gpu.train(samples, finalEpochs);
+			} finally {
+				fsm.unregisterActiveTrainer(context.getSessionId());
+			}
 			context.log(String.format(
 					"[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s | params=%d | forward=%.1fms backward=%.1fms optimizer=%.1fms (steps=%d)",
 					refineDevice.label(), gpu.getActualDevice().label(), gpu.getBackendName(), gpu.getParameterCount(),
@@ -1331,7 +1350,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				// NOTE: the trainer only invokes onProgressMetrics (per optimizer
 				// step); the legacy onProgress callback is a bridge that is never
 				// fired by the training loop, so progress must be consumed here.
-				trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+				// Use addProgressListener (not set) so the telemetry listener attached
+				// by registerActiveTrainer is preserved instead of being cleared.
+				trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
 					@Override
 					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
 
@@ -1846,19 +1867,28 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				// into the model in place so the candidate snapshot and export below
 				// operate on the GPU-trained parameters.
 				GpuTrainingAdapter gpu = new GpuTrainingAdapter(model);
-				gpu.setProgressListener(new EvoLlmTrainer.ProgressListener() {
-					@Override
-					public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
+				// Register GPU telemetry so the Forge page / Training Monitor receives
+				// candidate metrics (the previous GPU path published nothing).
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager fsm =
+						eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance();
+				fsm.registerActiveGpuTrainer(context.getSessionId(), gpu, false);
+				try {
+					gpu.addProgressListener(new EvoLlmTrainer.ProgressListener() {
+						@Override
+						public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {}
 
-					@Override
-					public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
-						context.log(String.format(
-								"[FORGE-EPOCH] Candidate Evaluation - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
-								epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
+						@Override
+						public void onEpochCompleted(int epoch, int totalEpochs, double trainLoss, double valLoss, long durationMs) {
+							context.log(String.format(
+									"[FORGE-EPOCH] Candidate Evaluation - Epoch %d/%d completed in %s | Train Loss: %.4f | Val Loss: %.4f",
+									epoch, totalEpochs, eu.kalafatic.utils.time.DateUtils.formatDuration(durationMs), trainLoss, valLoss));
+						}
+					});
+					if (!trainSamples.isEmpty()) {
+						gpu.train(trainSamples, screeningEpochs);
 					}
-				});
-				if (!trainSamples.isEmpty()) {
-					gpu.train(trainSamples, screeningEpochs);
+				} finally {
+					fsm.unregisterActiveTrainer(context.getSessionId());
 				}
 				context.log(String.format(
 						"[FORGE-TRAINING] selectedDevice=%s actualDevice=%s backend=%s | params=%d | forward=%.1fms backward=%.1fms optimizer=%.1fms (steps=%d)",
@@ -1875,7 +1905,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				trainer = new EvoLlmTrainer(model);
 				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().registerActiveTrainer(context.getSessionId(), trainer);
 				try {
-					trainer.setProgressListener(new EvoLlmTrainer.ProgressListener() {
+					trainer.addProgressListener(new EvoLlmTrainer.ProgressListener() {
 						@Override
 						public void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss) {
 							int logInterval = Math.max(1, totalSamples / 10);

@@ -3360,6 +3360,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getChatSession_GlobalSessionId() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(17);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getChatMessage() {
 		return chatMessageEClass;
 	}
@@ -4460,6 +4470,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatSessionEClass, CHAT_SESSION__REMOTE_MODEL);
 		createEAttribute(chatSessionEClass, CHAT_SESSION__BIT_STATE);
 		createEAttribute(chatSessionEClass, CHAT_SESSION__EXPANSION);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__GLOBAL_SESSION_ID);
 
 		chatMessageEClass = createEClass(CHAT_MESSAGE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__INDEX);
@@ -4898,6 +4909,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatSession_RemoteModel(), ecorePackage.getEString(), "remoteModel", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_BitState(), ecorePackage.getELong(), "bitState", "0", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_Expansion(), ecorePackage.getEInt(), "expansion", "5", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_GlobalSessionId(), ecorePackage.getEString(), "globalSessionId", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(chatMessageEClass, ChatMessage.class, "ChatMessage", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatMessage_Index(), ecorePackage.getEInt(), "index", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

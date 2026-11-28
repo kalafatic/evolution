@@ -70,6 +70,9 @@ public class ArchitecturePage extends AEvoPage {
     private MilestoneGenerator milestoneGenerator = new MilestoneGenerator();
 	private Composite content;
     private boolean bridgesInstalled = false;
+    /** Coalesces queued browser updates so a progress event + JS "ready" never double-render. */
+    private final java.util.concurrent.atomic.AtomicBoolean refreshQueued =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -520,6 +523,13 @@ public class ArchitecturePage extends AEvoPage {
 
         java.util.Set<String> diskTimestamps = snapshotDashboardMap.keySet();
 
+        // If the model already mirrors the disk exactly (same timestamps, sorted, <= 8),
+        // do nothing. Mutating the EMF list here would fire model notifications from a
+        // UI page, re-triggering every page's refresh and marking the editor dirty on open.
+        if (isSnapshotModelInSync(diskTimestamps)) {
+            return;
+        }
+
         // Remove from model if not on disk
         orchestrator.getGenomeSnapshots().removeIf(s -> !diskTimestamps.contains(s.getTimestamp()));
 
@@ -547,6 +557,29 @@ public class ArchitecturePage extends AEvoPage {
         while (orchestrator.getGenomeSnapshots().size() > 8) {
             orchestrator.getGenomeSnapshots().remove(0);
         }
+    }
+
+    /**
+     * True when the EMF genomeSnapshot list already matches the on-disk set, is sorted
+     * by timestamp and is within the retention limit. In that case synchronizeSnapshotsWithDisk
+     * must not mutate the model (no-op mutations fire EMF notifications and mark the editor dirty).
+     */
+    private boolean isSnapshotModelInSync(java.util.Set<String> diskTimestamps) {
+        if (orchestrator == null) return true;
+        java.util.List<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot> snapshots =
+                orchestrator.getGenomeSnapshots();
+        if (snapshots.size() > 8) return false;
+        java.util.Set<String> modelTimestamps = new java.util.HashSet<>();
+        String previous = null;
+        for (eu.kalafatic.evolution.model.orchestration.GenomeSnapshot s : snapshots) {
+            if (s == null || s.getTimestamp() == null) return false;
+            modelTimestamps.add(s.getTimestamp());
+            if (previous != null && previous.compareTo(s.getTimestamp()) > 0) {
+                return false; // not sorted
+            }
+            previous = s.getTimestamp();
+        }
+        return modelTimestamps.equals(diskTimestamps);
     }
 
     private void scanSnapshotDirectories(java.io.File current, java.io.File root, Map<String, String> map) {
@@ -1210,8 +1243,10 @@ public class ArchitecturePage extends AEvoPage {
 
     private void refreshBrowser() {
         if (browser == null || browser.isDisposed() || !isLoaded) return;
+        if (!refreshQueued.compareAndSet(false, true)) return;
 
         Display.getDefault().asyncExec(() -> {
+            refreshQueued.set(false);
             if (browser == null || browser.isDisposed()) return;
 
             String genomeJson = loadGenomeJson();

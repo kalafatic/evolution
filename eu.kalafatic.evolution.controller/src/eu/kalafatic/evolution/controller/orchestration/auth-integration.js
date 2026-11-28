@@ -3,6 +3,32 @@
  * Handles environment detection, session persistence, and fetch authorization.
  */
 
+
+/**
+ * Defense in depth for every EVO web page: never let a non-JSON response be parsed
+ * as JSON. An unrelated HTTP server occupying an EVO port can answer HTTP 200 with
+ * an HTML page; parsing that produced cryptic SyntaxErrors. This turns it into an
+ * explicit, actionable backend-identity error at the call site.
+ */
+(function guardNonJsonParsing() {
+    if (typeof Response === 'undefined' || !Response.prototype || !Response.prototype.json) return;
+    const nativeJson = Response.prototype.json;
+    Response.prototype.json = function() {
+        const contentType = ((this.headers && this.headers.get('content-type')) || '').toLowerCase();
+        if (!contentType.includes('json')) {
+            // Consume the body before failing. Rejecting without reading it makes the
+            // browser cancel the still-streaming response, which the server logs as a
+            // connection reset; reading it lets the response complete cleanly.
+            return this.text().catch(() => '').then(() => {
+                throw new Error(
+                    `Expected JSON from ${this.url} but received '${contentType || 'unknown'}' ` +
+                    `(HTTP ${this.status}) — a different application may be occupying the EVO server port.`);
+            });
+        }
+        return nativeJson.call(this);
+    };
+})();
+
 function isSWTBrowser() {
     return typeof JavaHandler !== 'undefined' ||
            typeof JavaLog !== 'undefined' ||

@@ -5,7 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.emf.common.util.URI;
@@ -64,6 +69,7 @@ public class ProjectModelManager {
     private final ResourceSet resourceSet;
     private final EvolutionRegistry evolutionRegistry = new EvolutionRegistry();
     private SourceDiscoveryResult cachedDiscoveryResult;
+    private final List<Runnable> modelChangeListeners = new CopyOnWriteArrayList<>();
 
     private ProjectModelManager() {
         resourceSet = new ResourceSetImpl();
@@ -158,13 +164,109 @@ public class ProjectModelManager {
         return orch;
     }
 
+    /**
+     * Persists an EMF resource, skipping the write entirely when the serialized
+     * content is byte-for-byte identical to what is already on disk.
+     *
+     * <p>Writing an unchanged configuration file externally makes Eclipse's
+     * {@code ResourceTextFileBuffer} re-synchronize the document of any editor that has
+     * the file open (e.g. a WTP SSE structured text editor showing {@code evo_config.xml}).
+     * That re-synchronization fires a document change through
+     * {@code org.eclipse.text.undo.DocumentUndoManager} into the global operation history,
+     * which notifies undo/redo {@code OperationHistoryActionHandler}s. A handler whose
+     * {@code IUndoContext} is null then fails in
+     * {@code AbstractOperation.hasContext(null)} with
+     * {@code AssertionFailedException: null argument}. Avoiding the no-op write removes the
+     * trigger without disabling undo/redo or suppressing the error.
+     */
     public void saveResource(Resource resource) throws IOException {
-        if (resource != null) {
+        if (resource == null) {
+            return;
+        }
+
+        // Serialize to memory first so we can compare against the on-disk content.
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        byte[] newContent;
+        try {
+            resource.save(baos, Collections.EMPTY_MAP);
+            newContent = baos.toByteArray();
+        } catch (java.lang.UnsupportedOperationException uoe) {
+            // A generic ResourceImpl cannot serialize to an OutputStream. Fall back to the
+            // plain save (which routes through the concrete resource's URI handler).
             try {
                 resource.save(Collections.EMPTY_MAP);
             } catch (org.eclipse.core.runtime.AssertionFailedException afe) {
-                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] AssertionFailedException caught during resource save: " + afe.getMessage());
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] AssertionFailedException during save: " + afe.getMessage());
             }
+            return;
+        } catch (org.eclipse.core.runtime.AssertionFailedException afe) {
+            // EMF's own serialization assertion; unrelated to operation-history. Log and
+            // stop so we never propagate a half-serialized model.
+            eu.kalafatic.evolution.controller.log.Log.log("[MODEL] AssertionFailedException during serialization: " + afe.getMessage());
+            return;
+        }
+
+        URI uri = resource.getURI();
+        if (uri == null) {
+            // No resolvable location: fall back to the plain EMF save.
+            try {
+                resource.save(Collections.EMPTY_MAP);
+            } catch (org.eclipse.core.runtime.AssertionFailedException afe) {
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] AssertionFailedException during save: " + afe.getMessage());
+            }
+            return;
+        }
+
+        if (uri.isPlatformResource()) {
+            org.eclipse.core.resources.IFile file = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot()
+                    .getFile(new org.eclipse.core.runtime.Path(uri.toPlatformString(true)));
+            if (fileContentEquals(file, newContent)) {
+                return; // unchanged: no external write, open editors are left untouched
+            }
+            try {
+                file.setContents(new java.io.ByteArrayInputStream(newContent),
+                        org.eclipse.core.resources.IResource.KEEP_HISTORY | org.eclipse.core.resources.IResource.FORCE,
+                        new org.eclipse.core.runtime.NullProgressMonitor());
+            } catch (org.eclipse.core.runtime.CoreException e) {
+                throw new IOException("Failed to persist workspace resource '" + uri + "': " + e.getMessage(), e);
+            }
+        } else if (uri.isFile()) {
+            java.io.File file = new java.io.File(uri.toFileString());
+            if (fileContentEquals(file, newContent)) {
+                return; // unchanged: no external write
+            }
+            java.nio.file.Files.write(file.toPath(), newContent);
+        } else {
+            // Non-file resource (e.g. remote URI): keep the existing EMF save path.
+            try {
+                resource.save(Collections.EMPTY_MAP);
+            } catch (org.eclipse.core.runtime.AssertionFailedException afe) {
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] AssertionFailedException during save: " + afe.getMessage());
+            }
+        }
+    }
+
+    /** Returns true when the workspace file already holds exactly {@code expected} bytes. */
+    private static boolean fileContentEquals(org.eclipse.core.resources.IFile file, byte[] expected) {
+        if (file == null || !file.exists()) {
+            return false;
+        }
+        try (java.io.InputStream in = file.getContents()) {
+            return java.util.Arrays.equals(expected, in.readAllBytes());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Returns true when the on-disk file already holds exactly {@code expected} bytes. */
+    private static boolean fileContentEquals(java.io.File file, byte[] expected) {
+        if (file == null || !file.isFile()) {
+            return false;
+        }
+        try {
+            return java.util.Arrays.equals(expected, java.nio.file.Files.readAllBytes(file.toPath()));
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -252,14 +354,19 @@ public class ProjectModelManager {
         
 
         if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
-            SourceDiscoveryResult result = getOrDiscoverWorkspace();
-            if (result != null && result.getPrimaryRepository() != null) {
-                orchestrator.setDefaultTarget(result.getPrimaryRepository().getAbsolutePath());
-                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] Default target discovered from workspace: " + orchestrator.getDefaultTarget());
-            } else {
-                // Fallback to legacy scan if workspace discovery failed
-                orchestrator.setDefaultTarget(findEvolutionRepository());
+            // The configured source repository (EMF Git.localPath) is authoritative.
+            // Workspace discovery may only report what is open in Eclipse; it must
+            // never silently override the configured repository with an unrelated
+            // project root (e.g. a sibling product checkout or runtime workspace).
+            Git configuredGit = orchestrator.getGit();
+            String configured = (configuredGit != null && configuredGit.getLocalPath() != null)
+                    ? configuredGit.getLocalPath().trim() : "";
+            if (configured.isEmpty()) {
+                configured = defaultGitRepo;
             }
+            orchestrator.setDefaultTarget(configured);
+            eu.kalafatic.evolution.controller.log.Log.log(
+                    "[MODEL] Default target uses the configured repository: " + configured);
         }
 
         if (orchestrator.getLlm() == null) {
@@ -519,13 +626,275 @@ public class ProjectModelManager {
         return getLlmModels(orchestrator, AiMode.REMOTE);
     }
 
+    // ------------------------------------------------------------------
+    // Model lifecycle / registration consistency helpers
+    // ------------------------------------------------------------------
+
+    public ModelStateStore getModelStateStore() {
+        return ModelStateStore.getInstance();
+    }
+
+    /**
+     * Registers a listener invoked whenever model registrations or discovery
+     * state change. Listeners must marshal to the SWT display thread themselves.
+     */
+    public void addModelChangeListener(Runnable listener) {
+        if (listener != null) {
+            modelChangeListeners.add(listener);
+        }
+    }
+
+    public void removeModelChangeListener(Runnable listener) {
+        modelChangeListeners.remove(listener);
+    }
+
+    public void notifyModelsChanged() {
+        for (Runnable listener : modelChangeListeners) {
+            try {
+                listener.run();
+            } catch (Exception e) {
+                eu.kalafatic.evolution.controller.log.Log.log(
+                        "[MODEL] Model change listener failed: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Invalidates runtime discovery caches and notifies UI consumers.
+     */
+    public void refreshModelDiscovery() {
+        Orchestrator current = null;
+        try {
+            current = eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl
+                    .getInstance().getOrchestrator();
+        } catch (Exception ignored) {
+            // Headless/test context without an active orchestration
+        }
+        refreshModelDiscovery(current);
+    }
+
+    /**
+     * Invalidates every model discovery cache, including the AI Commander
+     * provider-model cache, so a removed model cannot survive in a selection
+     * control.
+     */
+    public void refreshModelDiscovery(Orchestrator orchestrator) {
+        OllamaManager.getInstance().clearAllModelCaches();
+        try {
+            eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter.getInstance()
+                    .refreshProviderModels(orchestrator);
+        } catch (Exception e) {
+            eu.kalafatic.evolution.controller.log.Log.log(
+                    "[MODEL] Failed to refresh provider-model cache: " + e.getMessage());
+        }
+        notifyModelsChanged();
+    }
+
+    /**
+     * Finds the EMF provider entries that belong to the resolved model identity.
+     * This is the authoritative registration lookup used by removal and editing.
+     */
+    public List<AIProvider> findRegisteredProviders(Orchestrator orchestrator, ModelIdentity identity) {
+        List<AIProvider> matches = new ArrayList<>();
+        if (orchestrator == null || identity == null) {
+            return matches;
+        }
+        for (AIProvider provider : orchestrator.getAiProviders()) {
+            if (matchesIdentity(orchestrator, identity, provider)) {
+                matches.add(provider);
+            }
+        }
+        return matches;
+    }
+
+    public boolean isRegistered(Orchestrator orchestrator, ModelIdentity identity) {
+        return !findRegisteredProviders(orchestrator, identity).isEmpty();
+    }
+
+    /**
+     * Registration state for UI display: Registered / Unregistered / Discovered.
+     */
+    public String getRegistrationState(Orchestrator orchestrator, AIProvider provider) {
+        if (provider == null) {
+            return "Unknown";
+        }
+        ModelIdentity identity = ModelIdentityResolver.resolve(orchestrator, provider);
+        if (!findRegisteredProviders(orchestrator, identity).isEmpty()) {
+            return "Registered";
+        }
+        if (getModelStateStore().isSuppressed(identity.getCanonicalId())) {
+            return "Unregistered";
+        }
+        return "Discovered";
+    }
+
+    /**
+     * True when the candidate provider represents the same underlying model as
+     * the resolved identity. Cross-kind matches are intentionally conservative:
+     * an Ollama registration is not blindly treated as an EVO Native artifact.
+     */
+    public boolean matchesIdentity(Orchestrator orchestrator, ModelIdentity identity, AIProvider candidate) {
+        if (identity == null || candidate == null) {
+            return false;
+        }
+        ModelIdentity candidateIdentity = ModelIdentityResolver.resolve(orchestrator, candidate);
+        if (identity.getCanonicalId().equals(candidateIdentity.getCanonicalId())) {
+            return true;
+        }
+        if (identity.getKind() != candidateIdentity.getKind()) {
+            return false;
+        }
+        switch (identity.getKind()) {
+            case OLLAMA:
+                // Names are only equivalent within the same Ollama endpoint.
+                if (!identity.getEndpoint().isBlank() && !candidateIdentity.getEndpoint().isBlank()
+                        && !identity.getEndpoint().equalsIgnoreCase(candidateIdentity.getEndpoint())) {
+                    return false;
+                }
+                return ModelIdentityResolver.ollamaNamesEquivalent(
+                        identity.getTechnicalId(), candidateIdentity.getTechnicalId())
+                        || ModelIdentityResolver.ollamaNamesEquivalent(
+                                identity.getRuntimeName(), candidateIdentity.getRuntimeName());
+            case EVO_NATIVE:
+            case GGUF:
+            case DEMO:
+                if (identity.getArtifactPath() != null && candidateIdentity.getArtifactPath() != null) {
+                    return identity.getArtifactPath().toAbsolutePath().normalize()
+                            .equals(candidateIdentity.getArtifactPath().toAbsolutePath().normalize());
+                }
+                // When only one side can resolve a path, fall back to the exact
+                // technical id. Never match by a bare file name alias, which
+                // could remove a same-named artifact in a different directory.
+                return identity.getTechnicalId().equalsIgnoreCase(candidateIdentity.getTechnicalId());
+            case REMOTE:
+                // Remote registrations are matched by provider/model name only.
+                // Matching by endpoint would remove unrelated models that share
+                // the same provider URL.
+                String name = candidateIdentity.getTechnicalId();
+                return name.equalsIgnoreCase(identity.getTechnicalId())
+                        || identity.getAliases().contains(name);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Removes every EMF provider registration belonging to the identity.
+     *
+     * @return names of the removed provider entries.
+     */
+    public List<String> removeRegisteredProviders(Orchestrator orchestrator, ModelIdentity identity) {
+        List<String> removed = new ArrayList<>();
+        if (orchestrator == null || identity == null) {
+            return removed;
+        }
+        java.util.Iterator<AIProvider> iterator = orchestrator.getAiProviders().iterator();
+        while (iterator.hasNext()) {
+            AIProvider provider = iterator.next();
+            if (matchesIdentity(orchestrator, identity, provider)) {
+                removed.add(provider.getName());
+                iterator.remove();
+            }
+        }
+        return removed;
+    }
+
+    /**
+     * Clears default model references that point at the identity.
+     *
+     * @return true when at least one reference was cleared.
+     */
+    public boolean clearModelDefaultReferences(Orchestrator orchestrator, ModelIdentity identity) {
+        if (orchestrator == null || identity == null) {
+            return false;
+        }
+        boolean changed = false;
+
+        if (referencesModel(identity, orchestrator.getLocalModel())) {
+            updateLocalModel(orchestrator, "");
+            changed = true;
+        }
+        if (referencesModel(identity, orchestrator.getRemoteModel())) {
+            updateRemoteModel(orchestrator, "");
+            changed = true;
+        }
+        if (referencesModel(identity, orchestrator.getHybridModel())) {
+            updateHybridModel(orchestrator, "");
+            changed = true;
+        }
+        if (referencesModel(identity, orchestrator.getOpenAiModel())) {
+            updateOpenAiModel(orchestrator, "");
+            changed = true;
+        }
+        if (orchestrator.getOllama() != null && referencesModel(identity, orchestrator.getOllama().getModel())) {
+            orchestrator.getOllama().setModel("");
+            changed = true;
+        }
+        if (orchestrator.getLlm() != null && referencesModel(identity, orchestrator.getLlm().getModel())) {
+            orchestrator.getLlm().setModel("");
+            changed = true;
+        }
+        if (orchestrator.getNeuronAI() != null && referencesModel(identity, orchestrator.getNeuronAI().getModel())) {
+            orchestrator.getNeuronAI().setModel("");
+            changed = true;
+        }
+        return changed;
+    }
+
+    /**
+     * True when a configured model reference denotes the identity.
+     */
+    public boolean referencesModel(ModelIdentity identity, String reference) {
+        if (identity == null || reference == null || reference.isBlank()) {
+            return false;
+        }
+        String ref = reference.trim();
+        if (identity.isOllama()) {
+            return ModelIdentityResolver.ollamaNamesEquivalent(identity.getTechnicalId(), ref);
+        }
+        if (identity.isArtifactBacked()) {
+            if (ref.equalsIgnoreCase(identity.getTechnicalId())) {
+                return true;
+            }
+            if (identity.getArtifactPath() != null) {
+                try {
+                    java.nio.file.Path candidate = java.nio.file.Paths.get(ref)
+                            .toAbsolutePath().normalize();
+                    if (candidate.equals(identity.getArtifactPath().toAbsolutePath().normalize())) {
+                        return true;
+                    }
+                } catch (Exception ignored) {
+                    // Not a path
+                }
+            }
+            String fileName = identity.getArtifactPath() != null
+                    ? identity.getArtifactPath().getFileName().toString() : identity.getTechnicalId();
+            return ref.equalsIgnoreCase(fileName);
+        }
+        return ref.equalsIgnoreCase(identity.getTechnicalId());
+    }
+
     /**
      * Fetches all available models from all sources.
+     *
+     * <p>Explicitly unregistered models are excluded. The model management page
+     * uses {@link #getAllModels(Orchestrator, boolean)} to optionally reveal them
+     * for diagnostics; every other consumer (AI Commander, selection combos,
+     * Forge) must never see a removed model.</p>
      *
      * @param orchestrator The orchestrator instance.
      * @return List of AIProvider objects.
      */
     public List<AIProvider> getAllModels(Orchestrator orchestrator) {
+        return getAllModels(orchestrator, false);
+    }
+
+    /**
+     * @param includeSuppressed when true, explicitly unregistered models that
+     *                          still exist externally are included and marked as
+     *                          unregistered (Properties → Models diagnostics).
+     */
+    public List<AIProvider> getAllModels(Orchestrator orchestrator, boolean includeSuppressed) {
         List<AIProvider> models = new ArrayList<>();
         TokenSecurityService security = TokenSecurityService.getInstance();
         OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
@@ -1012,6 +1381,10 @@ public class ProjectModelManager {
             }
         }
 
+        // Reconcile duplicate discovery/registration representations into one
+        // logical model and drop identities that were explicitly unregistered.
+        models = applyIdentityConsistency(models, orchestrator, ollamaOnline, localNames, includeSuppressed);
+
         // Sort models descending by rating, with a secondary sort alphabetically by name
         models.sort((m1, m2) -> {
             int comp = Integer.compare(m2.getRating(), m1.getRating());
@@ -1024,6 +1397,111 @@ public class ProjectModelManager {
         });
 
         return models;
+    }
+
+    /**
+     * Collapses multiple representations of the same model (for example
+     * {@code model}, {@code model:latest} and a discovered artifact entry) into
+     * one logical row, and hides identities that were explicitly unregistered
+     * unless they still exist externally.
+     */
+    private List<AIProvider> applyIdentityConsistency(List<AIProvider> models, Orchestrator orchestrator,
+                                                      boolean ollamaOnline, Set<String> localNames,
+                                                      boolean includeSuppressed) {
+        Map<String, AIProvider> byIdentity = new LinkedHashMap<>();
+        for (AIProvider item : models) {
+            if (item == null || item.getName() == null || item.getName().isBlank()) {
+                continue;
+            }
+            ModelIdentity identity = ModelIdentityResolver.resolve(orchestrator, item);
+            AIProvider existing = byIdentity.get(identity.getCanonicalId());
+            if (existing == null) {
+                byIdentity.put(identity.getCanonicalId(), item);
+            } else {
+                mergeModelEntries(existing, item);
+            }
+        }
+
+        ModelStateStore store = getModelStateStore();
+        List<AIProvider> result = new ArrayList<>();
+        for (AIProvider item : byIdentity.values()) {
+            ModelIdentity identity = ModelIdentityResolver.resolve(orchestrator, item);
+            if (store.isSuppressed(identity.getCanonicalId())) {
+                if (!includeSuppressed) {
+                    // Removed models must never reach AI Commander, Forge or any
+                    // selection combo.
+                    continue;
+                }
+                boolean registered = isRegistered(orchestrator, identity);
+                boolean externallyPresent = isExternallyPresent(identity, item, ollamaOnline, localNames);
+                if (!registered && !externallyPresent) {
+                    continue;
+                }
+                if (!registered) {
+                    String description = item.getStateDescription() != null ? item.getStateDescription() : "";
+                    if (!description.startsWith("[Unregistered]")) {
+                        item.setStateDescription("[Unregistered] " + description);
+                    }
+                }
+            }
+            result.add(item);
+        }
+        return result;
+    }
+
+    private boolean isExternallyPresent(ModelIdentity identity, AIProvider item,
+                                        boolean ollamaOnline, Set<String> localNames) {
+        if (identity.isOllama()) {
+            if (!ollamaOnline || localNames == null) {
+                return false;
+            }
+            String runtime = identity.getRuntimeName().toLowerCase(Locale.ROOT);
+            String base = runtime.endsWith(":latest")
+                    ? runtime.substring(0, runtime.length() - ":latest".length()) : runtime;
+            return localNames.contains(runtime) || localNames.contains(base);
+        }
+        if (identity.isArtifactBacked()) {
+            if (identity.getArtifactPath() != null
+                    && java.nio.file.Files.exists(identity.getArtifactPath())) {
+                return true;
+            }
+            String url = item.getUrl();
+            if (url != null && !url.startsWith("http")) {
+                try {
+                    return java.nio.file.Files.exists(java.nio.file.Paths.get(url));
+                } catch (Exception ignored) {
+                    return false;
+                }
+            }
+            return false;
+        }
+        return identity.getKind() == ModelIdentity.Kind.REMOTE;
+    }
+
+    private void mergeModelEntries(AIProvider target, AIProvider source) {
+        if (!"OK".equals(target.getState()) && "OK".equals(source.getState())) {
+            target.setState("OK");
+            target.setStateDescription(source.getStateDescription());
+        } else if ((target.getState() == null || target.getState().isBlank())
+                && source.getState() != null) {
+            target.setState(source.getState());
+            target.setStateDescription(source.getStateDescription());
+        }
+        if (target.getRating() == 0 && source.getRating() != 0) {
+            target.setRating(source.getRating());
+            target.setRatingAnalyze(source.getRatingAnalyze());
+            target.setRatingChat(source.getRatingChat());
+            target.setRatingProgramming(source.getRatingProgramming());
+        }
+        boolean targetIsHttp = target.getUrl() == null || target.getUrl().startsWith("http");
+        boolean sourceIsPath = source.getUrl() != null && !source.getUrl().startsWith("http");
+        if (targetIsHttp && sourceIsPath) {
+            target.setUrl(source.getUrl());
+            if (source.getFormat() != null) {
+                target.setFormat(source.getFormat());
+            }
+            target.setLocal(true);
+        }
     }
 
     /**

@@ -50,16 +50,11 @@ public class Application implements IApplication {
 			}
 		}
 
-		// Start server in background for UI mode (honoring webServer.enabled / autoStart)
-		new Thread(() -> {
-			try {
-				startPrimaryIfConfigured(finalPort);
-				eu.kalafatic.evolution.controller.orchestration.EvolutionServer.logOsgiStatusDiagnostics();
-			} catch (Exception e) {
-				System.err.println("Failed to start background server on port " + finalPort + ": " + e.getMessage());
-				e.printStackTrace();
-			}
-		}).start();
+		// UI-mode server startup is owned exclusively by
+		// ApplicationWorkbenchWindowAdvisor.autoStartEvoServers(), which runs the full
+		// ServerManager.autoStartAll() sequence. Starting the primary server here as well
+		// created a duplicate initialization race (and, on a port conflict, duplicate
+		// conflict reports) against the same authoritative ServerManager.
 
 		Display display = PlatformUI.createDisplay();
 		try {

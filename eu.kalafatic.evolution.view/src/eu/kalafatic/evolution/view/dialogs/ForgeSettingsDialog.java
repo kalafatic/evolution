@@ -1379,6 +1379,13 @@ public class ForgeSettingsDialog extends Dialog {
     private String resolveForgeSessionId() {
         try {
             ForgeSessionManager mgr = ForgeSessionManager.getInstance();
+            // Prefer the globally selected EVO session (the same id the Darwin engine and
+            // the Forge Settings save flow use); this keeps telemetry and dataset config
+            // keyed consistently and avoids the seeded "Self-Evo Forging" demo session.
+            String global = mgr.getCurrentSessionId();
+            if (global != null && !global.trim().isEmpty()) {
+                return global;
+            }
             String active = mgr.getActiveTrainingSessionId();
             if (active != null && !active.trim().isEmpty()) return active;
             List<eu.kalafatic.evolution.model.orchestration.ForgeSession> sessions = mgr.getSessions();
@@ -2993,27 +3000,35 @@ public class ForgeSettingsDialog extends Dialog {
         int port = resolveServerPort();
         final String sessionId = sid;
         final int serverPort = port;
+        final String endpoint = "http://localhost:" + serverPort + "/forge/session/" + sessionId + "/forging/start";
         new Thread(() -> {
             try {
                 HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("http://localhost:" + serverPort + "/forge/session/" + sessionId + "/forging/start"))
+                        .uri(URI.create(endpoint))
                         .timeout(Duration.ofSeconds(15))
                         .POST(HttpRequest.BodyPublishers.noBody())
                         .build();
-                client.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                eu.kalafatic.evolution.view.HTTPUtils.requireEvolutionJson(endpoint,
+                        response.statusCode(),
+                        response.headers().firstValue("content-type").orElse(null));
+                Display.getDefault().asyncExec(() -> {
+                    if (getShell() != null && !getShell().isDisposed()) {
+                        MessageDialog.openInformation(getShell(), "Training Started",
+                            "Training start requested. The monitor will refresh automatically.\n\n"
+                            + "The backend prepares the dataset, validates configuration, initializes the model and starts training.");
+                    }
+                });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> {
                     if (getShell() != null && !getShell().isDisposed()) {
                         MessageDialog.openError(getShell(), "Start Failed",
-                            "Could not start training via the EVO server: " + ex.getMessage());
+                            "Could not start training via the EVO server:\n\n" + ex.getMessage());
                     }
                 });
             }
         }, "forge-settings-start").start();
-        MessageDialog.openInformation(getShell(), "Training Started",
-            "Training start requested. The monitor will refresh automatically.\n\n"
-            + "The backend prepares the dataset, validates configuration, initializes the model and starts training.");
     }
 
     private int resolveServerPort() {

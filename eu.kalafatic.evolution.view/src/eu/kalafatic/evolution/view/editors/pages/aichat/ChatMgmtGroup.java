@@ -524,6 +524,14 @@ public class ChatMgmtGroup extends AEvoGroup {
      * re-renders the Combo for the currently selected provider when the refresh
      * completes. This is the only normal operation that reloads provider models.
      */
+    /**
+     * Refreshes the provider-model selection after an external model registry
+     * change (for example a removal in Properties → Models).
+     */
+    public void refreshModelsFromRegistry() {
+        reloadModels();
+    }
+
     private void reloadModels() {
         String providerLabel = inferenceEngineCombo != null && !inferenceEngineCombo.isDisposed()
                 ? inferenceEngineCombo.getText() : "";
@@ -846,6 +854,28 @@ public class ChatMgmtGroup extends AEvoGroup {
      * ID, otherwise the first forge session ID, otherwise {@code null}.
      */
     private String resolveDefaultForgeSessionId() {
+        // Resolve the GLOBAL EVO session and bind its Forge training state, so the
+        // configured dataset folders are stored under the SAME id the Darwin engine
+        // reads. Previously this always returned the seeded "Self-Evo Forging" demo
+        // session, so the engine's getUiState(globalSessionId) came back empty and it
+        // silently fell back to the chat target folder.
+        try {
+            eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager mgr =
+                    eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance();
+            String globalUuid = page != null ? page.getCurrentSessionId() : null;
+            if (globalUuid == null || globalUuid.trim().isEmpty()) {
+                globalUuid = mgr.getCurrentSessionId();
+            }
+            if (globalUuid != null && !globalUuid.trim().isEmpty()) {
+                eu.kalafatic.evolution.model.orchestration.ForgeSession bound = mgr.getOrCreateForgeSession(globalUuid);
+                if (bound != null && bound.getSessionId() != null) {
+                    return bound.getSessionId();
+                }
+            }
+        } catch (Exception ignored) {
+            // Controller unavailable: fall through to the legacy default-session lookup.
+        }
+        // Legacy fallback (headless / pre-global-session states).
         if (orchestrator == null || orchestrator.getForgeSessions() == null || orchestrator.getForgeSessions().isEmpty()) {
             return null;
         }

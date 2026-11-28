@@ -148,12 +148,16 @@ public class AlpacaEvodataTrainingPipelineTest {
         assertTrue("Prompt length should be > 0", promptLen > 0);
         assertTrue("Sequence length should cover prompt and response", tSample.inputIds.length > promptLen);
 
-        for (int i = 0; i < promptLen; i++) {
+        // Prompt tokens are masked EXCEPT the last prompt position: with next-token-shifted
+        // labels, the last prompt position predicts the first response token and must be in
+        // the loss (otherwise the model is never taught to start a response). See
+        // DatasetBuilderInstructionMaskTest for the dedicated regression coverage.
+        for (int i = 0; i < promptLen - 1; i++) {
             assertFalse("Prompt token at index " + i + " must have lossMask = false", tSample.lossMask[i]);
         }
 
-        // Response tokens should have lossMask = true
-        for (int i = promptLen; i < tSample.inputIds.length; i++) {
+        // Response tokens (and the last prompt position) should have lossMask = true
+        for (int i = promptLen - 1; i < tSample.inputIds.length; i++) {
             assertTrue("Response token at index " + i + " must have lossMask = true", tSample.lossMask[i]);
         }
 

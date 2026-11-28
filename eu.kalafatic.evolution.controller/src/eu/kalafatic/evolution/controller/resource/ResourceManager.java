@@ -117,6 +117,28 @@ public class ResourceManager {
         return normalized;
     }
 
+    /**
+     * Resolves a consumer-provided project root to a canonical root. A candidate that
+     * is outside the allowed roots (e.g. the Eclipse runtime workspace or the IDE
+     * installation directory) is rejected and replaced by the configured source
+     * repository, so orchestrator state is never written to an unrelated location.
+     * The canonical security restrictions themselves are unchanged.
+     *
+     * @param candidate caller-provided project root (may be null)
+     * @return a canonical project root
+     */
+    public File resolveCanonicalProjectRoot(File candidate) {
+        if (candidate != null) {
+            try {
+                return validateCanonicalPath(candidate.toPath()).toFile();
+            } catch (IllegalArgumentException e) {
+                Log.log("[RESOURCE][PROJECT_ROOT] Rejected non-canonical root '" + candidate + "': "
+                        + e.getMessage() + " Falling back to the configured repository.");
+            }
+        }
+        return getEvoGitRepository().toFile();
+    }
+
     public Path getEvoGitRepository() {
         return getPath(EvoPath.EVO_GIT_REPOSITORY);
     }

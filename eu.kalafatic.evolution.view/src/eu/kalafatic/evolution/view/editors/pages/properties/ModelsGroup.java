@@ -2,8 +2,14 @@ package eu.kalafatic.evolution.view.editors.pages.properties;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
@@ -14,8 +20,12 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -23,22 +33,23 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
-import eu.kalafatic.evolution.view.util.EvoTableViewerHelper;
+import eu.kalafatic.evolution.controller.manager.ModelIdentity;
+import eu.kalafatic.evolution.controller.manager.ModelIdentityResolver;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
-import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalResult;
 import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalService;
-import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalStatus;
-import eu.kalafatic.evolution.controller.manager.removal.ModelRemovalStepResult;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -46,32 +57,56 @@ import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+import eu.kalafatic.evolution.view.util.EvoTableViewerHelper;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
- * @evo.lastModified: 13:A
- * @evo.origin: user
+ * Professional model management UI for Properties → Models.
+ *
+ * <p>The table is fed by the reconciled, de-duplicated model dataset. Filtering
+ * is applied over the complete dataset, and the filtered subset is the source
+ * for bulk selection and bulk operations.</p>
  */
 public class ModelsGroup extends AEvoGroup {
 
+    private static final String ALL = "All";
+
     private CheckboxTableViewer viewer;
-    private List<AIProvider> modelItems = new ArrayList<>();
+    private final List<ModelRow> allRows = new ArrayList<>();
+    private final List<ModelRow> filteredRows = new ArrayList<>();
+    private final Set<String> checkedKeys = new LinkedHashSet<>();
+    private final AtomicBoolean loadPending = new AtomicBoolean(false);
+
     private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
-    private org.eclipse.swt.widgets.Text filterText;
-    private String filterPattern = "";
+    private Text searchText;
+    private Combo providerFilter;
+    private Combo typeFilter;
+    private Combo statusFilter;
+    private Combo registrationFilter;
+    private Button showUnregisteredCheckbox;
+    private Label countsLabel;
 
     private Button selectAllButton;
-    private Button deselectAllButton;
+    private Button clearSelectionButton;
     private Button reloadButton;
+    private Button editButton;
+    private Button renameButton;
+    private Button removeButton;
     private Button testButton;
     private Button useButton;
     private Button addButton;
     private Button downloadButton;
-    private Button editButton;
-    private Button removeButton;
+    private Button exportButton;
     private Button saveButton;
 
-    public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
+    private int sortColumn = 1;
+    private int sortDirection = 1;
+    private Runnable modelChangeListener;
+
+    private String filterPattern = "";
+
+    public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator,
+                       eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
@@ -80,95 +115,238 @@ public class ModelsGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Models", 1, true, true);
 
-        Composite filterComp = toolkit.createComposite(group);
-        filterComp.setLayout(new GridLayout(2, false));
-        filterComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createFilterToolbar(toolkit);
 
-        GUIFactory.INSTANCE.createLabel(filterComp, "Filter Model Name:");
-        filterText = toolkit.createText(filterComp, "", SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
-        filterText.setMessage("Filter models...");
-        filterText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        filterText.addModifyListener(e -> {
-            filterPattern = filterText.getText();
-            if (viewer != null && !viewer.getControl().isDisposed()) {
-                viewer.refresh();
-            }
-        });
-
-        viewer = CheckboxTableViewer.newCheckList(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+        viewer = CheckboxTableViewer.newCheckList(group,
+                SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL);
         Table table = viewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        viewer.addFilter(new org.eclipse.jface.viewers.ViewerFilter() {
-            @Override
-            public boolean select(org.eclipse.jface.viewers.Viewer viewer, Object parentElement, Object element) {
-                if (filterPattern == null || filterPattern.trim().isEmpty()) {
-                    return true;
-                }
-                if (element instanceof AIProvider provider) {
-                    String name = provider.getName();
-                    if (name != null) {
-                        return name.toLowerCase().contains(filterPattern.trim().toLowerCase());
-                    }
-                }
-                return false;
-            }
-        });
-
         createColumns();
 
         viewer.setContentProvider(ArrayContentProvider.getInstance());
-        viewer.addDoubleClickListener(event -> handleUseModel());
+        viewer.setComparator(new ModelRowComparator());
+        viewer.addDoubleClickListener(event -> handleEditModel());
 
+        viewer.addSelectionChangedListener(event -> updateCounts());
+        viewer.addCheckStateListener(event -> {
+            if (event.getElement() instanceof ModelRow row) {
+                if (event.getChecked()) {
+                    checkedKeys.add(row.getKey());
+                } else {
+                    checkedKeys.remove(row.getKey());
+                }
+                updateCounts();
+            }
+        });
+        addRightClickSelection();
         createContextMenu();
         createButtons(toolkit);
-        
+
+        modelChangeListener = () -> Display.getDefault().asyncExec(() -> {
+            if (group != null && !group.isDisposed()) {
+                load();
+            }
+        });
+        ProjectModelManager.getInstance().addModelChangeListener(modelChangeListener);
+        group.addDisposeListener(e -> {
+            if (modelChangeListener != null) {
+                ProjectModelManager.getInstance().removeModelChangeListener(modelChangeListener);
+            }
+        });
+
         Display.getDefault().asyncExec(() -> {
             if (!viewer.getControl().isDisposed()) {
-            	load();
+                load();
             }
         });
     }
 
-	public void createButtons(FormToolkit toolkit) {
-		Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(10, false));
-        buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+    private void createFilterToolbar(FormToolkit toolkit) {
+        Composite searchRow = toolkit.createComposite(group);
+        searchRow.setLayout(new GridLayout(3, false));
+        searchRow.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        selectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Select All");
+        GUIFactory.INSTANCE.createLabel(searchRow, "Search:");
+        searchText = toolkit.createText(searchRow, "",
+                SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
+        searchText.setMessage("Name, technical ID, provider, type, endpoint, path, tag...");
+        searchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        searchText.addModifyListener(e -> {
+            filterPattern = searchText.getText();
+            applyFilters();
+        });
+
+        countsLabel = GUIFactory.INSTANCE.createLabel(searchRow, "");
+        countsLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+
+        Composite filterRow = toolkit.createComposite(group);
+        filterRow.setLayout(new GridLayout(12, false));
+        filterRow.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(filterRow, "Provider:");
+        providerFilter = createFilterCombo(filterRow,
+                new String[] { ALL, "Ollama", "EVO Native", "GGUF", "Demo", "Remote", "Unknown" });
+
+        GUIFactory.INSTANCE.createLabel(filterRow, "Type:");
+        typeFilter = createFilterCombo(filterRow,
+                new String[] { ALL, "Local (Ollama)", "EVO Native", "GGUF", "Demo", "Remote" });
+
+        GUIFactory.INSTANCE.createLabel(filterRow, "Status:");
+        statusFilter = createFilterCombo(filterRow,
+                new String[] { ALL, "Available", "Available (unregistered)",
+                        "Missing / not registered", "Offline / error", "Unknown" });
+
+        GUIFactory.INSTANCE.createLabel(filterRow, "Registration:");
+        registrationFilter = createFilterCombo(filterRow,
+                new String[] { ALL, "Registered", "Discovered", "Unregistered" });
+
+        Button clearButton = GUIFactory.INSTANCE.createButton(filterRow, "Clear Filters");
+        clearButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                clearFilters(false);
+            }
+        });
+
+        Button resetButton = GUIFactory.INSTANCE.createButton(filterRow, "Reset");
+        resetButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                clearFilters(true);
+            }
+        });
+
+        showUnregisteredCheckbox = new Button(filterRow, SWT.CHECK);
+        showUnregisteredCheckbox.setText("Show unregistered");
+        showUnregisteredCheckbox.setToolTipText(
+                "Reveal models whose EVO registration was removed but whose artifact/runtime still exists");
+        showUnregisteredCheckbox.setSelection(false);
+        showUnregisteredCheckbox.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                applyFilters();
+            }
+        });
+    }
+
+    private Combo createFilterCombo(Composite parent, String[] items) {
+        Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
+        combo.setItems(items);
+        combo.select(0);
+        combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+        combo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                applyFilters();
+            }
+        });
+        return combo;
+    }
+
+    private void clearFilters(boolean reset) {
+        if (searchText != null && !searchText.isDisposed()) {
+            filterPattern = "";
+            searchText.setText("");
+        }
+        if (providerFilter != null && !providerFilter.isDisposed()) {
+            providerFilter.select(0);
+        }
+        if (typeFilter != null && !typeFilter.isDisposed()) {
+            typeFilter.select(0);
+        }
+        if (statusFilter != null && !statusFilter.isDisposed()) {
+            statusFilter.select(0);
+        }
+        if (registrationFilter != null && !registrationFilter.isDisposed()) {
+            registrationFilter.select(0);
+        }
+        if (showUnregisteredCheckbox != null && !showUnregisteredCheckbox.isDisposed()) {
+            showUnregisteredCheckbox.setSelection(false);
+        }
+        if (reset) {
+            checkedKeys.clear();
+            if (viewer != null && !viewer.getControl().isDisposed()) {
+                viewer.setAllChecked(false);
+                viewer.setSelection(StructuredSelection.EMPTY);
+            }
+            load();
+        } else {
+            applyFilters();
+        }
+    }
+
+    public void createButtons(FormToolkit toolkit) {
+        Composite buttonBar = toolkit.createComposite(group);
+        buttonBar.setLayout(new GridLayout(7, false));
+        buttonBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        selectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Select All Filtered");
+        selectAllButton.setToolTipText("Select every model currently visible under the active filters");
         selectAllButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (viewer != null) {
-                    viewer.setAllChecked(true);
-                }
+                selectAllFiltered();
             }
         });
 
-        deselectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Deselect All");
-        deselectAllButton.addSelectionListener(new SelectionAdapter() {
+        clearSelectionButton = GUIFactory.INSTANCE.createButton(buttonBar, "Clear Selection");
+        clearSelectionButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (viewer != null) {
+                checkedKeys.clear();
+                if (viewer != null && !viewer.getControl().isDisposed()) {
                     viewer.setAllChecked(false);
+                    viewer.setSelection(StructuredSelection.EMPTY);
                 }
+                updateCounts();
             }
         });
 
-        reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Reload");
+        reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Refresh");
+        reloadButton.setToolTipText("Re-run model discovery and refresh statuses");
         reloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) ? orchestrator.getOllama().getUrl() : eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("INFERENCE").getUrl();
-                OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
-                load();
+                handleReload();
             }
         });
 
-        testButton = GUIFactory.INSTANCE.createButton(buttonBar, "Test Model");
+        editButton = GUIFactory.INSTANCE.createButton(buttonBar, "Edit");
+        editButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleEditModel();
+            }
+        });
+
+        renameButton = GUIFactory.INSTANCE.createButton(buttonBar, "Rename");
+        renameButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleRenameModel();
+            }
+        });
+
+        removeButton = GUIFactory.INSTANCE.createButton(buttonBar, "Delete Selected");
+        removeButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleRemoveModel();
+            }
+        });
+
+        exportButton = GUIFactory.INSTANCE.createButton(buttonBar, "Export ZIP");
+        exportButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleExportToZip();
+            }
+        });
+
+        testButton = GUIFactory.INSTANCE.createButton(buttonBar, "Test");
         testButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -200,22 +378,6 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        editButton = GUIFactory.INSTANCE.createButton(buttonBar, "Edit");
-        editButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleEditModel();
-            }
-        });
-
-        removeButton = GUIFactory.INSTANCE.createButton(buttonBar, "Remove");
-        removeButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleRemoveModel();
-            }
-        });
-
         saveButton = GUIFactory.INSTANCE.createButton(buttonBar, "Save to Model");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -223,408 +385,284 @@ public class ModelsGroup extends AEvoGroup {
                 editor.doSave(null);
             }
         });
-	}
+    }
 
-    private Color getModelColor(AIProvider item) {
-        if ("ERR".equals(item.getState())) return lightRed;
-        if ("NA".equals(item.getState())) return lightOrange;
-        if ("OK".equals(item.getState())) {
-            String name = item.getName().toLowerCase();
-            if (ProjectModelManager.getInstance().isHybrid(item)) return lightCyan;
-            if (name.endsWith(":instruct")) return lightPurple;
-            if (name.endsWith(":chat")) return lightBlue;
+    private Color getModelColor(ModelRow row) {
+        if (row == null) {
+            return null;
+        }
+        if ("Unregistered".equals(row.getRegistrationState())) {
+            return lightPurple;
+        }
+        if (ProjectModelManager.getInstance().isHybrid(row.getProvider())) {
+            return lightCyan;
+        }
+        String status = row.getStatus();
+        if ("Offline / error".equals(status)) {
+            return lightRed;
+        }
+        if ("Missing / not registered".equals(status) || "Unknown".equals(status)) {
+            return lightOrange;
+        }
+        if ("Available".equals(status) || "Available (unregistered)".equals(status)) {
             return lightGreen;
         }
         return null;
     }
 
-    private String getModelUrl(AIProvider item) {
-        if (item == null) return "";
-        if (item.isLocal()) {
-            if (orchestrator != null && orchestrator.getOllama() != null) {
-                return orchestrator.getOllama().getUrl();
-            }
-            if (item.getUrl() != null && item.getUrl().startsWith("http")) {
-                return item.getUrl();
-            }
-            return "http://localhost:11434";
-        }
-        return item.getUrl() != null ? item.getUrl() : "";
-    }
-
-    private String getModelPath(AIProvider item) {
-        if (item == null) return "";
-
-        // Check if item.getUrl() points directly to an existing file or directory on disk
-        if (item.getUrl() != null && !item.getUrl().isEmpty()) {
-            File directFile = new File(item.getUrl());
-            if (directFile.exists()) {
-                return directFile.getAbsolutePath();
-            }
-        }
-
-        // For demo models, item.getUrl() already has the absolute path of the demo GGUF file!
-        if (item.getName() != null && item.getName().startsWith("demo/")) {
-            return item.getUrl() != null ? item.getUrl() : "";
-        }
-
-        // If it's a remote model, path doesn't exist
-        if (!item.isLocal()) {
-            return "";
-        }
-
-        String modelName = item.getName();
-        if (modelName == null) return "";
-
-        // Check default internal controller models folder first
-        File modelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
-        if (modelsDir != null && modelsDir.exists() && modelsDir.isDirectory()) {
-            File f1 = new File(modelsDir, modelName + ".gguf");
-            if (f1.exists()) {
-                return f1.getAbsolutePath();
-            }
-            if (modelName.equalsIgnoreCase("evo")) {
-                File f2 = new File(modelsDir, "evo.gguf");
-                if (f2.exists()) {
-                    return f2.getAbsolutePath();
-                }
-            }
-        }
-
-        // Check default internal llama-cpp lib folder
-        File llamaCppDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveLlamaCppLibDir();
-        if (llamaCppDir != null && llamaCppDir.exists() && llamaCppDir.isDirectory()) {
-            File f1 = new File(llamaCppDir, modelName + ".gguf");
-            if (f1.exists()) {
-                return f1.getAbsolutePath();
-            }
-            if (modelName.equalsIgnoreCase("evo")) {
-                File f2 = new File(llamaCppDir, "evo.gguf");
-                if (f2.exists()) {
-                    return f2.getAbsolutePath();
-                }
-            }
-        }
-
-        // Check default Ollama folder
-        File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
-        if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
-            File f1 = new File(ollamaHomeModelsDir, modelName + ".gguf");
-            if (f1.exists()) {
-                return f1.getAbsolutePath();
-            }
-            if (modelName.equalsIgnoreCase("evo")) {
-                File f2 = new File(ollamaHomeModelsDir, "evo.gguf");
-                if (f2.exists()) {
-                    return f2.getAbsolutePath();
-                }
-            }
-        }
-
-        // Check workspace source/models folder
-        String codebasePath = ProjectModelManager.getCodebasePath();
-        if (codebasePath != null) {
-            File sourceModelsDir = new File(codebasePath, "source/models");
-            if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
-                File f1 = new File(sourceModelsDir, modelName + ".gguf");
-                if (f1.exists()) {
-                    return f1.getAbsolutePath();
-                }
-                if (modelName.equalsIgnoreCase("evo")) {
-                    File f2 = new File(sourceModelsDir, "evo.gguf");
-                    if (f2.exists()) {
-                        return f2.getAbsolutePath();
-                    }
-                }
-            }
-        }
-
-        // Check codebase dist folder
-        if (codebasePath != null) {
-            File distDir = new File(codebasePath, "dist");
-            if (distDir.exists() && distDir.isDirectory()) {
-                File[] subdirs = distDir.listFiles(File::isDirectory);
-                if (subdirs != null) {
-                    for (File subdir : subdirs) {
-                        if (subdir.getName().equalsIgnoreCase(modelName) || subdir.getName().startsWith("evo-")) {
-                            File f = new File(subdir, "evo.gguf");
-                            if (f.exists()) {
-                                // For forging/dist folders, if the subdir matches or maps to modelName, return that
-                                String expectedModelName = subdir.getName().startsWith("evo-") ? subdir.getName() : "evo-" + subdir.getName().substring(8);
-                                if (expectedModelName.equalsIgnoreCase(modelName) || subdir.getName().equalsIgnoreCase(modelName)) {
-                                    return f.getAbsolutePath();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return "";
-    }
-
-    private String getModelDate(AIProvider item) {
-        if (item == null) return "";
-
-        // 1. Try to get file modification time on disk
-        String path = getModelPath(item);
-        if (path != null && !path.isEmpty()) {
-            File f = new File(path);
-            if (f.exists()) {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                return sdf.format(new java.util.Date(f.lastModified()));
-            }
-        }
-
-        // 2. If it's a local model, check Ollama's registered models
-        if (item.isLocal()) {
-            try {
-                String ollamaUrl = getModelUrl(item);
-                if (ollamaUrl != null && !ollamaUrl.isEmpty()) {
-                    OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
-                    if (service != null) {
-                        List<OllamaModel> oModels = service.loadModels();
-                        if (oModels != null) {
-                            for (OllamaModel om : oModels) {
-                                if (om.getName().equalsIgnoreCase(item.getName())) {
-                                    String mod = om.getModifiedAt();
-                                    if (mod != null && !mod.isEmpty()) {
-                                        try {
-                                            String cleanMod = mod;
-                                            if (cleanMod.contains(".")) {
-                                                cleanMod = cleanMod.substring(0, cleanMod.indexOf("."));
-                                            }
-                                            cleanMod = cleanMod.replace("T", " ");
-                                            if (cleanMod.endsWith("Z")) {
-                                                cleanMod = cleanMod.substring(0, cleanMod.length() - 1);
-                                            }
-                                            return cleanMod;
-                                        } catch (Exception ex) {
-                                            return mod;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // Ignore
-            }
-        }
-
-        return "";
+    private Color getSafeColor(ModelRow row) {
+        Color color = getModelColor(row);
+        return color != null ? color : colorWhite;
     }
 
     private void createColumns() {
-        String[] titles = { "Select", "State", "Name", "Type", "URL", "Path", "Date", "Token", "Rating (A/CH/P)" };
-        int[] bounds = { 50, 60, 150, 60, 200, 250, 140, 80, 120 };
+        String[] titles = { "Select", "Model", "Technical ID", "Provider", "Type", "Status",
+                "Registration", "Endpoint", "Location", "Size", "Modified", "Actions" };
+        int[] bounds = { 42, 170, 190, 100, 100, 145, 105, 190, 260, 80, 135, 140 };
 
-        // Select (Checkbox column)
-        TableViewerColumn colSelect = createTableViewerColumn(titles[0], bounds[0]);
-        colSelect.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn selectColumn = createTableViewerColumn(titles[0], bounds[0]);
+        selectColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
                 return "";
             }
         });
 
-        // State
-        TableViewerColumn colState = createTableViewerColumn(titles[1], bounds[1]);
-        colState.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn modelColumn = createTableViewerColumn(titles[1], bounds[1]);
+        modelColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                String s = ((AIProvider) element).getState();
-                return s != null ? s : "NA";
+                return ((ModelRow) element).getDisplayName();
             }
+
             @Override
             public String getToolTipText(Object element) {
-                return ((AIProvider) element).getStateDescription();
+                ModelRow row = (ModelRow) element;
+                return row.getDescription() != null && !row.getDescription().isBlank()
+                        ? row.getDescription() : row.getStatusDescription();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
-        org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(viewer);
 
-        // Name
-        TableViewerColumn colName = createTableViewerColumn(titles[2], bounds[2]);
-        colName.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn techColumn = createTableViewerColumn(titles[2], bounds[2]);
+        techColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return ((AIProvider) element).getName();
+                return ((ModelRow) element).getTechnicalId();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        // Local
-        TableViewerColumn colLocal = createTableViewerColumn(titles[3], bounds[3]);
-        colLocal.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn providerColumn = createTableViewerColumn(titles[3], bounds[3]);
+        providerColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                AIProvider item = (AIProvider) element;
-                if (ProjectModelManager.getInstance().isHybrid(item)) return "Hybrid";
-                return (item.isLocal()) ? "Local" : "Remote";
+                return ((ModelRow) element).getProviderLabel();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        // URL
-        TableViewerColumn colUrl = createTableViewerColumn(titles[4], bounds[4]);
-        colUrl.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn typeColumn = createTableViewerColumn(titles[4], bounds[4]);
+        typeColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return getModelUrl((AIProvider) element);
+                return ((ModelRow) element).getTypeLabel();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        // Path
-        TableViewerColumn colPath = createTableViewerColumn(titles[5], bounds[5]);
-        colPath.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn statusColumn = createTableViewerColumn(titles[5], bounds[5]);
+        statusColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return getModelPath((AIProvider) element);
+                return ((ModelRow) element).getStatus();
             }
+
+            @Override
+            public String getToolTipText(Object element) {
+                return ((ModelRow) element).getStatusDescription();
+            }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        // Date
-        TableViewerColumn colDate = createTableViewerColumn(titles[6], bounds[6]);
-        colDate.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn registrationColumn = createTableViewerColumn(titles[6], bounds[6]);
+        registrationColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return getModelDate((AIProvider) element);
+                return ((ModelRow) element).getRegistrationState();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        // Token
-        TableViewerColumn colToken = createTableViewerColumn(titles[7], bounds[7]);
-        colToken.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn endpointColumn = createTableViewerColumn(titles[7], bounds[7]);
+        endpointColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                String t = ((AIProvider) element).getApiKey();
-                if (t == null || t.isEmpty() || t.equals("YOUR_API_KEY")) return "";
-                return "****";
+                return ((ModelRow) element).getEndpoint();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        // Rating
-        TableViewerColumn colRating = createTableViewerColumn(titles[8], bounds[8]);
-        colRating.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn locationColumn = createTableViewerColumn(titles[8], bounds[8]);
+        locationColumn.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                AIProvider item = (AIProvider) element;
-                return String.format("%d (A:%d/CH:%d/P:%d)", item.getRating(), item.getRatingAnalyze(), item.getRatingChat(), item.getRatingProgramming());
+                return ((ModelRow) element).getLocation();
             }
+
             @Override
             public Color getBackground(Object element) {
-                return getSafeColor(getModelColor((AIProvider) element));
+                return getSafeColor((ModelRow) element);
             }
         });
 
-        setupSorting(colName, colState, colRating, colDate);
+        TableViewerColumn sizeColumn = createTableViewerColumn(titles[9], bounds[9]);
+        sizeColumn.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((ModelRow) element).getFormattedSize();
+            }
+
+            @Override
+            public Color getBackground(Object element) {
+                return getSafeColor((ModelRow) element);
+            }
+        });
+
+        TableViewerColumn modifiedColumn = createTableViewerColumn(titles[10], bounds[10]);
+        modifiedColumn.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((ModelRow) element).getFormattedModified();
+            }
+
+            @Override
+            public Color getBackground(Object element) {
+                return getSafeColor((ModelRow) element);
+            }
+        });
+
+        TableViewerColumn actionsColumn = createTableViewerColumn(titles[11], bounds[11]);
+        actionsColumn.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((ModelRow) element).getActionsLabel();
+            }
+
+            @Override
+            public Color getBackground(Object element) {
+                return getSafeColor((ModelRow) element);
+            }
+        });
+
+        setupSorting(new TableViewerColumn[] { selectColumn, modelColumn, techColumn, providerColumn,
+                typeColumn, statusColumn, registrationColumn, endpointColumn, locationColumn,
+                sizeColumn, modifiedColumn, actionsColumn });
+        ColumnViewerToolTipSupport.enableFor(viewer);
     }
 
-    private void setupSorting(TableViewerColumn colName, TableViewerColumn colState, TableViewerColumn colRating, TableViewerColumn colDate) {
-        ModelComparator comparator = new ModelComparator(this);
-        viewer.setComparator(comparator);
-
-        colName.getColumn().addSelectionListener(new SelectionAdapter() {
-            @Override public void widgetSelected(SelectionEvent e) {
-                comparator.setColumn(0);
-                viewer.refresh();
-            }
-        });
-        colState.getColumn().addSelectionListener(new SelectionAdapter() {
-            @Override public void widgetSelected(SelectionEvent e) {
-                comparator.setColumn(1);
-                viewer.refresh();
-            }
-        });
-        colRating.getColumn().addSelectionListener(new SelectionAdapter() {
-            @Override public void widgetSelected(SelectionEvent e) {
-                comparator.setColumn(2);
-                viewer.refresh();
-            }
-        });
-        colDate.getColumn().addSelectionListener(new SelectionAdapter() {
-            @Override public void widgetSelected(SelectionEvent e) {
-                comparator.setColumn(3);
-                viewer.refresh();
-            }
-        });
+    private void setupSorting(TableViewerColumn[] columns) {
+        for (int i = 1; i < columns.length - 1; i++) {
+            final int index = i;
+            columns[i].getColumn().addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    if (sortColumn == index) {
+                        sortDirection = -sortDirection;
+                    } else {
+                        sortColumn = index;
+                        sortDirection = 1;
+                    }
+                    if (viewer != null && !viewer.getControl().isDisposed()) {
+                        viewer.refresh();
+                    }
+                }
+            });
+        }
     }
 
-    private static class ModelComparator extends org.eclipse.jface.viewers.ViewerComparator {
-        private final ModelsGroup group;
-        private int propertyIndex = 2; // Default to Rating column (index 2 in compare)
-        private static final int DESCENDING = 1;
-        private int direction = DESCENDING;
-
-        public ModelComparator(ModelsGroup group) {
-            this.group = group;
-        }
-
-        public void setColumn(int column) {
-            if (column == this.propertyIndex) {
-                direction = 1 - direction;
-            } else {
-                this.propertyIndex = column;
-                direction = DESCENDING;
-            }
-        }
-
+    private class ModelRowComparator extends ViewerComparator {
         @Override
-        public int compare(org.eclipse.jface.viewers.Viewer viewer, Object e1, Object e2) {
-            AIProvider m1 = (AIProvider) e1;
-            AIProvider m2 = (AIProvider) e2;
-            int rc = 0;
-            switch (propertyIndex) {
-            case 0: // Name
-                rc = m1.getName().compareToIgnoreCase(m2.getName());
-                break;
-            case 1: // State
-                String s1 = m1.getState() != null ? m1.getState() : "";
-                String s2 = m2.getState() != null ? m2.getState() : "";
-                rc = s1.compareTo(s2);
-                break;
-            case 2: // Rating
-                rc = Integer.compare(m1.getRating(), m2.getRating());
-                break;
-            case 3: // Date
-                String d1 = group.getModelDate(m1);
-                String d2 = group.getModelDate(m2);
-                rc = d1.compareTo(d2);
-                break;
-            default:
-                rc = 0;
+        public int compare(Viewer viewer, Object e1, Object e2) {
+            ModelRow a = (ModelRow) e1;
+            ModelRow b = (ModelRow) e2;
+            int result;
+            switch (sortColumn) {
+                case 2:
+                    result = a.getTechnicalId().compareToIgnoreCase(b.getTechnicalId());
+                    break;
+                case 3:
+                    result = a.getProviderLabel().compareToIgnoreCase(b.getProviderLabel());
+                    break;
+                case 4:
+                    result = a.getTypeLabel().compareToIgnoreCase(b.getTypeLabel());
+                    break;
+                case 5:
+                    result = a.getStatus().compareToIgnoreCase(b.getStatus());
+                    break;
+                case 6:
+                    result = a.getRegistrationState().compareToIgnoreCase(b.getRegistrationState());
+                    break;
+                case 7:
+                    result = a.getEndpoint().compareToIgnoreCase(b.getEndpoint());
+                    break;
+                case 8:
+                    result = a.getLocation().compareToIgnoreCase(b.getLocation());
+                    break;
+                case 9:
+                    result = Long.compare(a.getSize(), b.getSize());
+                    break;
+                case 10:
+                    result = Long.compare(a.getModified(), b.getModified());
+                    break;
+                default:
+                    result = a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
+                    break;
             }
-            if (direction == DESCENDING) rc = -rc;
-            return rc;
+            return sortDirection >= 0 ? result : -result;
         }
+    }
+
+    private TableViewerColumn createTableViewerColumn(String title, int bound) {
+        return EvoTableViewerHelper.createColumn(viewer, title, bound, true, true);
+    }
+
+    private void addRightClickSelection() {
+        viewer.getTable().addListener(SWT.MouseDown, event -> {
+            org.eclipse.swt.widgets.TableItem item = viewer.getTable().getItem(
+                    new org.eclipse.swt.graphics.Point(event.x, event.y));
+            if (item != null) {
+                viewer.getTable().setSelection(item);
+            }
+        });
     }
 
     private void createContextMenu() {
@@ -642,294 +680,465 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void fillContextMenu(IMenuManager manager) {
-        manager.add(new Action("Select All") {
-            @Override public void run() { if (viewer != null) viewer.setAllChecked(true); }
-        });
-        manager.add(new Action("Deselect All") {
-            @Override public void run() { if (viewer != null) viewer.setAllChecked(false); }
-        });
-        manager.add(new Separator());
-        manager.add(new Action("Reload") {
-            @Override public void run() {
-                String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
-                OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
-                load();
+        manager.add(new Action("Select All Filtered") {
+            @Override
+            public void run() {
+                selectAllFiltered();
             }
         });
-        manager.add(new Action("Test Model") {
-            @Override public void run() { handleTestModel(); }
-        });
-        manager.add(new Action("Use") {
-            @Override public void run() { handleUseModel(); }
+        manager.add(new Action("Clear Selection") {
+            @Override
+            public void run() {
+                checkedKeys.clear();
+                if (viewer != null) {
+                    viewer.setAllChecked(false);
+                }
+                updateCounts();
+            }
         });
         manager.add(new Separator());
+        manager.add(new Action("Edit...") {
+            @Override
+            public void run() {
+                handleEditModel();
+            }
+        });
+        manager.add(new Action("Rename...") {
+            @Override
+            public void run() {
+                handleRenameModel();
+            }
+        });
+        manager.add(new Action("Delete Selected...") {
+            @Override
+            public void run() {
+                handleRemoveModel();
+            }
+        });
+        manager.add(new Separator());
+        manager.add(new Action("Use") {
+            @Override
+            public void run() {
+                handleUseModel();
+            }
+        });
+        manager.add(new Action("Test") {
+            @Override
+            public void run() {
+                handleTestModel();
+            }
+        });
+        manager.add(new Action("Export to ZIP") {
+            @Override
+            public void run() {
+                handleExportToZip();
+            }
+        });
+        manager.add(new Separator());
+        manager.add(new Action("Refresh Discovery") {
+            @Override
+            public void run() {
+                handleReload();
+            }
+        });
         manager.add(new Action("Add") {
-            @Override public void run() { handleAddModel(); }
+            @Override
+            public void run() {
+                handleAddModel();
+            }
         });
         manager.add(new Action("Download") {
-            @Override public void run() { handleDownloadModel(); }
-        });
-        manager.add(new Separator());
-        manager.add(new Action("Edit") {
-            @Override public void run() { handleEditModel(); }
-        });
-        manager.add(new Action("Remove") {
-            @Override public void run() { handleRemoveModel(); }
-        });
-        manager.add(new Separator());
-        manager.add(new Action("Export to ZIP") {
-            @Override public void run() { handleExportToZip(); }
+            @Override
+            public void run() {
+                handleDownloadModel();
+            }
         });
         manager.add(new Separator());
         manager.add(new Action("Save to Model") {
-            @Override public void run() { editor.doSave(null); }
+            @Override
+            public void run() {
+                editor.doSave(null);
+            }
         });
     }
 
-    private AIProvider getSelectedOrCheckedModel() {
-        if (viewer == null) return null;
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection != null && !selection.isEmpty()) {
-            Object first = selection.getFirstElement();
-            if (first instanceof AIProvider p) {
-                return p;
-            }
-        }
-        Object[] checked = viewer.getCheckedElements();
-        if (checked != null && checked.length > 0) {
-            for (Object obj : checked) {
-                if (obj instanceof AIProvider p) {
-                    return p;
-                }
-            }
-        }
-        return null;
-    }
+    // ------------------------------------------------------------------
+    // Selection helpers
+    // ------------------------------------------------------------------
 
-    private List<AIProvider> getSelectedOrCheckedModels() {
-        if (viewer == null) return new ArrayList<>();
-        java.util.Set<AIProvider> set = new java.util.LinkedHashSet<>();
+    private List<ModelRow> getVisibleSelection() {
+        List<ModelRow> rows = new ArrayList<>();
+        if (viewer == null) {
+            return rows;
+        }
         IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection != null && !selection.isEmpty()) {
             for (Object obj : selection.toArray()) {
-                if (obj instanceof AIProvider p) {
-                    set.add(p);
+                if (obj instanceof ModelRow row) {
+                    rows.add(row);
                 }
             }
         }
-        Object[] checked = viewer.getCheckedElements();
-        if (checked != null) {
-            for (Object obj : checked) {
-                if (obj instanceof AIProvider p) {
-                    set.add(p);
-                }
-            }
-        }
-        return new ArrayList<>(set);
+        return rows;
     }
 
-    private void handleExportToZip() {
-        AIProvider item = getSelectedOrCheckedModel();
-        if (item == null) return;
+    /**
+     * Rows the next action should operate on: the checked filtered selection when
+     * present, otherwise the structured table selection.
+     */
+    private List<ModelRow> getActionRows() {
+        List<ModelRow> checkedRows = getCheckedRows();
+        if (!checkedRows.isEmpty()) {
+            return checkedRows;
+        }
+        return getVisibleSelection();
+    }
 
-        String path = getModelPath(item);
-        if (path == null || path.isEmpty()) {
-            MessageDialog.openError(group.getShell(), "Export Model", "Could not find physical file path for model: " + item.getName());
+    private List<ModelRow> getCheckedRows() {
+        List<ModelRow> rows = new ArrayList<>();
+        for (ModelRow row : allRows) {
+            if (checkedKeys.contains(row.getKey())) {
+                rows.add(row);
+            }
+        }
+        return rows;
+    }
+
+    private void selectAllFiltered() {
+        checkedKeys.clear();
+        for (ModelRow row : filteredRows) {
+            checkedKeys.add(row.getKey());
+        }
+        if (viewer != null && !viewer.getControl().isDisposed()) {
+            viewer.setCheckedElements(filteredRows.toArray());
+        }
+        updateCounts();
+    }
+
+    private void restoreCheckedState() {
+        if (viewer == null || viewer.getControl().isDisposed()) {
             return;
         }
+        List<ModelRow> toCheck = new ArrayList<>();
+        Set<String> visibleKeys = new LinkedHashSet<>();
+        for (ModelRow row : filteredRows) {
+            visibleKeys.add(row.getKey());
+            if (checkedKeys.contains(row.getKey())) {
+                toCheck.add(row);
+            }
+        }
+        // Hidden rows are never part of the bulk selection.
+        checkedKeys.retainAll(visibleKeys);
+        viewer.setCheckedElements(toCheck.toArray());
+    }
 
-        File file = new File(path);
-        if (!file.exists()) {
-            MessageDialog.openError(group.getShell(), "Export Model", "Model GGUF file does not exist on disk: " + path);
+    // ------------------------------------------------------------------
+    // Filtering
+    // ------------------------------------------------------------------
+
+    private void applyFilters() {
+        if (viewer == null || viewer.getControl().isDisposed()) {
             return;
         }
+        List<ModelRow> filtered = new ArrayList<>();
+        for (ModelRow row : allRows) {
+            if (!matchesRow(row)) {
+                continue;
+            }
+            filtered.add(row);
+        }
+        filteredRows.clear();
+        filteredRows.addAll(filtered);
+        viewer.setInput(filteredRows.toArray());
+        restoreCheckedState();
+        updateCounts();
+    }
 
-        org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.SAVE);
-        dialog.setFilterExtensions(new String[] { "*.zip" });
-        dialog.setFileName(item.getName().replace("/", "_").replace(":", "_") + ".zip");
-        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(dialog, null);
-        String destinationPath = dialog.open();
+    private boolean matchesRow(ModelRow row) {
+        if (!row.matchesSearch(filterPattern)) {
+            return false;
+        }
+        if (!matchesProvider(providerFilter, row)) {
+            return false;
+        }
+        if (!matchesType(typeFilter, row)) {
+            return false;
+        }
+        if (!matchesCombo(statusFilter, row.getStatus())) {
+            return false;
+        }
+        if (!matchesCombo(registrationFilter, row.getRegistrationState())) {
+            return false;
+        }
+        if (!isShowUnregistered() && "Unregistered".equals(row.getRegistrationState())) {
+            return false;
+        }
+        return true;
+    }
 
-        if (destinationPath != null) {
-            File zipFile = new File(destinationPath);
+    private boolean isShowUnregistered() {
+        return showUnregisteredCheckbox != null
+                && !showUnregisteredCheckbox.isDisposed()
+                && showUnregisteredCheckbox.getSelection();
+    }
+
+    private boolean matchesProvider(Combo combo, ModelRow row) {
+        if (combo == null || combo.isDisposed()) {
+            return true;
+        }
+        String selected = combo.getText();
+        if (selected == null || selected.isBlank() || ALL.equals(selected)) {
+            return true;
+        }
+        if ("Remote".equals(selected)) {
+            return row.getIdentity().getKind() == ModelIdentity.Kind.REMOTE;
+        }
+        return selected.equalsIgnoreCase(row.getProviderLabel());
+    }
+
+    private boolean matchesCombo(Combo combo, String value) {
+        if (combo == null || combo.isDisposed()) {
+            return true;
+        }
+        String selected = combo.getText();
+        if (selected == null || selected.isBlank() || ALL.equals(selected)) {
+            return true;
+        }
+        return selected.equalsIgnoreCase(value);
+    }
+
+    private boolean matchesType(Combo combo, ModelRow row) {
+        if (combo == null || combo.isDisposed()) {
+            return true;
+        }
+        String selected = combo.getText();
+        if (selected == null || selected.isBlank() || ALL.equals(selected)) {
+            return true;
+        }
+        ModelIdentity.Kind kind = row.getIdentity().getKind();
+        if ("Local (Ollama)".equals(selected)) {
+            return kind == ModelIdentity.Kind.OLLAMA;
+        }
+        return kind.getLabel().equalsIgnoreCase(selected);
+    }
+
+    private void updateCounts() {
+        if (countsLabel == null || countsLabel.isDisposed()) {
+            return;
+        }
+        long registered = allRows.stream()
+                .filter(r -> "Registered".equals(r.getRegistrationState()))
+                .count();
+        int selected = 0;
+        for (ModelRow row : allRows) {
+            if (checkedKeys.contains(row.getKey())) {
+                selected++;
+            }
+        }
+        long unregistered = allRows.stream()
+                .filter(r -> "Unregistered".equals(r.getRegistrationState()))
+                .count();
+        String hidden = (!isShowUnregistered() && unregistered > 0)
+                ? "  •  Hidden unregistered: " + unregistered : "";
+        countsLabel.setText("Showing " + filteredRows.size() + " of " + allRows.size()
+                + "  •  Registered: " + registered + "  •  Selected: " + selected + hidden);
+    }
+
+    // ------------------------------------------------------------------
+    // Loading
+    // ------------------------------------------------------------------
+
+    public void load() {
+        if (loadPending.getAndSet(true)) {
+            return;
+        }
+        CompletableFuture.supplyAsync(this::buildRows)
+                .thenAcceptAsync(rows -> {
+                    loadPending.set(false);
+                    if (viewer == null || viewer.getControl().isDisposed()) {
+                        return;
+                    }
+                    allRows.clear();
+                    allRows.addAll(rows);
+                    Set<String> available = new LinkedHashSet<>();
+                    for (ModelRow row : allRows) {
+                        available.add(row.getKey());
+                    }
+                    checkedKeys.retainAll(available);
+                    applyFilters();
+                }, Display.getDefault()::asyncExec)
+                .exceptionally(error -> {
+                    loadPending.set(false);
+                    eu.kalafatic.evolution.controller.log.Log.log(
+                            "[MODEL] Failed to load model list: " + error.getMessage());
+                    return null;
+                });
+    }
+
+    private List<ModelRow> buildRows() {
+        List<ModelRow> rows = new ArrayList<>();
+        if (orchestrator == null) {
+            return rows;
+        }
+        Set<String> registeredKeys = new LinkedHashSet<>();
+        for (AIProvider registration : orchestrator.getAiProviders()) {
+            registeredKeys.add(ModelIdentityResolver.resolve(orchestrator, registration).getCanonicalId());
+        }
+        Map<String, List<OllamaModel>> ollamaByEndpoint = new LinkedHashMap<>();
+        Map<String, ModelRow> unique = new LinkedHashMap<>();
+        for (AIProvider provider : ProjectModelManager.getInstance().getAllModels(orchestrator, true)) {
             try {
-                File parentDir = file.getParentFile();
-                boolean isSpecificModelFolder = false;
-                if (parentDir != null && parentDir.isDirectory()) {
-                    String parentName = parentDir.getName().toLowerCase();
-                    if (parentName.startsWith("evo-") || parentName.startsWith("forging-") || (parentDir.getParentFile() != null && parentDir.getParentFile().getName().equalsIgnoreCase("forge-output"))) {
-                        isSpecificModelFolder = true;
+                ModelIdentity identity = ModelIdentityResolver.resolve(orchestrator, provider);
+                List<OllamaModel> ollamaModels = null;
+                if (identity.isOllama()) {
+                    String endpoint = identity.getEndpoint();
+                    ollamaModels = ollamaByEndpoint.get(endpoint);
+                    if (ollamaModels == null) {
+                        ollamaModels = OllamaManager.getInstance().getService(endpoint).loadModels();
+                        ollamaByEndpoint.put(endpoint, ollamaModels);
                     }
                 }
-
-                if (isSpecificModelFolder) {
-                    eu.kalafatic.evolution.view.util.ZipUtil.pack(parentDir, zipFile);
-                } else {
-                    // Create a single file zip containing the GGUF file
-                    try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFile))) {
-                        java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(file.getName());
-                        zos.putNextEntry(zipEntry);
-                        java.nio.file.Files.copy(file.toPath(), zos);
-                        zos.closeEntry();
-                    }
-                }
-
-                MessageDialog.openInformation(group.getShell(), "Export Model", "Model exported successfully to " + zipFile.getAbsolutePath());
-            } catch (Exception ex) {
-                MessageDialog.openError(group.getShell(), "Export Model Error", "Failed to export model to ZIP: " + ex.getMessage());
+                ModelRow row = ModelRow.from(orchestrator, provider, registeredKeys, ollamaModels);
+                unique.putIfAbsent(row.getKey(), row);
+            } catch (Exception e) {
+                eu.kalafatic.evolution.controller.log.Log.log(
+                        "[MODEL] Failed to build row for '" + provider.getName() + "': " + e.getMessage());
             }
         }
+        rows.addAll(unique.values());
+        return rows;
     }
 
-    private TableViewerColumn createTableViewerColumn(String title, int bound) {
-        return EvoTableViewerHelper.createColumn(viewer, title, bound, true, true);
-    }
-
-    private void handleDownloadModel() {
-        String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
-        ModelDownloadDialog dialog = new ModelDownloadDialog(group.getShell(), ollamaUrl);
-        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
-            String modelName = dialog.getDownloadedModelName();
-            if (modelName != null && !modelName.isEmpty()) {
-                // Check if it already exists in aiProviders
-                boolean exists = orchestrator.getAiProviders().stream()
-                        .anyMatch(p -> modelName.equalsIgnoreCase(p.getName()) && p.isLocal());
-                if (!exists) {
-                    eu.kalafatic.evolution.model.orchestration.AIProvider newProvider =
-                            eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
-                    newProvider.setName(modelName);
-                    newProvider.setLocal(true);
-                    newProvider.setUrl(ollamaUrl);
-                    newProvider.setFormat("ollama");
-                    orchestrator.getAiProviders().add(newProvider);
-                    editor.setDirty(true);
-                }
-                refreshUI();
-            }
+    private void handleReload() {
+        if (orchestrator != null) {
+            String ollamaUrl = (orchestrator.getOllama() != null
+                    && orchestrator.getOllama().getUrl() != null)
+                    ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+            OllamaManager.getInstance().getService(ollamaUrl).clearCache();
         }
+        ProjectModelManager.getInstance().refreshModelDiscovery(orchestrator);
+        load();
     }
 
-    private void handleAddModel() {
-        String[] options = { "Local (Ollama)", "Remote" };
-        MessageDialog dialog = new MessageDialog(group.getShell(), "Add Model", null,
-                "Select the type of model to add:", MessageDialog.QUESTION, options, 0);
-        int result = dialog.open();
-        if (result == 0) { // Local
-            org.eclipse.jface.dialogs.InputDialog input = new org.eclipse.jface.dialogs.InputDialog(group.getShell(), "Add Local Model",
-                    "Enter the name of the model to run (e.g., gemma, llama3):", "", null);
-            if (input.open() == org.eclipse.jface.dialogs.InputDialog.OK) {
-                String modelName = input.getValue();
-                if (modelName != null && !modelName.trim().isEmpty()) {
-                    // Just add it to providers if it's already there or verified
-                    eu.kalafatic.evolution.model.orchestration.AIProvider newProvider =
-                            eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
-                    newProvider.setName(modelName.trim());
-                    newProvider.setLocal(true);
-                    String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
-                    newProvider.setUrl(ollamaUrl);
-                    newProvider.setFormat("ollama");
-                    orchestrator.getAiProviders().add(newProvider);
-                    editor.setDirty(true);
-                    refreshUI();
-                }
-            }
-        } else if (result == 1) { // Remote
-            eu.kalafatic.evolution.model.orchestration.AIProvider newProvider =
-                eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
-            newProvider.setName("new-provider");
-            newProvider.setFormat("openai");
-
-            ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), newProvider);
-            if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
-                if (orchestrator != null) {
-                    orchestrator.getAiProviders().add(newProvider);
-                    editor.setDirty(true);
-                    refreshUI();
-                }
-            }
-        }
-    }
+    // ------------------------------------------------------------------
+    // Operations
+    // ------------------------------------------------------------------
 
     private void handleEditModel() {
-        AIProvider item = getSelectedOrCheckedModel();
-        if (item == null) return;
-        if (item.isLocal()) {
-            MessageDialog.openInformation(group.getShell(), "Edit", "Local Ollama models cannot be edited here.");
+        List<ModelRow> rows = getActionRows();
+        if (rows.isEmpty()) {
             return;
         }
-
-        // We need to find the REAL provider in the model if it exists
-        AIProvider provider = orchestrator.getAiProviders().stream()
-                .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
-                .findFirst().orElse(null);
-
-        boolean isNew = false;
-        if (provider == null) {
-            // It's a static provider, create a model entry for it
-            provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
-            provider.setName(item.getName());
-            provider.setUrl(item.getUrl());
-            ProviderConfig config = AiProviders.PROVIDERS.get(item.getName().toLowerCase());
-            if (config != null) {
-                provider.setDefaultModel(config.getDefaultModel());
-                provider.setFormat(config.getFormat());
-            }
-            isNew = true;
+        if (rows.size() > 1) {
+            MessageDialog.openInformation(group.getShell(), "Edit Models",
+                    "Editing metadata is supported for one model at a time.\n"
+                            + "Use the selected single row or narrow the selection.");
+            return;
         }
-
-        ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), provider);
-        if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
-            if (isNew && orchestrator != null) {
-                orchestrator.getAiProviders().add(provider);
-            }
+        ModelRow row = rows.get(0);
+        ModelEditDialog dialog = new ModelEditDialog(group.getShell(), orchestrator, row, false);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
             editor.setDirty(true);
-            refreshUI();
+            persistEditorChanges();
+            load();
+            refreshConsumers();
+            if (dialog.getResultMessage() != null && !dialog.getResultMessage().isBlank()) {
+                MessageDialog.openInformation(group.getShell(), "Edit Model", dialog.getResultMessage());
+            }
         }
+    }
+
+    private void handleRenameModel() {
+        List<ModelRow> rows = getActionRows();
+        if (rows.isEmpty()) {
+            return;
+        }
+        if (rows.size() > 1) {
+            MessageDialog.openInformation(group.getShell(), "Rename Models",
+                    "Rename operates on one model at a time because runtime and artifact identity "
+                            + "must be updated atomically.");
+            return;
+        }
+        ModelRow row = rows.get(0);
+        ModelEditDialog dialog = new ModelEditDialog(group.getShell(), orchestrator, row, true);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            editor.setDirty(true);
+            persistEditorChanges();
+            load();
+            refreshConsumers();
+            MessageDialog.openInformation(group.getShell(), "Rename Model", dialog.getResultMessage());
+        }
+    }
+
+    private void handleUseModel() {
+        List<ModelRow> rows = getActionRows();
+        if (rows.isEmpty() || orchestrator == null) {
+            return;
+        }
+        ModelRow row = rows.get(0);
+        AIProvider item = row.getProvider();
+        ProjectModelManager modelManager = ProjectModelManager.getInstance();
+        if (item.isLocal()) {
+            modelManager.updateOllamaSettings(orchestrator,
+                    orchestrator.getOllama() != null ? orchestrator.getOllama().getUrl() : null,
+                    item.getName(),
+                    orchestrator.getOllama() != null ? orchestrator.getOllama().getPath() : null);
+            modelManager.updateLocalModel(orchestrator, item.getName());
+            modelManager.updateLlmSettings(orchestrator, item.getName(),
+                    orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 1.0f);
+        } else {
+            modelManager.updateRemoteModel(orchestrator, item.getName());
+            modelManager.updateLlmSettings(orchestrator, item.getName(),
+                    orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 1.0f);
+        }
+        editor.setDirty(true);
+        refreshConsumers();
     }
 
     private void handleTestModel() {
-        List<AIProvider> models = getSelectedOrCheckedModels();
-        if (models.isEmpty()) return;
-
-        for (AIProvider item : models) {
-            testModel(item);
+        List<ModelRow> rows = getActionRows();
+        if (rows.isEmpty()) {
+            return;
+        }
+        for (ModelRow row : rows) {
+            testModel(row.getProvider());
         }
     }
 
     private void testModel(AIProvider item) {
-        // Find real provider or use a temporary one for testing
-        final AIProvider providerToTest = orchestrator.getAiProviders().stream()
-                .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
-                .findFirst().orElse(item);
+        final AIProvider providerToTest = ProjectModelManager.getInstance()
+                .findRegisteredProviders(orchestrator,
+                        ModelIdentityResolver.resolve(orchestrator, item))
+                .stream().findFirst().orElse(item);
 
-        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Testing Model: " + providerToTest.getName()) {
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job(
+                "Testing Model: " + providerToTest.getName()) {
             @Override
             protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
                 try {
                     eu.kalafatic.evolution.controller.services.ModelEvaluationService service =
                             new eu.kalafatic.evolution.controller.services.ModelEvaluationService();
-
                     File projectRoot = null;
                     if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
-                        projectRoot = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
+                        projectRoot = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput())
+                                .getFile().getProject().getLocation().toFile();
                     }
-
                     TaskContext context = new TaskContext(orchestrator, projectRoot);
                     service.evaluateModel(orchestrator, providerToTest, context);
-
                     Display.getDefault().asyncExec(() -> {
-                        refreshUI();
+                        load();
                         editor.setDirty(true);
                         MessageDialog.openInformation(group.getShell(), "Test Complete",
-                                "Evaluation finished for " + providerToTest.getName() + ".\n" +
-                                "Overall: " + providerToTest.getRating() + "\n" +
-                                "A: " + providerToTest.getRatingAnalyze() + " CH: " + providerToTest.getRatingChat() + " P: " + providerToTest.getRatingProgramming());
+                                "Evaluation finished for " + providerToTest.getName() + ".\n"
+                                        + "Overall: " + providerToTest.getRating() + "\n"
+                                        + "A: " + providerToTest.getRatingAnalyze()
+                                        + " CH: " + providerToTest.getRatingChat()
+                                        + " P: " + providerToTest.getRatingProgramming());
                     });
                     return org.eclipse.core.runtime.Status.OK_STATUS;
                 } catch (Exception e) {
-                    Display.getDefault().asyncExec(() -> {
-                        MessageDialog.openError(group.getShell(), "Test Error", "Failed to evaluate model: " + e.getMessage());
-                    });
+                    Display.getDefault().asyncExec(() -> MessageDialog.openError(group.getShell(),
+                            "Test Error", "Failed to evaluate model: " + e.getMessage()));
                     return org.eclipse.core.runtime.Status.CANCEL_STATUS;
                 }
             }
@@ -937,117 +1146,270 @@ public class ModelsGroup extends AEvoGroup {
         job.schedule();
     }
 
-    private void handleUseModel() {
-        AIProvider item = getSelectedOrCheckedModel();
-        if (item == null) return;
+    private void handleRemoveModel() {
+        List<ModelRow> rows = getActionRows();
+        if (rows.isEmpty()) {
+            return;
+        }
+        Map<String, ModelRow> unique = new LinkedHashMap<>();
+        for (ModelRow row : rows) {
+            unique.putIfAbsent(row.getKey(), row);
+        }
+        List<ModelRow> selected = new ArrayList<>(unique.values());
 
-        if (orchestrator != null) {
-            ProjectModelManager modelManager = ProjectModelManager.getInstance();
-            if (item.isLocal()) {
-                modelManager.updateOllamaSettings(orchestrator, (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : null, item.getName(), (orchestrator.getOllama() != null) ? orchestrator.getOllama().getPath() : null);
-                modelManager.updateLocalModel(orchestrator, item.getName());
-                modelManager.updateLlmSettings(orchestrator, item.getName(), (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
-            } else {
-                modelManager.updateRemoteModel(orchestrator, item.getName());
-                modelManager.updateLlmSettings(orchestrator, item.getName(), (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
+        ModelDeleteDialog dialog = new ModelDeleteDialog(group.getShell(), selected);
+        if (dialog.open() != org.eclipse.jface.window.Window.OK) {
+            return;
+        }
+
+        ModelRemovalService.RemovalOptions options = ModelRemovalService.RemovalOptions.defaults()
+                .deregisterRuntime(dialog.isDeregisterRuntime())
+                .deleteOwnedArtifacts(dialog.isDeleteArtifacts())
+                .deleteSharedArtifacts(dialog.isDeleteSharedArtifacts());
+        List<AIProvider> providers = new ArrayList<>();
+        for (ModelRow row : selected) {
+            providers.add(row.getProvider());
+        }
+
+        setActionButtonsEnabled(false);
+        CompletableFuture
+                .supplyAsync(() -> ModelRemovalService.getInstance()
+                        .removeModels(orchestrator, providers, options))
+                .thenAcceptAsync(results -> {
+                    setActionButtonsEnabled(true);
+                    if (viewer == null || viewer.getControl().isDisposed()) {
+                        return;
+                    }
+                    editor.setDirty(true);
+                    boolean registryChanged = results.stream()
+                            .anyMatch(r -> r.getStatus() != eu.kalafatic.evolution.controller.manager.removal.ModelRemovalStatus.FAILED);
+                    if (registryChanged) {
+                        persistEditorChanges();
+                    }
+                    ProjectModelManager.getInstance().notifyModelsChanged();
+                    load();
+                    refreshConsumers();
+                    new ModelRemovalReportDialog(group.getShell(), results).open();
+                }, Display.getDefault()::asyncExec)
+                .exceptionally(error -> {
+                    Display.getDefault().asyncExec(() -> {
+                        setActionButtonsEnabled(true);
+                        MessageDialog.openError(group.getShell(), "Model Removal Error",
+                                "An unexpected error occurred during model removal: " + error.getMessage());
+                    });
+                    return null;
+                });
+    }
+
+    /**
+     * Persists registry/configuration changes immediately so a removed or
+     * renamed model does not return after the editor is reopened.
+     */
+    private void persistEditorChanges() {
+        if (editor == null) {
+            return;
+        }
+        try {
+            editor.doSave(null);
+        } catch (Exception e) {
+            eu.kalafatic.evolution.controller.log.Log.log(
+                    "[MODEL] Failed to persist model configuration: " + e.getMessage());
+        }
+    }
+
+    private void refreshConsumers() {
+        try {
+            ProjectModelManager.getInstance().notifyModelsChanged();
+            if (editor != null) {
+                editor.refreshPages();
+                if (editor.getAiChatPage() != null) {
+                    editor.getAiChatPage().refreshModelSelections();
+                }
             }
-            editor.setDirty(true);
             if (page != null) {
                 page.refreshUI();
+            }
+        } catch (Exception e) {
+            eu.kalafatic.evolution.controller.log.Log.log(
+                    "[MODEL] Failed to refresh model consumers: " + e.getMessage());
+        }
+    }
+
+    private void handleExportToZip() {
+        List<ModelRow> rows = getActionRows();
+        if (rows.isEmpty()) {
+            return;
+        }
+        ModelRow row = rows.get(0);
+        String path = row.getLocation();
+        if (path == null || path.isEmpty()) {
+            MessageDialog.openError(group.getShell(), "Export Model",
+                    "Could not find a physical file path for model: " + row.getDisplayName());
+            return;
+        }
+        File file = new File(path);
+        if (!file.exists()) {
+            MessageDialog.openError(group.getShell(), "Export Model",
+                    "Model artifact does not exist on disk: " + path);
+            return;
+        }
+
+        org.eclipse.swt.widgets.FileDialog fileDialog =
+                new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.SAVE);
+        fileDialog.setFilterExtensions(new String[] { "*.zip" });
+        fileDialog.setFileName(row.getTechnicalId().replace("/", "_").replace(":", "_") + ".zip");
+        eu.kalafatic.utils.application.FileUtils.configureDialogFilterPath(fileDialog, null);
+        String destinationPath = fileDialog.open();
+        if (destinationPath == null) {
+            return;
+        }
+        File zipFile = new File(destinationPath);
+        try {
+            File parentDir = file.getParentFile();
+            boolean isSpecificModelFolder = false;
+            if (parentDir != null && parentDir.isDirectory()) {
+                String parentName = parentDir.getName().toLowerCase(Locale.ROOT);
+                if (parentName.startsWith("evo-") || parentName.startsWith("forging-")
+                        || (parentDir.getParentFile() != null
+                                && parentDir.getParentFile().getName().equalsIgnoreCase("forge-output"))) {
+                    isSpecificModelFolder = true;
+                }
+            }
+            if (isSpecificModelFolder) {
+                eu.kalafatic.evolution.view.util.ZipUtil.pack(parentDir, zipFile);
+            } else {
+                try (java.util.zip.ZipOutputStream zos =
+                             new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFile))) {
+                    java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(file.getName());
+                    zos.putNextEntry(zipEntry);
+                    java.nio.file.Files.copy(file.toPath(), zos);
+                    zos.closeEntry();
+                }
+            }
+            MessageDialog.openInformation(group.getShell(), "Export Model",
+                    "Model exported successfully to " + zipFile.getAbsolutePath());
+        } catch (Exception ex) {
+            MessageDialog.openError(group.getShell(), "Export Model Error",
+                    "Failed to export model to ZIP: " + ex.getMessage());
+        }
+    }
+
+    private void handleDownloadModel() {
+        if (orchestrator == null) {
+            return;
+        }
+        String ollamaUrl = (orchestrator.getOllama() != null)
+                ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+        ModelDownloadDialog dialog = new ModelDownloadDialog(group.getShell(), ollamaUrl);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            String modelName = dialog.getDownloadedModelName();
+            if (modelName != null && !modelName.isEmpty()) {
+                boolean exists = orchestrator.getAiProviders().stream()
+                        .anyMatch(p -> modelName.equalsIgnoreCase(p.getName()) && p.isLocal());
+                if (!exists) {
+                    AIProvider newProvider =
+                            eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
+                                    .createAIProvider();
+                    newProvider.setName(modelName);
+                    newProvider.setLocal(true);
+                    newProvider.setUrl(ollamaUrl);
+                    newProvider.setFormat("ollama");
+                    orchestrator.getAiProviders().add(newProvider);
+                    editor.setDirty(true);
+                }
+                // Explicit download is an explicit rediscovery: clear any prior tombstone.
+                ProjectModelManager.getInstance().getModelStateStore().unsuppress(
+                        ModelIdentityResolver.resolve(orchestrator, orchestrator.getAiProviders().stream()
+                                .filter(p -> modelName.equalsIgnoreCase(p.getName()))
+                                .findFirst().orElse(createTransient(modelName, ollamaUrl))).getCanonicalId());
+                ProjectModelManager.getInstance().refreshModelDiscovery(orchestrator);
+                load();
+                refreshConsumers();
+            }
+        }
+    }
+
+    private AIProvider createTransient(String name, String url) {
+        AIProvider provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
+                .createAIProvider();
+        provider.setName(name);
+        provider.setLocal(true);
+        provider.setUrl(url);
+        provider.setFormat("ollama");
+        return provider;
+    }
+
+    private void handleAddModel() {
+        if (orchestrator == null) {
+            return;
+        }
+        String[] options = { "Local (Ollama)", "Remote" };
+        MessageDialog dialog = new MessageDialog(group.getShell(), "Add Model", null,
+                "Select the type of model to add:", MessageDialog.QUESTION, options, 0);
+        int result = dialog.open();
+        if (result == 0) {
+            org.eclipse.jface.dialogs.InputDialog input = new org.eclipse.jface.dialogs.InputDialog(
+                    group.getShell(), "Add Local Model",
+                    "Enter the name of the model to run (e.g., gemma, llama3):", "", null);
+            if (input.open() == org.eclipse.jface.dialogs.InputDialog.OK) {
+                String modelName = input.getValue();
+                if (modelName != null && !modelName.trim().isEmpty()) {
+                    AIProvider newProvider =
+                            eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
+                                    .createAIProvider();
+                    newProvider.setName(modelName.trim());
+                    newProvider.setLocal(true);
+                    String ollamaUrl = (orchestrator.getOllama() != null)
+                            ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+                    newProvider.setUrl(ollamaUrl);
+                    newProvider.setFormat("ollama");
+                    orchestrator.getAiProviders().add(newProvider);
+                    ProjectModelManager.getInstance().getModelStateStore().unsuppress(
+                            ModelIdentityResolver.resolve(orchestrator, newProvider).getCanonicalId());
+                    ProjectModelManager.getInstance().refreshModelDiscovery(orchestrator);
+                    editor.setDirty(true);
+                    load();
+                    refreshConsumers();
+                }
+            }
+        } else if (result == 1) {
+            AIProvider newProvider =
+                    eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
+                            .createAIProvider();
+            newProvider.setName("new-provider");
+            newProvider.setFormat("openai");
+            ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), newProvider);
+            if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
+                if (orchestrator != null) {
+                    orchestrator.getAiProviders().add(newProvider);
+                    editor.setDirty(true);
+                    load();
+                    refreshConsumers();
+                }
             }
         }
     }
 
     private void setActionButtonsEnabled(boolean enabled) {
-        if (selectAllButton != null && !selectAllButton.isDisposed()) selectAllButton.setEnabled(enabled);
-        if (deselectAllButton != null && !deselectAllButton.isDisposed()) deselectAllButton.setEnabled(enabled);
-        if (reloadButton != null && !reloadButton.isDisposed()) reloadButton.setEnabled(enabled);
-        if (testButton != null && !testButton.isDisposed()) testButton.setEnabled(enabled);
-        if (useButton != null && !useButton.isDisposed()) useButton.setEnabled(enabled);
-        if (addButton != null && !addButton.isDisposed()) addButton.setEnabled(enabled);
-        if (downloadButton != null && !downloadButton.isDisposed()) downloadButton.setEnabled(enabled);
-        if (editButton != null && !editButton.isDisposed()) editButton.setEnabled(enabled);
-        if (removeButton != null && !removeButton.isDisposed()) removeButton.setEnabled(enabled);
-        if (saveButton != null && !saveButton.isDisposed()) saveButton.setEnabled(enabled);
-    }
-
-    private void handleRemoveModel() {
-        List<AIProvider> selectedModels = getSelectedOrCheckedModels();
-        if (selectedModels.isEmpty()) return;
-
-        if (!MessageDialog.openConfirm(group.getShell(), "Remove Models",
-                "Are you sure you want to remove " + selectedModels.size() + " selected model(s)?")) {
-            return;
+        Button[] buttons = { selectAllButton, clearSelectionButton, reloadButton, editButton,
+                renameButton, removeButton, testButton, useButton, addButton, downloadButton,
+                exportButton, saveButton };
+        for (Button button : buttons) {
+            if (button != null && !button.isDisposed()) {
+                button.setEnabled(enabled);
+            }
         }
-
-        setActionButtonsEnabled(false);
-
-        CompletableFuture.supplyAsync(() -> {
-            return ModelRemovalService.getInstance().removeModels(orchestrator, selectedModels);
-        }).thenAcceptAsync(results -> {
-            if (viewer == null || viewer.getControl().isDisposed()) return;
-
-            setActionButtonsEnabled(true);
-            editor.setDirty(true);
-            load();
-
-            StringBuilder summary = new StringBuilder();
-            boolean hasPartialOrFailed = false;
-
-            for (ModelRemovalResult res : results) {
-                summary.append("• Model: ").append(res.getModelName())
-                        .append(" [").append(res.getModelType()).append("]\n")
-                        .append("  Status: ").append(res.getStatus()).append("\n");
-
-                if (res.getStatus() != ModelRemovalStatus.SUCCESS) {
-                    hasPartialOrFailed = true;
-                }
-
-                for (ModelRemovalStepResult step : res.getStepResults()) {
-                    summary.append("  - ").append(step.stepName()).append(": ")
-                            .append(step.success() ? "OK" : "FAILED").append(" (").append(step.message()).append(")\n");
-                }
-                summary.append("\n");
-            }
-
-            if (hasPartialOrFailed) {
-                MessageDialog.openWarning(group.getShell(), "Model Removal Results",
-                        "One or more models were partially removed or failed to complete:\n\n" + summary.toString().trim());
-            } else {
-                MessageDialog.openInformation(group.getShell(), "Model Removal Completed",
-                        "All selected models were successfully removed:\n\n" + summary.toString().trim());
-            }
-        }, Display.getDefault()::asyncExec).exceptionally(ex -> {
-            Display.getDefault().asyncExec(() -> {
-                setActionButtonsEnabled(true);
-                MessageDialog.openError(group.getShell(), "Model Removal Error",
-                        "An unexpected error occurred during model removal: " + ex.getMessage());
-            });
-            return null;
-        });
     }
 
     @Override
     protected void refreshUI() {
-        try {
-			if (orchestrator == null) return;
-			if (viewer == null || viewer.getControl().isDisposed()) return;
-			viewer.refresh();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        if (orchestrator == null) {
+            return;
+        }
+        if (allRows.isEmpty()) {
+            load();
+        } else {
+            applyFilters();
+        }
     }
-
-	public void load() {
-        CompletableFuture.runAsync(() -> {
-            List<AIProvider> allModels = ProjectModelManager.getInstance().getAllModels(orchestrator);
-            Display.getDefault().asyncExec(() -> {
-                if (viewer.getControl().isDisposed()) return;
-                this.modelItems = allModels;
-                viewer.setInput(modelItems);
-                refreshUI();
-            });
-        });
-	}
 }

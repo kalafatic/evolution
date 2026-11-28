@@ -27,8 +27,20 @@ public class OllamaService {
     private List<OllamaModel> cachedModels = null;
     private long lastModelRefresh = 0;
     private static final long CACHE_TTL = Duration.ofSeconds(15).toMillis();
+    /** Short-lived negative connectivity marker to avoid repeated long timeouts. */
+    private volatile long lastConnectivityFailure = 0L;
+    private static final long CONNECTIVITY_FAILURE_TTL = Duration.ofSeconds(5).toMillis();
 
     public static record OllamaOperationResult(boolean success, int statusCode, String responseBody, String message, Exception exception) {}
+
+    /**
+     * Result of an explicit model listing request. Unlike {@link #loadModels()}
+     * an unreachable runtime is reported explicitly instead of being collapsed
+     * into an empty list, so callers can distinguish "model absent" from
+     * "runtime unavailable".
+     */
+    public static record OllamaModelListResult(boolean success, int statusCode, List<OllamaModel> models,
+                                               String message, Exception exception) {}
 
     /**
      * Chat result with token usage counters as reported by Ollama
@@ -124,6 +136,31 @@ public class OllamaService {
         return Duration.ofSeconds(this.requestTimeoutSeconds);
     }
 
+    private boolean isRecentlyUnavailable() {
+        return lastConnectivityFailure > 0
+                && (System.currentTimeMillis() - lastConnectivityFailure) < CONNECTIVITY_FAILURE_TTL;
+    }
+
+    private void markConnectivityFailure(Exception e) {
+        String type = e != null ? e.getClass().getSimpleName() : "";
+        String message = e != null && e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+        if (type.contains("Connect") || type.contains("Timeout")
+                || message.contains("connection refused") || message.contains("timed out")
+                || message.contains("unreachable")) {
+            lastConnectivityFailure = System.currentTimeMillis();
+        }
+    }
+
+    private void markConnectivitySuccess() {
+        lastConnectivityFailure = 0L;
+    }
+
+    private OllamaOperationResult unavailableResult(String operation) {
+        return new OllamaOperationResult(false, -1, "",
+                "Ollama runtime unavailable (recent " + operation + " connection failure)", 
+                new java.io.IOException("Ollama runtime unavailable"));
+    }
+
     /**
      * Pings the Ollama server to check if it is reachable.
      * @return true if reachable, false otherwise.
@@ -136,8 +173,10 @@ public class OllamaService {
                     .GET()
                     .build();
             HttpResponse<Void> response = createClient().send(request, HttpResponse.BodyHandlers.discarding());
+            markConnectivitySuccess();
             return response.statusCode() == 200;
         } catch (Exception e) {
+            markConnectivityFailure(e);
             return false;
         }
     }
@@ -538,6 +577,9 @@ public class OllamaService {
         if (modelName == null || modelName.isEmpty()) {
             return new OllamaOperationResult(false, 400, "", "Model name is empty", null);
         }
+        if (isRecentlyUnavailable()) {
+            return unavailableResult("unload");
+        }
         try {
             String genUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/generate";
             JSONObject jsonObject = new JSONObject();
@@ -552,10 +594,12 @@ public class OllamaService {
                     .build();
 
             HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+            markConnectivitySuccess();
             boolean ok = response.statusCode() == 200;
             return new OllamaOperationResult(ok, response.statusCode(), response.body(),
                     ok ? "Model unloaded successfully" : "Ollama unload failed with HTTP " + response.statusCode(), null);
         } catch (Exception e) {
+            markConnectivityFailure(e);
             return new OllamaOperationResult(false, -1, "", "Exception during unloadModel: " + e.getMessage(), e);
         }
     }
@@ -571,6 +615,9 @@ public class OllamaService {
         if (modelName == null || modelName.isEmpty()) {
             return new OllamaOperationResult(false, 400, "", "Model name is empty", null);
         }
+        if (isRecentlyUnavailable()) {
+            return unavailableResult("delete");
+        }
         try {
             String deleteUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/delete";
             JSONObject jsonObject = new JSONObject();
@@ -584,12 +631,14 @@ public class OllamaService {
                     .build();
 
             HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+            markConnectivitySuccess();
             boolean ok = response.statusCode() == 200;
             clearCache();
             refreshModels();
             return new OllamaOperationResult(ok, response.statusCode(), response.body(),
                     ok ? "Model deleted successfully from Ollama" : "Ollama delete failed with HTTP " + response.statusCode(), null);
         } catch (Exception e) {
+            markConnectivityFailure(e);
             clearCache();
             return new OllamaOperationResult(false, -1, "", "Exception during deleteModel: " + e.getMessage(), e);
         }
@@ -685,7 +734,19 @@ public class OllamaService {
      * Forces a refresh of the models list.
      */
     public List<OllamaModel> refreshModels() {
+        return listModelsEx().models();
+    }
+
+    /**
+     * Explicit listing that distinguishes "no models" from "runtime unavailable".
+     */
+    public OllamaModelListResult listModelsEx() {
         clearCache();
+        if (isRecentlyUnavailable()) {
+            return new OllamaModelListResult(false, -1, Collections.emptyList(),
+                    "Ollama runtime unavailable (recent connection failure)",
+                    new java.io.IOException("Ollama runtime unavailable"));
+        }
         List<OllamaModel> result = new ArrayList<>();
         try {
             String tagsUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/tags";
@@ -696,9 +757,22 @@ public class OllamaService {
                     .build();
 
             HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                JSONObject obj = new JSONObject(response.body());
-                JSONArray models = obj.getJSONArray("models");
+            markConnectivitySuccess();
+            if (response.statusCode() != 200) {
+                // Cache the negative result briefly so a burst of UI row lookups
+                // does not repeatedly block on an unreachable runtime.
+                this.cachedModels = Collections.emptyList();
+                this.lastModelRefresh = System.currentTimeMillis();
+                return new OllamaModelListResult(false, response.statusCode(), Collections.emptyList(),
+                        "Ollama model listing failed with HTTP " + response.statusCode(), null);
+            }
+            if (response.body() == null || response.body().isBlank()) {
+                return new OllamaModelListResult(true, response.statusCode(), Collections.emptyList(),
+                        "Ollama returned an empty model list", null);
+            }
+            JSONObject obj = new JSONObject(response.body());
+            JSONArray models = obj.optJSONArray("models");
+            if (models != null) {
                 for (int i = 0; i < models.length(); i++) {
                     JSONObject m = models.getJSONObject(i);
                     String name = m.getString("name");
@@ -706,13 +780,18 @@ public class OllamaService {
                     String modifiedAt = m.optString("modified_at", "");
                     result.add(new OllamaModel(name, size, modifiedAt));
                 }
-                this.cachedModels = Collections.unmodifiableList(result);
-                this.lastModelRefresh = System.currentTimeMillis();
             }
+            this.cachedModels = Collections.unmodifiableList(result);
+            this.lastModelRefresh = System.currentTimeMillis();
+            return new OllamaModelListResult(true, response.statusCode(), Collections.unmodifiableList(result),
+                    "Retrieved " + result.size() + " model(s) from Ollama", null);
         } catch (Exception e) {
-            // silent fail or return empty
+            markConnectivityFailure(e);
+            this.cachedModels = Collections.emptyList();
+            this.lastModelRefresh = System.currentTimeMillis();
+            return new OllamaModelListResult(false, -1, Collections.emptyList(),
+                    "Ollama runtime unavailable: " + e.getMessage(), e);
         }
-        return result;
     }
 
     // Inner class for messages

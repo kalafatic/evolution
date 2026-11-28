@@ -191,6 +191,7 @@ public class MutationSessionManager {
             if (chatSession == null) {
                 chatSession = OrchestrationFactory.eINSTANCE.createChatSession();
                 chatSession.setId(sessionId);
+                chatSession.setGlobalSessionId(java.util.UUID.randomUUID().toString());
                 chatSession.setTargetType("REMOTE_CLIENT");
                 chatSession.setTargetPath(workspaceDir.getAbsolutePath());
                 if (requestedModel != null && !requestedModel.trim().isEmpty()) {

@@ -69,7 +69,12 @@ public class Log {
                         Throwable thrown = record.getThrown();
                         if (thrown instanceof java.net.SocketException) {
                             String msg = thrown.getMessage();
-                            if (msg != null && msg.contains("An established connection was aborted by the software in your host machine")) {
+                            if (msg != null && (msg.contains("An established connection was aborted by the software in your host machine")
+                                    || msg.contains("Connection reset")
+                                    || msg.contains("Broken pipe"))) {
+                                // A client that navigates away / aborts a poll is not a server
+                                // fault. NanoHTTPD logs it at SEVERE; suppress the platform-
+                                // specific duplicates (Windows, Linux, macOS) consistently.
                                 return false;
                             }
                         }

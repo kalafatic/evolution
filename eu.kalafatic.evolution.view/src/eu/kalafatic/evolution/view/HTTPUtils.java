@@ -71,4 +71,27 @@ public class HTTPUtils {
 	public static boolean isServerError(int statusCode) {
 	        return statusCode >= 500 && statusCode < 600;
 	    }
+
+	/**
+	 * Validates that a response really came from the EVO backend and carries JSON.
+	 * An unrelated process occupying an EVO port may answer HTTP 200 with an HTML
+	 * page; parsing that as JSON produces cryptic errors. This check turns it into
+	 * an explicit, actionable backend-connectivity failure.
+	 *
+	 * @param endpoint the requested URL (for diagnostics)
+	 * @param statusCode the HTTP status
+	 * @param contentType the response Content-Type (may be null)
+	 * @throws IllegalStateException when the status is not 2xx or the body is not JSON
+	 */
+	public static void requireEvolutionJson(String endpoint, int statusCode, String contentType) {
+		if (!isSuccess(statusCode)) {
+			throw new IllegalStateException("EVO backend returned HTTP " + decode(statusCode)
+					+ " from " + endpoint + " — is the EVO server running on the configured port?");
+		}
+		if (contentType == null || !contentType.toLowerCase().contains("json")) {
+			throw new IllegalStateException("EVO backend identity check failed at " + endpoint
+					+ ": expected a JSON response but received '" + (contentType == null ? "unknown" : contentType)
+					+ "'. A different application may be occupying the EVO server port.");
+		}
+	}
 }

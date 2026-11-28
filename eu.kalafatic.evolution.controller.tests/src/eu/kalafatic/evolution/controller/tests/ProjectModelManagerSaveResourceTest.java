@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.tests;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +50,38 @@ public class ProjectModelManagerSaveResourceTest {
 
         // Should not rethrow AssertionFailedException
         ProjectModelManager.getInstance().saveResource(throwingResource);
+    }
+
+    @Test
+    public void testSaveResourceSkipsNoOpWriteAndWritesOnChange() throws Exception {
+        File modelFile = new File(tempFolder.newFolder("model_dir"), "evo_config.xml");
+
+        org.eclipse.emf.ecore.resource.Resource resource =
+                ProjectModelManager.getInstance().getResourceSet()
+                        .createResource(org.eclipse.emf.common.util.URI.createFileURI(modelFile.getAbsolutePath()));
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        orchestrator.setName("Initial");
+        resource.getContents().add(orchestrator);
+
+        // First save writes the serialized model to disk.
+        ProjectModelManager.getInstance().saveResource(resource);
+        assertTrue("Model file must be written", modelFile.isFile());
+        byte[] first = Files.readAllBytes(modelFile.toPath());
+        long firstMtime = Files.getLastModifiedTime(modelFile.toPath()).toMillis();
+
+        Thread.sleep(120); // ensure the filesystem mtime granularity is exceeded
+
+        // A no-op save (unchanged model) must NOT touch the file.
+        ProjectModelManager.getInstance().saveResource(resource);
+        assertArrayEquals("Unchanged save must leave identical bytes", first, Files.readAllBytes(modelFile.toPath()));
+        assertEquals("Unchanged save must not rewrite the file", firstMtime,
+                Files.getLastModifiedTime(modelFile.toPath()).toMillis());
+
+        // A changed model must produce a fresh write.
+        orchestrator.setName("Changed");
+        ProjectModelManager.getInstance().saveResource(resource);
+        byte[] third = Files.readAllBytes(modelFile.toPath());
+        assertFalse("Changed save must write new content", java.util.Arrays.equals(first, third));
     }
 
     @Test

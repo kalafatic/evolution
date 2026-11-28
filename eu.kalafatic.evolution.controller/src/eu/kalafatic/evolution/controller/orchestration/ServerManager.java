@@ -19,7 +19,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.kalafatic.evolution.controller.log.Log;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SupervisorRuntime;
 import eu.kalafatic.evolution.controller.resource.PortAllocationManager;
 import eu.kalafatic.evolution.controller.resource.PortAvailabilityChecker;
@@ -412,18 +411,18 @@ public class ServerManager {
         }
 
         if (isSupervisor) {
-            // Supervisor process check / start
+            // Supervisor process check. The supervisor is launched by the Self-Development
+            // workflow, which owns the run-scoped SelfDevContext (prepared reactor,
+            // supervisor JAR, ownership record). ServerManager must not create a throw-away
+            // context here: a fresh context gets a new run id, cannot locate the run's
+            // supervisor artifact and leaves empty run directories behind.
             boolean running = verifySocketConnection("127.0.0.1", port, 300);
             if (!running) {
-                try {
-                    SelfDevContext sdContext = new SelfDevContext(new java.io.File("."), null);
-                    supervisorRuntime.start(sdContext);
-                    running = verifySocketConnection("127.0.0.1", port, 1000);
-                } catch (Throwable t) {
-                    Log.log("[ServerManager] Could not launch supervisor process: " + t.getMessage());
-                }
+                Log.log("[ServerManager] Supervisor endpoint is not running on port " + port
+                        + ". Start it from Self-Development, which provides the run-scoped context.");
             }
-            updateState(port, running ? ServerState.RUNNING : ServerState.STOPPED, null);
+            updateState(port, running ? ServerState.RUNNING : ServerState.STOPPED,
+                    running ? null : "Supervisor not running (start it from Self-Development).");
             return;
         }
 
@@ -583,8 +582,10 @@ public class ServerManager {
 
         if (isSupervisorControl || isSupervisor) {
             try {
-                SelfDevContext sdContext = new SelfDevContext(new java.io.File("."), null);
-                supervisorRuntime.stop(sdContext);
+                // No run-scoped context here: only processes owned by this JVM/run are
+                // affected. A supervisor launched by the self-dev workflow is stopped
+                // from that workflow, never by killing a guessed PID.
+                supervisorRuntime.stop(null);
             } catch (Throwable t) {
                 Log.log("[ServerManager] Error stopping supervisor: " + t.getMessage());
             }
@@ -742,7 +743,21 @@ public class ServerManager {
             conn.setReadTimeout(timeoutMs);
             conn.setRequestMethod("GET");
             int code = conn.getResponseCode();
-            return code >= 200 && code < 500;
+            // A 200-499 response is not proof of the correct backend: an unrelated HTTP
+            // server (e.g. a UI server occupying the port) also answers 200. Require a
+            // successful status and, for the JSON status endpoint, a JSON content type.
+            if (code < 200 || code >= 300) {
+                return false;
+            }
+            String identity = conn.getHeaderField("X-EVO-Application");
+            if (identity != null && !"evolution".equalsIgnoreCase(identity.trim())) {
+                return false;
+            }
+            if (endpointUrl.contains("/server/status")) {
+                String contentType = conn.getContentType();
+                return contentType != null && contentType.toLowerCase().contains("json");
+            }
+            return true;
         } catch (Exception e) {
             return false;
         }

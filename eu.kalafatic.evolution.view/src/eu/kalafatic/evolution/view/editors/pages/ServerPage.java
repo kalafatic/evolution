@@ -32,6 +32,11 @@ import org.json.JSONObject;
 public class ServerPage extends AEvoPage {
 
     private boolean isUpdating = false;
+    /** Prevents overlapping /server/status polls and tracks the last diagnostic. */
+    private final java.util.concurrent.atomic.AtomicBoolean statusPollInFlight =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private volatile String lastStatusDiagnostic = "";
+    private volatile long lastStatusDiagnosticAt = 0;
 
     private Color successColor;
     private Color colorWaiting;
@@ -141,61 +146,106 @@ public class ServerPage extends AEvoPage {
     }
 
     private void pollServerStatus() {
-        if (orchestrator == null) return;
+        if (orchestrator == null || isDisposed()) return;
+        if (!statusPollInFlight.compareAndSet(false, true)) return;
+
         new Thread(() -> {
+            HttpURLConnection conn = null;
             try {
-                eu.kalafatic.evolution.controller.resource.EvoService serverSvc = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("SERVER");
-                String serverStatusUrl = (serverSvc != null ? serverSvc.getUrl() : "http://127.0.0.1:28080") + "/server/status";
-                URL url = new URL(serverStatusUrl);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(2000);
-                conn.setReadTimeout(2000);
-
-                if (conn.getResponseCode() == 200) {
-                    InputStream is = conn.getInputStream();
-                    Scanner s = new Scanner(is).useDelimiter("\\A");
-                    String result = s.hasNext() ? s.next() : "";
-
-                    JSONObject json = new JSONObject(result);
-                    JSONObject monitoring = json.getJSONObject("monitoring");
-                    JSONArray sessions = json.getJSONArray("sessions");
-
+                eu.kalafatic.evolution.controller.resource.EvoService serverSvc =
+                        eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("SERVER");
+                int port = serverSvc != null ? serverSvc.getPort() : 28080;
+                eu.kalafatic.evolution.controller.orchestration.ServerEntry entry =
+                        ServerManager.getInstance().getServerEntry(port);
+                if (entry != null && entry.getState()
+                        != eu.kalafatic.evolution.controller.orchestration.ServerState.RUNNING) {
                     Display.getDefault().asyncExec(() -> {
-                        if (isDisposed() || orchestrator == null) return;
-                        updateBanner();
-
-                        // Update Monitoring History
-                        MonitoringData data = OrchestrationFactory.eINSTANCE.createMonitoringData();
-                        data.setTimestamp(monitoring.getLong("timestamp"));
-                        data.setCpuUsage(monitoring.getDouble("cpuUsage"));
-                        data.setMemoryUsage(monitoring.getLong("memoryUsage"));
-                        data.setTotalMemory(monitoring.getLong("totalMemory"));
-
-                        orchestrator.getMonitoringHistory().add(data);
-                        if (orchestrator.getMonitoringHistory().size() > 50) {
-                            orchestrator.getMonitoringHistory().remove(0);
-                        }
-
-                        // Update Sessions
-                        orchestrator.getServerSessions().clear();
-                        for (int i = 0; i < sessions.length(); i++) {
-                            JSONObject sj = sessions.getJSONObject(i);
-                            ServerSession ss = OrchestrationFactory.eINSTANCE.createServerSession();
-                            ss.setId(sj.getString("id"));
-                            ss.setType(SessionType.getByName(sj.getString("type")));
-                            ss.setStartTime(sj.getLong("startTime"));
-                            ss.setLastActivity(sj.getLong("lastActivity"));
-                            ss.setClientIp(sj.getString("clientIp"));
-                            orchestrator.getServerSessions().add(ss);
-                        }
-                        updateUIFromModel();
+                        if (!isDisposed()) updateBanner();
                     });
+                    return;
                 }
+
+                String serverStatusUrl = (serverSvc != null ? serverSvc.getUrl()
+                        : "http://127.0.0.1:28080") + "/server/status";
+                URL url = new URL(serverStatusUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(3000);
+                // Never abort the response mid-write: a short read timeout closes the
+                // socket while NanoHTTPD is still streaming the gzipped body, which shows
+                // up as SEVERE "Connection reset by peer"/"Broken pipe". The status
+                // endpoint is cached server-side and answers immediately.
+                conn.setReadTimeout(10000);
+                conn.setRequestProperty("Accept", "application/json");
+
+                int code = conn.getResponseCode();
+                String contentType = conn.getContentType();
+                InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+                String result = "";
+                if (is != null) {
+                    try (Scanner s = new Scanner(is).useDelimiter("\\A")) {
+                        result = s.hasNext() ? s.next() : "";
+                    }
+                }
+                if (code < 200 || code >= 300) return;
+                if (contentType == null || !contentType.toLowerCase().contains("json")) {
+                    logStatusDiagnostic("Non-JSON /server/status response from " + serverStatusUrl
+                            + " (Content-Type: " + contentType + "). Another application may be occupying the EVO port.");
+                    return;
+                }
+
+                JSONObject json = new JSONObject(result);
+                JSONObject monitoring = json.getJSONObject("monitoring");
+                JSONArray sessions = json.getJSONArray("sessions");
+
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed() || orchestrator == null) return;
+                    updateBanner();
+
+                    // Update Monitoring History
+                    MonitoringData data = OrchestrationFactory.eINSTANCE.createMonitoringData();
+                    data.setTimestamp(monitoring.getLong("timestamp"));
+                    data.setCpuUsage(monitoring.getDouble("cpuUsage"));
+                    data.setMemoryUsage(monitoring.getLong("memoryUsage"));
+                    data.setTotalMemory(monitoring.getLong("totalMemory"));
+
+                    orchestrator.getMonitoringHistory().add(data);
+                    if (orchestrator.getMonitoringHistory().size() > 50) {
+                        orchestrator.getMonitoringHistory().remove(0);
+                    }
+
+                    // Update Sessions
+                    orchestrator.getServerSessions().clear();
+                    for (int i = 0; i < sessions.length(); i++) {
+                        JSONObject sj = sessions.getJSONObject(i);
+                        ServerSession ss = OrchestrationFactory.eINSTANCE.createServerSession();
+                        ss.setId(sj.getString("id"));
+                        ss.setType(SessionType.getByName(sj.getString("type")));
+                        ss.setStartTime(sj.getLong("startTime"));
+                        ss.setLastActivity(sj.getLong("lastActivity"));
+                        ss.setClientIp(sj.getString("clientIp"));
+                        orchestrator.getServerSessions().add(ss);
+                    }
+                    updateUIFromModel();
+                });
             } catch (Exception e) {
-                // Server probably not running or port mismatch
+                // Server not running / not an EVO server: a poll failure is not an error.
+            } finally {
+                if (conn != null) conn.disconnect();
+                statusPollInFlight.set(false);
             }
-        }).start();
+        }, "evo-server-status-poll").start();
+    }
+
+    /** Logs a connectivity diagnostic at most once per 30s to avoid poller spam. */
+    private void logStatusDiagnostic(String message) {
+        long now = System.currentTimeMillis();
+        if (message.equals(lastStatusDiagnostic) && now - lastStatusDiagnosticAt < 30000) {
+            return;
+        }
+        lastStatusDiagnostic = message;
+        lastStatusDiagnosticAt = now;
+        eu.kalafatic.evolution.controller.log.Log.log("[ServerPage] " + message);
     }
 
     @Override

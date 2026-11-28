@@ -274,6 +274,11 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			protected IStatus run(IProgressMonitor monitor) {
 				try {
 					eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().autoStartAll().join();
+					try {
+						eu.kalafatic.evolution.controller.orchestration.EvolutionServer.logOsgiStatusDiagnostics();
+					} catch (Throwable ignored) {
+						// diagnostics only
+					}
 				} catch (Throwable t) {
 					Log.log("[AUTO_SERVER_STARTUP] Error during server startup: " + t.getMessage());
 				}

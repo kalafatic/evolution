@@ -44,11 +44,22 @@ public class EcosystemPage extends AEvoPage {
 
     private final EcosystemClient client = new EcosystemClient();
     private Browser browser;
+    private volatile Display display;
     private final AtomicBoolean jsReady = new AtomicBoolean(false);
     private volatile boolean bridgesInstalled;
     private volatile boolean disposed;
     private volatile EcosystemSnapshot latest;
     private Thread refreshThread;
+    /**
+     * SWT widget state mirrored into thread-safe flags. SWT controls may only be
+     * touched on the UI thread, so the background refresh loop must never call
+     * {@code browser.isDisposed()} / {@code browser.isVisible()}; it reads these
+     * atomics instead. They are maintained by listeners that run on the UI thread.
+     */
+    private final AtomicBoolean browserDisposed = new AtomicBoolean(false);
+    private final AtomicBoolean browserVisible = new AtomicBoolean(true);
+    /** Coalesces overlapping refreshes (periodic loop + explicit refreshUI). */
+    private final AtomicBoolean refreshInFlight = new AtomicBoolean(false);
 
     public EcosystemPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -62,6 +73,16 @@ public class EcosystemPage extends AEvoPage {
 
         browser = new Browser(comp, SWT.NONE);
         browser.setLayoutData(new GridData(GridData.FILL_BOTH));
+        display = comp.getDisplay();
+
+        // Mirror visibility/disposal into thread-safe flags so the refresh worker
+        // never touches SWT widgets from its background thread (Invalid thread access).
+        browser.addListener(SWT.Show, e -> browserVisible.set(true));
+        browser.addListener(SWT.Hide, e -> browserVisible.set(false));
+        browser.addListener(SWT.Dispose, e -> {
+            browserDisposed.set(true);
+            browserVisible.set(false);
+        });
 
         browser.addProgressListener(new ProgressAdapter() {
             @Override
@@ -285,6 +306,9 @@ public class EcosystemPage extends AEvoPage {
     // Refresh loop
     // ------------------------------------------------------------------
     private void startRefreshThread() {
+        if (disposed || (refreshThread != null && refreshThread.isAlive())) {
+            return; // never start a second refresh loop for the same page
+        }
         refreshThread = new Thread(this::refreshLoop, "evo-ecosystem-refresh");
         refreshThread.setDaemon(true);
         refreshThread.start();
@@ -293,7 +317,7 @@ public class EcosystemPage extends AEvoPage {
     private void refreshLoop() {
         // Initial discovery + first snapshot.
         if (!client.discover()) {
-            Display.getDefault().asyncExec(() -> pushConnection("err", client.getLastError()));
+            uiExec(() -> pushConnection("err", client.getLastError()));
         } else {
             refreshNow();
         }
@@ -304,31 +328,55 @@ public class EcosystemPage extends AEvoPage {
                 Thread.currentThread().interrupt();
                 return;
             }
-            if (disposed) return;
-            if (browser == null || browser.isDisposed()) return;
-            if (!browser.isVisible()) continue; // tab not shown — keep sleeping
+            if (disposed || browserDisposed.get()) return;
+            if (!browserVisible.get()) continue; // tab not shown — keep sleeping
             refreshNow();
+        }
+    }
+
+    /** Marshals a UI update onto the SWT thread, tolerating a disposed display. */
+    private void uiExec(Runnable update) {
+        Display d = display;
+        if (d == null || d.isDisposed()) return;
+        try {
+            d.asyncExec(() -> {
+                if (!disposed) {
+                    update.run();
+                }
+            });
+        } catch (org.eclipse.swt.SWTException e) {
+            // Display disposed between the check and the async post: nothing to update.
+            eu.kalafatic.evolution.controller.log.Log.log(
+                    "[Ecosystem] UI update skipped (display disposed): " + e.getMessage());
         }
     }
 
     /** Collects the snapshot on the refresh thread and pushes to the UI thread. */
     private void refreshNow() {
-        if (client.getBaseUrl() == null && !client.discover()) {
-            Display.getDefault().asyncExec(() -> pushConnection("err", client.getLastError()));
-            return;
+        if (disposed) return;
+        if (!refreshInFlight.compareAndSet(false, true)) {
+            return; // a refresh is already running; avoid duplicate concurrent pollers
         }
-        JSONObject state = client.get("/api/state");
-        JSONObject ports = client.get("/api/ports/inventory");
-        JSONObject metrics = client.get("/api/metrics/current");
-        JSONObject enrModels = client.get("/api/enr/models");
-        JSONObject enrInference = client.get("/api/enr/inference");
-        EcosystemSnapshot snapshot = EcosystemTopologyBuilder.build(
-                state, ports, metrics, enrModels, enrInference);
-        latest = snapshot;
-        Display.getDefault().asyncExec(() -> {
-            pushConnection("ok", null);
-            pushSnapshot(snapshot);
-        });
+        try {
+            if (client.getBaseUrl() == null && !client.discover()) {
+                uiExec(() -> pushConnection("err", client.getLastError()));
+                return;
+            }
+            JSONObject state = client.get("/api/state");
+            JSONObject ports = client.get("/api/ports/inventory");
+            JSONObject metrics = client.get("/api/metrics/current");
+            JSONObject enrModels = client.get("/api/enr/models");
+            JSONObject enrInference = client.get("/api/enr/inference");
+            EcosystemSnapshot snapshot = EcosystemTopologyBuilder.build(
+                    state, ports, metrics, enrModels, enrInference);
+            latest = snapshot;
+            uiExec(() -> {
+                pushConnection("ok", null);
+                pushSnapshot(snapshot);
+            });
+        } finally {
+            refreshInFlight.set(false);
+        }
     }
 
     private void pushConnection(String state, String message) {
@@ -367,7 +415,12 @@ public class EcosystemPage extends AEvoPage {
     }
 
     public void dispose() {
+        if (disposed) {
+            return;
+        }
         disposed = true;
+        browserDisposed.set(true);
+        browserVisible.set(false);
         if (refreshThread != null) {
             refreshThread.interrupt();
             refreshThread = null;

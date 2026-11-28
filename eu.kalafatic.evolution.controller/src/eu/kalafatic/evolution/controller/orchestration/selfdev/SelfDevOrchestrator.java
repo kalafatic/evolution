@@ -50,7 +50,7 @@ public class SelfDevOrchestrator {
         validateTaskGraph();
     }
 
-    public SelfDevPreflightResult executePreflight() {
+    public synchronized SelfDevPreflightResult executePreflight() {
         return executePreflightInternal();
     }
 

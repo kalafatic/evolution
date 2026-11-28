@@ -42,7 +42,7 @@ public class GpuTrainingAdapter {
     private int accumulationSteps = 2;
     private long baseSeed = 42L;
     private volatile boolean stopRequested = false;
-    private EvoLlmTrainer.ProgressListener progressListener;
+    private final List<EvoLlmTrainer.ProgressListener> progressListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     private String lastFailureReason;
     private long forwardNanos;
     private long backwardNanos;
@@ -87,7 +87,26 @@ public class GpuTrainingAdapter {
     }
 
     public void setProgressListener(EvoLlmTrainer.ProgressListener listener) {
-        this.progressListener = listener;
+        this.progressListeners.clear();
+        if (listener != null) {
+            this.progressListeners.add(listener);
+        }
+    }
+
+    public void addProgressListener(EvoLlmTrainer.ProgressListener listener) {
+        if (listener != null && !this.progressListeners.contains(listener)) {
+            this.progressListeners.add(listener);
+        }
+    }
+
+    public void removeProgressListener(EvoLlmTrainer.ProgressListener listener) {
+        if (listener != null) {
+            this.progressListeners.remove(listener);
+        }
+    }
+
+    public int getProgressListenerCount() {
+        return this.progressListeners.size();
     }
 
     public void requestStop() {
@@ -267,8 +286,8 @@ public class GpuTrainingAdapter {
                     epochValidTokens += windowTokens;
 
                     double avgWindowLoss = windowValidLoss(windowLoss, windowTokens);
-                    if (progressListener != null) {
-                        progressListener.onProgressMetrics(epoch, epochs, optStep, totalSteps,
+                    for (EvoLlmTrainer.ProgressListener listener : progressListeners) {
+                        listener.onProgressMetrics(epoch, epochs, optStep, totalSteps,
                                 epochValidTokens, (long) trainSamples.size() * 1, 0.0, 0.0, 0.0, avgWindowLoss, lr);
                     }
                 }
@@ -280,8 +299,8 @@ public class GpuTrainingAdapter {
                 model.getTrainingState().setLastLoss((float) avgTrainLoss);
 
                 double valLoss = valSamples.isEmpty() ? Double.NaN : evaluateValidation(valSamples);
-                if (progressListener != null) {
-                    progressListener.onEpochCompleted(epoch + 1, epochs, avgTrainLoss, valLoss,
+                for (EvoLlmTrainer.ProgressListener listener : progressListeners) {
+                    listener.onEpochCompleted(epoch + 1, epochs, avgTrainLoss, valLoss,
                             (System.nanoTime() - epochStart) / 1_000_000L);
                 }
             }

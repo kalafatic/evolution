@@ -245,25 +245,47 @@ public class ForgePage extends AEvoPage {
         String activeAiSession = "";
         org.json.JSONArray aiSessionArray = new org.json.JSONArray();
 
-        // The Forge session (canonical UUID) is the authoritative source for the Training
-        // Monitor's telemetry binding. Resolve it via ForgeSessionManager (active training ->
-        // non-IDLE telemetry -> default session). Do NOT fall back to the AI Commander
-        // chat-thread id here: it lives in a different namespace and would be resolved
-        // against the Forge session registry on every telemetry poll, flooding the log with
-        // NOT_FOUND diagnostics. Chat-thread ids are supplied separately via aiSessionArray
-        // for the session-list display only.
-        String forgeSessionId = ForgeSessionManager.getInstance().getCurrentSessionId();
-        if (forgeSessionId != null && !forgeSessionId.trim().isEmpty()) {
-            activeAiSession = forgeSessionId;
+        // The global EVO session UUID is the single session identity shared across the EVO
+        // family. The Forge page, the Training Monitor and the Darwin engine are consumers of
+        // this id — they do NOT create their own session. Propagate the authoritative global
+        // UUID from the AI Commander; fall back only for legacy/headless callers with no chat
+        // page.
+        if (editor != null && editor.getAiChatPage() != null) {
+            String globalUuid = editor.getAiChatPage().getCurrentSessionId();
+            if (globalUuid != null && !globalUuid.trim().isEmpty()) {
+                activeAiSession = globalUuid;
+                ForgeSessionManager.getInstance().setCurrentGlobalSessionId(globalUuid);
+                // Ensure the global session's ForgeSession exists with the human-readable
+                // chat id as its name, so the Forge combo shows "20261128-0757_task"
+                // instead of the raw UUID. The UUID remains the id used by the REST API.
+                ForgeSessionManager.getInstance().getOrCreateForgeSession(globalUuid);
+            }
         }
         if (activeAiSession == null || activeAiSession.trim().isEmpty()) {
-            activeAiSession = "Default";
+            String forgeSessionId = ForgeSessionManager.getInstance().getCurrentSessionId();
+            if (forgeSessionId != null && !forgeSessionId.trim().isEmpty()) {
+                activeAiSession = forgeSessionId;
+            }
+        }
+        if (activeAiSession == null || activeAiSession.trim().isEmpty()) {
+            // No authoritative session selected yet. Never invent the legacy "Default"
+            // chat id here: it belongs to the AI Commander namespace, not to Forge
+            // sessions, and requesting it produces [SESSION][ERROR] ... NOT_FOUND.
+            return;
         }
 
         if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getSessions() != null) {
             for (eu.kalafatic.evolution.model.orchestration.ChatSession cs : orchestrator.getAiChat().getSessions()) {
-                if (cs != null && cs.getId() != null) {
-                    aiSessionArray.put(cs.getId());
+                if (cs != null && cs.getId() != null && !cs.getId().trim().isEmpty()) {
+                    // Pass {id, name} pairs: id = the canonical global UUID (used by the REST
+                    // API and telemetry), name = the human-readable chat id ("20261128-0757_task")
+                    // shown in the AI Commander. The Forge combo then displays the same name
+                    // instead of the raw UUID hash, while every request stays keyed by the UUID.
+                    String globalId = cs.getGlobalSessionId();
+                    String id = (globalId != null && !globalId.trim().isEmpty()) ? globalId : cs.getId();
+                    aiSessionArray.put(new org.json.JSONObject()
+                            .put("id", id)
+                            .put("name", cs.getId()));
                 }
             }
         }

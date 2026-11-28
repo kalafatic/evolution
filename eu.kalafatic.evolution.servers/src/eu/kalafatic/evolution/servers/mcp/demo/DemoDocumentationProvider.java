@@ -89,7 +89,15 @@ public class DemoDocumentationProvider extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
-        return controller.handle(session);
+        Response response = controller.handle(session);
+        if (response != null) {
+            // Backend identity so port diagnostics / clients can distinguish this EVO
+            // MCP surface from an unrelated process occupying the port.
+            response.addHeader("X-EVO-Application", "evolution");
+            response.addHeader("X-EVO-Component", "McpDemoDocumentationServer");
+            response.addHeader("Access-Control-Expose-Headers", "X-EVO-Application, X-EVO-Component");
+        }
+        return response;
     }
 
     public void startServer() throws IOException {

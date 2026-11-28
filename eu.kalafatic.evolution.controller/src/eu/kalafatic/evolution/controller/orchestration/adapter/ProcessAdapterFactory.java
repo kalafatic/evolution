@@ -27,12 +27,19 @@ public class ProcessAdapterFactory {
      * Resolves an appropriate process adapter for the given session ID and orchestrator.
      */
     public IProcessAdapter getAdapter(String sessionId, Orchestrator orchestrator, File projectRoot) {
-        String sid = (sessionId != null && !sessionId.isEmpty()) ? sessionId : "Default";
+        String rawSid = (sessionId != null && !sessionId.isEmpty()) ? sessionId : null;
+        // Internal tracker/registry keys require a non-null id; "Default" is legal in the
+        // SessionManager namespace. It must NOT be passed to the Forge resolver, which
+        // owns a different (UUID-based) namespace and would log NOT_FOUND for it.
+        String sid = rawSid != null ? rawSid : "Default";
 
-        // 1. Check if Forge training is active for this session
-        ForgeSession forgeSession = ForgeSessionManager.getInstance().findSession(sid);
+        // 1. Check if Forge training is active for this session. Use the exact lookup
+        //    (no fallback, no NOT_FOUND diagnostic): this is a probe across namespaces,
+        //    and a chat session id is not a Forge session id.
+        ForgeSession forgeSession = rawSid != null
+                ? ForgeSessionManager.getInstance().findSessionById(rawSid) : null;
         if (forgeSession != null && (forgeSession.getStatus() == ForgeStatus.TRAINING ||
-                ForgeSessionManager.getInstance().getTelemetry(sid) != null)) {
+                ForgeSessionManager.getInstance().getTelemetry(rawSid) != null)) {
             return new ForgeProcessAdapter(sid, orchestrator);
         }
 

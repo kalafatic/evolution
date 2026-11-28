@@ -131,6 +131,19 @@ public class ProjectManager {
 	 * @return the absolute path of the codebase folder/repository, or null if it cannot be determined.
 	 */
 	public static String getCodebasePath() {
+		// 0. The EMF-configured source repository is authoritative. Workspace discovery
+		//    may only provide a fallback: it must never silently override the configured
+		//    repository with an unrelated open Eclipse project.
+		try {
+			java.nio.file.Path configured =
+				eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getEvoGitRepository();
+			if (configured != null && configured.toFile().exists()) {
+				return configured.toAbsolutePath().normalize().toString();
+			}
+		} catch (Throwable t) {
+			// ResourceManager unavailable — continue with discovery.
+		}
+
 		// 1. Try discovering via ProjectModelManager and its active WorkspaceSourceResolver
 		try {
 			eu.kalafatic.evolution.controller.manager.ProjectModelManager pmm =

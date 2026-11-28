@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorSite;
+import org.eclipse.core.commands.operations.IOperationApprover;
 import org.eclipse.core.commands.operations.IOperationHistory;
 import org.eclipse.core.commands.operations.IUndoContext;
 import org.eclipse.core.commands.operations.OperationHistoryFactory;
@@ -112,6 +113,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	private volatile boolean isDirty = false;
 	private Resource resource;
 	private volatile IUndoContext undoContext;
+	private volatile boolean disposed;
+	private IOperationApprover undoApprover;
 	private EditorResourceChangeListener resourceListener;
 	private EditorSelectionListener selectionListener;
 	private org.eclipse.jface.text.ITextSelection lastTextSelection;
@@ -190,9 +193,15 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		if (undoContext == null) {
 			undoContext = new ObjectUndoContext(this);
 		}
-		// Important: Register with the operation history
+		// Register exactly one approve per initialisation. Previously a new
+		// approver was added on every init and never removed, which kept stale
+		// approval state alive across editor re-initialisation.
 		IOperationHistory history = OperationHistoryFactory.getOperationHistory();
-		history.addOperationApprover(new LinearUndoViolationUserApprover(undoContext, this)); // optional
+		if (undoApprover != null) {
+			history.removeOperationApprover(undoApprover);
+		}
+		undoApprover = new LinearUndoViolationUserApprover(undoContext, this);
+		history.addOperationApprover(undoApprover);
 		super.init(site, input);
 	}
 
@@ -401,6 +410,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
 	@Override
 	public void dispose() {
+		if (disposed) {
+			return;
+		}
+		disposed = true;
 		if (resourceListener != null)
 			ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
 		if (workspaceListener != null)
@@ -423,13 +436,30 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		if (lightCyan != null && !lightCyan.isDisposed())
 			lightCyan.dispose();
 
-		// Dispose of the undo context and clean up the operation history
-		if (undoContext != null) {
+		// Dispose the nested pages and their text editors first. Only after the
+		// document undo managers are disconnected is the shared undo context
+		// removed from the operation history. The previous order released the
+		// context while the nested text editor could still flush a document
+		// operation, causing OperationHistoryActionHandler$HistoryListener to
+		// invoke AbstractOperation.hasContext(null) during teardown.
+		try {
+			super.dispose();
+		} finally {
 			IOperationHistory history = OperationHistoryFactory.getOperationHistory();
-			history.dispose(undoContext, true, true, true);
+			if (undoApprover != null) {
+				history.removeOperationApprover(undoApprover);
+				undoApprover = null;
+			}
+			if (undoContext != null) {
+				try {
+					history.dispose(undoContext, true, true, true);
+				} catch (Exception e) {
+					eu.kalafatic.evolution.controller.log.Log.log(
+							"[EDITOR] Failed to dispose undo context cleanly: " + e.getMessage());
+				}
+				undoContext = null;
+			}
 		}
-
-		super.dispose();
 	}
 
 	@Override
@@ -785,7 +815,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	@Override
 	public <T> T getAdapter(Class<T> key) {
 		if (IUndoContext.class.equals(key)) {
-			if (undoContext == null) {
+			if (undoContext == null && !disposed) {
 				undoContext = new ObjectUndoContext(this);
 			}
 			return key.cast(undoContext);
@@ -919,7 +949,13 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		@Override
 		public <T> T getAdapter(Class<T> adapter) {
 			if (IUndoContext.class.equals(adapter)) {
-				return adapter.cast(MultiPageEditor.this.undoContext);
+				IUndoContext context = MultiPageEditor.this.undoContext;
+				if (context != null) {
+					return adapter.cast(context);
+				}
+				// During/after disposal the shared context is gone. Fall back to
+				// the text editor's own viewer context instead of returning null,
+				// which operation history action handlers cannot handle.
 			}
 			return super.getAdapter(adapter);
 		}

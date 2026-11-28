@@ -566,13 +566,15 @@ public class AiCommanderPage extends AEvoPage {
 				}
 			} else if (selectedMode == AiMode.FORGE) {
 				String modelSizeStr = chatMgmtGroup != null ? chatMgmtGroup.getSelectedModelSize() : "SMALL";
-				// Forge uiState is keyed by the canonical forge session, not the AI
-				// Commander chat session ID. Select the default forge session explicitly.
+				// Forge uiState is keyed by the GLOBAL EVO session (the same id the Darwin
+				// engine reads), not the chat session id nor the seeded "Self-Evo Forging"
+				// demo session. Bind/select the global session explicitly.
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager fsm =
+						eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance();
 				eu.kalafatic.evolution.model.orchestration.ForgeSession forgeSession =
-						eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().findDefaultSession();
+						fsm.getOrCreateForgeSession(getCurrentSessionId());
 				if (forgeSession != null) {
-					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance()
-							.updateUiState(forgeSession.getSessionId(), "modelSize", modelSizeStr);
+					fsm.updateUiState(forgeSession.getSessionId(), "modelSize", modelSizeStr);
 				}
 
 				String targetPathStr = currentSession != null ? currentSession.getTargetPath() : null;
@@ -817,14 +819,48 @@ public class AiCommanderPage extends AEvoPage {
 		if (sessionList.isEmpty()) {
 			ChatSession defaultSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			defaultSession.setId("Default");
+			defaultSession.setGlobalSessionId(assignGlobalSessionId());
 			defaultSession.setIterativeMode(true);
 			defaultSession.setDarwinMode(true);
 			defaultSession.setAutoApprove(true);
 			sessionList.add(defaultSession);
+		} else {
+			// Backfill the globally unique session identity for any session created before
+			// the global-session architecture existed. The UUID is generated exactly once
+			// here and then persisted with the EMF model, so it is stable across restarts.
+			for (ChatSession cs : sessionList) {
+				if (cs != null && (cs.getGlobalSessionId() == null || cs.getGlobalSessionId().trim().isEmpty())) {
+					cs.setGlobalSessionId(assignGlobalSessionId());
+				}
+			}
 		}
 		currentSession = sessionList.get(0);
 		chatGroup.setSession(currentSession);
 		updateSessionCombo();
+		propagateGlobalSessionId();
+	}
+
+	/**
+	 * Publishes the current global EVO session UUID to the Forge / Training Monitor
+	 * infrastructure so every EVO page consumes the same globally selected session.
+	 */
+	private void propagateGlobalSessionId() {
+		try {
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance()
+					.setCurrentGlobalSessionId(getCurrentSessionId());
+		} catch (Exception ignored) {
+			// ForgeSessionManager is optional at this point; the Forge page re-propagates it.
+		}
+	}
+
+	/**
+	 * Generates a fresh, globally unique EVO session UUID. This is the single identity
+	 * shared across the EVO family (Chat, AI Commander, DARWIN, Coding, Mediated, Forge,
+	 * Training Monitor). It is independent of the human-readable session id/name and never
+	 * changes when switching execution modes, applications or UI pages.
+	 */
+	private String assignGlobalSessionId() {
+		return java.util.UUID.randomUUID().toString();
 	}
 
 	public void updateSessionCombo() {
@@ -853,6 +889,9 @@ public class AiCommanderPage extends AEvoPage {
 
 			ChatSession newSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			newSession.setId(id);
+			// The global EVO session UUID is generated exactly once at creation and is
+			// preserved across mode/application/page switches and application restarts.
+			newSession.setGlobalSessionId(assignGlobalSessionId());
 
 			// A new session always starts in the neutral LOCAL mode. Execution mode
 			// (aiMode) and the Forge training target (targetPath/targetType) are
@@ -879,6 +918,9 @@ public class AiCommanderPage extends AEvoPage {
 			orchestrator.getAiChat().getSessions().add(newSession);
 			currentSession = newSession;
 
+			// Propagate the global EVO session identity to Forge / Training Monitor.
+			propagateGlobalSessionId();
+
 			// Pre-select model from last used settings (and other general settings)
 			loadLastUsedSettings();
 			scheduleRefresh();
@@ -896,6 +938,10 @@ public class AiCommanderPage extends AEvoPage {
 				.ifPresent(t -> {
 					currentSession = t;
 					chatGroup.setSession(currentSession);
+
+					// Propagate the global EVO session identity to the Forge / Training
+					// Monitor consumers so every page follows this selection immediately.
+					propagateGlobalSessionId();
 
 					RuntimeProjection projection = ProjectionService.getInstance().getProjection(sessionId);
 
@@ -1363,6 +1409,19 @@ public class AiCommanderPage extends AEvoPage {
 				updateScrolledContent();
 			} finally {
 				isUpdating = false;
+			}
+		}
+	}
+
+	/**
+	 * Refreshes provider/model selection controls after the model registry changed
+	 * outside this page (Properties → Models add, rename or removal).
+	 */
+	public void refreshModelSelections() {
+		if (chatMgmtGroup != null) {
+			org.eclipse.swt.widgets.Composite groupControl = chatMgmtGroup.getGroup();
+			if (groupControl != null && !groupControl.isDisposed()) {
+				chatMgmtGroup.refreshModelsFromRegistry();
 			}
 		}
 	}
@@ -1883,6 +1942,10 @@ public class AiCommanderPage extends AEvoPage {
 		if (!exists) {
 			ChatSession newSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			newSession.setId(sessionId);
+			// Every chat session carries the globally unique EVO identity immediately;
+			// without it, consumers fall back to the chat id and leak it into the
+			// UUID-based Forge namespace.
+			newSession.setGlobalSessionId(assignGlobalSessionId());
 			newSession.setAutoApprove(true);
 			orchestrator.getAiChat().getSessions().add(newSession);
 		}
@@ -2129,6 +2192,29 @@ public class AiCommanderPage extends AEvoPage {
 	}
 
 	public String getCurrentSessionName() { return currentSession != null ? currentSession.getId() : "Default"; }
+
+	/**
+	 * The authoritative global EVO session identity (UUID) of the currently selected
+	 * session. This is the single id shared across the EVO family. Falls back to the
+	 * human-readable id only for sessions that predate the global-session architecture
+	 * and have not yet been backfilled.
+	 */
+	public String getCurrentSessionId() {
+		if (currentSession != null) {
+			String global = currentSession.getGlobalSessionId();
+			if (global != null && !global.trim().isEmpty()) {
+				return global;
+			}
+			// Cross-page consumers (Forge, Training Monitor, Darwin) require the global
+			// EVO UUID. Never expose the human-readable chat id (e.g. the legacy
+			// "Default") as a cross-namespace identity: lazily assign the global UUID.
+			String assigned = assignGlobalSessionId();
+			currentSession.setGlobalSessionId(assigned);
+			propagateGlobalSessionId();
+			return assigned;
+		}
+		return null;
+	}
 
 	public ChatSession getCurrentSession() { return currentSession; }
 
